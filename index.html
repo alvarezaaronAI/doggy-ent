@@ -126,6 +126,16 @@
     }
     /* Extra separation when panels stack */
     .section-panel + .section-panel { margin-top: 3rem; }
+
+    /* Keep images flush and consistently framed */
+    img { display: block; }
+    .media-cover {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
   </style>
 </head>
 <body class="bg-[var(--brand-5)] text-stone-900 antialiased">
@@ -235,13 +245,15 @@
 
 
   <section id="spotlight" class="max-w-7xl mx-auto px-4 py-14">
-    <div class="grid md:grid-cols-2 gap-8 items-center bg-white border border-[color-mix(in_srgb,var(--brand-3)_35%,white)] rounded-3xl overflow-hidden">
-      <img
-        src="https://images.unsplash.com/photo-1546443046-ed1ce6ffd1a5?q=80&w=1200&auto=format&fit=crop"
-        alt="Chicken breast jerky in craft pouch"
-        class="w-full h-80 object-cover"
-      />
-      <div class="p-6 md:p-8">
+    <div class="grid md:grid-cols-2 gap-8 md:items-stretch items-start bg-white border border-[color-mix(in_srgb,var(--brand-3)_35%,white)] rounded-3xl overflow-hidden">
+      <div class="h-full min-h-[320px] md:min-h-[100%] overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop"
+          alt="Chicken breast jerky in craft pouch"
+          class="media-cover"
+        />
+      </div>
+      <div class="p-6 md:p-8 flex flex-col justify-center">
         <h2 class="text-2xl md:text-3xl font-bold">Chicken Breast Jerky</h2>
         <p class="mt-2 text-stone-300">Lean, hand-sliced chicken breast, dehydrated low &amp; slow. That’s the whole ingredient list.</p>
 
@@ -295,20 +307,20 @@
         <div class="absolute bottom-3 left-3 text-lg font-semibold text-white drop-shadow">Single-Ingredient Jerky</div>
       </a>
       <div class="relative overflow-hidden rounded-2xl tile-strong tile-blue">
-        <img class="h-44 w-full object-cover opacity-60" src="https://images.unsplash.com/photo-1543465077-db45d34b88a5?q=80&w=1200&auto=format&fit=crop" alt="Training treats"/>
+        <img class="h-44 w-full object-cover opacity-75" src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1200&auto=format&fit=crop" alt="Training treats"/>
         <div class="absolute inset-0 tile-label-gradient"></div>
-        <div class="absolute bottom-3 left-3">
-          <div class="text-lg font-semibold text-white drop-shadow">Training Bites</div>
-          <div class="text-xs text-stone-300">Coming soon</div>
+        <div class="absolute bottom-3 left-3 right-3">
+          <div class="text-lg font-semibold text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)]">Training Bites</div>
+          <div class="mt-1 inline-flex rounded-full bg-white/90 px-2 py-1 text-[11px] font-semibold text-[var(--brand-4)] shadow-sm">Coming Soon</div>
         </div>
       </div>
       <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue" href="#catalog">
-        <img class="h-44 w-full object-cover" src="https://images.unsplash.com/photo-1601758124198-0c3d3c8d8d3f?q=80&w=1200&auto=format&fit=crop" alt="Seasonal drops"/>
+        <img class="h-44 w-full object-cover" src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?q=80&w=1200&auto=format&fit=crop" alt="Seasonal drops"/>
         <div class="absolute inset-0 tile-label-gradient"></div>
         <div class="absolute bottom-3 left-3 text-lg font-semibold text-white drop-shadow">Seasonal Drops</div>
       </a>
       <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue" href="#bundles">
-        <img class="h-44 w-full object-cover" src="https://images.unsplash.com/photo-1541976076758-347942db1970?q=80&w=1200&auto=format&fit=crop" alt="Bundles"/>
+        <img class="h-44 w-full object-cover" src="https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200&auto=format&fit=crop" alt="Bundles"/>
         <div class="absolute inset-0 tile-label-gradient"></div>
         <div class="absolute bottom-3 left-3 text-lg font-semibold text-white drop-shadow">Variety Packs &amp; Bundles</div>
       </a>
@@ -378,7 +390,7 @@
         <figcaption class="text-sm text-stone-300">“Our lab will do ANY trick for these!” — Jess R.</figcaption>
       </figure>
       <figure class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
-        <img class="h-36 w-full object-cover rounded-lg mb-4" src="https://images.unsplash.com/photo-1556228724-4b89e7d3f6fb?q=80&w=1200&auto=format&fit=crop" alt="Dog review 2">
+        <img class="h-36 w-full object-cover rounded-lg mb-4" src="https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?q=80&w=1200&auto=format&fit=crop" alt="Dog review 2">
         <figcaption class="text-sm text-stone-300">“Love the transparency &amp; simple label.” — Omar L.</figcaption>
       </figure>
       <figure class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
@@ -409,7 +421,7 @@
     <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <!-- Card -->
       <article class="rounded-2xl border border-stone-800 bg-stone-900/60 overflow-hidden tile-strong">
-        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1546443046-ed1ce6ffd1a5?q=80&w=1200&auto=format&fit=crop" alt="Chicken Breast Jerky">
+        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop" alt="Chicken Breast Jerky">
         <div class="p-5">
           <h3 class="font-semibold">Chicken Breast Jerky</h3>
           <div class="mt-1 flex gap-2 text-[11px]">
@@ -426,7 +438,7 @@
 
       <!-- More mock cards -->
       <article class="rounded-2xl border border-stone-800 bg-stone-900/60 overflow-hidden opacity-60 tile-strong">
-        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1576201836106-db1758fd1c97?q=80&w=1200&auto=format&fit=crop" alt="Training Bites">
+        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1200&auto=format&fit=crop" alt="Training Bites">
         <div class="p-5">
           <h3 class="font-semibold">Training Bites (Coming Soon)</h3>
           <p class="mt-3 text-sm text-stone-300">Tiny, high-reward morsels for focused sessions.</p>
@@ -434,7 +446,7 @@
       </article>
 
       <article class="rounded-2xl border border-stone-800 bg-stone-900/60 overflow-hidden tile-strong">
-        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1558944351-c7b35a1a8a05?q=80&w=1200&auto=format&fit=crop" alt="Seasonal Drop">
+        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1518717758536-85ae29035b6d?q=80&w=1200&auto=format&fit=crop" alt="Seasonal Drop">
         <div class="p-5">
           <h3 class="font-semibold">Seasonal Drop</h3>
           <p class="mt-3 text-sm text-stone-300">Limited runs inspired by the season.</p>
@@ -482,7 +494,7 @@
   <section id="about" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <div class="grid md:grid-cols-2 gap-8 items-center">
       <img class="w-full h-80 object-cover rounded-3xl border border-stone-800"
-           src="https://images.unsplash.com/photo-1558944351-9e0479c2a8a6?q=80&w=1400&auto=format&fit=crop"
+           src="https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1400&auto=format&fit=crop"
            alt="Chase & Evie labradors" />
       <div>
         <h2 class="text-3xl font-bold u-underline-blue">Meet Chase &amp; Evie</h2>
