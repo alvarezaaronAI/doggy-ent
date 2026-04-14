@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chase & Evie Co. — Small-Batch Dog Treats</title>
+  <!-- Updated by ChatGPT on 2025-10-07: Installed full mock layout + theme color scaffold -->
+
+  <!-- Tailwind (CDN for mock; swap to your build later) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome (icons) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Base styles (optional tweaks) -->
+  <style>
+    /* Theme: updated 2024-06-xx — new packaging palette */
+    :root {
+      --brand-1: #2F57B7; /* Blue ring - primary (focus/links) */
+      --brand-2: #F2DE5C; /* Yellow label - secondary (buttons/chips) */
+      --brand-3: #CDAA7E; /* Kraft bag - accent 1 (borders/cards) */
+      --brand-4: #6A3C2B; /* Cacao center - accent 2 (headings) */
+      --brand-5: #F3E8D2; /* Oat - neutral base */
+    }
+
+    /* Map Tailwind emerald utilities to your brand (Yellow CTAs, Blue links) */
+    .bg-emerald-400 { background-color: var(--brand-2) !important; }
+    .text-emerald-400 { color: var(--brand-1) !important; }
+    .border-emerald-400 { border-color: var(--brand-1) !important; }
+    .hover\:bg-emerald-300:hover { background-color: color-mix(in srgb, var(--brand-2) 78%, #ffffff) !important; }
+
+    /* Better focus outline for a11y using your primary */
+    :focus-visible { outline: 2px solid var(--brand-1); outline-offset: 2px; }
+
+    /* --- Light theme remap: remove darks, harmonize with Oat base --- */
+    /* Use Oat as site background and white for surfaces/cards */
+    .bg-stone-950 { background-color: var(--brand-5) !important; }
+    .bg-stone-950\/95 { background-color: color-mix(in srgb, var(--brand-5) 95%, transparent) !important; }
+    .bg-stone-950\/90 { background-color: color-mix(in srgb, var(--brand-5) 90%, transparent) !important; }
+    .bg-stone-950\/40 { background-color: color-mix(in srgb, var(--brand-5) 40%, transparent) !important; }
+
+    .bg-stone-900 { background-color: #ffffff !important; }
+    .bg-stone-900\/60 { background-color: rgba(255,255,255,0.60) !important; }
+    .bg-stone-900\/70 { background-color: rgba(255,255,255,0.70) !important; }
+    .bg-stone-900\/80 { background-color: rgba(255,255,255,0.80) !important; }
+
+    /* Softer borders for light theme using Kraft tone */
+    .border-stone-800 { border-color: color-mix(in srgb, var(--brand-3) 35%, white) !important; }
+
+    /* Inputs/selects previously using dark BGs */
+    select.bg-stone-900, input.bg-stone-900, textarea.bg-stone-900 { background-color: #ffffff !important; }
+    input.bg-stone-950 { background-color: #ffffff !important; }
+
+    /* Muted text on light */
+    .text-stone-300 { color: #6b7280 !important; }
+    .text-stone-400 { color: #4b5563 !important; }
+    .text-stone-200 { color: #475569 !important; }
+
+    /* === Readability & contrast tweaks for bright earthy theme === */
+    /* Darken "muted" text utilities so they read well on white/Oat */
+    .text-stone-300 { color: #374151 !important; } /* ~slate-700 */
+    .text-stone-400 { color: #4B5563 !important; } /* ~slate-600 */
+    .text-stone-200 { color: #6B7280 !important; } /* ~gray-500 */
+
+    /* Make semi-transparent card backgrounds closer to solid white */
+    .bg-stone-900\/60 { background-color: rgba(255,255,255,0.95) !important; }
+    .bg-stone-900\/70 { background-color: rgba(255,255,255,0.98) !important; }
+    .bg-stone-900\/80 { background-color: #ffffff !important; }
+
+    /* Softer borders using Kraft for better separation on light */
+    .border-stone-700 { border-color: color-mix(in srgb, var(--brand-3) 45%, white) !important; }
+
+    /* Hover states that used to go dark; shift to tasteful Laurel tint */
+    .hover\:bg-stone-900:hover { background-color: color-mix(in srgb, var(--brand-1) 15%, white) !important; }
+    .hover\:text-white:hover { color: var(--brand-4) !important; }
+
+    /* Buttons: make outline/ghost states readable on light */
+    .border-emerald-400 { border-color: var(--brand-1) !important; }
+    .text-emerald-400 { color: var(--brand-1) !important; }
+
+    /* Optional: emphasize headings slightly with cacao for warmth */
+    h1, h2, h3, h4 { color: var(--brand-4); }
+
+    /* Lighten dark gradient overlays to warm Oat tint */
+    .from-stone-950\/90 { --tw-gradient-from: color-mix(in srgb, var(--brand-5) 85%, transparent); --tw-gradient-to: transparent; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+    .from-stone-950 { --tw-gradient-from: color-mix(in srgb, var(--brand-5) 85%, transparent); --tw-gradient-to: transparent; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+
+    /* Links hover keep brand look on light */
+    .hover\:text-emerald-400:hover { color: var(--brand-1) !important; }
+    /* === UI polish 1–3 === */
+    /* (2) Thin blue underline for section headers */
+    .u-underline-blue { position: relative; padding-bottom: .35rem; }
+    .u-underline-blue::after { content: ""; position: absolute; left: 0; bottom: 0; width: 3rem; height: 2px; background: var(--brand-1); }
+
+    /* (3) Very soft Oat→White background for long sections */
+    .section-soft { background: linear-gradient(180deg, rgba(243,232,210,0.55) 0%, #ffffff 100%); }
+
+    /* === Blue accent sweep (brand-1) === */
+    /* subtle focus ring helper */
+    .focus-ring { box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-1) 22%, transparent); }
+    /* blue ring around small brand chips */
+    .chip-blue-ring { border: 2px solid var(--brand-1); }
+    /* tile borders pick up blue and intensify on hover */
+    .tile-blue { border-color: color-mix(in srgb, var(--brand-1) 28%, white) !important; }
+    .tile-blue:hover { border-color: var(--brand-1) !important; }
+    /* thin blue section dividers (utility) */
+    .hr-blue { height: 1px; background: color-mix(in srgb, var(--brand-1) 18%, white); border: 0; }
+    /* === Stronger tiles for readability === */
+    .tile { background: #ffffff; border: 1px solid color-mix(in srgb, var(--brand-3) 45%, white); box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+    .tile-strong { background: #ffffff; border: 2px solid color-mix(in srgb, var(--brand-3) 60%, white); box-shadow: 0 16px 40px rgba(0,0,0,.14); }
+    .tile-label-gradient { background: linear-gradient(to top, rgba(0,0,0,.42), rgba(0,0,0,.18), transparent); }
+    /* Section panels to prevent blending with Oat background */
+    .section-panel {
+      background: #ffffff;
+      border: 1px solid color-mix(in srgb, var(--brand-3) 45%, white);
+      border-radius: 1.5rem;
+      box-shadow: 0 12px 36px rgba(0,0,0,.12);
+      margin-top: 2.25rem;   /* clear break above */
+      margin-bottom: 2.25rem;/* clear break below */
+      padding-top: 2.25rem;  /* keep inner breathing room if a section lacks content spacing */
+      padding-bottom: 2.25rem;
+    }
+    /* Extra separation when panels stack */
+    .section-panel + .section-panel { margin-top: 3rem; }
+  </style>
+</head>
+<body class="bg-[var(--brand-5)] text-stone-900 antialiased">
+
+  <!-- PROMO STRIP -->
+  <div class="w-full bg-white text-stone-700 text-sm border-b border-[color-mix(in_srgb,var(--brand-1)_18%,white)]">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-4">
+      <span class="inline-flex items-center gap-2"><i class="fa-solid fa-truck-fast text-emerald-400"></i> Free shipping $39+</span>
+      <span class="hidden sm:inline-flex items-center gap-2"><i class="fa-solid fa-wheat-awn-circle-exclamation text-emerald-400"></i> Grain-free</span>
+      <span class="hidden md:inline-flex items-center gap-2"><i class="fa-solid fa-shield-dog text-emerald-400"></i> Small-batch • Single-ingredient</span>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <header class="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-[color-mix(in_srgb,var(--brand-1)_22%,white)]">
+    <nav class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between" aria-label="Primary">
+      <!-- Logo -->
+      <a href="#hero" class="flex items-center gap-3 font-black tracking-tight text-xl">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400 text-stone-900 chip-blue-ring">
+          <i class="fa-solid fa-paw"></i>
+        </span>
+        <span>Chase &amp; Evie Co.</span>
+      </a>
+
+      <!-- Desktop Links -->
+      <ul class="hidden md:flex items-center gap-6 text-sm text-stone-200">
+        <li><a class="hover:text-emerald-400" href="#shop">Shop</a></li>
+        <li><a class="hover:text-emerald-400" href="#process">How It’s Made</a></li>
+        <li><a class="hover:text-emerald-400" href="#ingredients">Ingredients</a></li>
+        <li><a class="hover:text-emerald-400" href="#bundles">Bundles</a></li>
+        <li><a class="hover:text-emerald-400" href="#reviews">Reviews</a></li>
+        <li><a class="hover:text-emerald-400" href="#about">About</a></li>
+        <li><a class="hover:text-emerald-400" href="#faq">FAQ</a></li>
+        <li><a class="hover:text-emerald-400" href="#contact">Contact</a></li>
+      </ul>
+
+      <!-- Right icons -->
+      <div class="hidden md:flex items-center gap-4">
+        <button class="text-stone-300 hover:text-white" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <button class="text-stone-300 hover:text-white" aria-label="Account"><i class="fa-regular fa-user"></i></button>
+        <button class="relative text-stone-300 hover:text-white" aria-label="Cart">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="absolute -top-2 -right-2 h-5 min-w-[1.25rem] px-1 rounded-full bg-emerald-400 text-stone-900 text-[10px] font-bold flex items-center justify-center">2</span>
+        </button>
+      </div>
+
+      <!-- Mobile toggle -->
+      <button id="nav-toggle" class="md:hidden text-stone-300 hover:text-white" aria-label="Open menu">
+        <i class="fa-solid fa-bars text-xl"></i>
+      </button>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div id="nav-menu" class="md:hidden hidden border-t border-stone-800 bg-white">
+      <ul class="max-w-7xl mx-auto px-4 py-4 grid gap-3 text-stone-200">
+        <li><a class="block py-2 hover:text-emerald-400" href="#shop">Shop</a></li>
+        <li><a class="block py-2 hover:text-emerald-400" href="#process">How It’s Made</a></li>
+        <li><a class="block py-2 hover:text-emerald-400" href="#ingredients">Ingredients</a></li>
+        <li><a class="block py-2 hover:text-emerald-400" href="#bundles">Bundles</a></li>
+        <li><a class="block py-2 hover:text-emerald-400" href="#reviews">Reviews</a></li>
+        <li><a class="block py-2 hover:text-emerald-400" href="#about">About</a></li>
+        <li><a class="block py-2 hover:text-emerald-400" href="#faq">FAQ</a></li>
+        <li><a class="block py-2 hover:text-emerald-400" href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section id="hero" class="relative">
+    <div class="absolute inset-0">
+      <!-- Use your own hero photo later -->
+      <img
+        src="https://images.unsplash.com/photo-1534361960057-19889db9621e?q=80&w=1600&auto=format&fit=crop"
+        alt="Happy labrador looking at dog treats"
+        class="w-full h-[72vh] md:h-[78vh] object-cover brightness-[.70]"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-[rgba(243,232,210,0.85)] via-[rgba(243,232,210,0.35)] to-transparent"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 h-[72vh] md:h-[78vh] flex items-end">
+      <div class="mb-16 max-w-2xl bg-white/80 backdrop-blur rounded-2xl p-6 md:p-8 border border-[color-mix(in_srgb,var(--brand-3)_35%,white)]">
+        <div class="mb-3 flex flex-wrap gap-2 text-[11px]">
+          <span class="px-2 py-1 rounded-full bg-emerald-400 text-stone-900 font-bold">Human-grade*</span>
+          <span class="px-2 py-1 rounded-full bg-emerald-400 text-stone-900 font-bold">Single-ingredient</span>
+          <span class="px-2 py-1 rounded-full bg-emerald-400 text-stone-900 font-bold">No preservatives</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight">Small-Batch Dog Treats They’ll Sit For</h1>
+        <p class="mt-3 text-stone-300">Hand-dehydrated chicken breast jerky. Nothing else. Made with love by Chase &amp; Evie Co.</p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="#spotlight" class="inline-flex items-center gap-2 bg-emerald-400 text-[var(--brand-4)] font-semibold px-5 py-3 rounded-lg hover:bg-emerald-300 focus-ring">
+            <i class="fa-solid fa-bone"></i> Shop Chicken Jerky
+          </a>
+          <a href="#ingredients" class="inline-flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-3 rounded-lg hover:bg-stone-900">
+            <i class="fa-solid fa-clipboard-check"></i> See Ingredients &amp; Analysis
+          </a>
+          <a href="#about" class="inline-flex items-center gap-2 text-stone-300 hover:text-white">
+            Meet Chase &amp; Evie <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+        <div class="mt-6 grid grid-cols-3 gap-4 text-xs text-stone-300">
+          <span class="inline-flex items-center gap-2"><i class="fa-solid fa-truck-fast text-emerald-400"></i> Fast Shipping</span>
+          <span class="inline-flex items-center gap-2"><i class="fa-solid fa-shield-dog text-emerald-400"></i> 30-Day Promise</span>
+          <span class="inline-flex items-center gap-2"><i class="fa-solid fa-leaf text-emerald-400"></i> Grain-Free</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="spotlight" class="max-w-7xl mx-auto px-4 py-14">
+    <div class="grid md:grid-cols-2 gap-8 items-center bg-white border border-[color-mix(in_srgb,var(--brand-3)_35%,white)] rounded-3xl overflow-hidden">
+      <img
+        src="https://images.unsplash.com/photo-1546443046-ed1ce6ffd1a5?q=80&w=1200&auto=format&fit=crop"
+        alt="Chicken breast jerky in craft pouch"
+        class="w-full h-80 object-cover"
+      />
+      <div class="p-6 md:p-8">
+        <h2 class="text-2xl md:text-3xl font-bold">Chicken Breast Jerky</h2>
+        <p class="mt-2 text-stone-300">Lean, hand-sliced chicken breast, dehydrated low &amp; slow. That’s the whole ingredient list.</p>
+
+        <ul class="mt-4 text-sm text-stone-300 space-y-1">
+          <li class="flex items-center gap-2"><i class="fa-regular fa-circle-check text-emerald-400"></i> Single ingredient</li>
+          <li class="flex items-center gap-2"><i class="fa-regular fa-circle-check text-emerald-400"></i> Low-temp dehydrated</li>
+          <li class="flex items-center gap-2"><i class="fa-regular fa-circle-check text-emerald-400"></i> Made in USA*</li>
+        </ul>
+
+        <div class="mt-5 flex flex-wrap items-center gap-3">
+          <label class="text-sm text-stone-300">Size:</label>
+          <div class="flex gap-2">
+            <button class="px-3 py-2 rounded-lg border border-stone-700 hover:border-emerald-400">3 oz</button>
+            <button class="px-3 py-2 rounded-lg border border-stone-700 hover:border-emerald-400">6 oz</button>
+            <button class="px-3 py-2 rounded-lg border border-stone-700 hover:border-emerald-400">12 oz</button>
+          </div>
+        </div>
+
+        <div class="mt-5 flex items-center gap-3">
+          <div class="text-lg font-semibold">$12.99</div>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" class="accent-emerald-400"> Subscribe &amp; Save 10%
+          </label>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button class="inline-flex items-center gap-2 bg-emerald-400 text-[var(--brand-4)] font-semibold px-5 py-3 rounded-lg hover:bg-emerald-300 focus-ring">
+            <i class="fa-solid fa-bag-shopping"></i> Add to Cart
+          </button>
+          <a href="#pdp" class="inline-flex items-center gap-2 text-emerald-400 hover:underline">
+            Learn More <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP COLLECTIONS -->
+  <section id="shop" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <div class="mb-8 flex items-end justify-between">
+      <h2 class="text-3xl font-bold u-underline-blue">Shop Treats</h2>
+      <a href="#catalog" class="text-emerald-400 hover:underline">View All →</a>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Category tile -->
+      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue hover:border-emerald-400" href="#catalog">
+        <img class="h-44 w-full object-cover opacity-80 group-hover:opacity-100 transition"
+             src="https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?q=80&w=1200&auto=format&fit=crop"
+             alt="Single-ingredient jerky" />
+        <div class="absolute inset-0 tile-label-gradient"></div>
+        <div class="absolute bottom-3 left-3 text-lg font-semibold text-white drop-shadow">Single-Ingredient Jerky</div>
+      </a>
+      <div class="relative overflow-hidden rounded-2xl tile-strong tile-blue">
+        <img class="h-44 w-full object-cover opacity-60" src="https://images.unsplash.com/photo-1543465077-db45d34b88a5?q=80&w=1200&auto=format&fit=crop" alt="Training treats"/>
+        <div class="absolute inset-0 tile-label-gradient"></div>
+        <div class="absolute bottom-3 left-3">
+          <div class="text-lg font-semibold text-white drop-shadow">Training Bites</div>
+          <div class="text-xs text-stone-300">Coming soon</div>
+        </div>
+      </div>
+      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue" href="#catalog">
+        <img class="h-44 w-full object-cover" src="https://images.unsplash.com/photo-1601758124198-0c3d3c8d8d3f?q=80&w=1200&auto=format&fit=crop" alt="Seasonal drops"/>
+        <div class="absolute inset-0 tile-label-gradient"></div>
+        <div class="absolute bottom-3 left-3 text-lg font-semibold text-white drop-shadow">Seasonal Drops</div>
+      </a>
+      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue" href="#bundles">
+        <img class="h-44 w-full object-cover" src="https://images.unsplash.com/photo-1541976076758-347942db1970?q=80&w=1200&auto=format&fit=crop" alt="Bundles"/>
+        <div class="absolute inset-0 tile-label-gradient"></div>
+        <div class="absolute bottom-3 left-3 text-lg font-semibold text-white drop-shadow">Variety Packs &amp; Bundles</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- HOW IT'S MADE -->
+  <section id="process" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <h2 class="text-3xl font-bold u-underline-blue">How We Make Them</h2>
+    <div class="mt-8 grid sm:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
+        <div class="text-emerald-400 text-2xl mb-2"><i class="fa-solid fa-seedling"></i></div>
+        <h3 class="font-semibold mb-1">Source</h3>
+        <p class="text-stone-300 text-sm">Lean chicken breast from trusted suppliers.</p>
+      </div>
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
+        <div class="text-emerald-400 text-2xl mb-2"><i class="fa-solid fa-fire-burner"></i></div>
+        <h3 class="font-semibold mb-1">Prepare</h3>
+        <p class="text-stone-300 text-sm">Trim, slice, and dehydrate low &amp; slow for max flavor.</p>
+      </div>
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
+        <div class="text-emerald-400 text-2xl mb-2"><i class="fa-solid fa-box-open"></i></div>
+        <h3 class="font-semibold mb-1">Pack</h3>
+        <p class="text-stone-300 text-sm">Hand-bagged in craft pouches. That’s it.</p>
+      </div>
+    </div>
+
+    <div class="mt-6 grid md:grid-cols-2 gap-6">
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
+        <h4 class="font-semibold mb-2">Storage</h4>
+        <p class="text-stone-300 text-sm">Keep sealed in a cool, dry place. Refrigerate after opening for max freshness.</p>
+      </div>
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
+        <h4 class="font-semibold mb-2">Shelf Life</h4>
+        <p class="text-stone-300 text-sm">Best by 6 months (batch &amp; best-by stamped on every bag).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INGREDIENTS & ANALYSIS -->
+  <section id="ingredients" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <div class="grid md:grid-cols-2 gap-8 items-start">
+      <div class="rounded-3xl border border-stone-800 bg-stone-900/70 p-8">
+        <div class="text-emerald-400 text-sm font-bold mb-2">ONE INGREDIENT</div>
+        <h2 class="text-3xl font-extrabold">Chicken Breast</h2>
+        <p class="mt-2 text-stone-300">No salt, no sugar, no glycerin, no preservatives. No wheat, corn, or soy.</p>
+      </div>
+      <div class="rounded-3xl border border-stone-800 bg-stone-900/70 p-8">
+        <h3 class="text-xl font-bold mb-4">Guaranteed Analysis</h3>
+        <dl class="grid grid-cols-2 gap-y-2 text-sm">
+          <dt class="text-stone-400">Crude Protein (min)</dt><dd class="text-right">70%</dd>
+          <dt class="text-stone-400">Crude Fat (min)</dt><dd class="text-right">4.5%</dd>
+          <dt class="text-stone-400">Crude Fiber (max)</dt><dd class="text-right">0.5%</dd>
+          <dt class="text-stone-400">Moisture (max)</dt><dd class="text-right">20%</dd>
+        </dl>
+        <p class="mt-4 text-xs text-stone-400">*Treats intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- UGC STRIP -->
+  <section id="reviews-short" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <h2 class="text-3xl font-bold u-underline-blue mb-6">Happy Pups</h2>
+    <div class="grid md:grid-cols-3 gap-6">
+      <figure class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
+        <img class="h-36 w-full object-cover rounded-lg mb-4" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1200&auto=format&fit=crop" alt="Dog review 1">
+        <figcaption class="text-sm text-stone-300">“Our lab will do ANY trick for these!” — Jess R.</figcaption>
+      </figure>
+      <figure class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
+        <img class="h-36 w-full object-cover rounded-lg mb-4" src="https://images.unsplash.com/photo-1556228724-4b89e7d3f6fb?q=80&w=1200&auto=format&fit=crop" alt="Dog review 2">
+        <figcaption class="text-sm text-stone-300">“Love the transparency &amp; simple label.” — Omar L.</figcaption>
+      </figure>
+      <figure class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 tile">
+        <img class="h-36 w-full object-cover rounded-lg mb-4" src="https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200&auto=format&fit=crop" alt="Dog review 3">
+        <figcaption class="text-sm text-stone-300">“Zero tummy issues. Five stars.” — Priya K.</figcaption>
+      </figure>
+    </div>
+    <div class="mt-4">
+      <a href="#reviews" class="text-emerald-400 hover:underline">Read all reviews →</a>
+    </div>
+  </section>
+
+  <!-- PRODUCT GRID -->
+  <section id="catalog" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h2 class="text-3xl font-bold u-underline-blue">All Treats</h2>
+      <div class="flex items-center gap-3 text-sm">
+        <label class="text-stone-300">Sort:</label>
+        <select class="bg-stone-900 border border-stone-800 rounded px-3 py-2">
+          <option>Best Sellers</option>
+          <option>New</option>
+          <option>Price: Low → High</option>
+          <option>Price: High → Low</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Card -->
+      <article class="rounded-2xl border border-stone-800 bg-stone-900/60 overflow-hidden tile-strong">
+        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1546443046-ed1ce6ffd1a5?q=80&w=1200&auto=format&fit=crop" alt="Chicken Breast Jerky">
+        <div class="p-5">
+          <h3 class="font-semibold">Chicken Breast Jerky</h3>
+          <div class="mt-1 flex gap-2 text-[11px]">
+            <span class="px-2 py-1 rounded-full bg-emerald-400 text-stone-900 font-bold">Single-ingredient</span>
+            <span class="px-2 py-1 rounded-full bg-emerald-400 text-stone-900 font-bold">Grain-free</span>
+          </div>
+          <p class="mt-3 text-sm text-stone-300">From $12.99 • 3oz / 6oz / 12oz</p>
+          <div class="mt-4 flex gap-3">
+            <button class="bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring">Add to Cart</button>
+            <button class="text-emerald-400 hover:underline">Quick View</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- More mock cards -->
+      <article class="rounded-2xl border border-stone-800 bg-stone-900/60 overflow-hidden opacity-60 tile-strong">
+        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1576201836106-db1758fd1c97?q=80&w=1200&auto=format&fit=crop" alt="Training Bites">
+        <div class="p-5">
+          <h3 class="font-semibold">Training Bites (Coming Soon)</h3>
+          <p class="mt-3 text-sm text-stone-300">Tiny, high-reward morsels for focused sessions.</p>
+        </div>
+      </article>
+
+      <article class="rounded-2xl border border-stone-800 bg-stone-900/60 overflow-hidden tile-strong">
+        <img class="h-56 w-full object-cover" src="https://images.unsplash.com/photo-1558944351-c7b35a1a8a05?q=80&w=1200&auto=format&fit=crop" alt="Seasonal Drop">
+        <div class="p-5">
+          <h3 class="font-semibold">Seasonal Drop</h3>
+          <p class="mt-3 text-sm text-stone-300">Limited runs inspired by the season.</p>
+          <div class="mt-4">
+            <button class="bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring">Notify Me</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- BUNDLES & SUBSCRIBE -->
+  <section id="bundles" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <h2 class="text-3xl font-bold u-underline-blue">Bundle &amp; Save</h2>
+    <div class="mt-8 grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6">
+        <h3 class="font-semibold">Taste Test Trio</h3>
+        <p class="text-sm text-stone-300">Three small bags for picky pups.</p>
+        <div class="mt-4 font-semibold">$29.99</div>
+        <button class="mt-4 bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring">Add to Cart</button>
+      </div>
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6">
+        <h3 class="font-semibold">Big Lab Bundle</h3>
+        <p class="text-sm text-stone-300">Family size for multi-dog homes.</p>
+        <div class="mt-4 font-semibold">$59.99</div>
+        <button class="mt-4 bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring">Add to Cart</button>
+      </div>
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6">
+        <h3 class="font-semibold">Subscribe &amp; Save</h3>
+        <p class="text-sm text-stone-300">Choose delivery every 2/4/6/8 weeks and save 10%.</p>
+        <div class="mt-4">
+          <select class="bg-stone-900 border border-stone-800 rounded px-3 py-2 w-full">
+            <option>Every 2 weeks</option>
+            <option>Every 4 weeks</option>
+            <option>Every 6 weeks</option>
+            <option>Every 8 weeks</option>
+          </select>
+        </div>
+        <button class="mt-4 bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 w-full focus-ring">Start Subscription</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <div class="grid md:grid-cols-2 gap-8 items-center">
+      <img class="w-full h-80 object-cover rounded-3xl border border-stone-800"
+           src="https://images.unsplash.com/photo-1558944351-9e0479c2a8a6?q=80&w=1400&auto=format&fit=crop"
+           alt="Chase & Evie labradors" />
+      <div>
+        <h2 class="text-3xl font-bold u-underline-blue">Meet Chase &amp; Evie</h2>
+        <p class="mt-3 text-stone-300">Two lovable Labs who inspired our single-ingredient snack company. We wanted treats we felt good about feeding every day—so we started making our own.</p>
+        <div class="mt-4 flex items-center gap-4">
+          <a href="https://instagram.com" class="inline-flex items-center gap-2 text-emerald-400 hover:underline">
+            <i class="fa-brands fa-instagram"></i> @chaseandevieco
+          </a>
+          <a href="https://tiktok.com" class="inline-flex items-center gap-2 text-emerald-400 hover:underline">
+            <i class="fa-brands fa-tiktok"></i> TikTok
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FULL REVIEWS -->
+  <section id="reviews" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <h2 class="text-3xl font-bold u-underline-blue mb-6">What Pet Parents Say</h2>
+    <div class="flex flex-wrap gap-2 text-xs mb-6">
+      <button class="px-3 py-1 rounded-full border border-stone-700 hover:border-emerald-400">All</button>
+      <button class="px-3 py-1 rounded-full border border-stone-700 hover:border-emerald-400">Photo Reviews</button>
+      <button class="px-3 py-1 rounded-full border border-stone-700 hover:border-emerald-400">Chicken</button>
+      <button class="px-3 py-1 rounded-full border border-stone-700 hover:border-emerald-400">12 oz</button>
+    </div>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6">
+        <div class="flex items-center gap-3">
+          <img class="h-10 w-10 rounded-full object-cover" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=200&auto=format&fit=crop" alt="Avatar">
+          <div>
+            <div class="font-semibold">Maya P.</div>
+            <div class="text-xs text-stone-400">Verified Purchase</div>
+          </div>
+          <div class="ml-auto text-emerald-400"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+        </div>
+        <p class="mt-3 text-sm text-stone-300">“The ingredient list is literally one word. My senior beagle’s stomach thanks you.”</p>
+      </div>
+      <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6">
+        <div class="flex items-center gap-3">
+          <img class="h-10 w-10 rounded-full object-cover" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=200&auto=format&fit=crop" alt="Avatar">
+          <div>
+            <div class="font-semibold">Kevin S.</div>
+            <div class="text-xs text-stone-400">Verified Purchase</div>
+          </div>
+          <div class="ml-auto text-emerald-400"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+        </div>
+        <p class="mt-3 text-sm text-stone-300">“Perfect training reward—breaks clean, not greasy.”</p>
+      </div>
+    </div>
+    <div class="mt-6">
+      <button class="px-4 py-2 rounded-lg border border-stone-700 text-sm hover:border-emerald-400">Write a Review</button>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <h2 class="text-3xl font-bold u-underline-blue">FAQ</h2>
+    <div class="mt-6 space-y-4">
+      <details class="rounded-2xl border border-stone-800 bg-stone-900/60 p-5">
+        <summary class="cursor-pointer font-semibold">What’s the shelf life?</summary>
+        <p class="mt-2 text-stone-300 text-sm">Best by 6 months. See batch &amp; best-by on your label.</p>
+      </details>
+      <details class="rounded-2xl border border-stone-800 bg-stone-900/60 p-5">
+        <summary class="cursor-pointer font-semibold">How should I store them?</summary>
+        <p class="mt-2 text-stone-300 text-sm">Reseal after opening. Keep in a cool, dry place; refrigerate for extra freshness.</p>
+      </details>
+      <details class="rounded-2xl border border-stone-800 bg-stone-900/60 p-5">
+        <summary class="cursor-pointer font-semibold">Puppies or seniors?</summary>
+        <p class="mt-2 text-stone-300 text-sm">Suitable as supplemental treats. Supervise chewing and break pieces to appropriate size.</p>
+      </details>
+      <details class="rounded-2xl border border-stone-800 bg-stone-900/60 p-5">
+        <summary class="cursor-pointer font-semibold">Shipping &amp; returns</summary>
+        <p class="mt-2 text-stone-300 text-sm">Free shipping $39+. Unopened returns within 30 days. See policy for details.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section id="subscribe" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <div class="rounded-3xl border border-stone-800 bg-stone-900/70 p-8 md:p-10 flex flex-col md:flex-row items-center gap-6">
+      <div class="flex-1">
+        <h2 class="text-2xl md:text-3xl font-extrabold u-underline-blue">Join the Pack</h2>
+        <p class="mt-2 text-stone-300">Get early drops and 10% off your first order.</p>
+      </div>
+      <form class="flex-1 w-full grid sm:grid-cols-[1fr_auto] gap-3">
+        <label class="sr-only" for="email">Email</label>
+        <input id="email" type="email" placeholder="your@email.com" class="w-full bg-stone-950 border border-stone-800 rounded-lg px-4 py-3" />
+        <button class="bg-emerald-400 text-[var(--brand-4)] font-semibold px-5 py-3 rounded-lg hover:bg-emerald-300 focus-ring">Subscribe</button>
+        <label class="sm:col-span-2 text-xs text-stone-400 inline-flex items-center gap-2">
+          <input type="checkbox" class="accent-emerald-400"> I agree to receive emails and understand I can unsubscribe.
+        </label>
+      </form>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="max-w-7xl mx-auto px-4 py-14 section-panel">
+    <h2 class="text-3xl font-bold u-underline-blue mb-6 text-center">Get in Touch</h2>
+    <p class="text-stone-300 text-center max-w-2xl mx-auto">Questions, wholesale, or press? We’d love to hear from you.</p>
+    <form class="mt-8 max-w-xl mx-auto grid gap-4">
+      <input type="text" placeholder="Your Name" class="w-full bg-stone-900 border border-stone-800 rounded-lg px-4 py-3" />
+      <input type="email" placeholder="Your Email" class="w-full bg-stone-900 border border-stone-800 rounded-lg px-4 py-3" />
+      <textarea rows="5" placeholder="Message" class="w-full bg-stone-900 border border-stone-800 rounded-lg px-4 py-3"></textarea>
+      <button class="bg-emerald-400 text-[var(--brand-4)] font-semibold px-5 py-3 rounded-lg hover:bg-emerald-300 focus-ring">Send Message</button>
+      <p class="text-center text-sm text-stone-400">Or email us: <a class="text-emerald-400 hover:underline" href="mailto:support@chaseandevie.co">support@chaseandevie.co</a></p>
+    </form>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-[var(--brand-5)] border-t border-stone-800">
+    <div class="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-3 gap-8 items-center">
+      <div class="space-y-2">
+        <div class="flex items-center gap-3 font-black tracking-tight text-lg">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-400 text-stone-900 chip-blue-ring">
+            <i class="fa-solid fa-paw"></i>
+          </span>
+          <span>Chase &amp; Evie Co.</span>
+        </div>
+        <p class="text-sm text-stone-400">Small-batch treats made with simple ingredients.</p>
+      </div>
+      <ul class="flex flex-wrap gap-4 justify-center text-sm">
+        <li><a class="hover:text-emerald-400" href="#shop">Shop</a></li>
+        <li><a class="hover:text-emerald-400" href="#process">How It’s Made</a></li>
+        <li><a class="hover:text-emerald-400" href="#ingredients">Ingredients</a></li>
+        <li><a class="hover:text-emerald-400" href="#bundles">Bundles</a></li>
+        <li><a class="hover:text-emerald-400" href="#reviews">Reviews</a></li>
+        <li><a class="hover:text-emerald-400" href="#about">About</a></li>
+        <li><a class="hover:text-emerald-400" href="#faq">FAQ</a></li>
+        <li><a class="hover:text-emerald-400" href="#contact">Contact</a></li>
+      </ul>
+      <div class="flex md:justify-end justify-center gap-4 text-stone-300">
+        <a class="hover:text-white" href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a class="hover:text-white" href="#" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+        <a class="hover:text-white" href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="border-t border-stone-800">
+      <div class="max-w-7xl mx-auto px-4 py-4 text-xs text-stone-400 flex flex-col md:flex-row items-center justify-between gap-2">
+        <p>© 2025 Chase &amp; Evie Co.</p>
+        <p>Terms • Privacy • Accessibility • Sitemap</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Simple mobile nav toggler (same pattern as your current file) -->
+  <script>
+    const btn = document.getElementById('nav-toggle');
+    const menu = document.getElementById('nav-menu');
+    btn?.addEventListener('click', () => menu.classList.toggle('hidden'));
+  </script>
+</body>
+</html>
