@@ -136,12 +136,38 @@
       border: 1px solid color-mix(in srgb, var(--brand-3) 45%, white);
       border-radius: 1rem;
       background: #ffffff;
-      transition: border-color 160ms ease, box-shadow 160ms ease;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease, transform 160ms ease;
     }
 
     .checkout-field-shell:focus-within {
       border-color: var(--brand-1);
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-1) 12%, transparent);
+    }
+
+    .checkout-field-shell.is-success {
+      border-color: var(--success-1);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-1) 12%, transparent);
+    }
+
+    .checkout-field-shell.is-error {
+      border-color: #f4a6a6;
+      box-shadow: 0 0 0 4px rgba(244, 166, 166, 0.28);
+      background-color: #fff1f1;
+    }
+
+    .checkout-field-shell.is-shaking {
+      animation: promoShake 480ms ease;
+    }
+
+    @keyframes promoShake {
+      0% { transform: translateX(0); }
+      15% { transform: translateX(-10px); }
+      30% { transform: translateX(10px); }
+      45% { transform: translateX(-8px); }
+      60% { transform: translateX(8px); }
+      75% { transform: translateX(-4px); }
+      90% { transform: translateX(4px); }
+      100% { transform: translateX(0); }
     }
 
     .checkout-input,
@@ -747,6 +773,10 @@
                 <span class="text-stone-300">Subtotal</span>
                 <span id="summary-subtotal" class="font-bold">$102.97</span>
               </div>
+              <div id="summary-discount-row" class="hidden flex items-center justify-between">
+                <span class="text-stone-300">Promo discount</span>
+                <span id="summary-discount" class="font-bold text-[var(--success-1)]">-$0.00</span>
+              </div>
               <div class="flex items-center justify-between">
                 <span class="text-stone-300">Shipping</span>
                 <span id="summary-shipping" class="font-bold">$5.99</span>
@@ -762,6 +792,66 @@
             <div class="flex items-center justify-between text-lg">
               <span class="font-extrabold">Total</span>
               <span id="summary-total" class="font-extrabold text-[var(--brand-4)]">$117.13</span>
+            </div>
+
+            <div class="summary-line my-5"></div>
+
+            <!-- ======================================== -->
+            <!-- PROMO CODE SECTION -->
+            <!-- Purpose: Allow future discount code validation at checkout -->
+            <!-- Future Component: PromoCodeBox -->
+            <!-- Status: UI Ready / Backend Pending -->
+            <!--
+              Future backend JSON role:
+              - promo.code
+              - promo.status
+              - promo.discount_type
+              - promo.discount_amount
+              - promo.message
+              Later backend flow:
+              1. Customer enters a code.
+              2. Frontend sends the code + cart/customer context to backend.
+              3. Backend validates whether the code exists, is active, is eligible,
+                 and whether it applies to the current cart.
+              4. Backend returns:
+                   valid/invalid status,
+                   discount amount or percentage,
+                   updated totals,
+                   and user-facing response message.
+            -->
+            <div>
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-base font-extrabold">Promo code</h3>
+                  <p class="mt-1 text-sm text-stone-300">Have a discount code? Enter it here before placing your order.</p>
+                </div>
+              </div>
+
+              <div class="mt-4 flex flex-col sm:flex-row gap-3">
+                <div id="promo-input-shell" class="checkout-field-shell flex-1">
+                  <input
+                    class="checkout-input"
+                    id="promo-code-input"
+                    name="promo-code-input"
+                    type="text"
+                    placeholder="Enter promo code"
+                    autocomplete="off"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  id="apply-promo-button"
+                  class="inline-flex items-center justify-center gap-2 border border-emerald-400 text-emerald-400 font-semibold px-5 py-3 rounded-lg hover:bg-stone-900 focus-ring whitespace-nowrap"
+                >
+                  <i class="fa-solid fa-tag"></i>
+                  Apply
+                </button>
+              </div>
+
+              <p id="promo-status-message" class="mt-3 text-sm text-stone-300">
+                Try demo code <strong>CHASE10</strong> to simulate a successful promo application.
+              </p>
             </div>
           </section>
 
@@ -798,8 +888,15 @@
     const checkoutStatusBanner = document.getElementById('checkout-status');
     const shippingOptionCards = document.querySelectorAll('#shipping-options .card-radio');
     const summaryShippingElement = document.getElementById('summary-shipping');
+    const summarySubtotalElement = document.getElementById('summary-subtotal');
+    const summaryDiscountRow = document.getElementById('summary-discount-row');
+    const summaryDiscountElement = document.getElementById('summary-discount');
     const summaryTaxElement = document.getElementById('summary-tax');
     const summaryTotalElement = document.getElementById('summary-total');
+    const promoCodeInput = document.getElementById('promo-code-input');
+    const applyPromoButton = document.getElementById('apply-promo-button');
+    const promoStatusMessage = document.getElementById('promo-status-message');
+    const promoInputShell = document.getElementById('promo-input-shell');
 
     // Future JSON payload blueprint:
     // The final checkout request should be structured something like this:
@@ -850,6 +947,13 @@
     //     payment_method_token: string,
     //     payment_intent_id: string,
     //     status: string
+    //   },
+    //   promo: {
+    //     code: string,
+    //     status: string,
+    //     discount_type: string,
+    //     discount_amount: number,
+    //     message: string
     //   }
     // }
     // ========================================
@@ -858,7 +962,10 @@
     const checkoutState = {
       subtotal: 102.97,
       shipping: 5.99,
-      taxRate: 0.075
+      taxRate: 0.075,
+      promoCode: '',
+      promoDiscount: 0,
+      promoIsApplied: false
     };
 
     // ========================================
@@ -868,12 +975,16 @@
       return `$${Number(value).toFixed(2)}`;
     }
 
+    function getDiscountAmount() {
+      return checkoutState.promoDiscount;
+    }
+
     function getTaxAmount() {
-      return (checkoutState.subtotal + checkoutState.shipping) * checkoutState.taxRate;
+      return (checkoutState.subtotal - getDiscountAmount() + checkoutState.shipping) * checkoutState.taxRate;
     }
 
     function getOrderTotal() {
-      return checkoutState.subtotal + checkoutState.shipping + getTaxAmount();
+      return checkoutState.subtotal - getDiscountAmount() + checkoutState.shipping + getTaxAmount();
     }
 
     function showCheckoutStatus(message, type) {
@@ -886,10 +997,85 @@
       checkoutStatusBanner.className = 'status-banner';
     }
 
+    function resetPromoVisualState() {
+      promoInputShell?.classList.remove('is-success', 'is-error', 'is-shaking');
+    }
+
+    function showPromoSuccessState() {
+      resetPromoVisualState();
+      promoInputShell?.classList.add('is-success');
+    }
+
+    function showPromoErrorState() {
+      if (!promoInputShell) return;
+
+      promoInputShell.classList.remove('is-success', 'is-error', 'is-shaking');
+      void promoInputShell.offsetWidth;
+      promoInputShell.classList.add('is-error');
+      promoInputShell.classList.add('is-shaking');
+
+      window.setTimeout(() => {
+        promoInputShell.classList.remove('is-shaking');
+      }, 480);
+    }
+
+    function applyPromoCode() {
+      const enteredCode = promoCodeInput?.value.trim();
+
+      clearCheckoutStatus();
+
+      if (!enteredCode) {
+        checkoutState.promoCode = '';
+        checkoutState.promoDiscount = 0;
+        checkoutState.promoIsApplied = false;
+        promoStatusMessage.textContent = 'Enter a promo code to apply a discount.';
+        updateCheckoutSummary();
+        showPromoErrorState();
+        return;
+      }
+
+      applyPromoButton.disabled = true;
+      applyPromoButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Checking...</span>';
+      promoStatusMessage.textContent = 'Checking promo code...';
+
+      window.setTimeout(() => {
+        const normalizedCode = enteredCode.toUpperCase();
+        promoCodeInput.value = normalizedCode;
+        const validDemoCode = 'CHASE10';
+
+        if (normalizedCode === validDemoCode) {
+          checkoutState.promoCode = validDemoCode;
+          checkoutState.promoDiscount = 10;
+          checkoutState.promoIsApplied = true;
+          promoStatusMessage.textContent = 'Promo code CHASE10 applied successfully. Demo discount of $10.00 added.';
+          showPromoSuccessState();
+        } else {
+          checkoutState.promoCode = normalizedCode;
+          checkoutState.promoDiscount = 0;
+          checkoutState.promoIsApplied = false;
+          promoStatusMessage.textContent = `Promo code "${enteredCode}" is not valid.`;
+          showPromoErrorState();
+        }
+
+        updateCheckoutSummary();
+        applyPromoButton.disabled = false;
+        applyPromoButton.innerHTML = '<i class="fa-solid fa-tag"></i><span>Apply</span>';
+      }, 900);
+    }
+
     function updateCheckoutSummary() {
       summaryShippingElement.textContent = formatPrice(checkoutState.shipping);
+      summarySubtotalElement.textContent = formatPrice(checkoutState.subtotal);
       summaryTaxElement.textContent = formatPrice(getTaxAmount());
       summaryTotalElement.textContent = formatPrice(getOrderTotal());
+
+      if (checkoutState.promoIsApplied && getDiscountAmount() > 0) {
+        summaryDiscountRow.classList.remove('hidden');
+        summaryDiscountElement.textContent = `-${formatPrice(getDiscountAmount())}`;
+      } else {
+        summaryDiscountRow.classList.add('hidden');
+        summaryDiscountElement.textContent = '-$0.00';
+      }
     }
 
     // Future backend step:
@@ -974,6 +1160,18 @@
           'success'
         );
       }, 900);
+    });
+
+    // ========================================
+    // PROMO CODE UI PLACEHOLDER
+    // ========================================
+    applyPromoButton?.addEventListener('click', applyPromoCode);
+
+    promoCodeInput?.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyPromoCode();
+      }
     });
 
     // ========================================
