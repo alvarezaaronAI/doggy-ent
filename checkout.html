@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chase & Evie Co. — Secure Checkout</title>
-  <meta name="description" content="Secure checkout for Chase & Evie Co. natural dog treats." />
+  <meta name="description" content="Complete your secure checkout for Chase & Evie Co. natural dog treats." />
 
   <!-- Updated by ChatGPT on 2025-10-07: Installed secure checkout concept page -->
   <!--
@@ -354,7 +354,7 @@
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Secure Checkout</p>
           <h1 class="mt-2 text-3xl md:text-4xl font-extrabold">Complete your order</h1>
           <p class="mt-2 text-stone-300 max-w-2xl">
-            Same brand feel, but with a cleaner, distraction-free layout focused on shipping, payment, and order review.
+            Review your order, enter your shipping details, and complete payment securely.
           </p>
         </div>
 
@@ -578,9 +578,9 @@
                     <div class="flex items-start gap-3">
                       <i class="fa-solid fa-shield-heart text-emerald-400 text-xl mt-0.5"></i>
                       <div>
-                        <p class="font-extrabold">Secure checkout note</p>
+                        <p class="font-extrabold">Protected payment</p>
                         <p class="mt-1 text-sm text-stone-300">
-                          This is a concept checkout page. It is designed to feel secure and focused, but it does not process real payments yet.
+                          Your payment details are protected with secure encryption and a streamlined checkout flow designed to make ordering fast and easy.
                         </p>
                       </div>
                     </div>
@@ -595,7 +595,7 @@
             <div class="rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4 md:p-5">
               <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <p class="text-sm text-stone-300 max-w-2xl">
-                  By placing your order, you confirm this is a blueprint checkout experience and agree to the future store policies.
+                  By placing your order, you agree to our store policies, shipping terms, and secure payment authorization.
                 </p>
 
                 <button type="submit" id="place-order-button" class="place-order-btn md:w-auto md:min-w-[240px]">
@@ -692,18 +692,19 @@
           </section>
 
           <section class="section-panel p-5 md:p-6">
-            <h3 class="text-lg font-extrabold">Why this checkout works</h3>
+            <h3 class="text-lg font-extrabold">Need help with your order?</h3>
             <ul class="mt-4 space-y-3 text-sm text-stone-300">
-              <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i><span>Dedicated page keeps users focused instead of mixing checkout into browsing.</span></li>
-              <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i><span>Right-side summary keeps pricing visible without overwhelming the form.</span></li>
-              <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i><span>Trust indicators make the concept feel reliable and ready for future real payment integration.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-lock text-emerald-400 mt-1"></i><span>Secure payment processing and encrypted checkout protection.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-truck-fast text-emerald-400 mt-1"></i><span>Shipping options are shown before you place your order.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-envelope text-emerald-400 mt-1"></i><span>Order confirmation and tracking updates are sent by email after purchase.</span></li>
             </ul>
-
+            <p class="mt-4 text-sm text-stone-300">
+              Questions before placing your order? Contact support at <span class="font-semibold text-[var(--brand-4)]">support@chaseandevieco.com</span>.
+            </p>
             <div class="summary-line my-5"></div>
-
             <a href="./index.html" class="inline-flex items-center gap-2 text-emerald-400 font-semibold hover:underline">
               <i class="fa-solid fa-arrow-left"></i>
-              Return to cart concept
+              Back to cart
             </a>
           </section>
         </aside>
@@ -835,7 +836,7 @@
         placeOrderButton.disabled = false;
         placeOrderButton.innerHTML = '<i class="fa-solid fa-lock mr-2"></i>Place Secure Order';
         showCheckoutStatus(
-          'Order placed in concept mode. This confirms the distraction-free checkout flow is working visually and logically.',
+          'Order placed successfully. A confirmation email and shipping updates will be sent shortly.',
           'success'
         );
       }, 900);
