@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chase & Evie Co. — Small-Batch Dog Treats</title>
   <!-- Updated by ChatGPT on 2025-10-07: Installed full mock layout + theme color scaffold -->
+  <!--
+    Blueprint Structure:
+    1. Theme + global styles
+    2. Marketing sections (hero → shop → content → footer)
+    3. Cart drawer interaction (UI + state)
+    4. Page scripts (navigation + cart logic)
+  -->
 
   <!-- Tailwind (CDN for mock; swap to your build later) -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -54,9 +61,6 @@
     .bg-stone-950\/40 { background-color: color-mix(in srgb, var(--brand-5) 40%, transparent) !important; }
 
     .bg-stone-900 { background-color: #ffffff !important; }
-    .bg-stone-900\/60 { background-color: rgba(255,255,255,0.60) !important; }
-    .bg-stone-900\/70 { background-color: rgba(255,255,255,0.70) !important; }
-    .bg-stone-900\/80 { background-color: rgba(255,255,255,0.80) !important; }
 
     /* Softer borders for light theme using Kraft tone */
     .border-stone-800 { border-color: color-mix(in srgb, var(--brand-3) 35%, white) !important; }
@@ -65,10 +69,6 @@
     select.bg-stone-900, input.bg-stone-900, textarea.bg-stone-900 { background-color: #ffffff !important; }
     input.bg-stone-950 { background-color: #ffffff !important; }
 
-    /* Muted text on light */
-    .text-stone-300 { color: #6b7280 !important; }
-    .text-stone-400 { color: #4b5563 !important; }
-    .text-stone-200 { color: #475569 !important; }
 
     /* === Readability & contrast tweaks for bright earthy theme === */
     /* Darken "muted" text utilities so they read well on white/Oat */
@@ -922,8 +922,10 @@
     }
 
     function renderCart() {
+      // Sync cart badge counts (desktop + mobile)
       syncCartBadges();
 
+      // Toggle empty vs filled state
       if (!cartState.length) {
         cartEmptyStateElement?.classList.remove('hidden');
         cartFilledStateElement?.classList.add('hidden');
@@ -937,6 +939,7 @@
       cartFilledStateElement?.classList.remove('hidden');
       cartFilledStateElement?.classList.add('cart-filled-state-open');
 
+      // Build cart items UI
       if (cartItemsContainer) {
         cartItemsContainer.innerHTML = cartState.map((item, index) => `
           <article class="rounded-2xl border border-stone-800 bg-stone-900/60 p-4 tile">
@@ -969,8 +972,10 @@
         `).join('');
       }
 
+      // Update subtotal
       if (cartSubtotalElement) cartSubtotalElement.textContent = formatPrice(getCartSubtotal());
 
+      // Bind quantity controls
       document.querySelectorAll('.cart-qty-btn').forEach(button => {
         button.addEventListener('click', () => {
           const cartIndex = Number(button.dataset.cartIndex);
@@ -993,6 +998,7 @@
         });
       });
 
+      // Bind remove item actions
       document.querySelectorAll('.remove-cart-item').forEach(button => {
         button.addEventListener('click', () => {
           const cartIndex = Number(button.dataset.cartIndex);
