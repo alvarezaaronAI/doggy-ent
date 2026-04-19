@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chase & Evie Co. — Secure Checkout</title>
+  <meta name="description" content="Complete your secure checkout for Chase & Evie Co. natural dog treats." />
+
+  <!-- Updated by ChatGPT on 2025-10-07: Installed secure checkout concept page -->
+  <!--
+    Blueprint Structure:
+    1. Theme + global styles
+    2. Checkout-only layout
+    3. Order summary + secure checkout flow
+    4. Page scripts (form + summary logic)
+  -->
+
+  <!-- Tailwind (CDN for mock; swap to your build later) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome (icons) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- ======================================== -->
+  <!-- GLOBAL THEME + COMPONENT STYLES -->
+  <!-- ======================================== -->
+  <style>
+    /* ======================================== */
+    /* THEME TOKENS */
+    /* ======================================== */
+    :root {
+      --brand-1: #2F57B7; /* Blue ring - primary (focus/links) */
+      --brand-2: #F2DE5C; /* Yellow label - secondary (buttons/chips) */
+      --brand-3: #CDAA7E; /* Kraft bag - accent 1 (borders/cards) */
+      --brand-4: #6A3C2B; /* Cacao center - accent 2 (headings) */
+      --brand-5: #F3E8D2; /* Oat - neutral base */
+      --success-1: #2F855A;
+      --danger-1: #C53030;
+    }
+
+    /* ======================================== */
+    /* TAILWIND UTILITY REMAPS */
+    /* ======================================== */
+    .bg-emerald-400 { background-color: var(--brand-2) !important; }
+    .text-emerald-400 { color: var(--brand-1) !important; }
+    .border-emerald-400 { border-color: var(--brand-1) !important; }
+    .hover\:bg-emerald-300:hover { background-color: color-mix(in srgb, var(--brand-2) 78%, #ffffff) !important; }
+
+    /* ======================================== */
+    /* ACCESSIBILITY + TYPOGRAPHY */
+    /* ======================================== */
+    :focus-visible { outline: 2px solid var(--brand-1); outline-offset: 2px; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, rgba(243,232,210,0.7) 0%, #ffffff 100%);
+      color: #111827;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    h1, h2, h3, h4 { color: var(--brand-4); }
+
+    .text-stone-300 { color: #374151 !important; }
+    .text-stone-400 { color: #4B5563 !important; }
+    .text-stone-200 { color: #6B7280 !important; }
+
+    .bg-stone-900\/60 { background-color: rgba(255,255,255,0.95) !important; }
+    .bg-stone-900\/70 { background-color: rgba(255,255,255,0.98) !important; }
+    .bg-stone-900\/80 { background-color: #ffffff !important; }
+
+    .border-stone-800 { border-color: color-mix(in srgb, var(--brand-3) 35%, white) !important; }
+    .border-stone-700 { border-color: color-mix(in srgb, var(--brand-3) 45%, white) !important; }
+
+    .hover\:bg-stone-900:hover { background-color: color-mix(in srgb, var(--brand-1) 15%, white) !important; }
+    .hover\:text-white:hover { color: var(--brand-4) !important; }
+    .hover\:text-emerald-400:hover { color: var(--brand-1) !important; }
+
+    /* ======================================== */
+    /* LAYOUT SURFACES + UI HELPERS */
+    /* ======================================== */
+    .focus-ring {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-1) 22%, transparent);
+    }
+
+    .chip-blue-ring {
+      border: 2px solid var(--brand-1);
+    }
+
+    .tile {
+      background: #ffffff;
+      border: 1px solid color-mix(in srgb, var(--brand-3) 45%, white);
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    .section-panel {
+      background: #ffffff;
+      border: 1px solid color-mix(in srgb, var(--brand-3) 45%, white);
+      border-radius: 1.5rem;
+      box-shadow: 0 12px 36px rgba(0,0,0,.12);
+    }
+
+    .u-underline-blue {
+      position: relative;
+      padding-bottom: .35rem;
+    }
+
+    .u-underline-blue::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 3rem;
+      height: 2px;
+      background: var(--brand-1);
+    }
+
+    /* ======================================== */
+    /* CHECKOUT PAGE */
+    /* ======================================== */
+    .checkout-shell {
+      min-height: 100vh;
+    }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .checkout-field-shell {
+      border: 1px solid color-mix(in srgb, var(--brand-3) 45%, white);
+      border-radius: 1rem;
+      background: #ffffff;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease, transform 160ms ease;
+    }
+
+    .checkout-field-shell:focus-within {
+      border-color: var(--brand-1);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-1) 12%, transparent);
+    }
+
+    .checkout-field-shell.is-success {
+      border-color: var(--success-1);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-1) 12%, transparent);
+    }
+
+    .checkout-field-shell.is-error {
+      border-color: #f4a6a6;
+      box-shadow: 0 0 0 4px rgba(244, 166, 166, 0.28);
+      background-color: #fff1f1;
+    }
+
+    .checkout-field-shell.is-shaking {
+      animation: promoShake 480ms ease;
+    }
+
+    @keyframes promoShake {
+      0% { transform: translateX(0); }
+      15% { transform: translateX(-10px); }
+      30% { transform: translateX(10px); }
+      45% { transform: translateX(-8px); }
+      60% { transform: translateX(8px); }
+      75% { transform: translateX(-4px); }
+      90% { transform: translateX(4px); }
+      100% { transform: translateX(0); }
+    }
+
+    .checkout-input,
+    .checkout-select {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #111827;
+      padding: 0.95rem 1rem;
+      font: inherit;
+      border-radius: 1rem;
+    }
+
+    .checkout-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--brand-4);
+      margin-bottom: 0.5rem;
+    }
+
+    .checkout-step {
+      border: 1px solid color-mix(in srgb, var(--brand-3) 35%, white);
+      border-radius: 1.25rem;
+      padding: 1.25rem;
+      background: color-mix(in srgb, white 88%, var(--brand-5));
+    }
+
+    .step-badge {
+      width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      background: var(--brand-2);
+      color: var(--brand-4);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-3) 35%, white);
+      flex-shrink: 0;
+    }
+
+    .summary-sticky {
+      position: sticky;
+      top: 1.5rem;
+    }
+
+    .summary-line {
+      height: 1px;
+      background: color-mix(in srgb, var(--brand-3) 30%, white);
+    }
+
+    .summary-item-thumb {
+      width: 70px;
+      height: 70px;
+      border-radius: 1rem;
+      object-fit: cover;
+      object-position: center;
+      border: 1px solid color-mix(in srgb, var(--brand-3) 35%, white);
+      flex-shrink: 0;
+    }
+
+    .pill-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 9999px;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: color-mix(in srgb, var(--brand-5) 72%, white);
+      color: var(--brand-4);
+      border: 1px solid color-mix(in srgb, var(--brand-3) 35%, white);
+    }
+
+    .card-radio {
+      border: 1px solid color-mix(in srgb, var(--brand-3) 35%, white);
+      border-radius: 1rem;
+      padding: 1rem;
+      background: #ffffff;
+      cursor: pointer;
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .card-radio:hover {
+      border-color: var(--brand-1);
+      transform: translateY(-1px);
+    }
+
+    .card-radio.is-selected {
+      border-color: var(--brand-1);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-1) 12%, transparent);
+      background: color-mix(in srgb, white 92%, var(--brand-5));
+    }
+
+    .status-banner {
+      display: none;
+      border-radius: 1rem;
+      padding: 1rem 1.1rem;
+      font-weight: 700;
+      margin-top: 1rem;
+    }
+
+    .status-banner.is-visible {
+      display: block;
+    }
+
+    .status-banner.is-success {
+      background: color-mix(in srgb, var(--success-1) 14%, white);
+      color: #1f5137;
+      border: 1px solid color-mix(in srgb, var(--success-1) 28%, white);
+    }
+
+    .status-banner.is-error {
+      background: color-mix(in srgb, var(--danger-1) 10%, white);
+      color: #7f1d1d;
+      border: 1px solid color-mix(in srgb, var(--danger-1) 22%, white);
+    }
+
+    .place-order-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 1rem;
+      padding: 1rem 1.25rem;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      background: var(--brand-2);
+      color: var(--brand-4);
+      transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+      box-shadow: 0 10px 25px rgba(0,0,0,.09);
+    }
+
+    .place-order-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.02);
+    }
+
+    .place-order-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+
+    @media (max-width: 960px) {
+      .checkout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-sticky {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body class="text-stone-900 antialiased">
+
+  <!-- ======================================== -->
+  <!-- PROMO STRIP -->
+  <!-- Purpose: Quick value props / shipping and product highlights -->
+  <!-- Future Component: PromoStrip -->
+  <!-- Status: Concept -->
+  <!-- ======================================== -->
+  <div class="w-full bg-white text-stone-700 text-sm border-b border-[color-mix(in_srgb,var(--brand-1)_18%,white)]">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-4 flex-wrap">
+      <span class="inline-flex items-center gap-2"><i class="fa-solid fa-lock text-emerald-400"></i> Secure checkout</span>
+      <span class="inline-flex items-center gap-2"><i class="fa-solid fa-truck-fast text-emerald-400"></i> Free shipping $39+</span>
+      <span class="hidden sm:inline-flex items-center gap-2"><i class="fa-solid fa-shield-dog text-emerald-400"></i> Small-batch treats</span>
+    </div>
+  </div>
+
+  <!-- ======================================== -->
+  <!-- HEADER / CHECKOUT NAVIGATION -->
+  <!-- Purpose: Minimal checkout header / trust + return path -->
+  <!-- Future Component: CheckoutHeader -->
+  <!-- Status: Interactive Concept -->
+  <!-- ======================================== -->
+  <header class="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-[color-mix(in_srgb,var(--brand-1)_22%,white)]">
+    <nav class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between" aria-label="Checkout Navigation">
+      <a href="./index.html" class="flex items-center gap-3 font-black tracking-tight text-xl">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400 text-stone-900 chip-blue-ring">
+          <i class="fa-solid fa-paw"></i>
+        </span>
+        <span>Chase &amp; Evie Co.</span>
+      </a>
+
+      <div class="flex items-center gap-3 text-sm">
+        <span class="pill-note"><i class="fa-solid fa-lock text-emerald-400"></i> SSL Secured</span>
+        <a href="./index.html" class="inline-flex items-center gap-2 text-emerald-400 hover:underline font-semibold">
+          <i class="fa-solid fa-arrow-left"></i> Back to shop
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ======================================== -->
+  <!-- CHECKOUT PAGE -->
+  <!-- Purpose: Distraction-free secure checkout flow -->
+  <!-- Future Component: CheckoutPage -->
+  <!-- Status: Interactive Concept -->
+  <!-- ======================================== -->
+  <main class="checkout-shell">
+    <div class="max-w-7xl mx-auto px-4 py-10">
+      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Secure Checkout</p>
+          <h1 class="mt-2 text-3xl md:text-4xl font-extrabold">Complete your order</h1>
+          <p class="mt-2 text-stone-300 max-w-2xl">
+            Review your order, enter your shipping details, and complete your purchase securely.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <span class="pill-note"><i class="fa-solid fa-shield-heart"></i> Trusted flow</span>
+          <span class="pill-note"><i class="fa-solid fa-credit-card"></i> Encrypted payment</span>
+          <span class="pill-note"><i class="fa-solid fa-box"></i> Order review</span>
+        </div>
+      </div>
+
+      <div class="checkout-grid">
+        <!-- ======================================== -->
+        <!-- CHECKOUT FORM COLUMN -->
+        <!-- Purpose: Contact + shipping + payment -->
+        <!-- Future Component: CheckoutFormColumn -->
+        <!-- Status: Interactive Concept -->
+        <!-- ======================================== -->
+        <section class="section-panel p-5 md:p-8">
+          <div class="flex items-center justify-between gap-4 border-b border-stone-800 pb-5">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Checkout Flow</p>
+              <h2 class="text-2xl font-extrabold">Secure order details</h2>
+            </div>
+            <div class="text-right">
+              <p class="text-sm text-stone-300">Estimated time</p>
+              <p class="font-bold">~2 minutes</p>
+            </div>
+          </div>
+
+          <form id="checkout-form" class="mt-6 space-y-6" novalidate>
+            <!-- ======================================== -->
+            <!-- CONTACT STEP -->
+            <!-- ======================================== -->
+            <div class="checkout-step">
+              <div class="flex gap-4">
+                <span class="step-badge">1</span>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-xl font-extrabold">Contact</h3>
+                  <p class="mt-1 text-sm text-stone-300">We’ll send your order confirmation, shipping updates, and delivery notifications here.</p>
+
+                  <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                      <label class="checkout-label" for="checkout-email">Email address</label>
+                      <div class="checkout-field-shell">
+                        <!--
+                          Future JSON payload role:
+                          - customer.email
+                          - Primary customer identifier before account system exists
+                          - Used for order confirmation, marketing consent linking, loyalty history,
+                            and later account migration
+                        -->
+                        <input class="checkout-input" id="checkout-email" name="checkout-email" type="email" placeholder="you@example.com" required />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-phone">Phone number</label>
+                      <div class="checkout-field-shell">
+                        <!--
+                          Future JSON payload role:
+                          - customer.phone
+                          - Secondary identifier and delivery support contact
+                          - Useful later for SMS updates, support, and duplicate-customer matching
+                        -->
+                        <input class="checkout-input" id="checkout-phone" name="checkout-phone" type="tel" placeholder="(555) 555-5555" required />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-notes">Delivery notes</label>
+                      <div class="checkout-field-shell">
+                        <input class="checkout-input" id="checkout-notes" name="checkout-notes" type="text" placeholder="Gate code, apartment, etc." />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- OPTIONAL CUSTOMER PREFERENCES -->
+                  <!--
+                    Future backend JSON notes:
+                    - These fields should later map to boolean values in the checkout payload.
+                    - Recommended payload keys:
+                        save_info_for_next_time: true | false
+                        marketing_opt_in: true | false
+                    - These values should be stored at the customer level, not only the order level,
+                      so returning customers can keep their preferences when accounts are added later.
+                    - Email should remain the primary customer identifier until full account auth exists.
+                    - When accounts are introduced later, these preferences should migrate into the
+                      customer profile record and prefill automatically on future checkout sessions.
+                  -->
+                  <div class="mt-4 space-y-2">
+                    <label class="flex items-start gap-2 text-sm text-stone-300">
+                      <input type="checkbox" class="mt-1" />
+                      <span>
+                        Save my information for faster checkout next time.
+                      </span>
+                    </label>
+
+                    <label class="flex items-start gap-2 text-sm text-stone-300">
+                      <input type="checkbox" class="mt-1" />
+                      <span>
+                        Email me exclusive offers, new product drops, and rewards updates as Chase & Evie Co. grows.
+                      </span>
+                    </label>
+
+                    <p class="text-xs text-stone-400 mt-2">
+                      Creating an account will be optional in the future. Saving your info now helps us personalize your experience and track your orders and rewards.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================================== -->
+            <!-- SHIPPING STEP -->
+            <!-- ======================================== -->
+            <div class="checkout-step">
+              <div class="flex gap-4">
+                <span class="step-badge">2</span>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-xl font-extrabold">Shipping</h3>
+                  <p class="mt-1 text-sm text-stone-300">Please enter the shipping address where you’d like your order delivered.</p>
+
+                  <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="checkout-label" for="checkout-first-name">First name</label>
+                      <div class="checkout-field-shell">
+                        <!-- Future JSON payload role: customer.first_name -->
+                        <input class="checkout-input" id="checkout-first-name" type="text" placeholder="Aaron" required />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-last-name">Last name</label>
+                      <div class="checkout-field-shell">
+                        <!-- Future JSON payload role: customer.last_name -->
+                        <input class="checkout-input" id="checkout-last-name" type="text" placeholder="Alvarez" required />
+                      </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <label class="checkout-label" for="checkout-address-1">Street address</label>
+                      <div class="checkout-field-shell">
+                        <!-- Future JSON payload role: shipping.address_line_1 -->
+                        <input class="checkout-input" id="checkout-address-1" type="text" placeholder="123 Treat Street" required />
+                      </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <label class="checkout-label" for="checkout-address-2">Apartment, suite, etc.</label>
+                      <div class="checkout-field-shell">
+                        <!-- Future JSON payload role: shipping.address_line_2 -->
+                        <input class="checkout-input" id="checkout-address-2" type="text" placeholder="Optional" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-city">City</label>
+                      <div class="checkout-field-shell">
+                        <!-- Future JSON payload role: shipping.city -->
+                        <input class="checkout-input" id="checkout-city" type="text" placeholder="Los Angeles" required />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-state">State</label>
+                      <div class="checkout-field-shell">
+                        <!-- Future JSON payload role: shipping.state -->
+                        <select class="checkout-select" id="checkout-state" required>
+                          <option value="">Select state</option>
+                          <option value="CA">California</option>
+                          <option value="NV">Nevada</option>
+                          <option value="AZ">Arizona</option>
+                          <option value="OR">Oregon</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-zip">ZIP code</label>
+                      <div class="checkout-field-shell">
+                        <!-- Future JSON payload role: shipping.postal_code -->
+                        <input class="checkout-input" id="checkout-zip" type="text" placeholder="90094" required />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-country">Country</label>
+                      <div class="checkout-field-shell">
+                        <!-- Future JSON payload role: shipping.country -->
+                        <select class="checkout-select" id="checkout-country" required>
+                          <option value="US">United States</option>
+                          <option value="CA">Canada</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================================== -->
+            <!-- DELIVERY STEP -->
+            <!-- ======================================== -->
+            <div class="checkout-step">
+              <div class="flex gap-4">
+                <span class="step-badge">3</span>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-xl font-extrabold">Delivery</h3>
+                  <p class="mt-1 text-sm text-stone-300">Choose the shipping method that works best for your delivery timeline.</p>
+
+                  <!--
+                    Future JSON payload role:
+                    - shipping.method
+                    - shipping.price
+                    - Recommended values later:
+                        method_code: "standard" | "priority"
+                        method_label: human-readable checkout label
+                        amount: numeric shipping charge
+                  -->
+                  <div id="shipping-options" class="mt-5 space-y-3">
+                    <label class="card-radio is-selected flex items-start justify-between gap-4">
+                      <input class="sr-only" type="radio" name="shipping-method" value="5.99" checked />
+                      <div>
+                        <p class="font-extrabold">Standard shipping</p>
+                        <p class="mt-1 text-sm text-stone-300">Estimated arrival in 3–5 business days.</p>
+                      </div>
+                      <div class="font-extrabold">$5.99</div>
+                    </label>
+
+                    <label class="card-radio flex items-start justify-between gap-4">
+                      <input class="sr-only" type="radio" name="shipping-method" value="11.99" />
+                      <div>
+                        <p class="font-extrabold">Priority shipping</p>
+                        <p class="mt-1 text-sm text-stone-300">Estimated arrival in 1–2 business days.</p>
+                      </div>
+                      <div class="font-extrabold">$11.99</div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================================== -->
+            <!-- PAYMENT STEP -->
+            <!-- ======================================== -->
+            <div class="checkout-step">
+              <div class="flex gap-4">
+                <span class="step-badge">4</span>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-xl font-extrabold">Payment</h3>
+                  <p class="mt-1 text-sm text-stone-300">Enter your payment details below to securely complete your order.</p>
+
+                  <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                      <label class="checkout-label" for="checkout-card-name">Name on card</label>
+                      <div class="checkout-field-shell">
+                        <input class="checkout-input" id="checkout-card-name" type="text" placeholder="Aaron Alvarez" required />
+                      </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <label class="checkout-label" for="checkout-card-number">Card number</label>
+                      <div class="checkout-field-shell">
+                        <input class="checkout-input" id="checkout-card-number" type="text" placeholder="1234 1234 1234 1234" required />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-card-expiry">Expiration date</label>
+                      <div class="checkout-field-shell">
+                        <input class="checkout-input" id="checkout-card-expiry" type="text" placeholder="MM / YY" required />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="checkout-label" for="checkout-card-cvc">Security code</label>
+                      <div class="checkout-field-shell">
+                        <input class="checkout-input" id="checkout-card-cvc" type="text" placeholder="CVC" required />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!--
+                    Future payment integration note:
+                    - Raw card data should NOT be stored in your own JSON payload or CSV export.
+                    - Later, replace direct card inputs with a payment processor UI such as Stripe Elements
+                      or a hosted/embedded secure field solution.
+                    - Your backend payload should later store only safe references such as:
+                        payment_provider: "stripe"
+                        payment_method_token: "pm_xxx" or equivalent
+                        payment_intent_id: "pi_xxx" or equivalent
+                        payment_status: "requires_payment_method" | "processing" | "paid"
+                  -->
+                  <div class="mt-5 rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_60%,white)] p-4">
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-shield-heart text-emerald-400 text-xl mt-0.5"></i>
+                      <div>
+                        <p class="font-extrabold">Protected payment</p>
+                        <p class="mt-1 text-sm text-stone-300">
+                          Your payment details are protected with secure encryption and a streamlined checkout flow designed to make ordering fast and easy.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================================== -->
+            <!-- PLACE ORDER ACTIONS -->
+            <!-- ======================================== -->
+            <div class="rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4 md:p-5">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <p class="text-sm text-stone-300 max-w-2xl">
+                  By placing your order, you agree to our store policies, shipping terms, and secure payment authorization.
+                </p>
+
+                <button type="submit" id="place-order-button" class="place-order-btn md:w-auto md:min-w-[240px]">
+                  <i class="fa-solid fa-lock mr-2"></i>
+                  Place Secure Order
+                </button>
+              </div>
+
+              <div id="checkout-status" class="status-banner" role="status" aria-live="polite"></div>
+            </div>
+          </form>
+        </section>
+
+        <!-- ======================================== -->
+        <!-- ORDER SUMMARY COLUMN -->
+        <!-- Purpose: Review items / totals / trust -->
+        <!-- Future Component: CheckoutSummaryColumn -->
+        <!-- Status: Interactive Concept -->
+        <!-- ======================================== -->
+        <aside class="summary-sticky space-y-4">
+          <section class="section-panel p-5 md:p-6">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Order Summary</p>
+                <h2 class="text-2xl font-extrabold">Order summary</h2>
+              </div>
+              <span id="summary-item-count" class="pill-note"><i class="fa-solid fa-bag-shopping"></i> 3 items</span>
+            </div>
+
+            <div class="mt-5 space-y-4">
+              <article class="flex gap-3">
+                <img class="summary-item-thumb" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop" alt="Chicken Breast Jerky" />
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 class="font-extrabold leading-tight">Chicken Breast Jerky</h3>
+                      <p class="mt-1 text-sm text-stone-300">6 oz • Qty 1</p>
+                    </div>
+                    <p class="font-extrabold">$12.99</p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="flex gap-3">
+                <img class="summary-item-thumb" src="https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?q=80&w=1200&auto=format&fit=crop" alt="Taste Test Trio" />
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 class="font-extrabold leading-tight">Taste Test Trio</h3>
+                      <p class="mt-1 text-sm text-stone-300">Bundle • Qty 1</p>
+                    </div>
+                    <p class="font-extrabold">$29.99</p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="flex gap-3">
+                <img class="summary-item-thumb" src="https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200&auto=format&fit=crop" alt="Big Lab Bundle" />
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 class="font-extrabold leading-tight">Big Lab Bundle</h3>
+                      <p class="mt-1 text-sm text-stone-300">Bundle • Qty 1</p>
+                    </div>
+                    <p class="font-extrabold">$59.99</p>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="summary-line my-5"></div>
+
+            <div class="space-y-3 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-stone-300">Subtotal</span>
+                <span id="summary-subtotal" class="font-bold">$102.97</span>
+              </div>
+              <div id="summary-discount-row" class="hidden flex items-start justify-between gap-3">
+                <div class="flex flex-col">
+                  <span class="text-stone-300 text-sm">Promo applied</span>
+                  <span id="summary-discount-code" class="text-xs font-semibold text-[var(--brand-4)]"></span>
+                </div>
+                <span id="summary-discount" class="font-bold text-[var(--success-1)]">-$0.00</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-stone-300">Shipping</span>
+                <span id="summary-shipping" class="font-bold">$5.99</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-stone-300">Taxes</span>
+                <span id="summary-tax" class="font-bold">$8.17</span>
+              </div>
+            </div>
+
+            <div class="summary-line my-5"></div>
+
+            <div class="flex items-center justify-between text-lg">
+              <span class="font-extrabold">Total</span>
+              <span id="summary-total" class="font-extrabold text-[var(--brand-4)]">$117.13</span>
+            </div>
+
+            <div class="summary-line my-5"></div>
+
+            <!-- ======================================== -->
+            <!-- PROMO CODE SECTION -->
+            <!-- Purpose: Allow future discount code validation at checkout -->
+            <!-- Future Component: PromoCodeBox -->
+            <!-- Status: UI Ready / Backend Pending -->
+            <!--
+              Future backend JSON role:
+              - promo.code
+              - promo.status
+              - promo.discount_type
+              - promo.discount_amount
+              - promo.message
+              Later backend flow:
+              1. Customer enters a code.
+              2. Frontend sends the code + cart/customer context to backend.
+              3. Backend validates whether the code exists, is active, is eligible,
+                 and whether it applies to the current cart.
+              4. Backend returns:
+                   valid/invalid status,
+                   discount amount or percentage,
+                   updated totals,
+                   and user-facing response message.
+            -->
+            <div>
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-base font-extrabold">Promo code</h3>
+                  <p class="mt-1 text-sm text-stone-300">Have a discount code? Apply it before placing your order.</p>
+                </div>
+              </div>
+
+              <div class="mt-4 flex flex-col sm:flex-row gap-3">
+                <div id="promo-input-shell" class="checkout-field-shell flex-1">
+                  <input
+                    class="checkout-input"
+                    id="promo-code-input"
+                    name="promo-code-input"
+                    type="text"
+                    placeholder="Enter promo code"
+                    autocomplete="off"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  id="apply-promo-button"
+                  class="inline-flex items-center justify-center gap-2 border border-emerald-400 text-emerald-400 font-semibold px-5 py-3 rounded-lg hover:bg-stone-900 focus-ring whitespace-nowrap"
+                >
+                  <i class="fa-solid fa-tag"></i>
+                  Apply
+                </button>
+              </div>
+
+              <p id="promo-status-message" class="mt-3 text-sm text-stone-300">
+                Try demo code <strong>CHASE10</strong> to simulate a successful promo application.
+              </p>
+            </div>
+          </section>
+
+          <section class="section-panel p-5 md:p-6">
+            <h3 class="text-lg font-extrabold">Questions before you order?</h3>
+            <ul class="mt-4 space-y-3 text-sm text-stone-300">
+              <li class="flex gap-3"><i class="fa-solid fa-lock text-emerald-400 mt-1"></i><span>Secure payment processing and encrypted checkout protection.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-truck-fast text-emerald-400 mt-1"></i><span>Shipping options are shown before you place your order.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-envelope text-emerald-400 mt-1"></i><span>Order confirmation and tracking updates are sent by email after purchase.</span></li>
+            </ul>
+            <p class="mt-4 text-sm text-stone-300">
+              Need help before checkout? Contact support at <span class="font-semibold text-[var(--brand-4)]">support@chaseandevieco.com</span>.
+            </p>
+            <div class="summary-line my-5"></div>
+            <a href="./index.html" class="inline-flex items-center gap-2 text-emerald-400 font-semibold hover:underline">
+              <i class="fa-solid fa-arrow-left"></i>
+              Back to cart
+            </a>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- ======================================== -->
+  <!-- PAGE SCRIPTS -->
+  <!-- ======================================== -->
+  <script>
+    // ========================================
+    // CHECKOUT ELEMENT REFERENCES
+    // ========================================
+    const checkoutFormElement = document.getElementById('checkout-form');
+    const placeOrderButton = document.getElementById('place-order-button');
+    const checkoutStatusBanner = document.getElementById('checkout-status');
+    const shippingOptionCards = document.querySelectorAll('#shipping-options .card-radio');
+    const summaryShippingElement = document.getElementById('summary-shipping');
+    const summarySubtotalElement = document.getElementById('summary-subtotal');
+    const summaryDiscountRow = document.getElementById('summary-discount-row');
+    const summaryDiscountElement = document.getElementById('summary-discount');
+    const summaryDiscountCodeElement = document.getElementById('summary-discount-code');
+    const summaryTaxElement = document.getElementById('summary-tax');
+    const summaryTotalElement = document.getElementById('summary-total');
+    const promoCodeInput = document.getElementById('promo-code-input');
+    const applyPromoButton = document.getElementById('apply-promo-button');
+    const promoStatusMessage = document.getElementById('promo-status-message');
+    const promoInputShell = document.getElementById('promo-input-shell');
+
+    // Future JSON payload blueprint:
+    // The final checkout request should be structured something like this:
+    // {
+    //   customer: {
+    //     email: string,
+    //     phone: string,
+    //     first_name: string,
+    //     last_name: string,
+    //     save_info_for_next_time: boolean,
+    //     marketing_opt_in: boolean
+    //   },
+    //   shipping: {
+    //     address_line_1: string,
+    //     address_line_2: string,
+    //     city: string,
+    //     state: string,
+    //     postal_code: string,
+    //     country: string,
+    //     method_code: string,
+    //     method_label: string,
+    //     amount: number
+    //   },
+    //   cart: {
+    //     items: [
+    //       {
+    //         product_id: string,
+    //         product_name: string,
+    //         variant: string,
+    //         quantity: number,
+    //         unit_price: number,
+    //         line_total: number
+    //       }
+    //     ],
+    //     subtotal: number,
+    //     shipping: number,
+    //     tax: number,
+    //     total: number,
+    //     currency: "USD"
+    //   },
+    //   order: {
+    //     order_id: string,
+    //     created_at: ISODateString,
+    //     order_notes: string
+    //   },
+    //   payment: {
+    //     provider: string,
+    //     payment_method_token: string,
+    //     payment_intent_id: string,
+    //     status: string
+    //   },
+    //   promo: {
+    //     code: string,
+    //     status: string,
+    //     discount_type: string,
+    //     discount_amount: number,
+    //     message: string
+    //   }
+    // }
+    // ========================================
+    // CHECKOUT STATE
+    // ========================================
+    const checkoutState = {
+      subtotal: 102.97,
+      shipping: 5.99,
+      taxRate: 0.075,
+      promoCode: '',
+      promoDiscount: 0,
+      promoIsApplied: false
+    };
+
+    // ========================================
+    // CHECKOUT HELPERS
+    // ========================================
+    function formatPrice(value) {
+      return `$${Number(value).toFixed(2)}`;
+    }
+
+    function getDiscountAmount() {
+      return checkoutState.promoDiscount;
+    }
+
+    function getTaxAmount() {
+      return (checkoutState.subtotal - getDiscountAmount() + checkoutState.shipping) * checkoutState.taxRate;
+    }
+
+    function getOrderTotal() {
+      return checkoutState.subtotal - getDiscountAmount() + checkoutState.shipping + getTaxAmount();
+    }
+
+    function showCheckoutStatus(message, type) {
+      checkoutStatusBanner.textContent = message;
+      checkoutStatusBanner.className = `status-banner is-visible ${type === 'success' ? 'is-success' : 'is-error'}`;
+    }
+
+    function clearCheckoutStatus() {
+      checkoutStatusBanner.textContent = '';
+      checkoutStatusBanner.className = 'status-banner';
+    }
+
+    function resetPromoVisualState() {
+      promoInputShell?.classList.remove('is-success', 'is-error', 'is-shaking');
+    }
+
+    function showPromoSuccessState() {
+      resetPromoVisualState();
+      promoInputShell?.classList.add('is-success');
+    }
+
+    function showPromoErrorState() {
+      if (!promoInputShell) return;
+
+      promoInputShell.classList.remove('is-success', 'is-error', 'is-shaking');
+      void promoInputShell.offsetWidth;
+      promoInputShell.classList.add('is-error');
+      promoInputShell.classList.add('is-shaking');
+
+      window.setTimeout(() => {
+        promoInputShell.classList.remove('is-shaking');
+      }, 480);
+    }
+
+    function applyPromoCode() {
+      const enteredCode = promoCodeInput?.value.trim();
+
+      clearCheckoutStatus();
+
+      if (!enteredCode) {
+        checkoutState.promoCode = '';
+        checkoutState.promoDiscount = 0;
+        checkoutState.promoIsApplied = false;
+        promoStatusMessage.textContent = 'Enter a promo code to apply a discount.';
+        updateCheckoutSummary();
+        showPromoErrorState();
+        return;
+      }
+
+      applyPromoButton.disabled = true;
+      applyPromoButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Checking...</span>';
+      promoStatusMessage.textContent = 'Checking promo code...';
+
+      window.setTimeout(() => {
+        const normalizedCode = enteredCode.toUpperCase();
+        promoCodeInput.value = normalizedCode;
+        const validDemoCode = 'CHASE10';
+
+        if (normalizedCode === validDemoCode) {
+          checkoutState.promoCode = validDemoCode;
+          checkoutState.promoDiscount = 10;
+          checkoutState.promoIsApplied = true;
+          promoStatusMessage.textContent = 'Promo code CHASE10 applied successfully. Demo discount of $10.00 added.';
+          showPromoSuccessState();
+        } else {
+          checkoutState.promoCode = normalizedCode;
+          checkoutState.promoDiscount = 0;
+          checkoutState.promoIsApplied = false;
+          promoStatusMessage.textContent = `Promo code "${enteredCode}" is not valid.`;
+          showPromoErrorState();
+        }
+
+        updateCheckoutSummary();
+        applyPromoButton.disabled = false;
+        applyPromoButton.innerHTML = '<i class="fa-solid fa-tag"></i><span>Apply</span>';
+      }, 900);
+    }
+
+    function updateCheckoutSummary() {
+      summaryShippingElement.textContent = formatPrice(checkoutState.shipping);
+      summarySubtotalElement.textContent = formatPrice(checkoutState.subtotal);
+      summaryTaxElement.textContent = formatPrice(getTaxAmount());
+      summaryTotalElement.textContent = formatPrice(getOrderTotal());
+
+      if (checkoutState.promoIsApplied && getDiscountAmount() > 0) {
+        summaryDiscountRow.classList.remove('hidden');
+        summaryDiscountElement.textContent = `-${formatPrice(getDiscountAmount())}`;
+        if (summaryDiscountCodeElement) {
+          summaryDiscountCodeElement.textContent = checkoutState.promoCode;
+        }
+      } else {
+        summaryDiscountRow.classList.add('hidden');
+        summaryDiscountElement.textContent = '-$0.00';
+        if (summaryDiscountCodeElement) {
+          summaryDiscountCodeElement.textContent = '';
+        }
+      }
+    }
+
+    // Future backend step:
+    // After validation passes, collect the form values and transform them into the
+    // final checkout JSON payload before sending them to your API endpoint.
+    function validateCheckoutForm() {
+      const requiredFields = checkoutFormElement.querySelectorAll('[required]');
+
+      for (const field of requiredFields) {
+        if (!field.value.trim()) {
+          field.focus();
+          showCheckoutStatus('Please complete all required fields before placing the order.', 'error');
+          return false;
+        }
+      }
+
+      const emailField = document.getElementById('checkout-email');
+      if (!emailField.value.includes('@')) {
+        emailField.focus();
+        showCheckoutStatus('Please enter a valid email address.', 'error');
+        return false;
+      }
+
+      const cardNumberField = document.getElementById('checkout-card-number');
+      const sanitizedCardNumber = cardNumberField.value.replace(/\s+/g, '');
+      if (sanitizedCardNumber.length < 14) {
+        cardNumberField.focus();
+        showCheckoutStatus('Please enter a valid card number.', 'error');
+        return false;
+      }
+
+      const zipField = document.getElementById('checkout-zip');
+      if (zipField.value.trim().length < 5) {
+        zipField.focus();
+        showCheckoutStatus('Please enter a valid ZIP code.', 'error');
+        return false;
+      }
+
+      clearCheckoutStatus();
+      return true;
+    }
+
+    // ========================================
+    // SHIPPING OPTION EVENTS
+    // ========================================
+    shippingOptionCards.forEach(card => {
+      const radio = card.querySelector('input[type="radio"]');
+
+      card.addEventListener('click', () => {
+        shippingOptionCards.forEach(optionCard => optionCard.classList.remove('is-selected'));
+        card.classList.add('is-selected');
+        radio.checked = true;
+        checkoutState.shipping = Number(radio.value);
+        updateCheckoutSummary();
+      });
+    });
+
+    // ========================================
+    // FORM SUBMIT
+    // ========================================
+    checkoutFormElement.addEventListener('submit', event => {
+      event.preventDefault();
+
+      if (!validateCheckoutForm()) {
+        return;
+      }
+
+      // Future API step:
+      // This is where the frontend should eventually:
+      // 1. Build the checkout payload from form fields + cart state
+      // 2. Send it to your backend endpoint
+      // 3. Let the backend create/store the order record
+      // 4. Let the backend request payment authorization from your payment provider
+      placeOrderButton.disabled = true;
+      placeOrderButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Processing...';
+
+      window.setTimeout(() => {
+        placeOrderButton.disabled = false;
+        placeOrderButton.innerHTML = '<i class="fa-solid fa-lock mr-2"></i>Place Secure Order';
+        showCheckoutStatus(
+          'Order placed successfully. A confirmation email and shipping updates will be sent shortly.',
+          'success'
+        );
+      }, 900);
+    });
+
+    // ========================================
+    // PROMO CODE UI PLACEHOLDER
+    // ========================================
+    applyPromoButton?.addEventListener('click', applyPromoCode);
+
+    promoCodeInput?.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyPromoCode();
+      }
+    });
+
+    // ========================================
+    // INITIAL RENDER
+    // ========================================
+    updateCheckoutSummary();
+  </script>
+</body>
+</html>
