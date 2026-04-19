@@ -16,8 +16,13 @@
     referrerpolicy="no-referrer"
   />
 
-  <!-- Base styles (optional tweaks) -->
+  <!-- ======================================== -->
+  <!-- GLOBAL THEME + COMPONENT STYLES -->
+  <!-- ======================================== -->
   <style>
+    /* ======================================== */
+    /* THEME TOKENS */
+    /* ======================================== */
     /* Theme: updated 2024-06-xx — new packaging palette */
     :root {
       --brand-1: #2F57B7; /* Blue ring - primary (focus/links) */
@@ -26,13 +31,18 @@
       --brand-4: #6A3C2B; /* Cacao center - accent 2 (headings) */
       --brand-5: #F3E8D2; /* Oat - neutral base */
     }
-
+    /* ======================================== */
+    /* TAILWIND UTILITY REMAPS */
+    /* ======================================== */
     /* Map Tailwind emerald utilities to your brand (Yellow CTAs, Blue links) */
     .bg-emerald-400 { background-color: var(--brand-2) !important; }
     .text-emerald-400 { color: var(--brand-1) !important; }
     .border-emerald-400 { border-color: var(--brand-1) !important; }
     .hover\:bg-emerald-300:hover { background-color: color-mix(in srgb, var(--brand-2) 78%, #ffffff) !important; }
 
+    /* ======================================== */
+    /* ACCESSIBILITY + TYPOGRAPHY */
+    /* ======================================== */
     /* Better focus outline for a11y using your primary */
     :focus-visible { outline: 2px solid var(--brand-1); outline-offset: 2px; }
 
@@ -91,6 +101,9 @@
 
     /* Links hover keep brand look on light */
     .hover\:text-emerald-400:hover { color: var(--brand-1) !important; }
+    /* ======================================== */
+    /* LAYOUT SURFACES + UI HELPERS */
+    /* ======================================== */
     /* === UI polish 1–3 === */
     /* (2) Thin blue underline for section headers */
     .u-underline-blue { position: relative; padding-bottom: .35rem; }
@@ -127,6 +140,9 @@
     /* Extra separation when panels stack */
     .section-panel + .section-panel { margin-top: 3rem; }
 
+    /* ======================================== */
+    /* MEDIA HELPERS */
+    /* ======================================== */
     /* Keep images flush and consistently framed */
     img { display: block; }
     .media-cover {
@@ -136,11 +152,98 @@
       object-position: center;
       display: block;
     }
+
+    /* ======================================== */
+    /* CART DRAWER */
+    /* ======================================== */
+    .cart-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+      z-index: 70;
+    }
+
+    .cart-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .cart-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(100%, 420px);
+      height: 100dvh;
+      max-height: 100dvh;
+      background: #ffffff;
+      border-left: 1px solid color-mix(in srgb, var(--brand-3) 45%, white);
+      box-shadow: -18px 0 48px rgba(0, 0, 0, 0.18);
+      transform: translateX(100%);
+      transition: transform 260ms ease;
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .cart-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    .cart-line-divider {
+      height: 1px;
+      background: color-mix(in srgb, var(--brand-3) 30%, white);
+    }
+
+    .cart-item-thumb {
+      width: 84px;
+      height: 84px;
+      object-fit: cover;
+      object-position: center;
+      border-radius: 1rem;
+      border: 1px solid color-mix(in srgb, var(--brand-3) 35%, white);
+      flex-shrink: 0;
+    }
+
+    .cart-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      padding-bottom: 1rem;
+    }
+
+    .cart-filled-state-open {
+      display: flex;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .cart-footer {
+      flex-shrink: 0;
+      position: sticky;
+      bottom: 0;
+      background: color-mix(in srgb, var(--brand-5) 55%, white);
+    }
+
+    .body-lock {
+      overflow: hidden;
+    }
   </style>
 </head>
 <body class="bg-[var(--brand-5)] text-stone-900 antialiased">
 
+  <!-- ======================================== -->
   <!-- PROMO STRIP -->
+  <!-- ======================================== -->
   <div class="w-full bg-white text-stone-700 text-sm border-b border-[color-mix(in_srgb,var(--brand-1)_18%,white)]">
     <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-4">
       <span class="inline-flex items-center gap-2"><i class="fa-solid fa-truck-fast text-emerald-400"></i> Free shipping $39+</span>
@@ -149,7 +252,9 @@
     </div>
   </div>
 
-  <!-- NAVIGATION -->
+  <!-- ======================================== -->
+  <!-- HEADER / NAVIGATION -->
+  <!-- ======================================== -->
   <header class="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-[color-mix(in_srgb,var(--brand-1)_22%,white)]">
     <nav class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between" aria-label="Primary">
       <!-- Logo -->
@@ -176,16 +281,22 @@
       <div class="hidden md:flex items-center gap-4">
         <button class="text-stone-300 hover:text-white" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
         <button class="text-stone-300 hover:text-white" aria-label="Account"><i class="fa-regular fa-user"></i></button>
-        <button class="relative text-stone-300 hover:text-white" aria-label="Cart">
+        <button id="cart-open-desktop" class="relative text-stone-300 hover:text-white" aria-label="Open cart" aria-controls="cart-drawer" aria-expanded="false">
           <i class="fa-solid fa-bag-shopping"></i>
-          <span class="absolute -top-2 -right-2 h-5 min-w-[1.25rem] px-1 rounded-full bg-emerald-400 text-stone-900 text-[10px] font-bold flex items-center justify-center">2</span>
+          <span id="cart-count-desktop" class="absolute -top-2 -right-2 h-5 min-w-[1.25rem] px-1 rounded-full bg-emerald-400 text-stone-900 text-[10px] font-bold flex items-center justify-center">0</span>
         </button>
       </div>
 
       <!-- Mobile toggle -->
-      <button id="nav-toggle" class="md:hidden text-stone-300 hover:text-white" aria-label="Open menu">
-        <i class="fa-solid fa-bars text-xl"></i>
-      </button>
+      <div class="md:hidden flex items-center gap-3">
+        <button id="cart-open-mobile" class="relative text-stone-300 hover:text-white" aria-label="Open cart" aria-controls="cart-drawer" aria-expanded="false">
+          <i class="fa-solid fa-bag-shopping text-lg"></i>
+          <span id="cart-count-mobile" class="absolute -top-2 -right-2 h-5 min-w-[1.25rem] px-1 rounded-full bg-emerald-400 text-stone-900 text-[10px] font-bold flex items-center justify-center">0</span>
+        </button>
+        <button id="nav-toggle" class="text-stone-300 hover:text-white" aria-label="Open menu">
+          <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+      </div>
     </nav>
 
     <!-- Mobile menu -->
@@ -203,7 +314,59 @@
     </div>
   </header>
 
+  <!-- ======================================== -->
+  <!-- CART DRAWER -->
+  <!-- ======================================== -->
+  <div id="cart-backdrop" class="cart-backdrop" aria-hidden="true"></div>
+  <aside id="cart-drawer" class="cart-drawer" aria-hidden="true" aria-labelledby="cart-title">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-stone-800">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Your Cart</p>
+        <h2 id="cart-title" class="text-2xl font-extrabold">Bag Summary</h2>
+      </div>
+      <button id="cart-close" class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-stone-700 text-stone-400 hover:border-emerald-400" aria-label="Close cart">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div id="cart-empty-state" class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+      <div class="h-16 w-16 rounded-full bg-[color-mix(in_srgb,var(--brand-2)_40%,white)] text-[var(--brand-4)] inline-flex items-center justify-center text-2xl mb-4">
+        <i class="fa-solid fa-bag-shopping"></i>
+      </div>
+      <h3 class="text-xl font-bold">Your cart is empty</h3>
+      <p class="mt-2 text-sm text-stone-300 max-w-xs">Add a treat to see your order slide in from the right side.</p>
+      <button id="cart-empty-cta" class="mt-5 inline-flex items-center gap-2 bg-emerald-400 text-[var(--brand-4)] font-semibold px-5 py-3 rounded-lg hover:bg-emerald-300 focus-ring">
+        <i class="fa-solid fa-bone"></i> Shop Treats
+      </button>
+    </div>
+
+    <div id="cart-filled-state" class="hidden flex-1 flex-col min-h-0">
+      <div id="cart-items" class="cart-scroll flex-1 px-5 py-5 space-y-5"></div>
+      <div class="cart-footer border-t border-stone-800 px-5 py-5 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)]">
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-stone-300">Subtotal</span>
+            <span id="cart-subtotal" class="font-semibold text-stone-900">$0.00</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-stone-300">Shipping</span>
+            <span class="font-semibold text-stone-900">Calculated at checkout</span>
+          </div>
+        </div>
+        <div class="cart-line-divider my-4"></div>
+        <button class="w-full inline-flex items-center justify-center gap-2 bg-emerald-400 text-[var(--brand-4)] font-semibold px-5 py-3 rounded-lg hover:bg-emerald-300 focus-ring">
+          <i class="fa-solid fa-lock"></i> Checkout
+        </button>
+        <button id="continue-shopping" class="w-full mt-3 inline-flex items-center justify-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-3 rounded-lg hover:bg-stone-900">
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ======================================== -->
   <!-- HERO -->
+  <!-- ======================================== -->
   <section id="hero" class="relative">
     <div class="absolute inset-0">
       <!-- Use your own hero photo later -->
@@ -280,7 +443,11 @@
         </div>
 
         <div class="mt-6 flex flex-wrap gap-3">
-          <button class="inline-flex items-center gap-2 bg-emerald-400 text-[var(--brand-4)] font-semibold px-5 py-3 rounded-lg hover:bg-emerald-300 focus-ring">
+          <button class="add-to-cart-btn inline-flex items-center gap-2 bg-emerald-400 text-[var(--brand-4)] font-semibold px-5 py-3 rounded-lg hover:bg-emerald-300 focus-ring"
+                  data-product-name="Chicken Breast Jerky"
+                  data-product-size="6 oz"
+                  data-product-price="12.99"
+                  data-product-image="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop">
             <i class="fa-solid fa-bag-shopping"></i> Add to Cart
           </button>
           <a href="#pdp" class="inline-flex items-center gap-2 text-emerald-400 hover:underline">
@@ -291,7 +458,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- SHOP COLLECTIONS -->
+  <!-- ======================================== -->
   <section id="shop" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <div class="mb-8 flex items-end justify-between">
       <h2 class="text-3xl font-bold u-underline-blue">Shop Treats</h2>
@@ -327,7 +496,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- HOW IT'S MADE -->
+  <!-- ======================================== -->
   <section id="process" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <h2 class="text-3xl font-bold u-underline-blue">How We Make Them</h2>
     <div class="mt-8 grid sm:grid-cols-3 gap-6">
@@ -360,7 +531,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- INGREDIENTS & ANALYSIS -->
+  <!-- ======================================== -->
   <section id="ingredients" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <div class="grid md:grid-cols-2 gap-8 items-start">
       <div class="rounded-3xl border border-stone-800 bg-stone-900/70 p-8">
@@ -381,7 +554,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- UGC STRIP -->
+  <!-- ======================================== -->
   <section id="reviews-short" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <h2 class="text-3xl font-bold u-underline-blue mb-6">Happy Pups</h2>
     <div class="grid md:grid-cols-3 gap-6">
@@ -403,7 +578,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- PRODUCT GRID -->
+  <!-- ======================================== -->
   <section id="catalog" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <h2 class="text-3xl font-bold u-underline-blue">All Treats</h2>
@@ -430,7 +607,11 @@
           </div>
           <p class="mt-3 text-sm text-stone-300">From $12.99 • 3oz / 6oz / 12oz</p>
           <div class="mt-4 flex gap-3">
-            <button class="bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring">Add to Cart</button>
+            <button class="add-to-cart-btn bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring"
+                    data-product-name="Chicken Breast Jerky"
+                    data-product-size="3 oz"
+                    data-product-price="12.99"
+                    data-product-image="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop">Add to Cart</button>
             <button class="text-emerald-400 hover:underline">Quick View</button>
           </div>
         </div>
@@ -458,7 +639,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- BUNDLES & SUBSCRIBE -->
+  <!-- ======================================== -->
   <section id="bundles" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <h2 class="text-3xl font-bold u-underline-blue">Bundle &amp; Save</h2>
     <div class="mt-8 grid md:grid-cols-3 gap-6">
@@ -466,13 +649,21 @@
         <h3 class="font-semibold">Taste Test Trio</h3>
         <p class="text-sm text-stone-300">Three small bags for picky pups.</p>
         <div class="mt-4 font-semibold">$29.99</div>
-        <button class="mt-4 bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring">Add to Cart</button>
+        <button class="add-to-cart-btn mt-4 bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring"
+                data-product-name="Taste Test Trio"
+                data-product-size="Bundle"
+                data-product-price="29.99"
+                data-product-image="https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?q=80&w=1200&auto=format&fit=crop">Add to Cart</button>
       </div>
       <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6">
         <h3 class="font-semibold">Big Lab Bundle</h3>
         <p class="text-sm text-stone-300">Family size for multi-dog homes.</p>
         <div class="mt-4 font-semibold">$59.99</div>
-        <button class="mt-4 bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring">Add to Cart</button>
+        <button class="add-to-cart-btn mt-4 bg-emerald-400 text-[var(--brand-4)] font-semibold px-4 py-2 rounded-lg hover:bg-emerald-300 focus-ring"
+                data-product-name="Big Lab Bundle"
+                data-product-size="Bundle"
+                data-product-price="59.99"
+                data-product-image="https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200&auto=format&fit=crop">Add to Cart</button>
       </div>
       <div class="rounded-2xl border border-stone-800 bg-stone-900/60 p-6">
         <h3 class="font-semibold">Subscribe &amp; Save</h3>
@@ -490,7 +681,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- ABOUT -->
+  <!-- ======================================== -->
   <section id="about" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <div class="grid md:grid-cols-2 gap-8 items-center">
       <img class="w-full h-80 object-cover rounded-3xl border border-stone-800"
@@ -511,7 +704,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- FULL REVIEWS -->
+  <!-- ======================================== -->
   <section id="reviews" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <h2 class="text-3xl font-bold u-underline-blue mb-6">What Pet Parents Say</h2>
     <div class="flex flex-wrap gap-2 text-xs mb-6">
@@ -549,7 +744,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- FAQ -->
+  <!-- ======================================== -->
   <section id="faq" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <h2 class="text-3xl font-bold u-underline-blue">FAQ</h2>
     <div class="mt-6 space-y-4">
@@ -572,7 +769,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- NEWSLETTER -->
+  <!-- ======================================== -->
   <section id="subscribe" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <div class="rounded-3xl border border-stone-800 bg-stone-900/70 p-8 md:p-10 flex flex-col md:flex-row items-center gap-6">
       <div class="flex-1">
@@ -590,7 +789,9 @@
     </div>
   </section>
 
+  <!-- ======================================== -->
   <!-- CONTACT -->
+  <!-- ======================================== -->
   <section id="contact" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <h2 class="text-3xl font-bold u-underline-blue mb-6 text-center">Get in Touch</h2>
     <p class="text-stone-300 text-center max-w-2xl mx-auto">Questions, wholesale, or press? We’d love to hear from you.</p>
@@ -603,7 +804,9 @@
     </form>
   </section>
 
+  <!-- ======================================== -->
   <!-- FOOTER -->
+  <!-- ======================================== -->
   <footer class="bg-[var(--brand-5)] border-t border-stone-800">
     <div class="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-3 gap-8 items-center">
       <div class="space-y-2">
@@ -639,11 +842,219 @@
     </div>
   </footer>
 
-  <!-- Simple mobile nav toggler (same pattern as your current file) -->
+  <!-- ======================================== -->
+  <!-- PAGE SCRIPTS -->
+  <!-- ======================================== -->
   <script>
-    const btn = document.getElementById('nav-toggle');
-    const menu = document.getElementById('nav-menu');
-    btn?.addEventListener('click', () => menu.classList.toggle('hidden'));
+    // ========================================
+    // NAVIGATION
+    // ========================================
+    const navToggleButton = document.getElementById('nav-toggle');
+    const navMenu = document.getElementById('nav-menu');
+
+    navToggleButton?.addEventListener('click', () => navMenu.classList.toggle('hidden'));
+
+    // ========================================
+    // CART ELEMENT REFERENCES
+    // ========================================
+    const cartDrawerElement = document.getElementById('cart-drawer');
+    const cartBackdropElement = document.getElementById('cart-backdrop');
+    const cartCloseButton = document.getElementById('cart-close');
+    const cartOpenDesktopButton = document.getElementById('cart-open-desktop');
+    const cartOpenMobileButton = document.getElementById('cart-open-mobile');
+    const cartEmptyStateElement = document.getElementById('cart-empty-state');
+    const cartFilledStateElement = document.getElementById('cart-filled-state');
+    const cartItemsContainer = document.getElementById('cart-items');
+    const cartSubtotalElement = document.getElementById('cart-subtotal');
+    const cartCountDesktopBadge = document.getElementById('cart-count-desktop');
+    const cartCountMobileBadge = document.getElementById('cart-count-mobile');
+    const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+    const continueShoppingButton = document.getElementById('continue-shopping');
+    const cartEmptyStateCtaButton = document.getElementById('cart-empty-cta');
+
+    // ========================================
+    // CART STATE
+    // ========================================
+    const cartState = [];
+
+    // ========================================
+    // CART HELPERS
+    // ========================================
+    function formatPrice(value) {
+      return `$${Number(value).toFixed(2)}`;
+    }
+
+    function getCartItemCount() {
+      return cartState.reduce((total, item) => total + item.quantity, 0);
+    }
+
+    function getCartSubtotal() {
+      return cartState.reduce((total, item) => total + (item.price * item.quantity), 0);
+    }
+
+    function syncCartBadges() {
+      const itemCount = getCartItemCount();
+      if (cartCountDesktopBadge) cartCountDesktopBadge.textContent = String(itemCount);
+      if (cartCountMobileBadge) cartCountMobileBadge.textContent = String(itemCount);
+    }
+
+    // ========================================
+    // CART UI
+    // ========================================
+    function openCartDrawer() {
+      cartDrawerElement?.classList.add('is-open');
+      cartBackdropElement?.classList.add('is-open');
+      document.body.classList.add('body-lock');
+      cartDrawerElement?.setAttribute('aria-hidden', 'false');
+      cartBackdropElement?.setAttribute('aria-hidden', 'false');
+      cartOpenDesktopButton?.setAttribute('aria-expanded', 'true');
+      cartOpenMobileButton?.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeCartDrawer() {
+      cartDrawerElement?.classList.remove('is-open');
+      cartBackdropElement?.classList.remove('is-open');
+      document.body.classList.remove('body-lock');
+      cartDrawerElement?.setAttribute('aria-hidden', 'true');
+      cartBackdropElement?.setAttribute('aria-hidden', 'true');
+      cartOpenDesktopButton?.setAttribute('aria-expanded', 'false');
+      cartOpenMobileButton?.setAttribute('aria-expanded', 'false');
+    }
+
+    function renderCart() {
+      syncCartBadges();
+
+      if (!cartState.length) {
+        cartEmptyStateElement?.classList.remove('hidden');
+        cartFilledStateElement?.classList.add('hidden');
+        cartFilledStateElement?.classList.remove('cart-filled-state-open');
+        if (cartItemsContainer) cartItemsContainer.innerHTML = '';
+        if (cartSubtotalElement) cartSubtotalElement.textContent = '$0.00';
+        return;
+      }
+
+      cartEmptyStateElement?.classList.add('hidden');
+      cartFilledStateElement?.classList.remove('hidden');
+      cartFilledStateElement?.classList.add('cart-filled-state-open');
+
+      if (cartItemsContainer) {
+        cartItemsContainer.innerHTML = cartState.map((item, index) => `
+          <article class="rounded-2xl border border-stone-800 bg-stone-900/60 p-4 tile">
+            <div class="flex gap-4">
+              <img class="cart-item-thumb" src="${item.image}" alt="${item.name}">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 class="font-semibold leading-tight">${item.name}</h3>
+                    <p class="mt-1 text-sm text-stone-300">${item.size}</p>
+                  </div>
+                  <button class="remove-cart-item text-stone-400 hover:text-emerald-400" data-cart-index="${index}" aria-label="Remove ${item.name}">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+                <div class="mt-4 flex items-center justify-between gap-3">
+                  <div class="inline-flex items-center rounded-full border border-stone-700 overflow-hidden">
+                    <button class="cart-qty-btn h-9 w-9 inline-flex items-center justify-center text-stone-400 hover:text-emerald-400" data-action="decrease" data-cart-index="${index}" aria-label="Decrease quantity for ${item.name}">-</button>
+                    <span class="min-w-[2.5rem] text-center text-sm font-semibold">${item.quantity}</span>
+                    <button class="cart-qty-btn h-9 w-9 inline-flex items-center justify-center text-stone-400 hover:text-emerald-400" data-action="increase" data-cart-index="${index}" aria-label="Increase quantity for ${item.name}">+</button>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm text-stone-300">${formatPrice(item.price)} each</p>
+                    <p class="font-semibold">${formatPrice(item.price * item.quantity)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `).join('');
+      }
+
+      if (cartSubtotalElement) cartSubtotalElement.textContent = formatPrice(getCartSubtotal());
+
+      document.querySelectorAll('.cart-qty-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          const cartIndex = Number(button.dataset.cartIndex);
+          const action = button.dataset.action;
+          const cartItem = cartState[cartIndex];
+          if (!cartItem) return;
+
+          if (action === 'increase') {
+            cartItem.quantity += 1;
+          }
+
+          if (action === 'decrease') {
+            cartItem.quantity -= 1;
+            if (cartItem.quantity <= 0) {
+              cartState.splice(cartIndex, 1);
+            }
+          }
+
+          renderCart();
+        });
+      });
+
+      document.querySelectorAll('.remove-cart-item').forEach(button => {
+        button.addEventListener('click', () => {
+          const cartIndex = Number(button.dataset.cartIndex);
+          cartState.splice(cartIndex, 1);
+          renderCart();
+        });
+      });
+    }
+
+    // ========================================
+    // CART ACTIONS
+    // ========================================
+    function addItemToCart(product) {
+      const existingCartItem = cartState.find(item => item.name === product.name && item.size === product.size);
+
+      if (existingCartItem) {
+        existingCartItem.quantity += 1;
+      } else {
+        cartState.push({
+          ...product,
+          quantity: 1,
+        });
+      }
+
+      renderCart();
+      openCartDrawer();
+    }
+
+    // ========================================
+    // EVENT LISTENERS
+    // ========================================
+    addToCartButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        addItemToCart({
+          name: button.dataset.productName,
+          size: button.dataset.productSize,
+          price: Number(button.dataset.productPrice),
+          image: button.dataset.productImage,
+        });
+      });
+    });
+
+    cartOpenDesktopButton?.addEventListener('click', openCartDrawer);
+    cartOpenMobileButton?.addEventListener('click', openCartDrawer);
+    cartCloseButton?.addEventListener('click', closeCartDrawer);
+    cartBackdropElement?.addEventListener('click', closeCartDrawer);
+    continueShoppingButton?.addEventListener('click', closeCartDrawer);
+    cartEmptyStateCtaButton?.addEventListener('click', () => {
+      closeCartDrawer();
+      document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        closeCartDrawer();
+      }
+    });
+
+    // ========================================
+    // INITIAL RENDER
+    // ========================================
+    renderCart();
   </script>
 </body>
 </html>
