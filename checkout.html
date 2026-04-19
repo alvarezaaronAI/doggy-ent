@@ -266,6 +266,69 @@
       background: color-mix(in srgb, white 92%, var(--brand-5));
     }
 
+    .express-pay-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .express-pay-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      min-height: 3.3rem;
+      border-radius: 1rem;
+      border: 1px solid color-mix(in srgb, var(--brand-3) 35%, white);
+      background: #111827;
+      color: #ffffff;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+      box-shadow: 0 10px 20px rgba(17, 24, 39, 0.12);
+    }
+
+    .express-pay-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .express-pay-btn.paypal {
+      background: #ffffff;
+      color: #003087;
+      border-color: color-mix(in srgb, #003087 18%, white);
+      box-shadow: 0 10px 20px rgba(0, 48, 135, 0.08);
+    }
+
+    .express-pay-btn .wallet-mark {
+      font-size: 1.05rem;
+    }
+
+    .payment-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      color: #6B7280;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .payment-divider::before,
+    .payment-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: color-mix(in srgb, var(--brand-3) 30%, white);
+    }
+
+    @media (max-width: 640px) {
+      .express-pay-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .status-banner {
       display: none;
       border-radius: 1rem;
@@ -631,7 +694,36 @@
                 <span class="step-badge">4</span>
                 <div class="flex-1 min-w-0">
                   <h3 class="text-xl font-extrabold">Payment</h3>
-                  <p class="mt-1 text-sm text-stone-300">Enter your payment details below to securely complete your order.</p>
+                  <p class="mt-1 text-sm text-stone-300">Choose express checkout for a faster purchase, or enter your card details below.</p>
+
+                  <div class="mt-5 rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4 md:p-5">
+                    <div class="flex items-start justify-between gap-4 flex-wrap">
+                      <div>
+                        <p class="text-sm font-extrabold text-[var(--brand-4)]">Express checkout</p>
+                        <p class="mt-1 text-sm text-stone-300">Pay faster with your saved wallet and shipping details.</p>
+                      </div>
+                      <span class="pill-note"><i class="fa-solid fa-bolt"></i> Faster checkout</span>
+                    </div>
+
+                    <div class="express-pay-grid mt-4">
+                      <button type="button" class="express-pay-btn" aria-label="Pay with Apple Pay">
+                        <i class="fa-brands fa-apple wallet-mark"></i>
+                        <span>Apple Pay</span>
+                      </button>
+
+                      <button type="button" class="express-pay-btn" aria-label="Pay with Google Pay">
+                        <i class="fa-brands fa-google wallet-mark"></i>
+                        <span>Google Pay</span>
+                      </button>
+
+                      <button type="button" class="express-pay-btn paypal" aria-label="Pay with PayPal">
+                        <i class="fa-brands fa-paypal wallet-mark"></i>
+                        <span>PayPal</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="payment-divider mt-5">Or pay with card</div>
 
                   <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="md:col-span-2">
@@ -680,7 +772,7 @@
                       <div>
                         <p class="font-extrabold">Protected payment</p>
                         <p class="mt-1 text-sm text-stone-300">
-                          Your payment details are protected with secure encryption and a streamlined checkout flow designed to make ordering fast and easy.
+                          Your payment details are protected with secure encryption, whether you choose express checkout or pay directly with your card.
                         </p>
                       </div>
                     </div>
