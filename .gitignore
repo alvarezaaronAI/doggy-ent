@@ -2,13 +2,10 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=vue,vuejs,macos,visualstudiocode,node,windows,dotenv,yarn,jetbrains
 
 ### Personal files, temp removed ###
-blogs/
-images/
-videos/
-downloads/
-projects/
+
 ### dotenv ###
 .env
+.vscode.env
 
 ### JetBrains ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
