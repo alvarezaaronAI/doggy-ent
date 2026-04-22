@@ -4,8 +4,7 @@
 ### Personal files, temp removed ###
 
 ### dotenv ###
-.env
-.vscode.env
+
 
 ### JetBrains ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
