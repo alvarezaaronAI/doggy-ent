@@ -30,71 +30,38 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-slate-50 text-slate-900">
-    <section class="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-16">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-        Doggy Ent
-      </p>
-
-      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-        Frontend and backend are now connected
-      </h1>
-
-      <p class="mb-8 max-w-2xl text-base text-slate-600 sm:text-lg">
-        This home page is making a real request from Vue to your Express server.
-      </p>
-
-      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div>
-            <h2 class="text-lg font-semibold text-slate-900">Backend health check</h2>
-            <p class="text-sm text-slate-500">
-              Source:
-              <code class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">GET /api/health</code>
-            </p>
-          </div>
-
-          <button
-            type="button"
-            @click="loadHealth"
-            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            Refresh
-          </button>
-        </div>
+  <main class="min-h-screen bg-[var(--brand-5)] text-slate-900">
+    <section class="mx-auto max-w-7xl px-6 py-16">
+      <div class="section-panel p-8">
+        <h1 class="text-4xl font-extrabold">Doggy Ent Storefront</h1>
+        <p class="mt-3 text-stone-300">
+          This page now matches your concept styling while still proving frontend ↔ backend communication.
+        </p>
 
         <div class="mt-6">
-          <p v-if="isLoading" class="text-sm font-medium text-slate-500">
-            Contacting backend server...
-          </p>
+          <p v-if="isLoading">Loading backend...</p>
 
-          <div
-            v-else-if="errorMessage"
-            class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-          >
+          <div v-else-if="errorMessage" class="text-red-600">
             {{ errorMessage }}
           </div>
 
-          <div v-else class="space-y-3">
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Connected
-              </span>
-              <span class="text-sm text-slate-500">The Vue frontend successfully reached Express.</span>
-            </div>
-
-            <pre class="overflow-x-auto rounded-xl bg-slate-950 p-4 text-sm text-slate-100">{{ JSON.stringify(healthData, null, 2) }}</pre>
+          <div v-else>
+            <p class="text-green-700 font-semibold">Connected to backend</p>
+            <pre class="mt-3 bg-[var(--brand-4)] text-white p-4 rounded-xl">
+{{ JSON.stringify(healthData, null, 2) }}
+            </pre>
           </div>
         </div>
-      </div>
 
-      <div class="mt-8 flex flex-wrap gap-3">
-        <RouterLink
-          to="/admin"
-          class="rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
-        >
-          Go to Admin Dashboard
-        </RouterLink>
+        <div class="mt-8 flex gap-4">
+          <RouterLink to="/admin" class="px-4 py-2 bg-emerald-400 rounded-lg font-semibold">
+            Admin
+          </RouterLink>
+
+          <RouterLink to="/admin/products" class="px-4 py-2 border rounded-lg">
+            Products
+          </RouterLink>
+        </div>
       </div>
     </section>
   </main>
