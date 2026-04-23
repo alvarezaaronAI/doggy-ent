@@ -1,4 +1,4 @@
-const mockProducts = [
+let mockProducts = [
   {
     id: 'chicken-breast-jerky',
     name: 'Chicken Breast Jerky',
@@ -31,6 +31,35 @@ const mockProducts = [
   },
 ]
 
+function slugify(value) {
+  return String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
 export async function fetchAllProducts() {
   return mockProducts
+}
+
+export async function createProduct(productInput) {
+  const idBase = slugify(productInput.name || 'product')
+  const duplicateCount = mockProducts.filter((product) => product.id.startsWith(idBase)).length
+  const id = duplicateCount > 0 ? `${idBase}-${duplicateCount + 1}` : idBase
+
+  const newProduct = {
+    id,
+    name: productInput.name,
+    shortDescription: productInput.shortDescription,
+    price: Number(productInput.price),
+    category: productInput.category,
+    status: productInput.status,
+    featured: Boolean(productInput.featured),
+    image: productInput.image,
+  }
+
+  mockProducts.unshift(newProduct)
+  return newProduct
 }
