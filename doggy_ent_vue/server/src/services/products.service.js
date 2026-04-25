@@ -63,3 +63,14 @@ export async function createProduct(productInput) {
   mockProducts.unshift(newProduct)
   return newProduct
 }
+
+export async function deleteProductById(productId) {
+  const existingIndex = mockProducts.findIndex((product) => product.id === productId)
+
+  if (existingIndex === -1) {
+    return null
+  }
+
+  const deletedProducts = mockProducts.splice(existingIndex, 1)
+  return deletedProducts[0]
+}

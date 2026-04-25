@@ -1,4 +1,8 @@
-import { createProduct, fetchAllProducts } from '../services/products.service.js'
+import {
+  createProduct,
+  deleteProductById,
+  fetchAllProducts,
+} from '../services/products.service.js'
 
 export async function getAllProducts(req, res, next) {
   try {
@@ -38,6 +42,26 @@ export async function createNewProduct(req, res, next) {
     })
 
     res.status(201).json(createdProduct)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function deleteExistingProduct(req, res, next) {
+  try {
+    const { id } = req.params
+    const deletedProduct = await deleteProductById(id)
+
+    if (!deletedProduct) {
+      return res.status(404).json({
+        message: 'Product not found.',
+      })
+    }
+
+    res.json({
+      message: `Product "${deletedProduct.name}" deleted successfully.`,
+      deletedProduct,
+    })
   } catch (error) {
     next(error)
   }

@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 const products = ref([])
 const isLoading = ref(true)
 const isSubmitting = ref(false)
+const isDeleting = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const showAddForm = ref(false)
@@ -100,6 +101,35 @@ async function submitProduct() {
     errorMessage.value = error.message || 'Unable to create product.'
   } finally {
     isSubmitting.value = false
+  }
+}
+
+async function deleteProduct(productId, productName) {
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  const confirmed = window.confirm(`Delete "${productName}"?`)
+  if (!confirmed) return
+
+  isDeleting.value = true
+
+  try {
+    const response = await fetch(`/api/products/${productId}`, {
+      method: 'DELETE',
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Unable to delete product.')
+    }
+
+    successMessage.value = data.message
+    await loadProducts()
+  } catch (error) {
+    errorMessage.value = error.message || 'Unable to delete product.'
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -301,7 +331,11 @@ onMounted(() => {
               <button class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55">
                 Edit
               </button>
-              <button class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55">
+              <button
+                class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55 disabled:opacity-60"
+                :disabled="isDeleting"
+                @click="deleteProduct(product.id, product.name)"
+              >
                 Delete
               </button>
             </div>
