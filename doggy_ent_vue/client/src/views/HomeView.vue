@@ -5,6 +5,9 @@ import PromoStrip from '../components/layout/PromoStrip.vue'
 import SiteHeader from '../components/layout/SiteHeader.vue'
 import SiteFooter from '../components/layout/SiteFooter.vue'
 import HeroSection from '../components/storefront/HeroSection.vue'
+import ProductSpotlightSection from '../components/storefront/ProductSpotlightSection.vue'
+import ShopCollectionsSection from '../components/storefront/ShopCollectionsSection.vue'
+import ProcessSection from '../components/storefront/ProcessSection.vue'
 
 const products = ref([])
 const cart = ref([])
@@ -70,6 +73,10 @@ const itemCount = computed(() =>
   cart.value.reduce((sum, item) => sum + item.quantity, 0)
 )
 
+const featuredProduct = computed(() =>
+  products.value.find((product) => product.featured) || products.value[0] || null
+)
+
 function formatPrice(value) {
   return `$${Number(value).toFixed(2)}`
 }
@@ -87,6 +94,13 @@ function formatPrice(value) {
     <HeroSection />
 
     <main>
+      <ProductSpotlightSection
+        :featured-product="featuredProduct"
+        @add-to-cart="addToCart"
+      />
+
+      <ShopCollectionsSection />
+
       <section id="catalog" class="section-panel mx-auto max-w-7xl px-4 py-14">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -160,29 +174,7 @@ function formatPrice(value) {
         </div>
       </section>
 
-      <section id="process" class="section-panel mx-auto max-w-7xl px-4 py-14">
-        <h2 class="u-underline-blue text-3xl font-bold">How We Make Them</h2>
-
-        <div class="mt-8 grid gap-6 sm:grid-cols-3">
-          <div class="tile rounded-2xl p-6">
-            <div class="mb-2 text-2xl text-emerald-400">🌱</div>
-            <h3 class="mb-1 font-semibold">Source</h3>
-            <p class="text-sm text-stone-300">Lean chicken breast from trusted suppliers.</p>
-          </div>
-
-          <div class="tile rounded-2xl p-6">
-            <div class="mb-2 text-2xl text-emerald-400">🔥</div>
-            <h3 class="mb-1 font-semibold">Prepare</h3>
-            <p class="text-sm text-stone-300">Trim, slice, and dehydrate low & slow for max flavor.</p>
-          </div>
-
-          <div class="tile rounded-2xl p-6">
-            <div class="mb-2 text-2xl text-emerald-400">📦</div>
-            <h3 class="mb-1 font-semibold">Pack</h3>
-            <p class="text-sm text-stone-300">Hand-bagged in craft pouches. That’s it.</p>
-          </div>
-        </div>
-      </section>
+      <ProcessSection />
 
       <section id="ingredients" class="section-panel mx-auto max-w-7xl px-4 py-14">
         <div class="grid gap-8 md:grid-cols-2">
