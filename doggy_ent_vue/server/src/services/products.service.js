@@ -64,6 +64,30 @@ export async function createProduct(productInput) {
   return newProduct
 }
 
+export async function updateProductById(productId, productInput) {
+  const existingIndex = mockProducts.findIndex((product) => product.id === productId)
+
+  if (existingIndex === -1) {
+    return null
+  }
+
+  const existingProduct = mockProducts[existingIndex]
+
+  const updatedProduct = {
+    ...existingProduct,
+    name: productInput.name,
+    shortDescription: productInput.shortDescription,
+    price: Number(productInput.price),
+    category: productInput.category,
+    status: productInput.status,
+    featured: Boolean(productInput.featured),
+    image: productInput.image,
+  }
+
+  mockProducts[existingIndex] = updatedProduct
+  return updatedProduct
+}
+
 export async function deleteProductById(productId) {
   const existingIndex = mockProducts.findIndex((product) => product.id === productId)
 

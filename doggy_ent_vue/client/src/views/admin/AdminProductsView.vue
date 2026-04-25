@@ -7,7 +7,9 @@ const isSubmitting = ref(false)
 const isDeleting = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
-const showAddForm = ref(false)
+const showForm = ref(false)
+const isEditMode = ref(false)
+const editingProductId = ref(null)
 
 const form = ref({
   name: '',
@@ -20,6 +22,11 @@ const form = ref({
 })
 
 const productCount = computed(() => products.value.length)
+const formTitle = computed(() => (isEditMode.value ? 'Edit Product' : 'Create Product'))
+const submitButtonLabel = computed(() => {
+  if (isSubmitting.value) return isEditMode.value ? 'Updating...' : 'Saving...'
+  return isEditMode.value ? 'Update Product' : 'Save Product'
+})
 
 async function loadProducts() {
   isLoading.value = true
@@ -52,10 +59,41 @@ function resetForm() {
   }
 }
 
-async function submitProduct() {
+function openCreateForm() {
+  resetForm()
+  isEditMode.value = false
+  editingProductId.value = null
+  showForm.value = true
   errorMessage.value = ''
   successMessage.value = ''
+}
 
+function closeForm() {
+  resetForm()
+  isEditMode.value = false
+  editingProductId.value = null
+  showForm.value = false
+}
+
+function startEdit(product) {
+  form.value = {
+    name: product.name,
+    shortDescription: product.shortDescription,
+    price: product.price,
+    category: product.category,
+    status: product.status,
+    featured: product.featured,
+    image: product.image,
+  }
+
+  isEditMode.value = true
+  editingProductId.value = product.id
+  showForm.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+}
+
+function validateForm() {
   if (
     !form.value.name ||
     !form.value.shortDescription ||
@@ -65,14 +103,29 @@ async function submitProduct() {
     !form.value.image
   ) {
     errorMessage.value = 'Please complete all required product fields.'
-    return
+    return false
   }
+
+  return true
+}
+
+async function submitProduct() {
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  if (!validateForm()) return
 
   isSubmitting.value = true
 
   try {
-    const response = await fetch('/api/products', {
-      method: 'POST',
+    const url = isEditMode.value
+      ? `/api/products/${editingProductId.value}`
+      : '/api/products'
+
+    const method = isEditMode.value ? 'PUT' : 'POST'
+
+    const response = await fetch(url, {
+      method,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -90,15 +143,17 @@ async function submitProduct() {
     const data = await response.json()
 
     if (!response.ok) {
-      throw new Error(data.message || 'Unable to create product.')
+      throw new Error(data.message || 'Unable to save product.')
     }
 
-    successMessage.value = `Product "${data.name}" created successfully.`
-    resetForm()
-    showAddForm.value = false
+    successMessage.value = isEditMode.value
+      ? `Product "${data.name}" updated successfully.`
+      : `Product "${data.name}" created successfully.`
+
+    closeForm()
     await loadProducts()
   } catch (error) {
-    errorMessage.value = error.message || 'Unable to create product.'
+    errorMessage.value = error.message || 'Unable to save product.'
   } finally {
     isSubmitting.value = false
   }
@@ -147,7 +202,7 @@ onMounted(() => {
             <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">Admin / Catalog</p>
             <h1 class="mt-2 text-4xl font-extrabold">Products</h1>
             <p class="mt-3 max-w-3xl text-stone-300">
-              This CMS page now reads from and writes to the same backend products API as the storefront.
+              This CMS page now supports create, read, update, and delete behavior through the backend products API.
             </p>
             <p class="mt-2 text-sm text-stone-400">
               Current products: <strong>{{ productCount }}</strong>
@@ -156,9 +211,9 @@ onMounted(() => {
 
           <button
             class="focus-ring rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] transition hover:bg-emerald-300"
-            @click="showAddForm = !showAddForm"
+            @click="showForm ? closeForm() : openCreateForm()"
           >
-            {{ showAddForm ? 'Close Form' : 'Add Product' }}
+            {{ showForm ? 'Close Form' : 'Add Product' }}
           </button>
         </div>
 
@@ -170,11 +225,22 @@ onMounted(() => {
           {{ successMessage }}
         </div>
 
-        <div v-if="showAddForm" class="mt-8 tile rounded-3xl p-6">
-          <h2 class="text-2xl font-extrabold">Create Product</h2>
-          <p class="mt-2 text-sm text-stone-300">
-            This is the first real CMS action. Submitting this form sends a POST request to your backend.
-          </p>
+        <div v-if="showForm" class="mt-8 tile rounded-3xl p-6">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-2xl font-extrabold">{{ formTitle }}</h2>
+              <p class="mt-2 text-sm text-stone-300">
+                {{ isEditMode ? 'Update this product and save changes to the backend.' : 'Create a new product and send it to the backend.' }}
+              </p>
+            </div>
+
+            <span
+              class="w-fit rounded-full px-3 py-1 text-xs font-semibold"
+              :class="isEditMode ? 'bg-blue-100 text-blue-700' : 'bg-stone-200 text-stone-700'"
+            >
+              {{ isEditMode ? 'Edit mode' : 'Create mode' }}
+            </span>
+          </div>
 
           <div class="mt-6 grid gap-4 md:grid-cols-2">
             <div class="md:col-span-2">
@@ -261,12 +327,12 @@ onMounted(() => {
               :disabled="isSubmitting"
               @click="submitProduct"
             >
-              {{ isSubmitting ? 'Saving...' : 'Save Product' }}
+              {{ submitButtonLabel }}
             </button>
 
             <button
               class="rounded-lg border border-stone-700 px-5 py-3 font-semibold text-stone-700 transition hover:bg-white"
-              @click="resetForm(); showAddForm = false"
+              @click="closeForm"
             >
               Cancel
             </button>
@@ -328,7 +394,10 @@ onMounted(() => {
             </div>
 
             <div class="flex flex-wrap gap-2">
-              <button class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55">
+              <button
+                class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55"
+                @click="startEdit(product)"
+              >
                 Edit
               </button>
               <button
