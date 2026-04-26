@@ -17,35 +17,32 @@ const emit = defineEmits(['close', 'add-to-cart'])
 const selectedSize = ref('6 oz')
 const quantity = ref(1)
 
-const sizeOptions = [
-  {
-    label: '6 oz',
-    description: 'Great for trying it out',
-    multiplier: 1,
-  },
-  {
-    label: '18 oz',
-    description: 'Best value for bigger dogs',
-    multiplier: 2.75,
-  },
-]
+const variants = computed(() => {
+  if (Array.isArray(props.product?.variants) && props.product.variants.length) {
+    return props.product.variants
+  }
 
-const selectedSizeOption = computed(() =>
-  sizeOptions.find((option) => option.label === selectedSize.value) || sizeOptions[0]
-)
-
-const unitPrice = computed(() => {
-  const basePrice = Number(props.product?.price || 0)
-  return basePrice * selectedSizeOption.value.multiplier
+  return [
+    {
+      size: '6 oz',
+      price: Number(props.product?.price || 0),
+      sku: '',
+    },
+  ]
 })
 
+const selectedVariant = computed(() =>
+  variants.value.find((variant) => variant.size === selectedSize.value) || variants.value[0]
+)
+
+const unitPrice = computed(() => Number(selectedVariant.value?.price || 0))
 const totalPrice = computed(() => unitPrice.value * quantity.value)
 
 watch(
   () => props.isOpen,
   (isOpen) => {
     if (isOpen) {
-      selectedSize.value = '6 oz'
+      selectedSize.value = variants.value[0]?.size || '6 oz'
       quantity.value = 1
     }
   }
@@ -65,13 +62,20 @@ function decreaseQuantity() {
   }
 }
 
+function getVariantDescription(size) {
+  if (size === '6 oz') return 'Regular size'
+  if (size === '18 oz') return 'Best value for bigger dogs'
+  return 'Product option'
+}
+
 function addProductToCart() {
-  if (!props.product) return
+  if (!props.product || !selectedVariant.value) return
 
   emit('add-to-cart', {
     ...props.product,
-    size: selectedSize.value,
+    size: selectedVariant.value.size,
     price: unitPrice.value,
+    sku: selectedVariant.value.sku,
     quantity: quantity.value,
   })
 }
@@ -115,6 +119,10 @@ function addProductToCart() {
               {{ product.name }}
             </h2>
 
+            <p class="mt-1 text-sm font-semibold text-stone-400">
+              {{ product.protein }} <span v-if="product.cut">• {{ product.cut }}</span>
+            </p>
+
             <p class="mt-3 text-stone-300">
               {{ product.shortDescription }}
             </p>
@@ -122,28 +130,33 @@ function addProductToCart() {
             <div class="mt-6">
               <div class="flex items-center justify-between gap-3">
                 <h3 class="font-extrabold text-[var(--brand-4)]">Choose Size</h3>
-                <p class="text-sm text-stone-400">6 oz or 18 oz</p>
+                <p class="text-sm text-stone-400">Editable in admin later</p>
               </div>
 
               <div class="mt-3 grid gap-3 sm:grid-cols-2">
                 <button
-                  v-for="option in sizeOptions"
-                  :key="option.label"
+                  v-for="variant in variants"
+                  :key="variant.size"
                   class="rounded-2xl border p-4 text-left transition"
                   :class="
-                    selectedSize === option.label
+                    selectedSize === variant.size
                       ? 'border-emerald-400 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] shadow-md'
                       : 'border-stone-700 bg-white hover:border-emerald-400'
                   "
-                  @click="selectedSize = option.label"
+                  @click="selectedSize = variant.size"
                 >
                   <div class="flex items-start justify-between gap-3">
                     <div>
-                      <p class="font-extrabold">{{ option.label }}</p>
-                      <p class="mt-1 text-sm text-stone-300">{{ option.description }}</p>
+                      <p class="font-extrabold">{{ variant.size }}</p>
+                      <p class="mt-1 text-sm text-stone-300">
+                        {{ getVariantDescription(variant.size) }}
+                      </p>
+                      <p v-if="variant.sku" class="mt-1 text-xs text-stone-400">
+                        {{ variant.sku }}
+                      </p>
                     </div>
                     <p class="font-bold text-[var(--brand-4)]">
-                      {{ formatPrice(Number(product.price) * option.multiplier) }}
+                      {{ formatPrice(variant.price) }}
                     </p>
                   </div>
                 </button>
@@ -190,7 +203,7 @@ function addProductToCart() {
               <div class="rounded-2xl border border-stone-800 bg-white p-4">
                 <h3 class="font-extrabold">Ingredients</h3>
                 <p class="mt-2 text-sm text-stone-300">
-                  Chicken breast. No salt, no sugar, no glycerin, no preservatives.
+                  {{ product.ingredients || 'Single ingredient. No salt, no sugar, no glycerin, no preservatives.' }}
                 </p>
               </div>
 
@@ -207,16 +220,24 @@ function addProductToCart() {
 
               <dl class="mt-3 grid grid-cols-2 gap-y-2 text-sm">
                 <dt class="text-stone-400">Crude Protein min</dt>
-                <dd class="text-right font-semibold">70%</dd>
+                <dd class="text-right font-semibold">
+                  {{ product.guaranteedAnalysis?.crudeProteinMin || '70%' }}
+                </dd>
 
                 <dt class="text-stone-400">Crude Fat min</dt>
-                <dd class="text-right font-semibold">4.5%</dd>
+                <dd class="text-right font-semibold">
+                  {{ product.guaranteedAnalysis?.crudeFatMin || '4.5%' }}
+                </dd>
 
                 <dt class="text-stone-400">Crude Fiber max</dt>
-                <dd class="text-right font-semibold">0.5%</dd>
+                <dd class="text-right font-semibold">
+                  {{ product.guaranteedAnalysis?.crudeFiberMax || '0.5%' }}
+                </dd>
 
                 <dt class="text-stone-400">Moisture max</dt>
-                <dd class="text-right font-semibold">20%</dd>
+                <dd class="text-right font-semibold">
+                  {{ product.guaranteedAnalysis?.moistureMax || '20%' }}
+                </dd>
               </dl>
             </div>
 

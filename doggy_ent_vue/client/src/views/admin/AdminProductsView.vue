@@ -13,16 +13,27 @@ const editingProductId = ref(null)
 
 const form = ref({
   name: '',
+  protein: '',
+  cut: '',
   shortDescription: '',
-  price: '',
   category: 'Jerky',
   status: 'draft',
   featured: false,
   image: '',
+  ingredients: '',
+  sixOzPrice: '',
+  eighteenOzPrice: '',
+  sixOzSku: '',
+  eighteenOzSku: '',
+  crudeProteinMin: '70%',
+  crudeFatMin: '4.5%',
+  crudeFiberMax: '0.5%',
+  moistureMax: '20%',
 })
 
 const productCount = computed(() => products.value.length)
 const formTitle = computed(() => (isEditMode.value ? 'Edit Product' : 'Create Product'))
+
 const submitButtonLabel = computed(() => {
   if (isSubmitting.value) return isEditMode.value ? 'Updating...' : 'Saving...'
   return isEditMode.value ? 'Update Product' : 'Save Product'
@@ -50,12 +61,22 @@ async function loadProducts() {
 function resetForm() {
   form.value = {
     name: '',
+    protein: '',
+    cut: '',
     shortDescription: '',
-    price: '',
     category: 'Jerky',
     status: 'draft',
     featured: false,
     image: '',
+    ingredients: '',
+    sixOzPrice: '',
+    eighteenOzPrice: '',
+    sixOzSku: '',
+    eighteenOzSku: '',
+    crudeProteinMin: '70%',
+    crudeFatMin: '4.5%',
+    crudeFiberMax: '0.5%',
+    moistureMax: '20%',
   }
 }
 
@@ -75,15 +96,32 @@ function closeForm() {
   showForm.value = false
 }
 
+function getVariant(product, size) {
+  return product.variants?.find((variant) => variant.size === size)
+}
+
 function startEdit(product) {
+  const sixOzVariant = getVariant(product, '6 oz')
+  const eighteenOzVariant = getVariant(product, '18 oz')
+
   form.value = {
-    name: product.name,
-    shortDescription: product.shortDescription,
-    price: product.price,
-    category: product.category,
-    status: product.status,
-    featured: product.featured,
-    image: product.image,
+    name: product.name || '',
+    protein: product.protein || '',
+    cut: product.cut || '',
+    shortDescription: product.shortDescription || '',
+    category: product.category || 'Jerky',
+    status: product.status || 'draft',
+    featured: Boolean(product.featured),
+    image: product.image || '',
+    ingredients: product.ingredients || '',
+    sixOzPrice: sixOzVariant?.price ?? product.price ?? '',
+    eighteenOzPrice: eighteenOzVariant?.price ?? '',
+    sixOzSku: sixOzVariant?.sku || '',
+    eighteenOzSku: eighteenOzVariant?.sku || '',
+    crudeProteinMin: product.guaranteedAnalysis?.crudeProteinMin || '70%',
+    crudeFatMin: product.guaranteedAnalysis?.crudeFatMin || '4.5%',
+    crudeFiberMax: product.guaranteedAnalysis?.crudeFiberMax || '0.5%',
+    moistureMax: product.guaranteedAnalysis?.moistureMax || '20%',
   }
 
   isEditMode.value = true
@@ -91,22 +129,48 @@ function startEdit(product) {
   showForm.value = true
   errorMessage.value = ''
   successMessage.value = ''
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function validateForm() {
   if (
     !form.value.name ||
     !form.value.shortDescription ||
-    !form.value.price ||
     !form.value.category ||
     !form.value.status ||
-    !form.value.image
+    !form.value.image ||
+    !form.value.sixOzPrice ||
+    !form.value.eighteenOzPrice
   ) {
-    errorMessage.value = 'Please complete all required product fields.'
+    errorMessage.value = 'Please complete all required product fields, including 6 oz and 18 oz prices.'
     return false
   }
 
   return true
+}
+
+function buildPayload() {
+  return {
+    name: form.value.name,
+    protein: form.value.protein,
+    cut: form.value.cut,
+    shortDescription: form.value.shortDescription,
+    category: form.value.category,
+    status: form.value.status,
+    featured: form.value.featured,
+    image: form.value.image,
+    ingredients: form.value.ingredients,
+    sixOzPrice: Number(form.value.sixOzPrice),
+    eighteenOzPrice: Number(form.value.eighteenOzPrice),
+    sixOzSku: form.value.sixOzSku,
+    eighteenOzSku: form.value.eighteenOzSku,
+    guaranteedAnalysis: {
+      crudeProteinMin: form.value.crudeProteinMin,
+      crudeFatMin: form.value.crudeFatMin,
+      crudeFiberMax: form.value.crudeFiberMax,
+      moistureMax: form.value.moistureMax,
+    },
+  }
 }
 
 async function submitProduct() {
@@ -129,15 +193,7 @@ async function submitProduct() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: form.value.name,
-        shortDescription: form.value.shortDescription,
-        price: Number(form.value.price),
-        category: form.value.category,
-        status: form.value.status,
-        featured: form.value.featured,
-        image: form.value.image,
-      }),
+      body: JSON.stringify(buildPayload()),
     })
 
     const data = await response.json()
@@ -179,6 +235,10 @@ async function deleteProduct(productId, productName) {
       throw new Error(data.message || 'Unable to delete product.')
     }
 
+    if (editingProductId.value === productId) {
+      closeForm()
+    }
+
     successMessage.value = data.message
     await loadProducts()
   } catch (error) {
@@ -186,6 +246,10 @@ async function deleteProduct(productId, productName) {
   } finally {
     isDeleting.value = false
   }
+}
+
+function formatPrice(value) {
+  return `$${Number(value || 0).toFixed(2)}`
 }
 
 onMounted(() => {
@@ -199,10 +263,12 @@ onMounted(() => {
       <div class="section-panel p-8 md:p-10">
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">Admin / Catalog</p>
+            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">
+              Admin / Catalog
+            </p>
             <h1 class="mt-2 text-4xl font-extrabold">Products</h1>
             <p class="mt-3 max-w-3xl text-stone-300">
-              This CMS page now supports create, read, update, and delete behavior through the backend products API.
+              Manage product details, protein type, cut type, and separate 6 oz / 18 oz prices.
             </p>
             <p class="mt-2 text-sm text-stone-400">
               Current products: <strong>{{ productCount }}</strong>
@@ -230,7 +296,7 @@ onMounted(() => {
             <div>
               <h2 class="text-2xl font-extrabold">{{ formTitle }}</h2>
               <p class="mt-2 text-sm text-stone-300">
-                {{ isEditMode ? 'Update this product and save changes to the backend.' : 'Create a new product and send it to the backend.' }}
+                Edit flat variant prices directly. No multiplier needed.
               </p>
             </div>
 
@@ -244,7 +310,7 @@ onMounted(() => {
 
           <div class="mt-6 grid gap-4 md:grid-cols-2">
             <div class="md:col-span-2">
-              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Product Name</label>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Product Name *</label>
               <input
                 v-model="form.name"
                 type="text"
@@ -253,8 +319,32 @@ onMounted(() => {
               />
             </div>
 
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Protein Type</label>
+              <select
+                v-model="form.protein"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+              >
+                <option value="">Select protein</option>
+                <option>Chicken</option>
+                <option>Beef</option>
+                <option>Turkey</option>
+                <option>Lamb</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Cut Type</label>
+              <input
+                v-model="form.cut"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="Breast, lean cut, liver, etc."
+              />
+            </div>
+
             <div class="md:col-span-2">
-              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Short Description</label>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Short Description *</label>
               <textarea
                 v-model="form.shortDescription"
                 rows="4"
@@ -264,18 +354,49 @@ onMounted(() => {
             </div>
 
             <div>
-              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Price</label>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">6 oz Price *</label>
               <input
-                v-model="form.price"
+                v-model="form.sixOzPrice"
                 type="number"
                 step="0.01"
                 class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
-                placeholder="12.99"
+                placeholder="14.99"
               />
             </div>
 
             <div>
-              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Category</label>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">18 oz Price *</label>
+              <input
+                v-model="form.eighteenOzPrice"
+                type="number"
+                step="0.01"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="39.99"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">6 oz SKU</label>
+              <input
+                v-model="form.sixOzSku"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="CNE-DT-CHICKEN-6OZ"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">18 oz SKU</label>
+              <input
+                v-model="form.eighteenOzSku"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="CNE-DT-CHICKEN-18OZ"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Category *</label>
               <select
                 v-model="form.category"
                 class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
@@ -288,7 +409,7 @@ onMounted(() => {
             </div>
 
             <div>
-              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Status</label>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Status *</label>
               <select
                 v-model="form.status"
                 class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
@@ -298,7 +419,7 @@ onMounted(() => {
               </select>
             </div>
 
-            <div class="flex items-center gap-3 pt-8">
+            <div class="flex items-center gap-3 pt-2 md:pt-8">
               <input
                 id="featured-product"
                 v-model="form.featured"
@@ -311,12 +432,66 @@ onMounted(() => {
             </div>
 
             <div class="md:col-span-2">
-              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Image URL</label>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Image URL *</label>
               <input
                 v-model="form.image"
                 type="text"
                 class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
                 placeholder="https://..."
+              />
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Ingredients</label>
+              <textarea
+                v-model="form.ingredients"
+                rows="3"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="Chicken breast. No salt, no sugar..."
+              ></textarea>
+            </div>
+
+            <div class="md:col-span-2">
+              <h3 class="text-lg font-extrabold text-[var(--brand-4)]">Guaranteed Analysis</h3>
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Crude Protein Min</label>
+              <input
+                v-model="form.crudeProteinMin"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="70%"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Crude Fat Min</label>
+              <input
+                v-model="form.crudeFatMin"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="4.5%"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Crude Fiber Max</label>
+              <input
+                v-model="form.crudeFiberMax"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="0.5%"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Moisture Max</label>
+              <input
+                v-model="form.moistureMax"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="20%"
               />
             </div>
           </div>
@@ -343,70 +518,72 @@ onMounted(() => {
           Loading products...
         </div>
 
-        <div v-else class="mt-8 overflow-hidden rounded-3xl border border-stone-800 bg-white">
-          <div class="grid grid-cols-6 gap-4 border-b border-stone-800 bg-[color:var(--brand-5)]/65 px-5 py-4 text-sm font-semibold text-[var(--brand-4)]">
-            <div>Name</div>
-            <div>Category</div>
-            <div>Price</div>
-            <div>Status</div>
-            <div>Featured</div>
-            <div>Actions</div>
-          </div>
-
-          <div
-            v-for="product in products"
-            :key="product.id"
-            class="grid grid-cols-6 items-center gap-4 border-b border-stone-800/50 px-5 py-5 text-sm text-stone-700 last:border-b-0"
-          >
-            <div>
-              <p class="font-semibold text-[var(--brand-4)]">{{ product.name }}</p>
-              <p class="mt-1 text-xs text-stone-400">{{ product.id }}</p>
+        <div v-else class="mt-8 overflow-x-auto rounded-3xl border border-stone-800 bg-white">
+          <div class="min-w-[1000px]">
+            <div class="grid grid-cols-8 gap-4 border-b border-stone-800 bg-[color:var(--brand-5)]/65 px-5 py-4 text-sm font-semibold text-[var(--brand-4)]">
+              <div>Name</div>
+              <div>Protein</div>
+              <div>Cut</div>
+              <div>Category</div>
+              <div>6 oz</div>
+              <div>18 oz</div>
+              <div>Status</div>
+              <div>Actions</div>
             </div>
 
-            <div>{{ product.category }}</div>
+            <div
+              v-for="product in products"
+              :key="product.id"
+              class="grid grid-cols-8 items-center gap-4 border-b border-stone-800/50 px-5 py-5 text-sm text-stone-700 last:border-b-0"
+            >
+              <div>
+                <p class="font-semibold text-[var(--brand-4)]">{{ product.name }}</p>
+                <p class="mt-1 text-xs text-stone-400">{{ product.id }}</p>
+              </div>
 
-            <div>${{ Number(product.price).toFixed(2) }}</div>
+              <div>{{ product.protein || '—' }}</div>
+              <div>{{ product.cut || '—' }}</div>
+              <div>{{ product.category }}</div>
 
-            <div>
-              <span
-                class="rounded-full px-3 py-1 text-xs font-semibold"
-                :class="
-                  product.status === 'active'
-                    ? 'bg-[color:var(--success-1)]/15 text-[color:var(--success-1)]'
-                    : 'bg-stone-200 text-stone-700'
-                "
-              >
-                {{ product.status }}
-              </span>
-            </div>
+              <div>
+                <p class="font-semibold">{{ formatPrice(getVariant(product, '6 oz')?.price) }}</p>
+                <p class="mt-1 text-xs text-stone-400">{{ getVariant(product, '6 oz')?.sku }}</p>
+              </div>
 
-            <div>
-              <span
-                class="rounded-full px-3 py-1 text-xs font-semibold"
-                :class="
-                  product.featured
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-stone-200 text-stone-700'
-                "
-              >
-                {{ product.featured ? 'yes' : 'no' }}
-              </span>
-            </div>
+              <div>
+                <p class="font-semibold">{{ formatPrice(getVariant(product, '18 oz')?.price) }}</p>
+                <p class="mt-1 text-xs text-stone-400">{{ getVariant(product, '18 oz')?.sku }}</p>
+              </div>
 
-            <div class="flex flex-wrap gap-2">
-              <button
-                class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55"
-                @click="startEdit(product)"
-              >
-                Edit
-              </button>
-              <button
-                class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55 disabled:opacity-60"
-                :disabled="isDeleting"
-                @click="deleteProduct(product.id, product.name)"
-              >
-                Delete
-              </button>
+              <div>
+                <span
+                  class="rounded-full px-3 py-1 text-xs font-semibold"
+                  :class="
+                    product.status === 'active'
+                      ? 'bg-[color:var(--success-1)]/15 text-[color:var(--success-1)]'
+                      : 'bg-stone-200 text-stone-700'
+                  "
+                >
+                  {{ product.status }}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <button
+                  class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55"
+                  @click="startEdit(product)"
+                >
+                  Edit
+                </button>
+
+                <button
+                  class="rounded-lg border border-stone-700 px-3 py-2 font-semibold text-stone-700 transition hover:bg-[color:var(--brand-5)]/55 disabled:opacity-60"
+                  :disabled="isDeleting"
+                  @click="deleteProduct(product.id, product.name)"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>

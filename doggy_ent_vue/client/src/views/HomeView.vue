@@ -58,7 +58,7 @@ function closeQuickView() {
 function addToCart(product) {
   const size = product.size || (product.category === 'Bundle' ? 'Bundle' : '6 oz')
   const quantityToAdd = product.quantity || 1
-  const price = Number(product.price || 0)
+  const price = Number(product.price || product.variants?.[0]?.price || 0)
   const existing = cart.value.find((item) => item.id === product.id && item.size === size)
 
   if (existing) {
