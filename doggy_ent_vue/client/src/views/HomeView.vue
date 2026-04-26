@@ -130,15 +130,15 @@ function formatPrice(value) {
           <article
             v-for="product in products"
             :key="product.id"
-            class="tile-strong overflow-hidden rounded-2xl"
+            class="tile-strong flex h-full min-h-[520px] flex-col overflow-hidden rounded-2xl"
           >
             <img
-              class="h-56 w-full object-cover"
+              class="h-56 w-full flex-shrink-0 object-cover"
               :src="product.image"
               :alt="product.name"
             />
 
-            <div class="p-5">
+            <div class="flex flex-1 flex-col p-5">
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
@@ -157,11 +157,11 @@ function formatPrice(value) {
                 </span>
               </div>
 
-              <p class="mt-3 text-sm text-stone-300">
+              <p class="mt-3 min-h-[72px] text-sm text-stone-300">
                 {{ product.shortDescription }}
               </p>
 
-              <div class="mt-4 flex items-center justify-between gap-3">
+              <div class="mt-auto flex items-center justify-between gap-3 pt-4">
                 <p class="font-semibold text-[var(--brand-4)]">
                   {{ formatPrice(product.price) }}
                 </p>
