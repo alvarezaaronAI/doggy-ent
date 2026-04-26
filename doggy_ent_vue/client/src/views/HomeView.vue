@@ -6,11 +6,9 @@ import SiteHeader from '../components/layout/SiteHeader.vue'
 import SiteFooter from '../components/layout/SiteFooter.vue'
 import HeroSection from '../components/storefront/HeroSection.vue'
 import ProductSpotlightSection from '../components/storefront/ProductSpotlightSection.vue'
-import ShopCollectionsSection from '../components/storefront/ShopCollectionsSection.vue'
 import ProcessSection from '../components/storefront/ProcessSection.vue'
 import IngredientsAnalysisSection from '../components/storefront/IngredientsAnalysisSection.vue'
 import ReviewsPreviewSection from '../components/storefront/ReviewsPreviewSection.vue'
-import BundlesSection from '../components/storefront/BundlesSection.vue'
 import AboutBrandSection from '../components/storefront/AboutBrandSection.vue'
 import QuickViewModal from '../components/storefront/QuickViewModal.vue'
 
@@ -21,6 +19,7 @@ const isLoading = ref(true)
 const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
 const errorMessage = ref('')
+const selectedCardSizes = ref({})
 
 async function loadProducts() {
   isLoading.value = true
@@ -56,9 +55,15 @@ function closeQuickView() {
 }
 
 function addToCart(product) {
-  const size = product.size || (product.category === 'Bundle' ? 'Bundle' : '6 oz')
+  const selectedSize = selectedCardSizes.value[product.id]
+  const defaultSize = product.category === 'Bundle' ? 'Bundle' : '6 oz'
+  const size = product.size || selectedSize || defaultSize
   const quantityToAdd = product.quantity || 1
-  const price = Number(product.price || product.variants?.[0]?.price || 0)
+  const selectedVariant = product.variants?.find((variant) => variant.size === size)
+
+  if (!isVariantPurchasable(product, selectedVariant)) return
+
+  const price = Number(product.price || selectedVariant?.price || product.variants?.[0]?.price || 0)
   const existing = cart.value.find((item) => item.id === product.id && item.size === size)
 
   if (existing) {
@@ -105,9 +110,76 @@ const itemCount = computed(() =>
   cart.value.reduce((sum, item) => sum + item.quantity, 0)
 )
 
-const featuredProduct = computed(() =>
-  products.value.find((product) => product.featured) || products.value[0] || null
+const activeProducts = computed(() =>
+  products.value.filter((product) => product.status === 'active')
 )
+
+const comingSoonProducts = computed(() =>
+  products.value.filter((product) => product.status === 'coming-soon')
+)
+
+const featuredProduct = computed(() =>
+  activeProducts.value.find((product) => product.featured) || activeProducts.value[0] || null
+)
+
+function getDisplayTags(product) {
+  if (Array.isArray(product.tags) && product.tags.length) {
+    return product.tags
+  }
+
+  return ['Small-batch', 'No fillers']
+}
+
+function getVariantPrice(product, size) {
+  return product.variants?.find((variant) => variant.size === size)?.price || product.price || 0
+}
+
+function hasVariant(product, size) {
+  return Boolean(product.variants?.find((variant) => variant.size === size))
+}
+
+function getProductVariants(product) {
+  return Array.isArray(product.variants) ? product.variants : []
+}
+
+function getSelectedCardSize(product) {
+  return selectedCardSizes.value[product.id] || getProductVariants(product)[0]?.size || '6 oz'
+}
+
+function selectCardSize(product, size) {
+  selectedCardSizes.value = {
+    ...selectedCardSizes.value,
+    [product.id]: size,
+  }
+}
+
+function getSelectedCardPrice(product) {
+  return getVariantPrice(product, getSelectedCardSize(product))
+}
+
+function getSelectedCardVariant(product) {
+  return getProductVariants(product).find(
+    (variant) => variant.size === getSelectedCardSize(product)
+  )
+}
+
+function isVariantPurchasable(product, variant = getSelectedCardVariant(product)) {
+  return product.status === 'active' && variant?.stockStatus === 'in-stock' && Number(variant?.quantity || 0) > 0
+}
+
+function getSelectedStockLabel(product) {
+  const selectedVariant = getSelectedCardVariant(product)
+
+  if (!selectedVariant) return 'Unavailable'
+  if (selectedVariant.stockStatus === 'out-of-stock' || Number(selectedVariant.quantity || 0) <= 0) {
+    return 'Out of stock'
+  }
+  if (Number(selectedVariant.quantity || 0) <= Number(selectedVariant.lowStockThreshold || 0)) {
+    return 'Low stock'
+  }
+
+  return 'In stock'
+}
 
 function formatPrice(value) {
   return `$${Number(value).toFixed(2)}`
@@ -125,15 +197,14 @@ function formatPrice(value) {
 
     <HeroSection />
 
-    <main>
+    <main class="space-y-8 pb-12">
       <ProductSpotlightSection
         :featured-product="featuredProduct"
         @add-to-cart="addToCart"
       />
 
-      <ShopCollectionsSection />
 
-      <section id="catalog" class="section-panel mx-auto max-w-7xl px-4 py-14">
+      <section id="catalog" class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">
@@ -158,77 +229,196 @@ function formatPrice(value) {
           {{ errorMessage }}
         </div>
 
-        <div v-else-if="!products.length" class="mt-8 rounded-2xl border border-stone-800 bg-white p-6 text-stone-300">
-          No products found yet. Add products from the admin dashboard.
+        <div v-else-if="!activeProducts.length" class="mt-8 rounded-2xl border border-stone-800 bg-white p-6 text-stone-300">
+          No active products are available yet. Add or activate products from the admin dashboard.
         </div>
 
-        <div v-else class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div v-else class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <article
-            v-for="product in products"
+            v-for="product in activeProducts"
             :key="product.id"
-            class="tile-strong flex h-full min-h-[520px] cursor-pointer flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
+            class="tile-strong flex h-full min-h-[500px] cursor-pointer flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
             @click="openQuickView(product)"
           >
             <img
-              class="h-56 w-full flex-shrink-0 object-cover"
+              class="h-44 w-full flex-shrink-0 object-cover"
               :src="product.image"
               :alt="product.name"
             />
 
-            <div class="flex flex-1 flex-col p-5">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
-                    {{ product.category }}
-                  </p>
-                  <h3 class="mt-2 text-xl font-semibold">{{ product.name }}</h3>
-                </div>
+            <div class="flex flex-1 flex-col p-4">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
+                  {{ product.category }}
+                </p>
+                <h3 class="mt-2 text-xl font-semibold">{{ product.name }}</h3>
+              </div>
 
+              <div class="mt-3 flex min-h-[28px] flex-wrap gap-2">
                 <span
-                  class="rounded-full px-2 py-1 text-[11px] font-bold"
-                  :class="product.status === 'active'
-                    ? 'bg-[color:var(--success-1)]/15 text-[color:var(--success-1)]'
-                    : 'bg-stone-200 text-stone-700'"
+                  v-for="tag in getDisplayTags(product).slice(0, 2)"
+                  :key="tag"
+                  class="rounded-full bg-[color-mix(in_srgb,var(--brand-2)_88%,white)] px-3 py-1 text-[11px] font-extrabold text-[var(--brand-4)] shadow-sm"
                 >
-                  {{ product.status }}
+                  {{ tag }}
                 </span>
               </div>
 
-              <p class="mt-3 min-h-[72px] text-sm text-stone-300">
+              <p class="mt-3 min-h-[52px] text-sm text-stone-300">
                 {{ product.shortDescription }}
               </p>
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">
+                {{ product.protein }}<span v-if="product.cut"> • {{ product.cut }}</span>
+              </p>
 
-              <div class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
-                <p class="font-semibold text-[var(--brand-4)]">
-                  {{ formatPrice(product.price) }}
-                </p>
-
+              <div class="mt-3 border-t border-[color-mix(in_srgb,var(--brand-3)_30%,white)] pt-3">
                 <div class="flex items-center gap-2">
                   <button
-                    class="rounded-lg border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-400 hover:bg-stone-900"
-                    @click.stop="openQuickView(product)"
+                    v-for="variant in getProductVariants(product)"
+                    :key="variant.size"
+                    class="rounded-full px-3 py-1 text-xs font-extrabold border transition"
+                    :class="getSelectedCardSize(product) === variant.size
+                      ? 'bg-emerald-400 text-[var(--brand-4)] border-emerald-400'
+                      : 'bg-white text-stone-700 border-stone-700 hover:border-emerald-400'"
+                    @click.stop="selectCardSize(product, variant.size)"
                   >
-                    Quick View
-                  </button>
-
-                  <button
-                    class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-                    @click.stop="addToCart(product)"
-                  >
-                    Add to Cart
+                    {{ variant.size }}
                   </button>
                 </div>
+
+                <div class="mt-3 flex items-end justify-between gap-3">
+                  <p class="text-lg font-extrabold text-[var(--brand-4)]">
+                    {{ formatPrice(getSelectedCardPrice(product)) }}
+                  </p>
+                  <p
+                    class="text-xs font-bold uppercase tracking-[0.12em]"
+                    :class="isVariantPurchasable(product)
+                      ? 'text-[color:var(--success-1)]'
+                      : 'text-amber-700'"
+                  >
+                    {{ getSelectedStockLabel(product) }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-auto flex items-center justify-between gap-2 pt-5">
+                <button
+                  v-if="isVariantPurchasable(product)"
+                  class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
+                  @click.stop="addToCart(product)"
+                >
+                  Add to Cart
+                </button>
+
+                <button
+                  v-else
+                  class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
+                  @click.stop="openQuickView(product)"
+                >
+                  Notify Me
+                </button>
               </div>
             </div>
           </article>
         </div>
       </section>
 
-      <ProcessSection />
-      <IngredientsAnalysisSection />
-      <ReviewsPreviewSection />
-      <BundlesSection />
-      <AboutBrandSection />
+      <section
+        v-if="comingSoonProducts.length"
+        id="coming-soon"
+        class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6"
+      >
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">
+              Coming soon
+            </p>
+            <h2 class="u-underline-blue mt-2 text-3xl font-bold">Next Drops</h2>
+            <p class="mt-3 max-w-2xl text-stone-300">
+              These treats are in development or planned for future seasonal drops. Join the list to get notified when they launch.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <article
+            v-for="product in comingSoonProducts"
+            :key="product.id"
+            class="tile-strong flex h-full min-h-[450px] cursor-pointer flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
+            @click="openQuickView(product)"
+          >
+            <img
+              class="h-44 w-full flex-shrink-0 object-cover"
+              :src="product.image"
+              :alt="product.name"
+            />
+
+            <div class="flex flex-1 flex-col p-4">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
+                  {{ product.category }}
+                </p>
+                <h3 class="mt-2 text-xl font-semibold">{{ product.name }}</h3>
+              </div>
+
+              <div class="mt-3 flex min-h-[28px] flex-wrap gap-2">
+                <span
+                  v-for="tag in getDisplayTags(product).slice(0, 2)"
+                  :key="tag"
+                  class="rounded-full bg-[color-mix(in_srgb,var(--brand-2)_88%,white)] px-3 py-1 text-[11px] font-extrabold text-[var(--brand-4)] shadow-sm"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+
+              <p class="mt-3 min-h-[48px] text-sm text-stone-300">
+                {{ product.shortDescription }}
+              </p>
+
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">
+                {{ product.protein }}<span v-if="product.cut"> • {{ product.cut }}</span>
+              </p>
+
+              <div class="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--brand-3)_35%,white)] bg-[color-mix(in_srgb,var(--brand-5)_62%,white)] p-3">
+                <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-400">
+                  Coming Soon
+                </p>
+                <h4 class="mt-1 text-base font-extrabold text-[var(--brand-4)]">
+                  This product is not available yet
+                </h4>
+                <p class="mt-1 text-sm leading-relaxed text-stone-300">
+                  Pricing, sizes, and launch details will be announced when this treat goes live.
+                </p>
+              </div>
+
+              <div class="mt-auto flex items-center justify-between gap-2 pt-5">
+                <button
+                  class="rounded-lg border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-400 hover:bg-stone-900"
+                  @click.stop="openQuickView(product)"
+                >
+                  Preview
+                </button>
+
+                <button
+                  class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
+                  @click.stop="openQuickView(product)"
+                >
+                  Notify Me
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-5 py-2 md:px-6">
+        <div class="space-y-8">
+          <ReviewsPreviewSection />
+          <ProcessSection />
+          <IngredientsAnalysisSection />
+          <AboutBrandSection />
+        </div>
+      </section>
     </main>
 
     <SiteFooter />

@@ -19,10 +19,20 @@ const form = ref({
   category: 'Jerky',
   status: 'draft',
   featured: false,
+  tags: '',
   image: '',
   ingredients: '',
+  texture: '',
+  bestFor: '',
+  notIncluded: '',
+  freshness: '',
+  storageFeeding: '',
   sixOzPrice: '',
   eighteenOzPrice: '',
+  sixOzQuantity: '',
+  eighteenOzQuantity: '',
+  sixOzLowStockThreshold: 5,
+  eighteenOzLowStockThreshold: 3,
   sixOzSku: '',
   eighteenOzSku: '',
   crudeProteinMin: '70%',
@@ -67,10 +77,20 @@ function resetForm() {
     category: 'Jerky',
     status: 'draft',
     featured: false,
+    tags: '',
     image: '',
     ingredients: '',
+    texture: '',
+    bestFor: '',
+    notIncluded: '',
+    freshness: '',
+    storageFeeding: '',
     sixOzPrice: '',
     eighteenOzPrice: '',
+    sixOzQuantity: '',
+    eighteenOzQuantity: '',
+    sixOzLowStockThreshold: 5,
+    eighteenOzLowStockThreshold: 3,
     sixOzSku: '',
     eighteenOzSku: '',
     crudeProteinMin: '70%',
@@ -112,10 +132,20 @@ function startEdit(product) {
     category: product.category || 'Jerky',
     status: product.status || 'draft',
     featured: Boolean(product.featured),
+    tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
     image: product.image || '',
     ingredients: product.ingredients || '',
+    texture: product.texture || '',
+    bestFor: product.bestFor || '',
+    notIncluded: Array.isArray(product.notIncluded) ? product.notIncluded.join(', ') : '',
+    freshness: product.freshness || '',
+    storageFeeding: product.storageFeeding || '',
     sixOzPrice: sixOzVariant?.price ?? product.price ?? '',
     eighteenOzPrice: eighteenOzVariant?.price ?? '',
+    sixOzQuantity: sixOzVariant?.quantity ?? '',
+    eighteenOzQuantity: eighteenOzVariant?.quantity ?? '',
+    sixOzLowStockThreshold: sixOzVariant?.lowStockThreshold ?? 5,
+    eighteenOzLowStockThreshold: eighteenOzVariant?.lowStockThreshold ?? 3,
     sixOzSku: sixOzVariant?.sku || '',
     eighteenOzSku: eighteenOzVariant?.sku || '',
     crudeProteinMin: product.guaranteedAnalysis?.crudeProteinMin || '70%',
@@ -158,10 +188,26 @@ function buildPayload() {
     category: form.value.category,
     status: form.value.status,
     featured: form.value.featured,
+    tags: form.value.tags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean),
     image: form.value.image,
     ingredients: form.value.ingredients,
+    texture: form.value.texture,
+    bestFor: form.value.bestFor,
+    notIncluded: form.value.notIncluded
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean),
+    freshness: form.value.freshness,
+    storageFeeding: form.value.storageFeeding,
     sixOzPrice: Number(form.value.sixOzPrice),
     eighteenOzPrice: Number(form.value.eighteenOzPrice),
+    sixOzQuantity: Number(form.value.sixOzQuantity),
+    eighteenOzQuantity: Number(form.value.eighteenOzQuantity),
+    sixOzLowStockThreshold: Number(form.value.sixOzLowStockThreshold),
+    eighteenOzLowStockThreshold: Number(form.value.eighteenOzLowStockThreshold),
     sixOzSku: form.value.sixOzSku,
     eighteenOzSku: form.value.eighteenOzSku,
     guaranteedAnalysis: {
@@ -376,6 +422,54 @@ onMounted(() => {
             </div>
 
             <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">6 oz Quantity</label>
+              <input
+                v-model="form.sixOzQuantity"
+                type="number"
+                min="0"
+                step="1"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="24"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">18 oz Quantity</label>
+              <input
+                v-model="form.eighteenOzQuantity"
+                type="number"
+                min="0"
+                step="1"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="10"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">6 oz Low Stock Threshold</label>
+              <input
+                v-model="form.sixOzLowStockThreshold"
+                type="number"
+                min="0"
+                step="1"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="5"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">18 oz Low Stock Threshold</label>
+              <input
+                v-model="form.eighteenOzLowStockThreshold"
+                type="number"
+                min="0"
+                step="1"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="3"
+              />
+            </div>
+
+            <div>
               <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">6 oz SKU</label>
               <input
                 v-model="form.sixOzSku"
@@ -415,6 +509,7 @@ onMounted(() => {
                 class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
               >
                 <option value="draft">draft</option>
+                <option value="coming-soon">coming-soon</option>
                 <option value="active">active</option>
               </select>
             </div>
@@ -429,6 +524,19 @@ onMounted(() => {
               <label for="featured-product" class="text-sm font-semibold text-[var(--brand-4)]">
                 Featured product
               </label>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Product Tags</label>
+              <input
+                v-model="form.tags"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="Single-ingredient, Grain-free, High Protein"
+              />
+              <p class="mt-2 text-xs text-stone-400">
+                Separate each badge with a comma. These appear as yellow tags on the storefront product card.
+              </p>
             </div>
 
             <div class="md:col-span-2">
@@ -448,6 +556,59 @@ onMounted(() => {
                 rows="3"
                 class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
                 placeholder="Chicken breast. No salt, no sugar..."
+              ></textarea>
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Texture</label>
+              <input
+                v-model="form.texture"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="Firm jerky texture, easy to break"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Freshness / Shelf Life</label>
+              <input
+                v-model="form.freshness"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="Best within 14–21 days after opening"
+              />
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Best For</label>
+              <textarea
+                v-model="form.bestFor"
+                rows="3"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="Training rewards, bigger dogs, picky pups..."
+              ></textarea>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">What’s Not Inside</label>
+              <input
+                v-model="form.notIncluded"
+                type="text"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="No salt, No sugar, No glycerin, No preservatives"
+              />
+              <p class="mt-2 text-xs text-stone-400">
+                Separate each item with a comma. These appear in Quick View as trust badges.
+              </p>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Storage & Feeding</label>
+              <textarea
+                v-model="form.storageFeeding"
+                rows="3"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+                placeholder="Keep sealed in a cool, dry place..."
               ></textarea>
             </div>
 
@@ -547,12 +708,14 @@ onMounted(() => {
 
               <div>
                 <p class="font-semibold">{{ formatPrice(getVariant(product, '6 oz')?.price) }}</p>
-                <p class="mt-1 text-xs text-stone-400">{{ getVariant(product, '6 oz')?.sku }}</p>
+                <p class="mt-1 text-xs text-stone-400">Qty: {{ getVariant(product, '6 oz')?.quantity ?? 0 }}</p>
+                <p class="mt-1 text-xs text-stone-400">{{ getVariant(product, '6 oz')?.stockStatus || '—' }}</p>
               </div>
 
               <div>
                 <p class="font-semibold">{{ formatPrice(getVariant(product, '18 oz')?.price) }}</p>
-                <p class="mt-1 text-xs text-stone-400">{{ getVariant(product, '18 oz')?.sku }}</p>
+                <p class="mt-1 text-xs text-stone-400">Qty: {{ getVariant(product, '18 oz')?.quantity ?? 0 }}</p>
+                <p class="mt-1 text-xs text-stone-400">{{ getVariant(product, '18 oz')?.stockStatus || '—' }}</p>
               </div>
 
               <div>
@@ -561,7 +724,9 @@ onMounted(() => {
                   :class="
                     product.status === 'active'
                       ? 'bg-[color:var(--success-1)]/15 text-[color:var(--success-1)]'
-                      : 'bg-stone-200 text-stone-700'
+                      : product.status === 'coming-soon'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-stone-200 text-stone-700'
                   "
                 >
                   {{ product.status }}

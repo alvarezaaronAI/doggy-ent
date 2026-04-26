@@ -38,11 +38,34 @@ const selectedVariant = computed(() =>
 const unitPrice = computed(() => Number(selectedVariant.value?.price || 0))
 const totalPrice = computed(() => unitPrice.value * quantity.value)
 
+const hasGuaranteedAnalysis = computed(() => {
+  const analysis = props.product?.guaranteedAnalysis
+  if (!analysis) return false
+
+  return Boolean(
+    analysis.crudeProteinMin ||
+    analysis.crudeFatMin ||
+    analysis.crudeFiberMax ||
+    analysis.moistureMax
+  )
+})
+
+const notIncludedItems = computed(() => {
+  if (Array.isArray(props.product?.notIncluded) && props.product.notIncluded.length) {
+    return props.product.notIncluded
+  }
+
+  return ['No salt', 'No sugar', 'No glycerin', 'No preservatives']
+})
+
+const isPurchasable = computed(() => props.product?.status === 'active')
+
 watch(
   () => props.isOpen,
   (isOpen) => {
     if (isOpen) {
-      selectedSize.value = variants.value[0]?.size || '6 oz'
+      const hasSixOz = variants.value.some((variant) => variant.size === '6 oz')
+      selectedSize.value = hasSixOz ? '6 oz' : variants.value[0]?.size || '6 oz'
       quantity.value = 1
     }
   }
@@ -68,8 +91,16 @@ function getVariantDescription(size) {
   return 'Product option'
 }
 
+function getDisplayTags(product) {
+  if (Array.isArray(product?.tags) && product.tags.length) {
+    return product.tags
+  }
+
+  return ['Small-batch', 'No fillers']
+}
+
 function addProductToCart() {
-  if (!props.product || !selectedVariant.value) return
+  if (!props.product || !selectedVariant.value || !isPurchasable.value) return
 
   emit('add-to-cart', {
     ...props.product,
@@ -119,6 +150,16 @@ function addProductToCart() {
               {{ product.name }}
             </h2>
 
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span
+                v-for="tag in getDisplayTags(product).slice(0, 3)"
+                :key="tag"
+                class="rounded-full bg-[color-mix(in_srgb,var(--brand-2)_88%,white)] px-3 py-1 text-[11px] font-extrabold text-[var(--brand-4)] shadow-sm"
+              >
+                {{ tag }}
+              </span>
+            </div>
+
             <p class="mt-1 text-sm font-semibold text-stone-400">
               {{ product.protein }} <span v-if="product.cut">• {{ product.cut }}</span>
             </p>
@@ -127,43 +168,55 @@ function addProductToCart() {
               {{ product.shortDescription }}
             </p>
 
-            <div class="mt-6">
-              <div class="flex items-center justify-between gap-3">
-                <h3 class="font-extrabold text-[var(--brand-4)]">Choose Size</h3>
-                <p class="text-sm text-stone-400">Editable in admin later</p>
+            <div v-if="isPurchasable" class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 class="font-extrabold text-[var(--brand-4)]">Choose Size</h3>
+                  <p class="mt-1 text-sm text-stone-300">
+                    Select a size before adding to cart.
+                  </p>
+                </div>
+
+                <p class="text-right text-sm font-semibold text-stone-400">
+                  Unit price
+                  <span class="block text-lg font-extrabold text-[var(--brand-4)]">
+                    {{ formatPrice(unitPrice) }}
+                  </span>
+                </p>
               </div>
 
-              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+              <div class="mt-4 flex flex-wrap gap-2">
                 <button
                   v-for="variant in variants"
                   :key="variant.size"
-                  class="rounded-2xl border p-4 text-left transition"
-                  :class="
-                    selectedSize === variant.size
-                      ? 'border-emerald-400 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] shadow-md'
-                      : 'border-stone-700 bg-white hover:border-emerald-400'
-                  "
+                  class="rounded-full border px-4 py-2 text-sm font-extrabold transition"
+                  :class="selectedSize === variant.size
+                    ? 'border-emerald-400 bg-emerald-400 text-[var(--brand-4)] shadow-sm'
+                    : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400'"
                   @click="selectedSize = variant.size"
                 >
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <p class="font-extrabold">{{ variant.size }}</p>
-                      <p class="mt-1 text-sm text-stone-300">
-                        {{ getVariantDescription(variant.size) }}
-                      </p>
-                      <p v-if="variant.sku" class="mt-1 text-xs text-stone-400">
-                        {{ variant.sku }}
-                      </p>
-                    </div>
-                    <p class="font-bold text-[var(--brand-4)]">
-                      {{ formatPrice(variant.price) }}
-                    </p>
-                  </div>
+                  {{ variant.size }}
                 </button>
               </div>
+
+              <p class="mt-3 text-xs text-stone-400">
+                {{ getVariantDescription(selectedSize) }}
+              </p>
             </div>
 
-            <div class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
+            <div v-else class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">
+                Coming Soon
+              </p>
+              <h3 class="mt-2 font-extrabold text-[var(--brand-4)]">
+                This product is not available yet
+              </h3>
+              <p class="mt-2 text-sm text-stone-300">
+                Pricing, sizes, and launch details will be announced when this treat goes live.
+              </p>
+            </div>
+
+            <div v-if="isPurchasable" class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
               <div>
                 <p class="text-sm text-stone-400">Quantity</p>
                 <div class="mt-2 inline-flex items-center overflow-hidden rounded-full border border-stone-700 bg-white">
@@ -192,6 +245,7 @@ function addProductToCart() {
             </div>
 
             <button
+              v-if="isPurchasable"
               class="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
               @click="addProductToCart"
             >
@@ -199,23 +253,84 @@ function addProductToCart() {
               Add {{ quantity }} to Cart
             </button>
 
+            <button
+              v-else
+              class="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
+              @click="emit('close')"
+            >
+              <i class="fa-solid fa-bell"></i>
+              Notify Me When Available
+            </button>
+
             <div class="mt-6 grid gap-4 sm:grid-cols-2">
               <div class="rounded-2xl border border-stone-800 bg-white p-4">
-                <h3 class="font-extrabold">Ingredients</h3>
-                <p class="mt-2 text-sm text-stone-300">
-                  {{ product.ingredients || 'Single ingredient. No salt, no sugar, no glycerin, no preservatives.' }}
-                </p>
+                <div class="flex items-start gap-3">
+                  <i class="fa-solid fa-bowl-food mt-1 text-emerald-400"></i>
+                  <div>
+                    <h3 class="font-extrabold">Ingredients</h3>
+                    <p class="mt-2 text-sm text-stone-300">
+                      {{ product.ingredients || 'Single ingredient. No salt, no sugar, no glycerin, no preservatives.' }}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div class="rounded-2xl border border-stone-800 bg-white p-4">
-                <h3 class="font-extrabold">Perfect For</h3>
-                <p class="mt-2 text-sm text-stone-300">
-                  Bigger dogs, training rewards, picky pups, and simple-ingredient snack routines.
-                </p>
+                <div class="flex items-start gap-3">
+                  <i class="fa-solid fa-hand-sparkles mt-1 text-emerald-400"></i>
+                  <div>
+                    <h3 class="font-extrabold">Texture</h3>
+                    <p class="mt-2 text-sm text-stone-300">
+                      {{ product.texture || 'Firm jerky texture that can be broken into smaller pieces.' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-stone-800 bg-white p-4">
+                <div class="flex items-start gap-3">
+                  <i class="fa-solid fa-bullseye mt-1 text-emerald-400"></i>
+                  <div>
+                    <h3 class="font-extrabold">Best For</h3>
+                    <p class="mt-2 text-sm text-stone-300">
+                      {{ product.bestFor || 'Training rewards, bigger dogs, picky pups, and simple-ingredient routines.' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-stone-800 bg-white p-4">
+                <div class="flex items-start gap-3">
+                  <i class="fa-solid fa-clock mt-1 text-emerald-400"></i>
+                  <div>
+                    <h3 class="font-extrabold">Freshness</h3>
+                    <p class="mt-2 text-sm text-stone-300">
+                      {{ product.freshness || 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.' }}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="mt-4 rounded-2xl border border-stone-800 bg-white p-4">
+              <div class="flex items-start gap-3">
+                <i class="fa-solid fa-ban mt-1 text-emerald-400"></i>
+                <div class="min-w-0 flex-1">
+                  <h3 class="font-extrabold">What’s Not Inside</h3>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <span
+                      v-for="item in notIncludedItems"
+                      :key="item"
+                      class="rounded-full bg-[color-mix(in_srgb,var(--brand-5)_70%,white)] px-3 py-1 text-xs font-bold text-[var(--brand-4)]"
+                    >
+                      {{ item }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="hasGuaranteedAnalysis" class="mt-4 rounded-2xl border border-stone-800 bg-white p-4">
               <h3 class="font-extrabold">Guaranteed Analysis</h3>
 
               <dl class="mt-3 grid grid-cols-2 gap-y-2 text-sm">
@@ -244,8 +359,7 @@ function addProductToCart() {
             <div class="mt-4 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
               <h3 class="font-extrabold">Storage & Feeding</h3>
               <p class="mt-2 text-sm text-stone-300">
-                Keep sealed in a cool, dry place. Refrigerate after opening for max freshness.
-                Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.
+                {{ product.storageFeeding || 'Keep sealed in a cool, dry place. Refrigerate after opening for max freshness. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.' }}
               </p>
             </div>
           </div>
