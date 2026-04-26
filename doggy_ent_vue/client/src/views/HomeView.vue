@@ -12,18 +12,32 @@ import IngredientsAnalysisSection from '../components/storefront/IngredientsAnal
 import ReviewsPreviewSection from '../components/storefront/ReviewsPreviewSection.vue'
 import BundlesSection from '../components/storefront/BundlesSection.vue'
 import AboutBrandSection from '../components/storefront/AboutBrandSection.vue'
+import QuickViewModal from '../components/storefront/QuickViewModal.vue'
 
 const products = ref([])
 const cart = ref([])
 const isCartOpen = ref(false)
 const isLoading = ref(true)
+const selectedProduct = ref(null)
+const isQuickViewOpen = ref(false)
+const errorMessage = ref('')
 
 async function loadProducts() {
   isLoading.value = true
+  errorMessage.value = ''
 
   try {
     const res = await fetch('/api/products')
-    products.value = await res.json()
+
+    if (!res.ok) {
+      throw new Error(`Products request failed with status ${res.status}`)
+    }
+
+    const data = await res.json()
+    products.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    products.value = []
+    errorMessage.value = error.message || 'Unable to load products.'
   } finally {
     isLoading.value = false
   }
@@ -31,21 +45,35 @@ async function loadProducts() {
 
 onMounted(loadProducts)
 
+function openQuickView(product) {
+  selectedProduct.value = product
+  isQuickViewOpen.value = true
+}
+
+function closeQuickView() {
+  selectedProduct.value = null
+  isQuickViewOpen.value = false
+}
+
 function addToCart(product) {
-  const size = product.category === 'Bundle' ? 'Bundle' : 'Default'
+  const size = product.size || (product.category === 'Bundle' ? 'Bundle' : '6 oz')
+  const quantityToAdd = product.quantity || 1
+  const price = Number(product.price || 0)
   const existing = cart.value.find((item) => item.id === product.id && item.size === size)
 
   if (existing) {
-    existing.quantity += 1
+    existing.quantity += quantityToAdd
   } else {
     cart.value.push({
       ...product,
+      price,
       size,
-      quantity: 1,
+      quantity: quantityToAdd,
     })
   }
 
   isCartOpen.value = true
+  isQuickViewOpen.value = false
 }
 
 function increase(id, size) {
@@ -126,11 +154,20 @@ function formatPrice(value) {
           Loading treats...
         </div>
 
+        <div v-else-if="errorMessage" class="mt-8 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+          {{ errorMessage }}
+        </div>
+
+        <div v-else-if="!products.length" class="mt-8 rounded-2xl border border-stone-800 bg-white p-6 text-stone-300">
+          No products found yet. Add products from the admin dashboard.
+        </div>
+
         <div v-else class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <article
             v-for="product in products"
             :key="product.id"
-            class="tile-strong flex h-full min-h-[520px] flex-col overflow-hidden rounded-2xl"
+            class="tile-strong flex h-full min-h-[520px] cursor-pointer flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
+            @click="openQuickView(product)"
           >
             <img
               class="h-56 w-full flex-shrink-0 object-cover"
@@ -161,17 +198,26 @@ function formatPrice(value) {
                 {{ product.shortDescription }}
               </p>
 
-              <div class="mt-auto flex items-center justify-between gap-3 pt-4">
+              <div class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
                 <p class="font-semibold text-[var(--brand-4)]">
                   {{ formatPrice(product.price) }}
                 </p>
 
-                <button
-                  class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-                  @click="addToCart(product)"
-                >
-                  Add to Cart
-                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="rounded-lg border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-400 hover:bg-stone-900"
+                    @click.stop="openQuickView(product)"
+                  >
+                    Quick View
+                  </button>
+
+                  <button
+                    class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
+                    @click.stop="addToCart(product)"
+                  >
+                    Add to Cart
+                  </button>
+                </div>
               </div>
             </div>
           </article>
@@ -179,36 +225,20 @@ function formatPrice(value) {
       </section>
 
       <ProcessSection />
-
       <IngredientsAnalysisSection />
       <ReviewsPreviewSection />
       <BundlesSection />
       <AboutBrandSection />
-
-      <section id="ingredients" class="section-panel mx-auto max-w-7xl px-4 py-14">
-        <div class="grid gap-8 md:grid-cols-2">
-          <div class="rounded-3xl border border-stone-800 bg-white p-8">
-            <div class="mb-2 text-sm font-bold text-emerald-400">ONE INGREDIENT</div>
-            <h2 class="text-3xl font-extrabold">Chicken Breast</h2>
-            <p class="mt-2 text-stone-300">
-              No salt, no sugar, no glycerin, no preservatives. No wheat, corn, or soy.
-            </p>
-          </div>
-
-          <div class="rounded-3xl border border-stone-800 bg-white p-8">
-            <h3 class="mb-4 text-xl font-bold">Guaranteed Analysis</h3>
-            <dl class="grid grid-cols-2 gap-y-2 text-sm">
-              <dt class="text-stone-400">Crude Protein (min)</dt><dd class="text-right">70%</dd>
-              <dt class="text-stone-400">Crude Fat (min)</dt><dd class="text-right">4.5%</dd>
-              <dt class="text-stone-400">Crude Fiber (max)</dt><dd class="text-right">0.5%</dd>
-              <dt class="text-stone-400">Moisture (max)</dt><dd class="text-right">20%</dd>
-            </dl>
-          </div>
-        </div>
-      </section>
     </main>
 
     <SiteFooter />
+
+    <QuickViewModal
+      :product="selectedProduct"
+      :is-open="isQuickViewOpen"
+      @close="closeQuickView"
+      @add-to-cart="addToCart"
+    />
 
     <CartDrawer
       :is-open="isCartOpen"
