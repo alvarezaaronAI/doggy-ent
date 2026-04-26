@@ -8,6 +8,10 @@ import HeroSection from '../components/storefront/HeroSection.vue'
 import ProductSpotlightSection from '../components/storefront/ProductSpotlightSection.vue'
 import ShopCollectionsSection from '../components/storefront/ShopCollectionsSection.vue'
 import ProcessSection from '../components/storefront/ProcessSection.vue'
+import IngredientsAnalysisSection from '../components/storefront/IngredientsAnalysisSection.vue'
+import ReviewsPreviewSection from '../components/storefront/ReviewsPreviewSection.vue'
+import BundlesSection from '../components/storefront/BundlesSection.vue'
+import AboutBrandSection from '../components/storefront/AboutBrandSection.vue'
 
 const products = ref([])
 const cart = ref([])
@@ -175,6 +179,11 @@ function formatPrice(value) {
       </section>
 
       <ProcessSection />
+
+      <IngredientsAnalysisSection />
+      <ReviewsPreviewSection />
+      <BundlesSection />
+      <AboutBrandSection />
 
       <section id="ingredients" class="section-panel mx-auto max-w-7xl px-4 py-14">
         <div class="grid gap-8 md:grid-cols-2">
