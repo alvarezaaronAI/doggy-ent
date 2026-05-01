@@ -1,5 +1,13 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import {
+  getSellingMode,
+  canIgnoreInventory,
+  isInventoryLimited,
+  isPurchasable as isProductPurchasable,
+  getAvailableQuantity,
+  getStockLabel,
+} from '../../utils/sellingMode'
 
 const props = defineProps({
   featuredProduct: {
@@ -36,50 +44,13 @@ const selectedPrice = computed(() =>
   Number(selectedVariant.value?.price || props.featuredProduct?.price || 0)
 )
 
-function getSellingMode(product) {
-  return String(product?.sellingMode || 'inventory-limited').trim().toLowerCase()
-}
+const isPurchasable = computed(() =>
+  isProductPurchasable(props.featuredProduct, selectedVariant.value)
+)
 
-function canIgnoreInventory(product) {
-  return ['made-to-order', 'preorder'].includes(getSellingMode(product))
-}
-
-function isInventoryLimited(product) {
-  return getSellingMode(product) === 'inventory-limited'
-}
-
-const isPurchasable = computed(() => {
-  if (props.featuredProduct?.status !== 'active' || !selectedVariant.value) return false
-
-  if (canIgnoreInventory(props.featuredProduct)) return true
-
-  return (
-    selectedVariant.value.stockStatus === 'in-stock' &&
-    Number(selectedVariant.value.quantity || 0) > 0
-  )
-})
-
-const stockLabel = computed(() => {
-  if (!selectedVariant.value) return 'Unavailable'
-
-  const sellingMode = getSellingMode(props.featuredProduct)
-
-  if (sellingMode === 'made-to-order') return 'Made to order'
-  if (sellingMode === 'preorder') return 'Preorder'
-
-  if (
-    selectedVariant.value.stockStatus === 'out-of-stock' ||
-    Number(selectedVariant.value.quantity || 0) <= 0
-  ) {
-    return 'Out of stock'
-  }
-
-  if (Number(selectedVariant.value.quantity || 0) <= Number(selectedVariant.value.lowStockThreshold || 0)) {
-    return 'Low stock'
-  }
-
-  return 'In stock'
-})
+const stockLabel = computed(() =>
+  getStockLabel(props.featuredProduct, selectedVariant.value)
+)
 
 const displayTags = computed(() => {
   if (Array.isArray(props.featuredProduct?.tags) && props.featuredProduct.tags.length) {
@@ -123,9 +94,7 @@ function addFeaturedToCart() {
     size: selectedVariant.value.size,
     price: selectedPrice.value,
     quantity: 1,
-    availableQuantity: canIgnoreInventory(props.featuredProduct)
-      ? Number.POSITIVE_INFINITY
-      : Number(selectedVariant.value.quantity || 0),
+    availableQuantity: getAvailableQuantity(props.featuredProduct, selectedVariant.value),
     sellingMode: getSellingMode(props.featuredProduct),
   })
 }
