@@ -29,18 +29,29 @@ const variants = computed(() => {
 })
 
 const selectedVariant = computed(() =>
-  variants.value.find((variant) => variant.size === selectedSize.value) || variants.value[0]
+  variants.value.find((variant) => normalizeSize(variant.size) === normalizeSize(selectedSize.value)) || variants.value[0]
 )
 
 const selectedPrice = computed(() =>
   Number(selectedVariant.value?.price || props.featuredProduct?.price || 0)
 )
 
+function getSellingMode(product) {
+  return String(product?.sellingMode || 'inventory-limited').trim().toLowerCase()
+}
+
+function canIgnoreInventory(product) {
+  return ['made-to-order', 'preorder'].includes(getSellingMode(product))
+}
+
+function isInventoryLimited(product) {
+  return getSellingMode(product) === 'inventory-limited'
+}
+
 const isPurchasable = computed(() => {
   if (props.featuredProduct?.status !== 'active' || !selectedVariant.value) return false
 
-  if (props.featuredProduct.sellingMode === 'made-to-order') return true
-  if (props.featuredProduct.sellingMode === 'preorder') return true
+  if (canIgnoreInventory(props.featuredProduct)) return true
 
   return (
     selectedVariant.value.stockStatus === 'in-stock' &&
@@ -51,8 +62,10 @@ const isPurchasable = computed(() => {
 const stockLabel = computed(() => {
   if (!selectedVariant.value) return 'Unavailable'
 
-  if (props.featuredProduct?.sellingMode === 'made-to-order') return 'Made to order'
-  if (props.featuredProduct?.sellingMode === 'preorder') return 'Preorder'
+  const sellingMode = getSellingMode(props.featuredProduct)
+
+  if (sellingMode === 'made-to-order') return 'Made to order'
+  if (sellingMode === 'preorder') return 'Preorder'
 
   if (
     selectedVariant.value.stockStatus === 'out-of-stock' ||
@@ -90,6 +103,14 @@ function formatPrice(value) {
   return `$${Number(value).toFixed(2)}`
 }
 
+function normalizeSize(size) {
+  return String(size || '').trim().toLowerCase()
+}
+
+function isSelectedSize(size) {
+  return normalizeSize(selectedSize.value) === normalizeSize(size)
+}
+
 function selectSize(size) {
   selectedSize.value = size
 }
@@ -102,12 +123,10 @@ function addFeaturedToCart() {
     size: selectedVariant.value.size,
     price: selectedPrice.value,
     quantity: 1,
-    availableQuantity:
-      props.featuredProduct.sellingMode === 'made-to-order' ||
-      props.featuredProduct.sellingMode === 'preorder'
-        ? Number.POSITIVE_INFINITY
-        : Number(selectedVariant.value.quantity || 0),
-    sellingMode: props.featuredProduct.sellingMode || 'inventory-limited',
+    availableQuantity: canIgnoreInventory(props.featuredProduct)
+      ? Number.POSITIVE_INFINITY
+      : Number(selectedVariant.value.quantity || 0),
+    sellingMode: getSellingMode(props.featuredProduct),
   })
 }
 </script>
@@ -148,7 +167,7 @@ function addFeaturedToCart() {
           </p>
 
           <div class="mt-6 rounded-2xl border border-stone-800 p-4">
-            <div class="flex justify-between items-center">
+            <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="text-sm font-bold">Choose Size</p>
                 <div class="mt-2 flex gap-2">
@@ -156,7 +175,15 @@ function addFeaturedToCart() {
                     v-for="variant in variants"
                     :key="variant.size"
                     @click="selectSize(variant.size)"
-                    class="px-4 py-2 border rounded-full"
+                    class="min-w-[72px] rounded-full border px-4 py-2 text-sm font-extrabold transition"
+                    :class="[
+                      isSelectedSize(variant.size)
+                        ? 'chip-blue-ring border-emerald-400 bg-emerald-400 text-[var(--brand-4)] shadow-sm'
+                        : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400',
+                      isInventoryLimited(featuredProduct) && (variant.stockStatus === 'out-of-stock' || Number(variant.quantity || 0) <= 0)
+                        ? 'opacity-60'
+                        : ''
+                    ]"
                   >
                     {{ variant.size }}
                   </button>
@@ -164,10 +191,25 @@ function addFeaturedToCart() {
               </div>
 
               <div class="text-right">
-                <p class="text-xs text-stone-400">{{ stockLabel }}</p>
-                <p class="text-xl font-bold">{{ formatPrice(selectedPrice) }}</p>
+                <p class="text-xs font-bold uppercase tracking-[0.12em] text-stone-400">{{ stockLabel }}</p>
+                <p class="mt-1 text-xl font-extrabold text-[var(--brand-4)]">{{ formatPrice(selectedPrice) }}</p>
               </div>
             </div>
+          </div>
+
+          <div
+            v-if="featuredProduct?.status === 'active' && isInventoryLimited(featuredProduct) && !isPurchasable"
+            class="mt-4 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4"
+          >
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">
+              {{ stockLabel }}
+            </p>
+            <h3 class="mt-2 font-extrabold text-[var(--brand-4)]">
+              This size is not available right now
+            </h3>
+            <p class="mt-2 text-sm text-stone-300">
+              Choose another size if available, or request a notification when this size is restocked.
+            </p>
           </div>
 
           <div class="mt-6 flex gap-3">
@@ -179,7 +221,10 @@ function addFeaturedToCart() {
               Add to Cart
             </button>
 
-            <button v-else class="bg-emerald-400 px-5 py-3 rounded-lg font-semibold">
+            <button
+              v-else
+              class="bg-emerald-400 px-5 py-3 rounded-lg font-semibold text-[var(--brand-4)]"
+            >
               Notify Me
             </button>
           </div>

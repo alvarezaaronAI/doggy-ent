@@ -81,7 +81,7 @@ function addToCart(product) {
   const size = product.size || selectedSize || defaultSize
   const quantityToAdd = product.quantity || 1
   const selectedVariant = product.variants?.find((variant) => variant.size === size)
-  const availableQuantity = Number(selectedVariant?.quantity || 0)
+  const availableQuantity = getVariantAvailableQuantity(product, selectedVariant)
 
   if (!isVariantPurchasable(product, selectedVariant)) return
 
@@ -90,14 +90,15 @@ function addToCart(product) {
 
   if (existing) {
     const nextQuantity = existing.quantity + quantityToAdd
-    existing.quantity = Math.min(nextQuantity, availableQuantity)
+    existing.quantity = limitQuantityBySellingMode(product, nextQuantity, availableQuantity)
   } else {
     cart.value.push({
       ...product,
       price,
       size,
-      quantity: Math.min(quantityToAdd, availableQuantity),
+      quantity: limitQuantityBySellingMode(product, quantityToAdd, availableQuantity),
       availableQuantity,
+      sellingMode: getSellingMode(product),
     })
   }
 
@@ -111,11 +112,10 @@ function increase(id, size) {
 
   const currentProduct = products.value.find((product) => product.id === id)
   const currentVariant = currentProduct?.variants?.find((variant) => variant.size === size)
-  const availableQuantity = Number(currentVariant?.quantity || item.availableQuantity || 0)
+  const availableQuantity = getVariantAvailableQuantity(currentProduct || item, currentVariant)
 
-  if (item.quantity < availableQuantity) {
-    item.quantity += 1
-  }
+  const nextQuantity = item.quantity + 1
+  item.quantity = limitQuantityBySellingMode(currentProduct || item, nextQuantity, availableQuantity)
 }
 
 function decrease(id, size) {
@@ -195,14 +195,49 @@ function getSelectedCardVariant(product) {
   )
 }
 
+function getSellingMode(product) {
+  return String(product?.sellingMode || 'inventory-limited').trim().toLowerCase()
+}
+
+function canIgnoreInventory(product) {
+  return ['made-to-order', 'preorder'].includes(getSellingMode(product))
+}
+
 function isVariantPurchasable(product, variant = getSelectedCardVariant(product)) {
-  return product.status === 'active' && variant?.stockStatus === 'in-stock' && Number(variant?.quantity || 0) > 0
+  if (product.status !== 'active' || !variant) return false
+
+  if (canIgnoreInventory(product)) {
+    return true
+  }
+
+  return variant.stockStatus === 'in-stock' && Number(variant.quantity || 0) > 0
+}
+
+function getVariantAvailableQuantity(product, variant) {
+  if (canIgnoreInventory(product)) {
+    return Number.POSITIVE_INFINITY
+  }
+
+  return Number(variant?.quantity || 0)
+}
+
+function limitQuantityBySellingMode(product, requestedQuantity, availableQuantity) {
+  if (canIgnoreInventory(product)) {
+    return requestedQuantity
+  }
+
+  return Math.min(requestedQuantity, availableQuantity)
 }
 
 function getSelectedStockLabel(product) {
   const selectedVariant = getSelectedCardVariant(product)
 
   if (!selectedVariant) return 'Unavailable'
+
+  const sellingMode = getSellingMode(product)
+
+  if (sellingMode === 'made-to-order') return 'Made to order'
+  if (sellingMode === 'preorder') return 'Preorder'
   if (selectedVariant.stockStatus === 'out-of-stock' || Number(selectedVariant.quantity || 0) <= 0) {
     return 'Out of stock'
   }
