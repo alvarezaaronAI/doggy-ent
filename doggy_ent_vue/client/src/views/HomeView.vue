@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import CartDrawer from '../components/cart/CartDrawer.vue'
 import PromoStrip from '../components/layout/PromoStrip.vue'
 import SiteHeader from '../components/layout/SiteHeader.vue'
@@ -20,6 +20,7 @@ const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
 const errorMessage = ref('')
 const selectedCardSizes = ref({})
+const CART_STORAGE_KEY = 'doggy-ent-cart'
 
 async function loadProducts() {
   isLoading.value = true
@@ -42,7 +43,27 @@ async function loadProducts() {
   }
 }
 
-onMounted(loadProducts)
+onMounted(() => {
+  loadSavedCart()
+  loadProducts()
+})
+
+watch(
+  cart,
+  (updatedCart) => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updatedCart))
+  },
+  { deep: true }
+)
+
+function loadSavedCart() {
+  try {
+    const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]')
+    cart.value = Array.isArray(savedCart) ? savedCart : []
+  } catch {
+    cart.value = []
+  }
+}
 
 function openQuickView(product) {
   selectedProduct.value = product
@@ -60,6 +81,7 @@ function addToCart(product) {
   const size = product.size || selectedSize || defaultSize
   const quantityToAdd = product.quantity || 1
   const selectedVariant = product.variants?.find((variant) => variant.size === size)
+  const availableQuantity = Number(selectedVariant?.quantity || 0)
 
   if (!isVariantPurchasable(product, selectedVariant)) return
 
@@ -67,13 +89,15 @@ function addToCart(product) {
   const existing = cart.value.find((item) => item.id === product.id && item.size === size)
 
   if (existing) {
-    existing.quantity += quantityToAdd
+    const nextQuantity = existing.quantity + quantityToAdd
+    existing.quantity = Math.min(nextQuantity, availableQuantity)
   } else {
     cart.value.push({
       ...product,
       price,
       size,
-      quantity: quantityToAdd,
+      quantity: Math.min(quantityToAdd, availableQuantity),
+      availableQuantity,
     })
   }
 
@@ -83,7 +107,15 @@ function addToCart(product) {
 
 function increase(id, size) {
   const item = cart.value.find((cartItem) => cartItem.id === id && cartItem.size === size)
-  if (item) item.quantity += 1
+  if (!item) return
+
+  const currentProduct = products.value.find((product) => product.id === id)
+  const currentVariant = currentProduct?.variants?.find((variant) => variant.size === size)
+  const availableQuantity = Number(currentVariant?.quantity || item.availableQuantity || 0)
+
+  if (item.quantity < availableQuantity) {
+    item.quantity += 1
+  }
 }
 
 function decrease(id, size) {

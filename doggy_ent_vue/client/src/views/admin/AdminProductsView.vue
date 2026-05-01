@@ -18,6 +18,7 @@ const form = ref({
   shortDescription: '',
   category: 'Jerky',
   status: 'draft',
+  sellingMode: 'inventory-limited',
   featured: false,
   tags: '',
   image: '',
@@ -76,6 +77,7 @@ function resetForm() {
     shortDescription: '',
     category: 'Jerky',
     status: 'draft',
+    sellingMode: 'inventory-limited',
     featured: false,
     tags: '',
     image: '',
@@ -131,6 +133,7 @@ function startEdit(product) {
     shortDescription: product.shortDescription || '',
     category: product.category || 'Jerky',
     status: product.status || 'draft',
+    sellingMode: product.sellingMode || 'inventory-limited',
     featured: Boolean(product.featured),
     tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
     image: product.image || '',
@@ -187,6 +190,7 @@ function buildPayload() {
     shortDescription: form.value.shortDescription,
     category: form.value.category,
     status: form.value.status,
+    sellingMode: form.value.sellingMode,
     featured: form.value.featured,
     tags: form.value.tags
       .split(',')
@@ -514,6 +518,21 @@ onMounted(() => {
               </select>
             </div>
 
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Selling Mode</label>
+              <select
+                v-model="form.sellingMode"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none"
+              >
+                <option value="inventory-limited">inventory-limited</option>
+                <option value="made-to-order">made-to-order</option>
+                <option value="preorder">preorder</option>
+              </select>
+              <p class="mt-2 text-xs text-stone-400">
+                inventory-limited follows stock. made-to-order allows purchases beyond inventory. preorder is for future launches.
+              </p>
+            </div>
+
             <div class="flex items-center gap-3 pt-2 md:pt-8">
               <input
                 id="featured-product"
@@ -681,7 +700,7 @@ onMounted(() => {
 
         <div v-else class="mt-8 overflow-x-auto rounded-3xl border border-stone-800 bg-white">
           <div class="min-w-[1000px]">
-            <div class="grid grid-cols-8 gap-4 border-b border-stone-800 bg-[color:var(--brand-5)]/65 px-5 py-4 text-sm font-semibold text-[var(--brand-4)]">
+            <div class="grid grid-cols-9 gap-4 border-b border-stone-800 bg-[color:var(--brand-5)]/65 px-5 py-4 text-sm font-semibold text-[var(--brand-4)]">
               <div>Name</div>
               <div>Protein</div>
               <div>Cut</div>
@@ -689,13 +708,14 @@ onMounted(() => {
               <div>6 oz</div>
               <div>18 oz</div>
               <div>Status</div>
+              <div>Mode</div>
               <div>Actions</div>
             </div>
 
             <div
               v-for="product in products"
               :key="product.id"
-              class="grid grid-cols-8 items-center gap-4 border-b border-stone-800/50 px-5 py-5 text-sm text-stone-700 last:border-b-0"
+              class="grid grid-cols-9 items-center gap-4 border-b border-stone-800/50 px-5 py-5 text-sm text-stone-700 last:border-b-0"
             >
               <div>
                 <p class="font-semibold text-[var(--brand-4)]">{{ product.name }}</p>
@@ -730,6 +750,12 @@ onMounted(() => {
                   "
                 >
                   {{ product.status }}
+                </span>
+              </div>
+
+              <div>
+                <span class="rounded-full bg-[color-mix(in_srgb,var(--brand-5)_70%,white)] px-3 py-1 text-xs font-semibold text-[var(--brand-4)]">
+                  {{ product.sellingMode || 'inventory-limited' }}
                 </span>
               </div>
 

@@ -1,4 +1,3 @@
-
 <script setup>
 import { computed, ref, watch } from 'vue'
 
@@ -24,6 +23,7 @@ const variants = computed(() => {
       price: Number(props.featuredProduct?.price || 0),
       quantity: 0,
       stockStatus: 'out-of-stock',
+      lowStockThreshold: 0,
     },
   ]
 })
@@ -32,16 +32,27 @@ const selectedVariant = computed(() =>
   variants.value.find((variant) => variant.size === selectedSize.value) || variants.value[0]
 )
 
-const selectedPrice = computed(() => Number(selectedVariant.value?.price || props.featuredProduct?.price || 0))
-
-const isPurchasable = computed(() =>
-  props.featuredProduct?.status === 'active' &&
-  selectedVariant.value?.stockStatus === 'in-stock' &&
-  Number(selectedVariant.value?.quantity || 0) > 0
+const selectedPrice = computed(() =>
+  Number(selectedVariant.value?.price || props.featuredProduct?.price || 0)
 )
+
+const isPurchasable = computed(() => {
+  if (props.featuredProduct?.status !== 'active' || !selectedVariant.value) return false
+
+  if (props.featuredProduct.sellingMode === 'made-to-order') return true
+  if (props.featuredProduct.sellingMode === 'preorder') return true
+
+  return (
+    selectedVariant.value.stockStatus === 'in-stock' &&
+    Number(selectedVariant.value.quantity || 0) > 0
+  )
+})
 
 const stockLabel = computed(() => {
   if (!selectedVariant.value) return 'Unavailable'
+
+  if (props.featuredProduct?.sellingMode === 'made-to-order') return 'Made to order'
+  if (props.featuredProduct?.sellingMode === 'preorder') return 'Preorder'
 
   if (
     selectedVariant.value.stockStatus === 'out-of-stock' ||
@@ -91,6 +102,12 @@ function addFeaturedToCart() {
     size: selectedVariant.value.size,
     price: selectedPrice.value,
     quantity: 1,
+    availableQuantity:
+      props.featuredProduct.sellingMode === 'made-to-order' ||
+      props.featuredProduct.sellingMode === 'preorder'
+        ? Number.POSITIVE_INFINITY
+        : Number(selectedVariant.value.quantity || 0),
+    sellingMode: props.featuredProduct.sellingMode || 'inventory-limited',
   })
 }
 </script>
@@ -102,7 +119,7 @@ function addFeaturedToCart() {
         <div class="tile-strong overflow-hidden rounded-2xl border border-stone-800 bg-white">
           <img
             :src="featuredProduct?.image || 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop'"
-            :alt="featuredProduct?.name || 'Chicken breast jerky in craft pouch'"
+            :alt="featuredProduct?.name || 'Chicken breast jerky'"
             class="h-full min-h-[340px] w-full object-cover"
           />
         </div>
@@ -113,59 +130,33 @@ function addFeaturedToCart() {
           </p>
 
           <h2 class="mt-2 text-2xl font-extrabold text-[var(--brand-4)] md:text-3xl">
-            {{ featuredProduct?.name || 'Chicken Breast Jerky' }}
+            {{ featuredProduct?.name }}
           </h2>
 
           <div class="mt-3 flex flex-wrap gap-2">
             <span
               v-for="tag in displayTags"
               :key="tag"
-              class="rounded-full bg-[color-mix(in_srgb,var(--brand-2)_88%,white)] px-3 py-1 text-[11px] font-extrabold text-[var(--brand-4)] shadow-sm"
+              class="rounded-full bg-[color-mix(in_srgb,var(--brand-2)_88%,white)] px-3 py-1 text-[11px] font-extrabold text-[var(--brand-4)]"
             >
               {{ tag }}
             </span>
           </div>
 
           <p class="mt-4 text-stone-300">
-            {{ featuredProduct?.shortDescription || 'Lean, hand-sliced chicken breast, dehydrated low and slow. That is the whole ingredient list.' }}
+            {{ featuredProduct?.shortDescription }}
           </p>
 
-          <p class="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">
-            {{ featuredProduct?.protein || 'Chicken' }}<span v-if="featuredProduct?.cut"> • {{ featuredProduct.cut }}</span>
-          </p>
-
-          <ul class="mt-5 grid gap-2 text-sm text-stone-300 sm:grid-cols-2">
-            <li class="flex items-center gap-2">
-              <i class="fa-regular fa-circle-check text-emerald-400"></i>
-              Simple ingredients
-            </li>
-            <li class="flex items-center gap-2">
-              <i class="fa-regular fa-circle-check text-emerald-400"></i>
-              Small-batch prepared
-            </li>
-            <li class="flex items-center gap-2">
-              <i class="fa-regular fa-circle-check text-emerald-400"></i>
-              Bigger-dog friendly
-            </li>
-            <li class="flex items-center gap-2">
-              <i class="fa-regular fa-circle-check text-emerald-400"></i>
-              No unnecessary fillers
-            </li>
-          </ul>
-
-          <div class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="mt-6 rounded-2xl border border-stone-800 p-4">
+            <div class="flex justify-between items-center">
               <div>
-                <p class="text-sm font-extrabold text-[var(--brand-4)]">Choose Size</p>
-                <div class="mt-3 flex flex-wrap gap-2">
+                <p class="text-sm font-bold">Choose Size</p>
+                <div class="mt-2 flex gap-2">
                   <button
                     v-for="variant in variants"
                     :key="variant.size"
-                    class="rounded-full border px-4 py-2 text-sm font-extrabold transition"
-                    :class="selectedSize === variant.size
-                      ? 'border-emerald-400 bg-emerald-400 text-[var(--brand-4)] shadow-sm'
-                      : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400'"
                     @click="selectSize(variant.size)"
+                    class="px-4 py-2 border rounded-full"
                   >
                     {{ variant.size }}
                   </button>
@@ -173,38 +164,24 @@ function addFeaturedToCart() {
               </div>
 
               <div class="text-right">
-                <p class="text-xs font-bold uppercase tracking-[0.12em] text-stone-400">
-                  {{ stockLabel }}
-                </p>
-                <p class="mt-1 text-2xl font-extrabold text-[var(--brand-4)]">
-                  {{ formatPrice(selectedPrice) }}
-                </p>
+                <p class="text-xs text-stone-400">{{ stockLabel }}</p>
+                <p class="text-xl font-bold">{{ formatPrice(selectedPrice) }}</p>
               </div>
             </div>
           </div>
 
-          <div class="mt-6 flex flex-wrap items-center gap-3">
+          <div class="mt-6 flex gap-3">
             <button
               v-if="isPurchasable"
-              class="focus-ring inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
+              class="bg-emerald-400 px-5 py-3 rounded-lg font-semibold"
               @click="addFeaturedToCart"
             >
-              <i class="fa-solid fa-bag-shopping"></i>
               Add to Cart
             </button>
 
-            <button
-              v-else
-              class="focus-ring inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-            >
-              <i class="fa-solid fa-bell"></i>
+            <button v-else class="bg-emerald-400 px-5 py-3 rounded-lg font-semibold">
               Notify Me
             </button>
-
-            <a href="#catalog" class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-400 hover:underline">
-              View all treats
-              <i class="fa-solid fa-arrow-right"></i>
-            </a>
           </div>
         </div>
       </div>

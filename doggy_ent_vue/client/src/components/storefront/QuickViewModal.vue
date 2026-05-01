@@ -27,6 +27,9 @@ const variants = computed(() => {
       size: '6 oz',
       price: Number(props.product?.price || 0),
       sku: '',
+      quantity: 0,
+      stockStatus: 'out-of-stock',
+      lowStockThreshold: 0,
     },
   ]
 })
@@ -58,7 +61,37 @@ const notIncludedItems = computed(() => {
   return ['No salt', 'No sugar', 'No glycerin', 'No preservatives']
 })
 
-const isPurchasable = computed(() => props.product?.status === 'active')
+const isPurchasable = computed(() => {
+  if (props.product?.status !== 'active' || !selectedVariant.value) return false
+
+  if (props.product.sellingMode === 'made-to-order') return true
+  if (props.product.sellingMode === 'preorder') return true
+
+  return (
+    selectedVariant.value.stockStatus === 'in-stock' &&
+    Number(selectedVariant.value.quantity || 0) > 0
+  )
+})
+
+const selectedStockLabel = computed(() => {
+  if (!selectedVariant.value) return 'Unavailable'
+
+  if (props.product?.sellingMode === 'made-to-order') return 'Made to order'
+  if (props.product?.sellingMode === 'preorder') return 'Preorder'
+
+  if (
+    selectedVariant.value.stockStatus === 'out-of-stock' ||
+    Number(selectedVariant.value.quantity || 0) <= 0
+  ) {
+    return 'Out of stock'
+  }
+
+  if (Number(selectedVariant.value.quantity || 0) <= Number(selectedVariant.value.lowStockThreshold || 0)) {
+    return 'Low stock'
+  }
+
+  return 'In stock'
+})
 
 watch(
   () => props.isOpen,
@@ -71,12 +104,28 @@ watch(
   }
 )
 
+watch(
+  () => selectedSize.value,
+  () => {
+    quantity.value = 1
+  }
+)
+
 function formatPrice(value) {
   return `$${Number(value).toFixed(2)}`
 }
 
 function increaseQuantity() {
-  quantity.value += 1
+  if (props.product?.sellingMode === 'made-to-order' || props.product?.sellingMode === 'preorder') {
+    quantity.value += 1
+    return
+  }
+
+  const availableQuantity = Number(selectedVariant.value?.quantity || 0)
+
+  if (availableQuantity && quantity.value < availableQuantity) {
+    quantity.value += 1
+  }
 }
 
 function decreaseQuantity() {
@@ -108,6 +157,10 @@ function addProductToCart() {
     price: unitPrice.value,
     sku: selectedVariant.value.sku,
     quantity: quantity.value,
+    availableQuantity: props.product.sellingMode === 'made-to-order' || props.product.sellingMode === 'preorder'
+      ? Number.POSITIVE_INFINITY
+      : Number(selectedVariant.value.quantity || 0),
+    sellingMode: props.product.sellingMode || 'inventory-limited',
   })
 }
 </script>
@@ -168,7 +221,7 @@ function addProductToCart() {
               {{ product.shortDescription }}
             </p>
 
-            <div v-if="isPurchasable" class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4">
+            <div v-if="product.status === 'active'" class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 class="font-extrabold text-[var(--brand-4)]">Choose Size</h3>
@@ -178,7 +231,7 @@ function addProductToCart() {
                 </div>
 
                 <p class="text-right text-sm font-semibold text-stone-400">
-                  Unit price
+                  {{ selectedStockLabel }}
                   <span class="block text-lg font-extrabold text-[var(--brand-4)]">
                     {{ formatPrice(unitPrice) }}
                   </span>
@@ -190,9 +243,14 @@ function addProductToCart() {
                   v-for="variant in variants"
                   :key="variant.size"
                   class="rounded-full border px-4 py-2 text-sm font-extrabold transition"
-                  :class="selectedSize === variant.size
-                    ? 'border-emerald-400 bg-emerald-400 text-[var(--brand-4)] shadow-sm'
-                    : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400'"
+                  :class="[
+                    selectedSize === variant.size
+                      ? 'border-emerald-400 bg-emerald-400 text-[var(--brand-4)] shadow-sm'
+                      : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400',
+                    product.sellingMode === 'inventory-limited' && (variant.stockStatus === 'out-of-stock' || Number(variant.quantity || 0) <= 0)
+                      ? 'opacity-60'
+                      : ''
+                  ]"
                   @click="selectedSize = variant.size"
                 >
                   {{ variant.size }}
@@ -216,7 +274,7 @@ function addProductToCart() {
               </p>
             </div>
 
-            <div v-if="isPurchasable" class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
+            <div v-if="product.status === 'active' && isPurchasable" class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
               <div>
                 <p class="text-sm text-stone-400">Quantity</p>
                 <div class="mt-2 inline-flex items-center overflow-hidden rounded-full border border-stone-700 bg-white">
@@ -242,6 +300,18 @@ function addProductToCart() {
                   {{ formatPrice(totalPrice) }}
                 </p>
               </div>
+            </div>
+
+            <div v-if="product.status === 'active' && product.sellingMode === 'inventory-limited' && !isPurchasable" class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">
+                {{ selectedStockLabel }}
+              </p>
+              <h3 class="mt-2 font-extrabold text-[var(--brand-4)]">
+                This size is not available right now
+              </h3>
+              <p class="mt-2 text-sm text-stone-300">
+                Choose another size if available, or request a notification when this size is restocked.
+              </p>
             </div>
 
             <button

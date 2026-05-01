@@ -7,6 +7,7 @@ let mockProducts = [
     shortDescription: 'Lean, hand-sliced chicken breast dehydrated low and slow.',
     category: 'Jerky',
     status: 'active',
+    sellingMode: 'made-to-order',
     featured: true,
     tags: ['Single-ingredient', 'Grain-free'],
     image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop',
@@ -49,6 +50,7 @@ let mockProducts = [
     shortDescription: 'Rich beef jerky made for bigger dogs who love a stronger flavor.',
     category: 'Jerky',
     status: 'active',
+    sellingMode: 'inventory-limited',
     featured: false,
     tags: ['High Protein', 'Rich Flavor'],
     image: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?q=80&w=1200&auto=format&fit=crop',
@@ -91,6 +93,7 @@ let mockProducts = [
     shortDescription: 'A lighter protein option with a clean, simple ingredient list.',
     category: 'Jerky',
     status: 'draft',
+    sellingMode: 'inventory-limited',
     featured: false,
     tags: ['Lean Protein', 'Easy to Digest'],
     image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1200&auto=format&fit=crop',
@@ -133,6 +136,7 @@ let mockProducts = [
     shortDescription: 'A premium lamb treat option for dogs who love richer proteins.',
     category: 'Jerky',
     status: 'draft',
+    sellingMode: 'inventory-limited',
     featured: false,
     tags: ['Premium Cut', 'Rich Protein'],
     image: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200&auto=format&fit=crop',
@@ -175,6 +179,7 @@ let mockProducts = [
     shortDescription: 'Tiny, high-reward morsels for focused sessions.',
     category: 'Training',
     status: 'coming-soon',
+    sellingMode: 'preorder',
     featured: false,
     tags: ['Training Size', 'Coming Soon'],
     image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1200&auto=format&fit=crop',
@@ -212,6 +217,7 @@ let mockProducts = [
     shortDescription: 'Limited runs inspired by the season. New flavors, same clean promise.',
     category: 'Seasonal',
     status: 'coming-soon',
+    sellingMode: 'preorder',
     featured: false,
     tags: ['Limited Time', 'Special Flavor'],
     image: 'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?q=80&w=1200&auto=format&fit=crop',
@@ -267,13 +273,13 @@ function normalizeProductInput(productInput) {
         .map((item) => item.trim())
         .filter(Boolean)
 
-  const sixOzPrice = Number(productInput.sixOzPrice || productInput.variants?.[0]?.price || 0)
-  const eighteenOzPrice = Number(productInput.eighteenOzPrice || productInput.variants?.[1]?.price || 0)
+  const sixOzPrice = Number(productInput.sixOzPrice ?? productInput.variants?.[0]?.price ?? 0)
+  const eighteenOzPrice = Number(productInput.eighteenOzPrice ?? productInput.variants?.[1]?.price ?? 0)
 
-  const sixOzQuantity = Number(productInput.sixOzQuantity || productInput.variants?.[0]?.quantity || 0)
-  const eighteenOzQuantity = Number(productInput.eighteenOzQuantity || productInput.variants?.[1]?.quantity || 0)
-  const sixOzLowStockThreshold = Number(productInput.sixOzLowStockThreshold || productInput.variants?.[0]?.lowStockThreshold || 5)
-  const eighteenOzLowStockThreshold = Number(productInput.eighteenOzLowStockThreshold || productInput.variants?.[1]?.lowStockThreshold || 3)
+  const sixOzQuantity = Number(productInput.sixOzQuantity ?? productInput.variants?.[0]?.quantity ?? 0)
+  const eighteenOzQuantity = Number(productInput.eighteenOzQuantity ?? productInput.variants?.[1]?.quantity ?? 0)
+  const sixOzLowStockThreshold = Number(productInput.sixOzLowStockThreshold ?? productInput.variants?.[0]?.lowStockThreshold ?? 5)
+  const eighteenOzLowStockThreshold = Number(productInput.eighteenOzLowStockThreshold ?? productInput.variants?.[1]?.lowStockThreshold ?? 3)
 
   const getStockStatus = (quantity, incomingStatus) => {
     if (incomingStatus === 'coming-soon') return 'coming-soon'
@@ -288,6 +294,7 @@ function normalizeProductInput(productInput) {
     shortDescription: productInput.shortDescription,
     category: productInput.category,
     status: productInput.status,
+    sellingMode: productInput.sellingMode || 'inventory-limited',
     featured: Boolean(productInput.featured),
     tags,
     image: productInput.image,
@@ -360,7 +367,10 @@ export async function updateProductById(productId, productInput) {
 
   const updatedProduct = {
     ...existingProduct,
-    ...normalizeProductInput(productInput),
+    ...normalizeProductInput({
+      ...existingProduct,
+      ...productInput,
+    }),
   }
 
   mockProducts[existingIndex] = updatedProduct
