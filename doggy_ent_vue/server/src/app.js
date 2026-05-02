@@ -1,5 +1,6 @@
 import express from 'express'
 import productsRoutes from './routes/products.routes.js'
+import adminPromosRoutes from './routes/admin/promos.routes.js'
 
 const app = express()
 
@@ -10,5 +11,7 @@ app.get('/api/health', (req, res) => {
 })
 
 app.use('/api/products', productsRoutes)
+app.use('/api/promos', adminPromosRoutes)
+app.use('/api/admin/promos', adminPromosRoutes)
 
 export default app
