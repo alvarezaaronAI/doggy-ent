@@ -1,16 +1,43 @@
+const nowISO = () => new Date().toISOString()
+
 const promos = [
   {
     id: 'promo-chase10',
     code: 'CHASE10',
     name: 'Chase 10 Off',
+
+    // core
+    type: 'global', // global | unique | referral | shelter
     status: 'active',
-    discountType: 'fixed',
+
+    // discount
+    discountType: 'fixed', // fixed | percent
     discountValue: 10,
+
+    // rules
     minimumSubtotal: 0,
+    usageLimitTotal: null,
+    usageLimitPerCustomer: 1,
+    assignedCustomerEmail: null,
+
+    // referral / donation
+    referralOwnerName: 'MIA',
+    donationTarget: 'LA AnimalShelter',
+    donationType: 'percent', // fixed | percent
+    donationValue: 5,
+
+    // tracking (in‑memory for now)
+    usedCount: 0,
+    revenueGenerated: 0,
+    discountGiven: 0,
+    donationGenerated: 0,
+
+    // schedule
     startsAt: null,
     endsAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+
+    createdAt: nowISO(),
+    updatedAt: nowISO(),
   },
 ]
 
@@ -18,21 +45,40 @@ function normalizePromoCode(code) {
   return String(code || '').trim().toUpperCase()
 }
 
-function normalizePromoInput(promoInput) {
-  const now = new Date().toISOString()
-  const code = normalizePromoCode(promoInput.code)
+function normalizePromoInput(input) {
+  const code = normalizePromoCode(input.code)
+  const now = nowISO()
 
   return {
-    id: promoInput.id || `promo-${code.toLowerCase()}`,
+    id: input.id || `promo-${code.toLowerCase()}`,
     code,
-    name: promoInput.name || code,
-    status: promoInput.status || 'draft',
-    discountType: promoInput.discountType || 'fixed',
-    discountValue: Number(promoInput.discountValue || 0),
-    minimumSubtotal: Number(promoInput.minimumSubtotal || 0),
-    startsAt: promoInput.startsAt || null,
-    endsAt: promoInput.endsAt || null,
-    createdAt: promoInput.createdAt || now,
+    name: input.name || code,
+
+    type: input.type || 'global',
+    status: input.status || 'draft',
+
+    discountType: input.discountType || 'fixed',
+    discountValue: Number(input.discountValue ?? 0),
+
+    minimumSubtotal: Number(input.minimumSubtotal ?? 0),
+    usageLimitTotal: input.usageLimitTotal ?? null,
+    usageLimitPerCustomer: input.usageLimitPerCustomer ?? null,
+    assignedCustomerEmail: input.assignedCustomerEmail || null,
+
+    referralOwnerName: input.referralOwnerName || null,
+    donationTarget: input.donationTarget || null,
+    donationType: input.donationType || null,
+    donationValue: Number(input.donationValue ?? 0),
+
+    usedCount: Number(input.usedCount ?? 0),
+    revenueGenerated: Number(input.revenueGenerated ?? 0),
+    discountGiven: Number(input.discountGiven ?? 0),
+    donationGenerated: Number(input.donationGenerated ?? 0),
+
+    startsAt: input.startsAt || null,
+    endsAt: input.endsAt || null,
+
+    createdAt: input.createdAt || now,
     updatedAt: now,
   }
 }
@@ -47,17 +93,33 @@ function isPromoActive(promo) {
   if (startsAt && now < startsAt) return false
   if (endsAt && now > endsAt) return false
 
+  if (promo.usageLimitTotal && promo.usedCount >= promo.usageLimitTotal) {
+    return false
+  }
+
   return true
 }
 
 function calculateDiscountAmount(promo, subtotal) {
-  const safeSubtotal = Number(subtotal || 0)
+  const s = Number(subtotal || 0)
 
   if (promo.discountType === 'percent') {
-    return Math.min(safeSubtotal, safeSubtotal * (Number(promo.discountValue || 0) / 100))
+    return Math.min(s, s * (Number(promo.discountValue || 0) / 100))
   }
 
-  return Math.min(safeSubtotal, Number(promo.discountValue || 0))
+  return Math.min(s, Number(promo.discountValue || 0))
+}
+
+function calculateDonation(promo, subtotal) {
+  const s = Number(subtotal || 0)
+
+  if (!promo.donationType) return 0
+
+  if (promo.donationType === 'percent') {
+    return s * (Number(promo.donationValue || 0) / 100)
+  }
+
+  return Number(promo.donationValue || 0)
 }
 
 export async function getAllPromos() {
@@ -65,45 +127,38 @@ export async function getAllPromos() {
 }
 
 export async function getPromoById(promoId) {
-  return promos.find((promo) => promo.id === promoId) || null
+  return promos.find((p) => p.id === promoId) || null
 }
 
-export async function createPromo(promoInput) {
-  const promo = normalizePromoInput(promoInput)
+export async function createPromo(input) {
+  const promo = normalizePromoInput(input)
 
-  const existingPromo = promos.find((p) => p.code === promo.code)
-  if (existingPromo) {
-    const error = new Error('Promo already exists')
-    error.statusCode = 409
-    throw error
+  if (promos.find((p) => p.code === promo.code)) {
+    const e = new Error('Promo already exists')
+    e.statusCode = 409
+    throw e
   }
 
   promos.push(promo)
   return promo
 }
 
-export async function updatePromoById(promoId, promoInput) {
-  const index = promos.findIndex((p) => p.id === promoId)
-  if (index === -1) throw new Error('Promo not found')
+export async function updatePromoById(promoId, input) {
+  const i = promos.findIndex((p) => p.id === promoId)
+  if (i === -1) throw new Error('Promo not found')
 
-  const updated = normalizePromoInput({
-    ...promos[index],
-    ...promoInput,
-    id: promoId,
-  })
-
-  promos[index] = updated
+  const updated = normalizePromoInput({ ...promos[i], ...input, id: promoId })
+  promos[i] = updated
   return updated
 }
 
 export async function deletePromoById(promoId) {
-  const index = promos.findIndex((p) => p.id === promoId)
-  if (index === -1) throw new Error('Promo not found')
-
-  return promos.splice(index, 1)[0]
+  const i = promos.findIndex((p) => p.id === promoId)
+  if (i === -1) throw new Error('Promo not found')
+  return promos.splice(i, 1)[0]
 }
 
-export async function validatePromoCode({ code, cart }) {
+export async function validatePromoCode({ code, cart, customerEmail }) {
   const normalizedCode = normalizePromoCode(code)
   const subtotal = Number(cart?.subtotal || 0)
 
@@ -117,11 +172,40 @@ export async function validatePromoCode({ code, cart }) {
     return { valid: false, message: 'Promo not active', discountAmount: 0 }
   }
 
+  if (promo.assignedCustomerEmail && promo.assignedCustomerEmail !== customerEmail) {
+    return { valid: false, message: 'Promo not valid for this customer', discountAmount: 0 }
+  }
+
+  if (subtotal < Number(promo.minimumSubtotal || 0)) {
+    return { valid: false, message: 'Minimum subtotal not met', discountAmount: 0 }
+  }
+
   const discountAmount = calculateDiscountAmount(promo, subtotal)
+  const donationAmount = calculateDonation(promo, subtotal)
 
   return {
     valid: true,
+    code: promo.code,
     discountAmount,
-    message: 'Promo applied',
+    donationAmount,
+    referralOwnerName: promo.referralOwnerName,
+    donationTarget: promo.donationTarget,
+    message: `Promo code ${promo.code} applied successfully.`,
   }
+}
+
+export async function recordPromoUsage({ code, cart }) {
+  const normalizedCode = normalizePromoCode(code)
+  const subtotal = Number(cart?.subtotal || 0)
+
+  const promo = promos.find((p) => p.code === normalizedCode)
+  if (!promo) return
+
+  const discountAmount = calculateDiscountAmount(promo, subtotal)
+  const donationAmount = calculateDonation(promo, subtotal)
+
+  promo.usedCount += 1
+  promo.revenueGenerated += subtotal
+  promo.discountGiven += discountAmount
+  promo.donationGenerated += donationAmount
 }

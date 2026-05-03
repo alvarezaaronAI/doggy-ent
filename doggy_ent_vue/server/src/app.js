@@ -1,8 +1,14 @@
 import express from 'express'
+import cors from 'cors'
 import productsRoutes from './routes/products.routes.js'
-import adminPromosRoutes from './routes/admin/promos.routes.js'
+import adminPromosRoutes from './routes/admin/promos.route.js'
+import campaignsRoutes from './routes/admin/campaigns.route.js'
 
 const app = express()
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+}))
 
 app.use(express.json())
 
@@ -13,5 +19,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/products', productsRoutes)
 app.use('/api/promos', adminPromosRoutes)
 app.use('/api/admin/promos', adminPromosRoutes)
+app.use('/api/admin/campaigns', campaignsRoutes)
+app.use('/api/campaigns', campaignsRoutes)
 
 export default app

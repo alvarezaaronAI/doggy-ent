@@ -4,6 +4,7 @@ import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
 import AdminProductsView from '../views/admin/AdminProductsView.vue'
 import AdminOrdersView from '../views/admin/AdminOrdersView.vue'
 import AdminPromosView from '../views/admin/AdminPromosView.vue'
+import AdminCampaignsView from '../views/admin/AdminCampaignsView.vue'
 import CheckoutView from '../views/CheckoutView.vue'
 
 const routes = [
@@ -31,6 +32,11 @@ const routes = [
     path: '/admin/promos',
     name: 'admin-promos',
     component: AdminPromosView,
+  },
+  {
+    path: '/admin/campaigns',
+    name: 'admin-campaigns',
+    component: AdminCampaignsView,
   },
   {
     path: '/checkout',

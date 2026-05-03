@@ -11,6 +11,13 @@ import IngredientsAnalysisSection from '../components/storefront/IngredientsAnal
 import ReviewsPreviewSection from '../components/storefront/ReviewsPreviewSection.vue'
 import AboutBrandSection from '../components/storefront/AboutBrandSection.vue'
 import QuickViewModal from '../components/storefront/QuickViewModal.vue'
+import {
+  getSellingMode,
+  isPurchasable,
+  getAvailableQuantity,
+  limitQuantity,
+  getStockLabel,
+} from '../utils/sellingMode'
 
 const products = ref([])
 const cart = ref([])
@@ -81,22 +88,22 @@ function addToCart(product) {
   const size = product.size || selectedSize || defaultSize
   const quantityToAdd = product.quantity || 1
   const selectedVariant = product.variants?.find((variant) => variant.size === size)
-  const availableQuantity = getVariantAvailableQuantity(product, selectedVariant)
+  const availableQuantity = getAvailableQuantity(product, selectedVariant)
 
-  if (!isVariantPurchasable(product, selectedVariant)) return
+  if (!isPurchasable(product, selectedVariant)) return
 
   const price = Number(product.price || selectedVariant?.price || product.variants?.[0]?.price || 0)
   const existing = cart.value.find((item) => item.id === product.id && item.size === size)
 
   if (existing) {
     const nextQuantity = existing.quantity + quantityToAdd
-    existing.quantity = limitQuantityBySellingMode(product, nextQuantity, availableQuantity)
+    existing.quantity = limitQuantity(product, nextQuantity, availableQuantity)
   } else {
     cart.value.push({
       ...product,
       price,
       size,
-      quantity: limitQuantityBySellingMode(product, quantityToAdd, availableQuantity),
+      quantity: limitQuantity(product, quantityToAdd, availableQuantity),
       availableQuantity,
       sellingMode: getSellingMode(product),
     })
@@ -112,10 +119,10 @@ function increase(id, size) {
 
   const currentProduct = products.value.find((product) => product.id === id)
   const currentVariant = currentProduct?.variants?.find((variant) => variant.size === size)
-  const availableQuantity = getVariantAvailableQuantity(currentProduct || item, currentVariant)
+  const availableQuantity = getAvailableQuantity(currentProduct || item, currentVariant)
 
   const nextQuantity = item.quantity + 1
-  item.quantity = limitQuantityBySellingMode(currentProduct || item, nextQuantity, availableQuantity)
+  item.quantity = limitQuantity(currentProduct || item, nextQuantity, availableQuantity)
 }
 
 function decrease(id, size) {
@@ -195,57 +202,9 @@ function getSelectedCardVariant(product) {
   )
 }
 
-function getSellingMode(product) {
-  return String(product?.sellingMode || 'inventory-limited').trim().toLowerCase()
-}
-
-function canIgnoreInventory(product) {
-  return ['made-to-order', 'preorder'].includes(getSellingMode(product))
-}
-
-function isVariantPurchasable(product, variant = getSelectedCardVariant(product)) {
-  if (product.status !== 'active' || !variant) return false
-
-  if (canIgnoreInventory(product)) {
-    return true
-  }
-
-  return variant.stockStatus === 'in-stock' && Number(variant.quantity || 0) > 0
-}
-
-function getVariantAvailableQuantity(product, variant) {
-  if (canIgnoreInventory(product)) {
-    return Number.POSITIVE_INFINITY
-  }
-
-  return Number(variant?.quantity || 0)
-}
-
-function limitQuantityBySellingMode(product, requestedQuantity, availableQuantity) {
-  if (canIgnoreInventory(product)) {
-    return requestedQuantity
-  }
-
-  return Math.min(requestedQuantity, availableQuantity)
-}
 
 function getSelectedStockLabel(product) {
-  const selectedVariant = getSelectedCardVariant(product)
-
-  if (!selectedVariant) return 'Unavailable'
-
-  const sellingMode = getSellingMode(product)
-
-  if (sellingMode === 'made-to-order') return 'Made to order'
-  if (sellingMode === 'preorder') return 'Preorder'
-  if (selectedVariant.stockStatus === 'out-of-stock' || Number(selectedVariant.quantity || 0) <= 0) {
-    return 'Out of stock'
-  }
-  if (Number(selectedVariant.quantity || 0) <= Number(selectedVariant.lowStockThreshold || 0)) {
-    return 'Low stock'
-  }
-
-  return 'In stock'
+  return getStockLabel(product, getSelectedCardVariant(product))
 }
 
 function formatPrice(value) {
@@ -359,9 +318,9 @@ function formatPrice(value) {
                   </p>
                   <p
                     class="text-xs font-bold uppercase tracking-[0.12em]"
-                    :class="isVariantPurchasable(product)
-                      ? 'text-[color:var(--success-1)]'
-                      : 'text-amber-700'"
+                  :class="isPurchasable(product, getSelectedCardVariant(product))
+                    ? 'text-[color:var(--success-1)]'
+                    : 'text-amber-700'"
                   >
                     {{ getSelectedStockLabel(product) }}
                   </p>
@@ -370,7 +329,7 @@ function formatPrice(value) {
 
               <div class="mt-auto flex items-center justify-between gap-2 pt-5">
                 <button
-                  v-if="isVariantPurchasable(product)"
+                  v-if="isPurchasable(product, getSelectedCardVariant(product))"
                   class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
                   @click.stop="addToCart(product)"
                 >
