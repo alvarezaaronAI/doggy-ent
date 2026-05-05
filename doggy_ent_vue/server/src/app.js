@@ -3,6 +3,7 @@ import cors from 'cors'
 import productsRoutes from './routes/products.routes.js'
 import adminPromosRoutes from './routes/admin/promos.route.js'
 import campaignsRoutes from './routes/admin/campaigns.route.js'
+import checkoutRoutes from './routes/checkout.routes.js'
 
 const app = express()
 
@@ -17,6 +18,7 @@ app.get('/api/health', (req, res) => {
 })
 
 app.use('/api/products', productsRoutes)
+app.use('/api/checkout', checkoutRoutes)
 app.use('/api/promos', adminPromosRoutes)
 app.use('/api/admin/promos', adminPromosRoutes)
 app.use('/api/admin/campaigns', campaignsRoutes)

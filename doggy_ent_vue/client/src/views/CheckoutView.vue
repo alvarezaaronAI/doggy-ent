@@ -1,21 +1,25 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 const CART_STORAGE_KEY = 'doggy-ent-cart'
-const PROMO_CODE = 'CHASE10'
-const PROMO_DISCOUNT_AMOUNT = 10
 const TAX_RATE = 0.075
 
 const cartItems = ref(loadSavedCart())
 const selectedShipping = ref('standard')
 const promoCode = ref('')
 const appliedPromoCode = ref('')
-const promoMessage = ref('Try demo code CHASE10 to simulate a successful promo application.')
+const appliedPromoDiscount = ref(0)
+const promoMessage = ref('Enter a promo code if you have one.')
 const promoStatus = ref('idle')
 const checkoutStatus = ref('')
 const checkoutStatusType = ref('')
 const isProcessingOrder = ref(false)
+const checkoutResult = ref(null)
+const campaignPreview = ref([])
+const isLoadingCampaignPreview = ref(false)
+const isRefreshingCheckoutPreview = ref(false)
+let checkoutPreviewTimer = null
 
 const customer = ref({
   email: '',
@@ -67,7 +71,7 @@ const shippingPrice = computed(() =>
   shippingOptions.find((option) => option.code === selectedShipping.value)?.price || 0
 )
 
-const discount = computed(() => (appliedPromoCode.value ? Math.min(PROMO_DISCOUNT_AMOUNT, subtotal.value) : 0))
+const discount = computed(() => Math.min(Number(appliedPromoDiscount.value || 0), subtotal.value))
 
 const taxableTotal = computed(() => Math.max(subtotal.value - discount.value + shippingPrice.value, 0))
 const tax = computed(() => taxableTotal.value * TAX_RATE)
@@ -86,27 +90,100 @@ function formatPrice(value) {
   return `$${Number(value || 0).toFixed(2)}`
 }
 
-function applyPromoCode() {
+async function loadCampaignPreview() {
+  if (!cartItems.value.length) {
+    campaignPreview.value = []
+    return
+  }
+
+  isLoadingCampaignPreview.value = true
+
+  try {
+    const response = await fetch('/api/campaigns/preview', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        cartItems: cartItems.value,
+      }),
+    })
+
+    if (!response.ok) throw new Error('Unable to preview donation campaigns.')
+
+    const data = await response.json()
+    campaignPreview.value = Array.isArray(data) ? data : []
+  } catch {
+    campaignPreview.value = []
+  } finally {
+    isLoadingCampaignPreview.value = false
+  }
+}
+
+
+const totalCampaignDonation = computed(() =>
+  campaignPreview.value.reduce((total, campaign) => total + Number(campaign.donationAmount || 0), 0)
+)
+
+const trustedPricing = computed(() => checkoutResult.value?.pricing || null)
+
+const summarySubtotal = computed(() => trustedPricing.value?.subtotal ?? subtotal.value)
+const summaryDiscount = computed(() => trustedPricing.value?.discountAmount ?? discount.value)
+const summaryShipping = computed(() => trustedPricing.value?.shippingAmount ?? shippingPrice.value)
+const summaryTax = computed(() => trustedPricing.value?.tax ?? tax.value)
+const summaryDonation = computed(() => trustedPricing.value?.donationAmount ?? totalCampaignDonation.value)
+const summaryTotal = computed(() => trustedPricing.value?.total ?? total.value)
+
+async function applyPromoCode() {
   const normalizedCode = promoCode.value.trim().toUpperCase()
 
   if (!normalizedCode) {
     appliedPromoCode.value = ''
+    appliedPromoDiscount.value = 0
     promoStatus.value = 'error'
     promoMessage.value = 'Enter a promo code to apply a discount.'
     return
   }
 
-  if (normalizedCode === PROMO_CODE) {
-    appliedPromoCode.value = PROMO_CODE
-    promoCode.value = PROMO_CODE
-    promoStatus.value = 'success'
-    promoMessage.value = 'Promo code CHASE10 applied successfully. Demo discount of $10.00 added.'
-    return
-  }
+  promoStatus.value = 'checking'
+  promoMessage.value = 'Checking promo code...'
 
-  appliedPromoCode.value = ''
-  promoStatus.value = 'error'
-  promoMessage.value = `Promo code ${normalizedCode} is not valid.`
+  try {
+    const response = await fetch('/api/promos/validate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code: normalizedCode,
+        cart: {
+          items: cartItems.value,
+          subtotal: subtotal.value,
+        },
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok || !data.valid) {
+      appliedPromoCode.value = ''
+      appliedPromoDiscount.value = 0
+      promoStatus.value = 'error'
+      promoMessage.value = data.message || `Promo code ${normalizedCode} is not valid.`
+      return
+    }
+
+    appliedPromoCode.value = normalizedCode
+    appliedPromoDiscount.value = Number(data.discountAmount || 0)
+    promoCode.value = normalizedCode
+    promoStatus.value = 'success'
+    promoMessage.value = data.message || `Promo code ${normalizedCode} applied successfully.`
+  } catch {
+    appliedPromoCode.value = ''
+    appliedPromoDiscount.value = 0
+    promoStatus.value = 'error'
+    promoMessage.value = 'Promo validation is not available yet. Please try again later.'
+  }
 }
 
 function validateCheckout() {
@@ -156,18 +233,133 @@ function validateCheckout() {
   return true
 }
 
-function placeOrder() {
+async function submitCheckoutToBackend() {
+  const response = await fetch('/api/checkout', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      cartItems: cartItems.value,
+      promoCode: appliedPromoCode.value || null,
+      customerEmail: customer.value.email,
+      customer: customer.value,
+      shipping: {
+        method: selectedShipping.value,
+        price: shippingPrice.value,
+      },
+    }),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || 'Checkout failed.')
+  }
+
+  return data
+}
+
+// Live checkout preview (separate endpoint)
+async function submitCheckoutPreviewToBackend() {
+  const response = await fetch('/api/checkout/preview', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      cartItems: cartItems.value,
+      promoCode: appliedPromoCode.value || null,
+      customerEmail: customer.value.email,
+      customer: customer.value,
+      shipping: {
+        method: selectedShipping.value,
+        price: shippingPrice.value,
+      },
+    }),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || 'Checkout preview failed.')
+  }
+
+  return data
+}
+
+// Live backend checkout/tax preview
+async function refreshCheckoutPreview() {
+  if (!cartItems.value.length) {
+    checkoutResult.value = null
+    return
+  }
+
+  isRefreshingCheckoutPreview.value = true
+
+  try {
+    checkoutResult.value = await submitCheckoutPreviewToBackend()
+  } catch {
+    // Live preview should fail quietly. Final checkout still shows the real error.
+  } finally {
+    isRefreshingCheckoutPreview.value = false
+  }
+}
+
+function scheduleCheckoutPreview() {
+  window.clearTimeout(checkoutPreviewTimer)
+  checkoutPreviewTimer = window.setTimeout(refreshCheckoutPreview, 350)
+}
+
+async function placeOrder() {
   if (!validateCheckout()) return
 
   isProcessingOrder.value = true
   checkoutStatus.value = ''
+  checkoutResult.value = null
 
-  window.setTimeout(() => {
-    isProcessingOrder.value = false
+  try {
+    const result = await submitCheckoutToBackend()
+
+    checkoutResult.value = result
+
+    // Clear checkout/cart state after successful order
+    cartItems.value = []
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([]))
+    campaignPreview.value = []
+    promoCode.value = ''
+    appliedPromoCode.value = ''
+    appliedPromoDiscount.value = 0
+    promoStatus.value = 'idle'
+    promoMessage.value = 'Enter a promo code if you have one.'
+
     checkoutStatusType.value = 'success'
-    checkoutStatus.value = 'Order placed successfully. A confirmation email and shipping updates will be sent shortly.'
-  }, 900)
+    checkoutStatus.value = `Order placed successfully! Order ID: ${result.order?.id || 'Pending'}`
+  } catch (error) {
+    checkoutStatusType.value = 'error'
+    checkoutStatus.value = error.message || 'Checkout failed. Please try again.'
+  } finally {
+    isProcessingOrder.value = false
+  }
 }
+
+watch(
+  [
+    selectedShipping,
+    appliedPromoCode,
+    () => customer.value.state,
+    () => customer.value.zip,
+    () => cartItems.value.map((item) => `${item.id}-${item.size}-${item.quantity}-${item.price}`).join('|'),
+  ],
+  () => {
+    scheduleCheckoutPreview()
+  }
+)
+
+onMounted(() => {
+  loadCampaignPreview()
+  refreshCheckoutPreview()
+})
 </script>
 
 <template>
@@ -406,6 +598,19 @@ function placeOrder() {
                     : 'border-red-200 bg-red-50 text-red-800'"
                 >
                   {{ checkoutStatus }}
+                  <div v-if="checkoutStatusType === 'success' && checkoutResult?.order" class="mt-3 text-xs">
+                    <p><strong>Order ID:</strong> {{ checkoutResult.order.id }}</p>
+                    <p><strong>Total Paid:</strong> {{ formatPrice(checkoutResult.pricing.total) }}</p>
+                    <p v-if="checkoutResult.pricing.donationAmount">
+                      <strong>Donation Generated:</strong> {{ formatPrice(checkoutResult.pricing.donationAmount) }}
+                    </p>
+                  </div>
+                  <div v-if="checkoutResult?.pricing" class="mt-3 grid gap-2 text-xs md:grid-cols-2">
+                    <span>Backend subtotal: {{ formatPrice(checkoutResult.pricing.subtotal) }}</span>
+                    <span>Backend discount: {{ formatPrice(checkoutResult.pricing.discountAmount) }}</span>
+                    <span>Backend donation: {{ formatPrice(checkoutResult.pricing.donationAmount) }}</span>
+                    <span>Backend total: {{ formatPrice(checkoutResult.pricing.total) }}</span>
+                  </div>
                 </div>
               </div>
             </form>
@@ -442,27 +647,69 @@ function placeOrder() {
                 Your cart is empty. Return to the shop to add treats before checking out.
               </div>
 
+              <div
+                v-if="isLoadingCampaignPreview"
+                class="mt-5 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4 text-sm font-semibold text-stone-400"
+              >
+                Checking donation campaigns...
+              </div>
+
+              <div
+                v-else-if="cartItems.length && campaignPreview.length"
+                class="mt-5 rounded-2xl border border-green-200 bg-green-50 p-4 text-green-800"
+              >
+                <div class="flex items-start gap-3">
+                  <i class="fa-solid fa-shield-dog mt-1 text-emerald-400"></i>
+                  <div>
+                    <p class="font-extrabold">This order helps dogs in need</p>
+                    <p class="mt-1 text-sm">
+                      Estimated donation from eligible items: {{ formatPrice(totalCampaignDonation) }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="mt-4 space-y-3">
+                  <div
+                    v-for="campaign in campaignPreview"
+                    :key="campaign.campaignId"
+                    class="rounded-xl bg-white/70 p-3 text-sm"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <p class="font-bold">{{ campaign.campaignName }}</p>
+                        <p class="mt-1 text-xs opacity-80">Supports {{ campaign.donationTarget }}</p>
+                      </div>
+                      <p class="font-extrabold">{{ formatPrice(campaign.donationAmount) }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="my-5 h-px bg-[color-mix(in_srgb,var(--brand-3)_30%,white)]"></div>
 
               <div class="space-y-3 text-sm">
                 <div class="flex items-center justify-between">
                   <span class="text-stone-300">Subtotal</span>
-                  <span class="font-bold">{{ formatPrice(subtotal) }}</span>
+                  <span class="font-bold">{{ formatPrice(summarySubtotal) }}</span>
                 </div>
-                <div v-if="discount" class="flex items-start justify-between gap-3">
+                <div v-if="summaryDiscount" class="flex items-start justify-between gap-3">
                   <div>
                     <span class="text-sm text-stone-300">Promo applied</span>
                     <p class="text-xs font-semibold text-[var(--brand-4)]">{{ appliedPromoCode }}</p>
                   </div>
-                  <span class="font-bold text-[var(--success-1)]">-{{ formatPrice(discount) }}</span>
+                  <span class="font-bold text-[var(--success-1)]">-{{ formatPrice(summaryDiscount) }}</span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-stone-300">Shipping</span>
-                  <span class="font-bold">{{ formatPrice(shippingPrice) }}</span>
+                  <span class="font-bold">{{ formatPrice(summaryShipping) }}</span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-stone-300">Taxes</span>
-                  <span class="font-bold">{{ formatPrice(tax) }}</span>
+                  <span class="font-bold">{{ formatPrice(summaryTax) }}</span>
+                </div>
+                <div v-if="summaryDonation" class="flex items-center justify-between">
+                  <span class="text-stone-300">Donation generated</span>
+                  <span class="font-bold text-[var(--success-1)]">{{ formatPrice(summaryDonation) }}</span>
                 </div>
               </div>
 
@@ -470,12 +717,18 @@ function placeOrder() {
 
               <div class="flex items-center justify-between text-lg">
                 <span class="font-extrabold">Total</span>
-                <span class="font-extrabold text-[var(--brand-4)]">{{ formatPrice(total) }}</span>
+                <span class="font-extrabold text-[var(--brand-4)]">{{ formatPrice(summaryTotal) }}</span>
               </div>
+              <p v-if="isRefreshingCheckoutPreview" class="mt-2 text-xs font-semibold text-stone-400">
+                Updating tax and total...
+              </p>
+              <p v-else-if="trustedPricing" class="mt-2 text-xs font-semibold text-[var(--success-1)]">
+                Verified by backend checkout.
+              </p>
 
               <div class="my-5 h-px bg-[color-mix(in_srgb,var(--brand-3)_30%,white)]"></div>
 
-              <div>
+              <div v-if="cartItems.length">
                 <h3 class="text-base font-extrabold">Promo code</h3>
                 <p class="mt-1 text-sm text-stone-300">Have a discount code? Apply it before placing your order.</p>
 
@@ -483,12 +736,18 @@ function placeOrder() {
                   <input
                     v-model="promoCode"
                     class="flex-1 rounded-2xl border bg-white px-4 py-3 outline-none focus:border-emerald-400"
-                    :class="promoStatus === 'error' ? 'border-red-300 bg-red-50' : promoStatus === 'success' ? 'border-green-300 bg-green-50' : 'border-stone-700'"
+                    :class="promoStatus === 'error' ? 'border-red-300 bg-red-50' : promoStatus === 'success' ? 'border-green-300 bg-green-50' : promoStatus === 'checking' ? 'border-amber-300 bg-amber-50' : 'border-stone-700'"
                     placeholder="Enter promo code"
                     @keydown.enter.prevent="applyPromoCode"
                   />
-                  <button type="button" class="focus-ring rounded-lg border border-emerald-400 px-5 py-3 font-semibold text-emerald-400 hover:bg-stone-900" @click="applyPromoCode">
-                    <i class="fa-solid fa-tag mr-2"></i> Apply
+                  <button
+                    type="button"
+                    class="focus-ring rounded-lg border border-emerald-400 px-5 py-3 font-semibold text-emerald-400 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="promoStatus === 'checking'"
+                    @click="applyPromoCode"
+                  >
+                    <i class="fa-solid fa-tag mr-2"></i>
+                    {{ promoStatus === 'checking' ? 'Checking...' : 'Apply' }}
                   </button>
                 </div>
 
