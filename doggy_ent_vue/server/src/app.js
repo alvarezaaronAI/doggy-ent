@@ -4,6 +4,7 @@ import productsRoutes from './routes/products.routes.js'
 import adminPromosRoutes from './routes/admin/promos.route.js'
 import campaignsRoutes from './routes/admin/campaigns.route.js'
 import checkoutRoutes from './routes/checkout.routes.js'
+import ordersRoutes from './routes/admin/orders.routes.js'
 
 const app = express()
 
@@ -23,5 +24,6 @@ app.use('/api/promos', adminPromosRoutes)
 app.use('/api/admin/promos', adminPromosRoutes)
 app.use('/api/admin/campaigns', campaignsRoutes)
 app.use('/api/campaigns', campaignsRoutes)
+app.use('/api/admin/orders', ordersRoutes)
 
 export default app
