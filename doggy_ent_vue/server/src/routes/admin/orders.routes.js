@@ -10,8 +10,10 @@ import {
   updateFulfillmentStatus,
   getOrderStats,
 } from '../../services/admin/orders.service.js'
+import { requireAdminAuth } from '../../middleware/auth/requireAdminAuth.js'
 
 const router = express.Router()
+router.use(requireAdminAuth)
 
 router.get('/', async (req, res) => {
   try {

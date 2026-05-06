@@ -9,10 +9,11 @@ import {
   deletePromoById,
   validatePromoCode,
 } from '../../services/admin/promos.service.js'
+import { requireAdminAuth } from '../../middleware/auth/requireAdminAuth.js'
 
 const router = express.Router()
 
-router.get('/', async (req, res, next) => {
+router.get('/', requireAdminAuth, async (req, res, next) => {
   try {
     const promos = await getAllPromos()
     res.json(promos)
@@ -21,7 +22,7 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-router.get('/:promoId', async (req, res, next) => {
+router.get('/:promoId', requireAdminAuth, async (req, res, next) => {
   try {
     const promo = await getPromoById(req.params.promoId)
 
@@ -35,7 +36,7 @@ router.get('/:promoId', async (req, res, next) => {
   }
 })
 
-router.post('/', async (req, res, next) => {
+router.post('/', requireAdminAuth, async (req, res, next) => {
   try {
     const promo = await createPromo(req.body)
     res.status(201).json(promo)
@@ -44,7 +45,7 @@ router.post('/', async (req, res, next) => {
   }
 })
 
-router.put('/:promoId', async (req, res, next) => {
+router.put('/:promoId', requireAdminAuth, async (req, res, next) => {
   try {
     const promo = await updatePromoById(req.params.promoId, req.body)
     res.json(promo)
@@ -53,7 +54,7 @@ router.put('/:promoId', async (req, res, next) => {
   }
 })
 
-router.delete('/:promoId', async (req, res, next) => {
+router.delete('/:promoId', requireAdminAuth, async (req, res, next) => {
   try {
     const promo = await deletePromoById(req.params.promoId)
     res.json(promo)

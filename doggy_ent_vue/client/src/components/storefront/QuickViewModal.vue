@@ -1,5 +1,13 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import {
+  getSellingMode,
+  canIgnoreInventory,
+  isInventoryLimited,
+  isPurchasable as isProductPurchasable,
+  getAvailableQuantity,
+  getStockLabel,
+} from '../../utils/sellingMode'
 
 const props = defineProps({
   product: {
@@ -53,6 +61,7 @@ const hasGuaranteedAnalysis = computed(() => {
   )
 })
 
+
 const notIncludedItems = computed(() => {
   if (Array.isArray(props.product?.notIncluded) && props.product.notIncluded.length) {
     return props.product.notIncluded
@@ -61,37 +70,10 @@ const notIncludedItems = computed(() => {
   return ['No salt', 'No sugar', 'No glycerin', 'No preservatives']
 })
 
-const isPurchasable = computed(() => {
-  if (props.product?.status !== 'active' || !selectedVariant.value) return false
 
-  if (props.product.sellingMode === 'made-to-order') return true
-  if (props.product.sellingMode === 'preorder') return true
+const isPurchasable = computed(() => isProductPurchasable(props.product, selectedVariant.value))
 
-  return (
-    selectedVariant.value.stockStatus === 'in-stock' &&
-    Number(selectedVariant.value.quantity || 0) > 0
-  )
-})
-
-const selectedStockLabel = computed(() => {
-  if (!selectedVariant.value) return 'Unavailable'
-
-  if (props.product?.sellingMode === 'made-to-order') return 'Made to order'
-  if (props.product?.sellingMode === 'preorder') return 'Preorder'
-
-  if (
-    selectedVariant.value.stockStatus === 'out-of-stock' ||
-    Number(selectedVariant.value.quantity || 0) <= 0
-  ) {
-    return 'Out of stock'
-  }
-
-  if (Number(selectedVariant.value.quantity || 0) <= Number(selectedVariant.value.lowStockThreshold || 0)) {
-    return 'Low stock'
-  }
-
-  return 'In stock'
-})
+const selectedStockLabel = computed(() => getStockLabel(props.product, selectedVariant.value))
 
 watch(
   () => props.isOpen,
@@ -116,12 +98,12 @@ function formatPrice(value) {
 }
 
 function increaseQuantity() {
-  if (props.product?.sellingMode === 'made-to-order' || props.product?.sellingMode === 'preorder') {
+  if (canIgnoreInventory(props.product)) {
     quantity.value += 1
     return
   }
 
-  const availableQuantity = Number(selectedVariant.value?.quantity || 0)
+  const availableQuantity = getAvailableQuantity(props.product, selectedVariant.value)
 
   if (availableQuantity && quantity.value < availableQuantity) {
     quantity.value += 1
@@ -157,10 +139,8 @@ function addProductToCart() {
     price: unitPrice.value,
     sku: selectedVariant.value.sku,
     quantity: quantity.value,
-    availableQuantity: props.product.sellingMode === 'made-to-order' || props.product.sellingMode === 'preorder'
-      ? Number.POSITIVE_INFINITY
-      : Number(selectedVariant.value.quantity || 0),
-    sellingMode: props.product.sellingMode || 'inventory-limited',
+    availableQuantity: getAvailableQuantity(props.product, selectedVariant.value),
+    sellingMode: getSellingMode(props.product),
   })
 }
 </script>
@@ -247,7 +227,7 @@ function addProductToCart() {
                     selectedSize === variant.size
                       ? 'border-emerald-400 bg-emerald-400 text-[var(--brand-4)] shadow-sm'
                       : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400',
-                    product.sellingMode === 'inventory-limited' && (variant.stockStatus === 'out-of-stock' || Number(variant.quantity || 0) <= 0)
+                    isInventoryLimited(product) && (variant.stockStatus === 'out-of-stock' || Number(variant.quantity || 0) <= 0)
                       ? 'opacity-60'
                       : ''
                   ]"
@@ -302,7 +282,7 @@ function addProductToCart() {
               </div>
             </div>
 
-            <div v-if="product.status === 'active' && product.sellingMode === 'inventory-limited' && !isPurchasable" class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
+            <div v-if="product.status === 'active' && isInventoryLimited(product) && !isPurchasable" class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
               <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">
                 {{ selectedStockLabel }}
               </p>

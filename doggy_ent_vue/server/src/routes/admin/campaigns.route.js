@@ -1,5 +1,3 @@
-
-
 import express from 'express'
 
 import {
@@ -9,12 +7,14 @@ import {
   updateCampaignById,
   deleteCampaignById,
   previewCampaignDonations,
+  recordCampaignDonationUsage,
 } from '../../services/admin/campaigns.service.js'
+import { requireAdminAuth } from '../../middleware/auth/requireAdminAuth.js'
 
 const router = express.Router()
 
 // Admin CRUD routes
-router.get('/', async (req, res) => {
+router.get('/', requireAdminAuth, async (req, res) => {
   try {
     const campaigns = await getAllCampaigns()
     res.json(campaigns)
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
   }
 })
 
-router.get('/:campaignId', async (req, res) => {
+router.get('/:campaignId', requireAdminAuth, async (req, res) => {
   try {
     const campaign = await getCampaignById(req.params.campaignId)
 
@@ -37,7 +37,7 @@ router.get('/:campaignId', async (req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', requireAdminAuth, async (req, res) => {
   try {
     const campaign = await createCampaign(req.body)
     res.status(201).json(campaign)
@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.put('/:campaignId', async (req, res) => {
+router.put('/:campaignId', requireAdminAuth, async (req, res) => {
   try {
     const campaign = await updateCampaignById(req.params.campaignId, req.body)
     res.json(campaign)
@@ -55,7 +55,7 @@ router.put('/:campaignId', async (req, res) => {
   }
 })
 
-router.delete('/:campaignId', async (req, res) => {
+router.delete('/:campaignId', requireAdminAuth, async (req, res) => {
   try {
     const campaign = await deleteCampaignById(req.params.campaignId)
     res.json(campaign)
@@ -73,6 +73,34 @@ router.post('/preview', async (req, res) => {
     res.json(result)
   } catch (error) {
     res.status(500).json({ message: 'Failed to preview campaign donations.' })
+  }
+})
+
+// Record campaign usage after successful order
+router.post('/record-usage', async (req, res) => {
+  try {
+    const { campaigns } = req.body
+
+    if (!Array.isArray(campaigns)) {
+      return res.status(400).json({ message: 'Campaigns payload must be an array.' })
+    }
+
+    const results = []
+
+    for (const campaign of campaigns) {
+      const updated = await recordCampaignDonationUsage({
+        campaignId: campaign.campaignId,
+        subtotal: campaign.matchedSubtotal,
+      })
+
+      if (updated) {
+        results.push(updated)
+      }
+    }
+
+    res.json({ success: true, updatedCampaigns: results })
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to record campaign usage.' })
   }
 })
 
