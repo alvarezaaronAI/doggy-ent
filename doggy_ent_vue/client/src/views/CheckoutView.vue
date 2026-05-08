@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 const CART_STORAGE_KEY = 'doggy-ent-cart'
+const CUSTOMER_STORAGE_KEY = 'doggy-ent-checkout-customer'
 const TAX_RATE = 0.075
 
 const cartItems = ref(loadSavedCart())
@@ -21,21 +22,57 @@ const isLoadingCampaignPreview = ref(false)
 const isRefreshingCheckoutPreview = ref(false)
 let checkoutPreviewTimer = null
 
-const customer = ref({
-  email: '',
-  phone: '',
-  notes: '',
-  firstName: '',
-  lastName: '',
-  address1: '',
-  address2: '',
-  city: '',
-  state: '',
-  zip: '',
-  country: 'US',
-  saveInfo: false,
-  marketingOptIn: false,
-})
+const customer = ref(loadSavedCustomer())
+function getEmptyCustomer() {
+  return {
+    email: '',
+    phone: '',
+    notes: '',
+    firstName: '',
+    lastName: '',
+    address1: '',
+    address2: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: 'US',
+    saveInfo: false,
+    marketingOptIn: false,
+  }
+}
+
+function loadSavedCustomer() {
+  try {
+    const savedCustomer = JSON.parse(localStorage.getItem(CUSTOMER_STORAGE_KEY) || 'null')
+    return savedCustomer && typeof savedCustomer === 'object'
+      ? { ...getEmptyCustomer(), ...savedCustomer }
+      : getEmptyCustomer()
+  } catch {
+    return getEmptyCustomer()
+  }
+}
+
+function saveCustomerForNextCheckout() {
+  if (!customer.value.saveInfo) {
+    localStorage.removeItem(CUSTOMER_STORAGE_KEY)
+    return
+  }
+
+  localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify({
+    email: customer.value.email,
+    phone: customer.value.phone,
+    firstName: customer.value.firstName,
+    lastName: customer.value.lastName,
+    address1: customer.value.address1,
+    address2: customer.value.address2,
+    city: customer.value.city,
+    state: customer.value.state,
+    zip: customer.value.zip,
+    country: customer.value.country,
+    saveInfo: true,
+    marketingOptIn: customer.value.marketingOptIn,
+  }))
+}
 
 const payment = ref({
   nameOnCard: '',
@@ -156,6 +193,7 @@ async function applyPromoCode() {
       },
       body: JSON.stringify({
         code: normalizedCode,
+        customerEmail: customer.value.email,
         cart: {
           items: cartItems.value,
           subtotal: subtotal.value,
@@ -322,6 +360,7 @@ async function placeOrder() {
     const result = await submitCheckoutToBackend()
 
     checkoutResult.value = result
+    saveCustomerForNextCheckout()
 
     // Clear checkout/cart state after successful order
     cartItems.value = []

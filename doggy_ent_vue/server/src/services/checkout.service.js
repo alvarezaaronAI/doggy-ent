@@ -1,4 +1,4 @@
-import { validatePromoCode } from './admin/promos.service.js'
+import { validatePromoCode, recordPromoUsage } from './admin/promos.service.js'
 import { previewCampaignDonations } from './admin/campaigns.service.js'
 import { calculateTax } from './tax.service.js'
 import { createOrder } from './admin/orders.service.js'
@@ -107,21 +107,37 @@ export async function createCheckout(checkoutInput = {}) {
 
   const {
     cartItems = [],
+    promoCode = null,
+    customerEmail = null,
     customer = {},
     shipping = {},
   } = checkoutInput
+
+  let recordedPromo = checkoutPreview.promo
+
+  if (promoCode && checkoutPreview.promo?.valid) {
+    recordedPromo = await recordPromoUsage({
+      code: promoCode,
+      customerEmail,
+      cart: {
+        subtotal: checkoutPreview.pricing.subtotal,
+        items: cartItems,
+      },
+    })
+  }
 
   const order = await createOrder({
     cartItems,
     customer,
     shipping,
     pricing: checkoutPreview.pricing,
-    promo: checkoutPreview.promo,
+    promo: recordedPromo,
     campaigns: checkoutPreview.campaigns,
   })
 
   return {
     ...checkoutPreview,
+    promo: recordedPromo,
     order,
   }
 }

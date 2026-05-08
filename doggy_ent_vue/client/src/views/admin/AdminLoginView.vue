@@ -1,5 +1,3 @@
-
-
 <template>
   <main class="min-h-screen bg-[var(--brand-5)] text-slate-900">
     <section class="mx-auto flex min-h-screen max-w-xl items-center px-6 py-10">
@@ -19,7 +17,7 @@
               autocomplete="username"
               required
               class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 outline-none transition focus:border-emerald-400"
-              placeholder="admin@doggyent.local"
+              placeholder="Enter admin email"
             />
           </label>
 
@@ -64,7 +62,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const email = ref('admin@doggyent.local')
+const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const message = ref('')

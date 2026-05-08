@@ -7,7 +7,7 @@ const promos = [
     name: 'Chase 10 Off',
 
     // core
-    type: 'global', // global | unique | referral | shelter
+    type: 'global', // global | unique | referral
     status: 'active',
 
     // discount
@@ -20,17 +20,13 @@ const promos = [
     usageLimitPerCustomer: 1,
     assignedCustomerEmail: null,
 
-    // referral / donation
-    referralOwnerName: 'MIA',
-    donationTarget: 'LA AnimalShelter',
-    donationType: 'percent', // fixed | percent
-    donationValue: 5,
+    // referral
+    referralOwnerName: null,
 
     // tracking (in‑memory for now)
     usedCount: 0,
     revenueGenerated: 0,
     discountGiven: 0,
-    donationGenerated: 0,
 
     // schedule
     startsAt: null,
@@ -66,14 +62,10 @@ function normalizePromoInput(input) {
     assignedCustomerEmail: input.assignedCustomerEmail || null,
 
     referralOwnerName: input.referralOwnerName || null,
-    donationTarget: input.donationTarget || null,
-    donationType: input.donationType || null,
-    donationValue: Number(input.donationValue ?? 0),
 
     usedCount: Number(input.usedCount ?? 0),
     revenueGenerated: Number(input.revenueGenerated ?? 0),
     discountGiven: Number(input.discountGiven ?? 0),
-    donationGenerated: Number(input.donationGenerated ?? 0),
 
     startsAt: input.startsAt || null,
     endsAt: input.endsAt || null,
@@ -93,7 +85,8 @@ function isPromoActive(promo) {
   if (startsAt && now < startsAt) return false
   if (endsAt && now > endsAt) return false
 
-  if (promo.usageLimitTotal && promo.usedCount >= promo.usageLimitTotal) {
+  if (hasReachedUsageLimit(promo)) {
+    expirePromoIfLimitReached(promo)
     return false
   }
 
@@ -110,17 +103,19 @@ function calculateDiscountAmount(promo, subtotal) {
   return Math.min(s, Number(promo.discountValue || 0))
 }
 
-function calculateDonation(promo, subtotal) {
-  const s = Number(subtotal || 0)
+function hasReachedUsageLimit(promo) {
+  return promo.usageLimitTotal !== null && Number(promo.usedCount || 0) >= Number(promo.usageLimitTotal)
+}
 
-  if (!promo.donationType) return 0
-
-  if (promo.donationType === 'percent') {
-    return s * (Number(promo.donationValue || 0) / 100)
+function expirePromoIfLimitReached(promo) {
+  if (hasReachedUsageLimit(promo)) {
+    promo.status = 'expired'
+    promo.updatedAt = nowISO()
   }
 
-  return Number(promo.donationValue || 0)
+  return promo
 }
+
 
 export async function getAllPromos() {
   return promos
@@ -169,28 +164,29 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
   }
 
   if (!isPromoActive(promo)) {
-    return { valid: false, message: 'Promo not active', discountAmount: 0 }
+    const message = hasReachedUsageLimit(promo)
+      ? 'Promo usage limit reached.'
+      : 'Promo not active.'
+
+    return { valid: false, message, discountAmount: 0 }
   }
 
-  if (promo.assignedCustomerEmail && promo.assignedCustomerEmail !== customerEmail) {
-    return { valid: false, message: 'Promo not valid for this customer', discountAmount: 0 }
-  }
 
   if (subtotal < Number(promo.minimumSubtotal || 0)) {
     return { valid: false, message: 'Minimum subtotal not met', discountAmount: 0 }
   }
 
   const discountAmount = calculateDiscountAmount(promo, subtotal)
-  const donationAmount = calculateDonation(promo, subtotal)
 
   return {
     valid: true,
     code: promo.code,
     discountAmount,
-    donationAmount,
     referralOwnerName: promo.referralOwnerName,
-    donationTarget: promo.donationTarget,
-    message: `Promo code ${promo.code} applied successfully.`,
+    assignedCustomerEmail: promo.assignedCustomerEmail,
+    message: promo.assignedCustomerEmail
+      ? `Promo code ${promo.code} applied successfully. This is a customer-specific code.`
+      : `Promo code ${promo.code} applied successfully.`,
   }
 }
 
@@ -202,10 +198,11 @@ export async function recordPromoUsage({ code, cart }) {
   if (!promo) return
 
   const discountAmount = calculateDiscountAmount(promo, subtotal)
-  const donationAmount = calculateDonation(promo, subtotal)
 
   promo.usedCount += 1
   promo.revenueGenerated += subtotal
   promo.discountGiven += discountAmount
-  promo.donationGenerated += donationAmount
+  expirePromoIfLimitReached(promo)
+
+  return promo
 }

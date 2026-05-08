@@ -18,13 +18,45 @@ const promoTestForm = ref({
   customerEmail: '',
 })
 
+
 const form = ref(getEmptyForm())
+
+// Promo library search/filter controls
+const promoSearchQuery = ref('')
+const promoTypeFilter = ref('all')
+const promoStatusFilter = ref('all')
 
 const activePromos = computed(() => promos.value.filter((promo) => promo.status === 'active'))
 const totalUses = computed(() => promos.value.reduce((total, promo) => total + Number(promo.usedCount || 0), 0))
 const totalDiscountGiven = computed(() => promos.value.reduce((total, promo) => total + Number(promo.discountGiven || 0), 0))
-const totalDonationGenerated = computed(() => promos.value.reduce((total, promo) => total + Number(promo.donationGenerated || 0), 0))
+
 const totalRevenueGenerated = computed(() => promos.value.reduce((total, promo) => total + Number(promo.revenueGenerated || 0), 0))
+
+// Filtering and grouping for promo library UI
+const filteredPromos = computed(() => {
+  const query = promoSearchQuery.value.trim().toLowerCase()
+
+  return promos.value.filter((promo) => {
+    const matchesQuery = !query || [
+      promo.code,
+      promo.name,
+      promo.type,
+      promo.status,
+      promo.assignedCustomerEmail,
+      promo.referralOwnerName,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(query))
+
+    const matchesType = promoTypeFilter.value === 'all' || promo.type === promoTypeFilter.value
+    const matchesStatus = promoStatusFilter.value === 'all' || promo.status === promoStatusFilter.value
+
+    return matchesQuery && matchesType && matchesStatus
+  })
+})
+
+const activeFilteredPromos = computed(() => filteredPromos.value.filter((promo) => promo.status === 'active'))
+const inactiveFilteredPromos = computed(() => filteredPromos.value.filter((promo) => promo.status !== 'active'))
 
 function getEmptyForm() {
   return {
@@ -39,11 +71,10 @@ function getEmptyForm() {
     usageLimitPerCustomer: 1,
     assignedCustomerEmail: '',
     referralOwnerName: '',
-    donationTarget: '',
-    donationType: '',
-    donationValue: 0,
-    startsAt: '',
-    endsAt: '',
+    startsDate: '',
+    startsTime: '',
+    endsDate: '',
+    endsTime: '',
   }
 }
 
@@ -55,6 +86,22 @@ function normalizeOptionalNumber(value) {
 function normalizeOptionalString(value) {
   const normalized = String(value || '').trim()
   return normalized || null
+}
+
+function splitDateTime(value) {
+  if (!value) {
+    return { date: '', time: '' }
+  }
+
+  const [date = '', timeWithSeconds = ''] = String(value).split('T')
+  const time = timeWithSeconds.slice(0, 5)
+
+  return { date, time }
+}
+
+function combineDateTime(date, time) {
+  if (!date) return null
+  return `${date}T${time || '00:00'}`
 }
 
 function buildPayload() {
@@ -70,11 +117,8 @@ function buildPayload() {
     usageLimitPerCustomer: normalizeOptionalNumber(form.value.usageLimitPerCustomer),
     assignedCustomerEmail: normalizeOptionalString(form.value.assignedCustomerEmail),
     referralOwnerName: normalizeOptionalString(form.value.referralOwnerName),
-    donationTarget: normalizeOptionalString(form.value.donationTarget),
-    donationType: normalizeOptionalString(form.value.donationType),
-    donationValue: Number(form.value.donationValue || 0),
-    startsAt: normalizeOptionalString(form.value.startsAt),
-    endsAt: normalizeOptionalString(form.value.endsAt),
+    startsAt: combineDateTime(form.value.startsDate, form.value.startsTime),
+    endsAt: combineDateTime(form.value.endsDate, form.value.endsTime),
   }
 }
 
@@ -82,23 +126,29 @@ function formatPrice(value) {
   return `$${Number(value || 0).toFixed(2)}`
 }
 
+
 function formatDiscount(promo) {
   if (promo.discountType === 'percent') return `${Number(promo.discountValue || 0)}% off`
   return `${formatPrice(promo.discountValue)} off`
 }
 
-function formatDonationRule(promo) {
-  if (!promo.donationType || !promo.donationValue) return 'No donation rule'
-  if (promo.donationType === 'percent') return `${Number(promo.donationValue)}% of subtotal`
-  return `${formatPrice(promo.donationValue)} per order`
+function getUsageLabel(promo) {
+  return `${promo.usedCount || 0} / ${promo.usageLimitTotal || 'Unlimited'}`
 }
+
+function getPromoStatusClass(status) {
+  if (status === 'active') return 'bg-green-50 text-green-700'
+  if (status === 'expired') return 'bg-red-50 text-red-700'
+  if (status === 'paused') return 'bg-amber-50 text-amber-700'
+  return 'bg-stone-100 text-stone-500'
+}
+
 
 function getPromoTypeLabel(type) {
   const labels = {
     global: 'Global',
     unique: 'Unique customer',
     referral: 'Referral',
-    shelter: 'Shelter donation',
   }
 
   return labels[type] || type
@@ -106,6 +156,28 @@ function getPromoTypeLabel(type) {
 
 function selectPromoForTest(promo) {
   promoTestForm.value.code = promo.code
+}
+
+function getSecureRandomCode(length = 12) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const randomValues = new Uint32Array(length)
+  window.crypto.getRandomValues(randomValues)
+
+  return Array.from(randomValues, (value) => alphabet[value % alphabet.length]).join('')
+}
+
+function generateUniquePromoCode() {
+  const suffix = getSecureRandomCode(12)
+
+  form.value.code = `VIP-${suffix}`
+  form.value.type = 'unique'
+  form.value.status = 'active'
+  form.value.usageLimitTotal = 1
+  form.value.usageLimitPerCustomer = 1
+
+  if (!form.value.name) {
+    form.value.name = 'Unique customer code'
+  }
 }
 
 async function testPromoCode() {
@@ -140,7 +212,6 @@ async function testPromoCode() {
       valid: false,
       message: error.message || 'Unable to test promo code.',
       discountAmount: 0,
-      donationAmount: 0,
       statusCode: 500,
     }
   } finally {
@@ -202,6 +273,9 @@ function editPromo(promo) {
   successMessage.value = ''
   errorMessage.value = ''
 
+  const starts = splitDateTime(promo.startsAt)
+  const ends = splitDateTime(promo.endsAt)
+
   form.value = {
     code: promo.code || '',
     name: promo.name || '',
@@ -214,11 +288,10 @@ function editPromo(promo) {
     usageLimitPerCustomer: promo.usageLimitPerCustomer ?? '',
     assignedCustomerEmail: promo.assignedCustomerEmail || '',
     referralOwnerName: promo.referralOwnerName || '',
-    donationTarget: promo.donationTarget || '',
-    donationType: promo.donationType || '',
-    donationValue: Number(promo.donationValue || 0),
-    startsAt: promo.startsAt || '',
-    endsAt: promo.endsAt || '',
+    startsDate: starts.date,
+    startsTime: starts.time,
+    endsDate: ends.date,
+    endsTime: ends.time,
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -264,12 +337,12 @@ onMounted(loadPromos)
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Admin</p>
         <h1 class="mt-2 text-3xl font-extrabold text-[var(--brand-4)]">Promo Codes</h1>
         <p class="mt-2 max-w-2xl text-stone-300">
-          Create global discounts, unique customer codes, referral codes, and shelter donation campaigns.
+          Create global discounts, unique one-time customer codes, and referral promo codes.
         </p>
       </div>
     </div>
 
-    <div class="mb-8 grid gap-4 md:grid-cols-4">
+    <div class="mb-8 grid gap-4 md:grid-cols-3">
       <article class="section-panel p-5">
         <p class="text-sm font-semibold text-stone-400">Active codes</p>
         <p class="mt-2 text-3xl font-extrabold text-[var(--brand-4)]">{{ activePromos.length }}</p>
@@ -281,10 +354,6 @@ onMounted(loadPromos)
       <article class="section-panel p-5">
         <p class="text-sm font-semibold text-stone-400">Discount given</p>
         <p class="mt-2 text-3xl font-extrabold text-[var(--brand-4)]">{{ formatPrice(totalDiscountGiven) }}</p>
-      </article>
-      <article class="section-panel p-5">
-        <p class="text-sm font-semibold text-stone-400">Donation generated</p>
-        <p class="mt-2 text-3xl font-extrabold text-[var(--brand-4)]">{{ formatPrice(totalDonationGenerated) }}</p>
       </article>
     </div>
 
@@ -357,22 +426,14 @@ onMounted(loadPromos)
           </span>
         </div>
 
-        <div v-if="promoTestResult.valid" class="mt-4 grid gap-3 md:grid-cols-4">
+        <div v-if="promoTestResult.valid" class="mt-4 grid gap-3 md:grid-cols-2">
           <div class="rounded-xl bg-white/70 p-3">
             <p class="text-xs font-semibold opacity-70">Discount</p>
             <p class="mt-1 text-lg font-extrabold">{{ formatPrice(promoTestResult.discountAmount) }}</p>
           </div>
           <div class="rounded-xl bg-white/70 p-3">
-            <p class="text-xs font-semibold opacity-70">Donation</p>
-            <p class="mt-1 text-lg font-extrabold">{{ formatPrice(promoTestResult.donationAmount) }}</p>
-          </div>
-          <div class="rounded-xl bg-white/70 p-3">
             <p class="text-xs font-semibold opacity-70">Referral owner</p>
             <p class="mt-1 text-sm font-extrabold">{{ promoTestResult.referralOwnerName || 'None' }}</p>
-          </div>
-          <div class="rounded-xl bg-white/70 p-3">
-            <p class="text-xs font-semibold opacity-70">Donation target</p>
-            <p class="mt-1 text-sm font-extrabold">{{ promoTestResult.donationTarget || 'None' }}</p>
           </div>
         </div>
       </div>
@@ -396,10 +457,22 @@ onMounted(loadPromos)
           {{ successMessage }}
         </div>
 
-        <label class="block">
-          <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Code *</span>
-          <input v-model="form.code" required class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="CHASE10" />
-        </label>
+        <div class="block">
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <span class="block text-sm font-semibold text-[var(--brand-4)]">Code *</span>
+            <button
+              type="button"
+              class="rounded-lg border border-emerald-400 px-3 py-1.5 text-xs font-bold text-emerald-500 hover:bg-emerald-50"
+              @click="generateUniquePromoCode"
+            >
+              Generate Unique Code
+            </button>
+          </div>
+          <input v-model="form.code" required class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="CHASE10 or VIP-K7X2P9" />
+          <p class="mt-2 text-xs text-stone-400">
+            Use manual codes for public sales, or generate hard-to-guess one-time codes for specific customers.
+          </p>
+        </div>
 
         <label class="block">
           <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Name *</span>
@@ -413,7 +486,6 @@ onMounted(loadPromos)
               <option value="global">Global</option>
               <option value="unique">Unique customer</option>
               <option value="referral">Referral</option>
-              <option value="shelter">Shelter donation</option>
             </select>
           </label>
 
@@ -468,50 +540,52 @@ onMounted(loadPromos)
         </div>
 
         <div class="rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
-          <h3 class="font-extrabold text-[var(--brand-4)]">Referral / Donation tracking</h3>
+          <h3 class="font-extrabold text-[var(--brand-4)]">Referral tracking</h3>
           <p class="mt-1 text-sm text-stone-300">
-            Optional fields for referral codes, influencer codes, or shelter donation campaigns.
+            Optional owner name for influencer, customer, or partner referral codes.
           </p>
 
-          <div class="mt-4 space-y-4">
-            <label class="block">
-              <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Referral owner</span>
-              <input v-model="form.referralOwnerName" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="Influencer, customer, partner, etc." />
-            </label>
-
-            <label class="block">
-              <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Donation target</span>
-              <input v-model="form.donationTarget" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="LA Animal Shelter" />
-            </label>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <label class="block">
-                <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Donation type</span>
-                <select v-model="form.donationType" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
-                  <option value="">None</option>
-                  <option value="fixed">Fixed amount</option>
-                  <option value="percent">Percent</option>
-                </select>
-              </label>
-
-              <label class="block">
-                <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Donation value</span>
-                <input v-model.number="form.donationValue" type="number" min="0" step="0.01" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" />
-              </label>
-            </div>
-          </div>
+          <label class="mt-4 block">
+            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Referral owner</span>
+            <input v-model="form.referralOwnerName" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="Influencer, customer, partner, etc." />
+          </label>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="block">
-            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Starts at</span>
-            <input v-model="form.startsAt" type="datetime-local" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" />
-          </label>
+        <div class="rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
+          <h3 class="font-extrabold text-[var(--brand-4)]">Schedule</h3>
+          <p class="mt-1 text-sm text-stone-300">
+            Optional. Leave blank for codes that are available until paused, expired, or deleted.
+          </p>
 
-          <label class="block">
-            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Ends at</span>
-            <input v-model="form.endsAt" type="datetime-local" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" />
-          </label>
+          <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <div class="rounded-xl bg-white/70 p-3">
+              <p class="mb-3 text-sm font-bold text-[var(--brand-4)]">Starts</p>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold text-stone-400">Date</span>
+                  <input v-model="form.startsDate" type="date" class="w-full rounded-xl border border-stone-700 bg-white px-3 py-2 outline-none focus:border-emerald-400" />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold text-stone-400">Time</span>
+                  <input v-model="form.startsTime" type="time" class="w-full rounded-xl border border-stone-700 bg-white px-3 py-2 outline-none focus:border-emerald-400" />
+                </label>
+              </div>
+            </div>
+
+            <div class="rounded-xl bg-white/70 p-3">
+              <p class="mb-3 text-sm font-bold text-[var(--brand-4)]">Ends</p>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold text-stone-400">Date</span>
+                  <input v-model="form.endsDate" type="date" class="w-full rounded-xl border border-stone-700 bg-white px-3 py-2 outline-none focus:border-emerald-400" />
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold text-stone-400">Time</span>
+                  <input v-model="form.endsTime" type="time" class="w-full rounded-xl border border-stone-700 bg-white px-3 py-2 outline-none focus:border-emerald-400" />
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
@@ -530,10 +604,45 @@ onMounted(loadPromos)
             <div>
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Promo library</p>
               <h2 class="mt-2 text-2xl font-extrabold text-[var(--brand-4)]">Codes & performance</h2>
+              <p class="mt-2 text-sm text-stone-400">
+                Active codes appear first. Use filters to quickly find global, referral, or one-time customer codes.
+              </p>
             </div>
             <button class="rounded-lg border border-emerald-400 px-4 py-2 font-semibold text-emerald-400 hover:bg-stone-900" @click="loadPromos">
               Refresh
             </button>
+          </div>
+
+          <div class="mt-5 grid gap-3 lg:grid-cols-[1.4fr_0.8fr_0.8fr]">
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Search</span>
+              <input
+                v-model="promoSearchQuery"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400"
+                placeholder="Search code, email, owner, type..."
+              />
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Type</span>
+              <select v-model="promoTypeFilter" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
+                <option value="all">All types</option>
+                <option value="global">Global</option>
+                <option value="unique">Unique customer</option>
+                <option value="referral">Referral</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Status</span>
+              <select v-model="promoStatusFilter" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="paused">Paused</option>
+                <option value="expired">Expired</option>
+              </select>
+            </label>
           </div>
         </div>
 
@@ -543,73 +652,158 @@ onMounted(loadPromos)
           No promo codes yet.
         </div>
 
-        <div v-else class="overflow-x-auto">
-          <table class="min-w-full text-left text-sm">
-            <thead class="bg-[color:var(--brand-5)]/65 text-[var(--brand-4)]">
-              <tr>
-                <th class="px-5 py-4 font-extrabold">Code</th>
-                <th class="px-5 py-4 font-extrabold">Type</th>
-                <th class="px-5 py-4 font-extrabold">Status</th>
-                <th class="px-5 py-4 font-extrabold">Discount</th>
-                <th class="px-5 py-4 font-extrabold">Usage</th>
-                <th class="px-5 py-4 font-extrabold">Donation</th>
-                <th class="px-5 py-4 font-extrabold">Performance</th>
-                <th class="px-5 py-4 font-extrabold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="promo in promos" :key="promo.id" class="border-t border-stone-800/50 align-top">
-                <td class="px-5 py-4">
-                  <p class="font-extrabold text-[var(--brand-4)]">{{ promo.code }}</p>
-                  <p class="mt-1 text-xs text-stone-400">{{ promo.name }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <span class="rounded-full bg-[color-mix(in_srgb,var(--brand-5)_70%,white)] px-3 py-1 text-xs font-bold text-[var(--brand-4)]">
-                    {{ getPromoTypeLabel(promo.type) }}
-                  </span>
-                  <p v-if="promo.assignedCustomerEmail" class="mt-2 text-xs text-stone-400">{{ promo.assignedCustomerEmail }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <span class="rounded-full px-3 py-1 text-xs font-bold" :class="promo.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-stone-100 text-stone-500'">
-                    {{ promo.status }}
-                  </span>
-                </td>
-                <td class="px-5 py-4">
-                  <p class="font-bold">{{ formatDiscount(promo) }}</p>
-                  <p class="mt-1 text-xs text-stone-400">Minimum {{ formatPrice(promo.minimumSubtotal) }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <p class="font-bold">{{ promo.usedCount || 0 }} used</p>
-                  <p class="mt-1 text-xs text-stone-400">Limit {{ promo.usageLimitTotal || 'Unlimited' }}</p>
-                  <p class="mt-1 text-xs text-stone-400">Per customer {{ promo.usageLimitPerCustomer || 'Unlimited' }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <p class="font-bold">{{ promo.donationTarget || 'None' }}</p>
-                  <p class="mt-1 text-xs text-stone-400">{{ formatDonationRule(promo) }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--success-1)]">{{ formatPrice(promo.donationGenerated) }} generated</p>
-                </td>
-                <td class="px-5 py-4">
-                  <p class="text-xs text-stone-400">Revenue</p>
-                  <p class="font-bold">{{ formatPrice(promo.revenueGenerated) }}</p>
-                  <p class="mt-2 text-xs text-stone-400">Discount</p>
-                  <p class="font-bold">{{ formatPrice(promo.discountGiven) }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <div class="flex flex-wrap gap-2">
-                    <button class="rounded-lg border border-stone-700 px-3 py-2 text-xs font-bold text-stone-500 hover:border-emerald-400" @click="selectPromoForTest(promo)">
-                      Test
-                    </button>
-                    <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="editPromo(promo)">
-                      Edit
-                    </button>
-                    <button class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50" @click="deletePromo(promo)">
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-else-if="!filteredPromos.length" class="p-6 text-stone-300">
+          No promo codes match your filters.
+        </div>
+
+        <div v-else class="space-y-8 p-5 md:p-6">
+          <section>
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <h3 class="text-lg font-extrabold text-[var(--brand-4)]">Active promos</h3>
+              <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">{{ activeFilteredPromos.length }} active</span>
+            </div>
+
+            <div v-if="!activeFilteredPromos.length" class="rounded-2xl border border-stone-200 bg-white/70 p-4 text-sm text-stone-400">
+              No active promos match this view.
+            </div>
+
+            <div v-else class="overflow-x-auto rounded-2xl border border-stone-200 bg-white/70">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-[color:var(--brand-5)]/65 text-[var(--brand-4)]">
+                  <tr>
+                    <th class="px-5 py-4 font-extrabold">Code</th>
+                    <th class="px-5 py-4 font-extrabold">Type</th>
+                    <th class="px-5 py-4 font-extrabold">Status</th>
+                    <th class="px-5 py-4 font-extrabold">Discount</th>
+                    <th class="px-5 py-4 font-extrabold">Usage</th>
+                    <th class="px-5 py-4 font-extrabold">Performance</th>
+                    <th class="px-5 py-4 font-extrabold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="promo in activeFilteredPromos" :key="promo.id" class="border-t border-stone-200 align-top">
+                    <td class="px-5 py-4">
+                      <p class="font-extrabold text-[var(--brand-4)]">{{ promo.code }}</p>
+                      <p class="mt-1 text-xs text-stone-400">{{ promo.name }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <span class="rounded-full bg-[color-mix(in_srgb,var(--brand-5)_70%,white)] px-3 py-1 text-xs font-bold text-[var(--brand-4)]">
+                        {{ getPromoTypeLabel(promo.type) }}
+                      </span>
+                      <p v-if="promo.assignedCustomerEmail" class="mt-2 text-xs text-stone-400">{{ promo.assignedCustomerEmail }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <span class="rounded-full px-3 py-1 text-xs font-bold" :class="getPromoStatusClass(promo.status)">
+                        {{ promo.status }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="font-bold">{{ formatDiscount(promo) }}</p>
+                      <p class="mt-1 text-xs text-stone-400">Minimum {{ formatPrice(promo.minimumSubtotal) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="font-bold">{{ getUsageLabel(promo) }} used</p>
+                      <p v-if="promo.usageLimitTotal && promo.usedCount >= promo.usageLimitTotal" class="mt-1 text-xs font-bold text-red-600">Limit reached</p>
+                      <p class="mt-1 text-xs text-stone-400">Per customer {{ promo.usageLimitPerCustomer || 'Unlimited' }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="text-xs text-stone-400">Revenue</p>
+                      <p class="font-bold">{{ formatPrice(promo.revenueGenerated) }}</p>
+                      <p class="mt-2 text-xs text-stone-400">Discount</p>
+                      <p class="font-bold">{{ formatPrice(promo.discountGiven) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <div class="flex flex-wrap gap-2">
+                        <button class="rounded-lg border border-stone-700 px-3 py-2 text-xs font-bold text-stone-500 hover:border-emerald-400" @click="selectPromoForTest(promo)">
+                          Test
+                        </button>
+                        <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="editPromo(promo)">
+                          Edit
+                        </button>
+                        <button class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50" @click="deletePromo(promo)">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <h3 class="text-lg font-extrabold text-[var(--brand-4)]">Draft, paused & expired promos</h3>
+              <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-stone-600">{{ inactiveFilteredPromos.length }} inactive</span>
+            </div>
+
+            <div v-if="!inactiveFilteredPromos.length" class="rounded-2xl border border-stone-200 bg-white/70 p-4 text-sm text-stone-400">
+              No inactive promos match this view.
+            </div>
+
+            <div v-else class="overflow-x-auto rounded-2xl border border-stone-200 bg-white/70">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-[color:var(--brand-5)]/65 text-[var(--brand-4)]">
+                  <tr>
+                    <th class="px-5 py-4 font-extrabold">Code</th>
+                    <th class="px-5 py-4 font-extrabold">Type</th>
+                    <th class="px-5 py-4 font-extrabold">Status</th>
+                    <th class="px-5 py-4 font-extrabold">Discount</th>
+                    <th class="px-5 py-4 font-extrabold">Usage</th>
+                    <th class="px-5 py-4 font-extrabold">Performance</th>
+                    <th class="px-5 py-4 font-extrabold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="promo in inactiveFilteredPromos" :key="promo.id" class="border-t border-stone-200 align-top">
+                    <td class="px-5 py-4">
+                      <p class="font-extrabold text-[var(--brand-4)]">{{ promo.code }}</p>
+                      <p class="mt-1 text-xs text-stone-400">{{ promo.name }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <span class="rounded-full bg-[color-mix(in_srgb,var(--brand-5)_70%,white)] px-3 py-1 text-xs font-bold text-[var(--brand-4)]">
+                        {{ getPromoTypeLabel(promo.type) }}
+                      </span>
+                      <p v-if="promo.assignedCustomerEmail" class="mt-2 text-xs text-stone-400">{{ promo.assignedCustomerEmail }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <span class="rounded-full px-3 py-1 text-xs font-bold" :class="getPromoStatusClass(promo.status)">
+                        {{ promo.status }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="font-bold">{{ formatDiscount(promo) }}</p>
+                      <p class="mt-1 text-xs text-stone-400">Minimum {{ formatPrice(promo.minimumSubtotal) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="font-bold">{{ getUsageLabel(promo) }} used</p>
+                      <p v-if="promo.usageLimitTotal && promo.usedCount >= promo.usageLimitTotal" class="mt-1 text-xs font-bold text-red-600">Limit reached</p>
+                      <p class="mt-1 text-xs text-stone-400">Per customer {{ promo.usageLimitPerCustomer || 'Unlimited' }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="text-xs text-stone-400">Revenue</p>
+                      <p class="font-bold">{{ formatPrice(promo.revenueGenerated) }}</p>
+                      <p class="mt-2 text-xs text-stone-400">Discount</p>
+                      <p class="font-bold">{{ formatPrice(promo.discountGiven) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <div class="flex flex-wrap gap-2">
+                        <button class="rounded-lg border border-stone-700 px-3 py-2 text-xs font-bold text-stone-500 hover:border-emerald-400" @click="selectPromoForTest(promo)">
+                          Test
+                        </button>
+                        <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="editPromo(promo)">
+                          Edit
+                        </button>
+                        <button class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50" @click="deletePromo(promo)">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </section>
     </div>

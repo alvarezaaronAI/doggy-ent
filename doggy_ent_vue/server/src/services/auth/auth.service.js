@@ -1,6 +1,5 @@
-
-
 import crypto from 'crypto'
+import bcrypt from 'bcryptjs'
 
 const SESSION_COOKIE_NAME = 'doggy_admin_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8 // 8 hours
@@ -12,9 +11,16 @@ function now() {
 }
 
 function getAdminCredentials() {
+  const email = process.env.ADMIN_EMAIL
+  const passwordHash = process.env.ADMIN_PASSWORD_HASH
+
+  if (!email || !passwordHash) {
+    throw new Error('Missing ADMIN_EMAIL or ADMIN_PASSWORD_HASH environment variables.')
+  }
+
   return {
-    email: process.env.ADMIN_EMAIL || 'admin@doggyent.local',
-    password: process.env.ADMIN_PASSWORD || 'dev-password-change-me',
+    email,
+    passwordHash,
   }
 }
 
@@ -66,7 +72,9 @@ export async function loginAdmin({ email, password }) {
     throw error
   }
 
-  if (normalizedEmail !== normalizedAdminEmail || password !== credentials.password) {
+  const passwordMatches = await bcrypt.compare(password, credentials.passwordHash)
+
+  if (normalizedEmail !== normalizedAdminEmail || !passwordMatches) {
     const error = new Error('Invalid admin credentials.')
     error.statusCode = 401
     throw error
