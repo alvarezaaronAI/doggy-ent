@@ -35,12 +35,8 @@ let mockProducts = [
         lowStockThreshold: 3,
       },
     ],
-    guaranteedAnalysis: {
-      crudeProteinMin: '70%',
-      crudeFatMin: '4.5%',
-      crudeFiberMax: '0.5%',
-      moistureMax: '20%',
-    },
+    showGuaranteedAnalysis: false,
+    guaranteedAnalysis: {},
   },
   {
     id: 'beef-jerky',
@@ -78,12 +74,8 @@ let mockProducts = [
         lowStockThreshold: 3,
       },
     ],
-    guaranteedAnalysis: {
-      crudeProteinMin: '68%',
-      crudeFatMin: '6%',
-      crudeFiberMax: '1%',
-      moistureMax: '20%',
-    },
+    showGuaranteedAnalysis: false,
+    guaranteedAnalysis: {},
   },
   {
     id: 'turkey-jerky',
@@ -121,12 +113,8 @@ let mockProducts = [
         lowStockThreshold: 3,
       },
     ],
-    guaranteedAnalysis: {
-      crudeProteinMin: '69%',
-      crudeFatMin: '4%',
-      crudeFiberMax: '0.5%',
-      moistureMax: '20%',
-    },
+    showGuaranteedAnalysis: false,
+    guaranteedAnalysis: {},
   },
   {
     id: 'lamb-jerky',
@@ -164,12 +152,8 @@ let mockProducts = [
         lowStockThreshold: 3,
       },
     ],
-    guaranteedAnalysis: {
-      crudeProteinMin: '65%',
-      crudeFatMin: '8%',
-      crudeFiberMax: '1%',
-      moistureMax: '20%',
-    },
+    showGuaranteedAnalysis: false,
+    guaranteedAnalysis: {},
   },
   {
     id: 'training-bites',
@@ -207,6 +191,7 @@ let mockProducts = [
         lowStockThreshold: 3,
       },
     ],
+    showGuaranteedAnalysis: false,
     guaranteedAnalysis: {},
   },
   {
@@ -245,6 +230,7 @@ let mockProducts = [
         lowStockThreshold: 3,
       },
     ],
+    showGuaranteedAnalysis: false,
     guaranteedAnalysis: {},
   },
 ]
@@ -304,6 +290,7 @@ function normalizeProductInput(productInput) {
     notIncluded,
     freshness: productInput.freshness || 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.',
     storageFeeding: productInput.storageFeeding || 'Keep sealed in a cool, dry place. Refrigerate after opening for max freshness. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.',
+    showGuaranteedAnalysis: Boolean(productInput.showGuaranteedAnalysis),
     variants: [
       {
         size: '6 oz',
@@ -322,12 +309,14 @@ function normalizeProductInput(productInput) {
         lowStockThreshold: eighteenOzLowStockThreshold,
       },
     ],
-    guaranteedAnalysis: productInput.guaranteedAnalysis || {
-      crudeProteinMin: productInput.crudeProteinMin || '70%',
-      crudeFatMin: productInput.crudeFatMin || '4.5%',
-      crudeFiberMax: productInput.crudeFiberMax || '0.5%',
-      moistureMax: productInput.moistureMax || '20%',
-    },
+    guaranteedAnalysis: productInput.showGuaranteedAnalysis
+      ? productInput.guaranteedAnalysis || {
+          crudeProteinMin: productInput.crudeProteinMin || '',
+          crudeFatMin: productInput.crudeFatMin || '',
+          crudeFiberMax: productInput.crudeFiberMax || '',
+          moistureMax: productInput.moistureMax || '',
+        }
+      : {},
   }
 }
 

@@ -50,6 +50,8 @@ const unitPrice = computed(() => Number(selectedVariant.value?.price || 0))
 const totalPrice = computed(() => unitPrice.value * quantity.value)
 
 const hasGuaranteedAnalysis = computed(() => {
+  if (!props.product?.showGuaranteedAnalysis) return false
+
   const analysis = props.product?.guaranteedAnalysis
   if (!analysis) return false
 
@@ -386,22 +388,22 @@ function addProductToCart() {
               <dl class="mt-3 grid grid-cols-2 gap-y-2 text-sm">
                 <dt class="text-stone-400">Crude Protein min</dt>
                 <dd class="text-right font-semibold">
-                  {{ product.guaranteedAnalysis?.crudeProteinMin || '70%' }}
+                  {{ product.guaranteedAnalysis?.crudeProteinMin }}
                 </dd>
 
                 <dt class="text-stone-400">Crude Fat min</dt>
                 <dd class="text-right font-semibold">
-                  {{ product.guaranteedAnalysis?.crudeFatMin || '4.5%' }}
+                  {{ product.guaranteedAnalysis?.crudeFatMin }}
                 </dd>
 
                 <dt class="text-stone-400">Crude Fiber max</dt>
                 <dd class="text-right font-semibold">
-                  {{ product.guaranteedAnalysis?.crudeFiberMax || '0.5%' }}
+                  {{ product.guaranteedAnalysis?.crudeFiberMax }}
                 </dd>
 
                 <dt class="text-stone-400">Moisture max</dt>
                 <dd class="text-right font-semibold">
-                  {{ product.guaranteedAnalysis?.moistureMax || '20%' }}
+                  {{ product.guaranteedAnalysis?.moistureMax }}
                 </dd>
               </dl>
             </div>
