@@ -22,3 +22,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment variables
+server/.env
+client/.env
+
+# Vite cache
+client/.vite/
+.vite/
+
+# Build outputs
+client/dist/
+server/dist/
+coverage/
+
+# OS / misc
+Thumbs.db
+
+# Environment files
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
