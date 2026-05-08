@@ -14,12 +14,38 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const editingCampaignId = ref(null)
 
+
 const form = ref(getEmptyForm())
+
+const campaignSearchQuery = ref('')
+const campaignStatusFilter = ref('all')
 
 const activeCampaigns = computed(() => campaigns.value.filter((campaign) => campaign.status === 'active'))
 const totalDonationGenerated = computed(() => campaigns.value.reduce((total, campaign) => total + Number(campaign.donationGenerated || 0), 0))
 const totalRevenueGenerated = computed(() => campaigns.value.reduce((total, campaign) => total + Number(campaign.revenueGenerated || 0), 0))
 const totalOrders = computed(() => campaigns.value.reduce((total, campaign) => total + Number(campaign.orderCount || 0), 0))
+
+const filteredCampaigns = computed(() => {
+  const query = campaignSearchQuery.value.trim().toLowerCase()
+
+  return campaigns.value.filter((campaign) => {
+    const matchesQuery = !query || [
+      campaign.name,
+      campaign.description,
+      campaign.donationTarget,
+      campaign.status,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(query))
+
+    const matchesStatus = campaignStatusFilter.value === 'all' || campaign.status === campaignStatusFilter.value
+
+    return matchesQuery && matchesStatus
+  })
+})
+
+const activeFilteredCampaigns = computed(() => filteredCampaigns.value.filter((campaign) => campaign.status === 'active'))
+const inactiveFilteredCampaigns = computed(() => filteredCampaigns.value.filter((campaign) => campaign.status !== 'active'))
 
 function getEmptyForm() {
   return {
@@ -30,14 +56,32 @@ function getEmptyForm() {
     donationType: 'percent',
     donationValue: 5,
     productIds: [],
-    startsAt: '',
-    endsAt: '',
+    startsDate: '',
+    startsTime: '',
+    endsDate: '',
+    endsTime: '',
   }
 }
 
 function normalizeOptionalString(value) {
   const normalized = String(value || '').trim()
   return normalized || null
+}
+
+function splitDateTime(value) {
+  if (!value) {
+    return { date: '', time: '' }
+  }
+
+  const [date = '', timeWithSeconds = ''] = String(value).split('T')
+  const time = timeWithSeconds.slice(0, 5)
+
+  return { date, time }
+}
+
+function combineDateTime(date, time) {
+  if (!date) return null
+  return `${date}T${time || '00:00'}`
 }
 
 function buildPayload() {
@@ -49,8 +93,8 @@ function buildPayload() {
     donationType: form.value.donationType,
     donationValue: Number(form.value.donationValue || 0),
     productIds: form.value.productIds,
-    startsAt: normalizeOptionalString(form.value.startsAt),
-    endsAt: normalizeOptionalString(form.value.endsAt),
+    startsAt: combineDateTime(form.value.startsDate, form.value.startsTime),
+    endsAt: combineDateTime(form.value.endsDate, form.value.endsTime),
   }
 }
 
@@ -64,6 +108,18 @@ function formatDonationRule(campaign) {
   }
 
   return `${formatPrice(campaign.donationValue)} per matched order`
+}
+
+function getCampaignStatusClass(status) {
+  if (status === 'active') return 'bg-green-50 text-green-700'
+  if (status === 'ended') return 'bg-red-50 text-red-700'
+  if (status === 'paused') return 'bg-amber-50 text-amber-700'
+  return 'bg-stone-100 text-stone-500'
+}
+
+function clearCampaignFilters() {
+  campaignSearchQuery.value = ''
+  campaignStatusFilter.value = 'all'
 }
 
 function getProductName(productId) {
@@ -140,6 +196,9 @@ function editCampaign(campaign) {
   successMessage.value = ''
   errorMessage.value = ''
 
+  const starts = splitDateTime(campaign.startsAt)
+  const ends = splitDateTime(campaign.endsAt)
+
   form.value = {
     name: campaign.name || '',
     description: campaign.description || '',
@@ -148,8 +207,10 @@ function editCampaign(campaign) {
     donationType: campaign.donationType || 'percent',
     donationValue: Number(campaign.donationValue || 0),
     productIds: Array.isArray(campaign.productIds) ? [...campaign.productIds] : [],
-    startsAt: campaign.startsAt || '',
-    endsAt: campaign.endsAt || '',
+    startsDate: starts.date,
+    startsTime: starts.time,
+    endsDate: ends.date,
+    endsTime: ends.time,
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -190,7 +251,7 @@ onMounted(loadPageData)
 
 <template>
   <section class="mx-auto max-w-7xl px-5 py-8 md:px-6">
-    <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Admin</p>
         <h1 class="mt-2 text-3xl font-extrabold text-[var(--brand-4)]">Donation Campaigns</h1>
@@ -198,6 +259,13 @@ onMounted(loadPageData)
           Create product-based shelter campaigns that automatically generate donations without requiring promo codes.
         </p>
       </div>
+
+      <RouterLink
+        to="/admin"
+        class="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-[var(--brand-4)] transition hover:border-emerald-400 hover:bg-emerald-50"
+      >
+        ← Back to Dashboard
+      </RouterLink>
     </div>
 
     <div class="mb-8 grid gap-4 md:grid-cols-4">
@@ -299,16 +367,81 @@ onMounted(loadPageData)
           </p>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="block">
-            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Starts at</span>
-            <input v-model="form.startsAt" type="datetime-local" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" />
-          </label>
+        <div class="rounded-2xl border border-stone-200 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
+          <div>
+            <h3 class="font-extrabold text-[var(--brand-4)]">Schedule</h3>
+            <p class="mt-1 text-sm text-stone-400">
+              Optional. Leave blank for campaigns that remain active until paused or ended.
+            </p>
+          </div>
 
-          <label class="block">
-            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Ends at</span>
-            <input v-model="form.endsAt" type="datetime-local" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" />
-          </label>
+          <div class="mt-4 space-y-4">
+            <div class="rounded-2xl border border-stone-200 bg-white/80 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-sm font-extrabold text-[var(--brand-4)]">Starts</p>
+                <button
+                  type="button"
+                  class="text-xs font-bold text-stone-400 transition hover:text-red-500"
+                  @click="form.startsDate = ''; form.startsTime = ''"
+                >
+                  Clear start
+                </button>
+              </div>
+
+              <div class="mt-3 grid gap-3">
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">Start date</span>
+                  <input
+                    v-model="form.startsDate"
+                    type="date"
+                    class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-400"
+                  />
+                </label>
+
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">Start time</span>
+                  <input
+                    v-model="form.startsTime"
+                    type="time"
+                    class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-400"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-stone-200 bg-white/80 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-sm font-extrabold text-[var(--brand-4)]">Ends</p>
+                <button
+                  type="button"
+                  class="text-xs font-bold text-stone-400 transition hover:text-red-500"
+                  @click="form.endsDate = ''; form.endsTime = ''"
+                >
+                  Clear end
+                </button>
+              </div>
+
+              <div class="mt-3 grid gap-3">
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">End date</span>
+                  <input
+                    v-model="form.endsDate"
+                    type="date"
+                    class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-400"
+                  />
+                </label>
+
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">End time</span>
+                  <input
+                    v-model="form.endsTime"
+                    type="time"
+                    class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-400"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
@@ -327,9 +460,42 @@ onMounted(loadPageData)
             <div>
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Campaign library</p>
               <h2 class="mt-2 text-2xl font-extrabold text-[var(--brand-4)]">Campaigns & donations</h2>
+              <p class="mt-2 text-sm text-stone-400">
+                Active campaigns appear first. Use filters to quickly manage live donation drives.
+              </p>
             </div>
             <button class="rounded-lg border border-emerald-400 px-4 py-2 font-semibold text-emerald-400 hover:bg-stone-900" @click="loadPageData">
               Refresh
+            </button>
+          </div>
+
+          <div class="mt-5 grid gap-3 lg:grid-cols-[1.4fr_0.8fr_auto] lg:items-end">
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Search</span>
+              <input
+                v-model="campaignSearchQuery"
+                class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400"
+                placeholder="Search campaign, shelter, status..."
+              />
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Status</span>
+              <select v-model="campaignStatusFilter" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="paused">Paused</option>
+                <option value="ended">Ended</option>
+              </select>
+            </label>
+
+            <button
+              type="button"
+              class="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-bold text-[var(--brand-4)] transition hover:border-emerald-400 hover:bg-emerald-50"
+              @click="clearCampaignFilters"
+            >
+              Clear
             </button>
           </div>
         </div>
@@ -340,60 +506,144 @@ onMounted(loadPageData)
           No campaigns yet.
         </div>
 
-        <div v-else class="overflow-x-auto">
-          <table class="min-w-full text-left text-sm">
-            <thead class="bg-[color:var(--brand-5)]/65 text-[var(--brand-4)]">
-              <tr>
-                <th class="px-5 py-4 font-extrabold">Campaign</th>
-                <th class="px-5 py-4 font-extrabold">Target</th>
-                <th class="px-5 py-4 font-extrabold">Status</th>
-                <th class="px-5 py-4 font-extrabold">Donation rule</th>
-                <th class="px-5 py-4 font-extrabold">Products</th>
-                <th class="px-5 py-4 font-extrabold">Performance</th>
-                <th class="px-5 py-4 font-extrabold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="campaign in campaigns" :key="campaign.id" class="border-t border-stone-800/50 align-top">
-                <td class="px-5 py-4">
-                  <p class="font-extrabold text-[var(--brand-4)]">{{ campaign.name }}</p>
-                  <p class="mt-1 max-w-xs text-xs text-stone-400">{{ campaign.description || 'No description' }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <p class="font-bold">{{ campaign.donationTarget }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <span class="rounded-full px-3 py-1 text-xs font-bold" :class="campaign.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-stone-100 text-stone-500'">
-                    {{ campaign.status }}
-                  </span>
-                </td>
-                <td class="px-5 py-4">
-                  <p class="font-bold">{{ formatDonationRule(campaign) }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <p class="max-w-xs text-xs leading-relaxed text-stone-400">{{ getCampaignProductNames(campaign) }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <p class="text-xs text-stone-400">Orders</p>
-                  <p class="font-bold">{{ campaign.orderCount || 0 }}</p>
-                  <p class="mt-2 text-xs text-stone-400">Donation</p>
-                  <p class="font-bold text-[var(--success-1)]">{{ formatPrice(campaign.donationGenerated) }}</p>
-                  <p class="mt-2 text-xs text-stone-400">Revenue</p>
-                  <p class="font-bold">{{ formatPrice(campaign.revenueGenerated) }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <div class="flex flex-wrap gap-2">
-                    <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="editCampaign(campaign)">
-                      Edit
-                    </button>
-                    <button class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50" @click="deleteCampaign(campaign)">
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-else-if="!filteredCampaigns.length" class="p-6 text-stone-300">
+          No campaigns match your filters.
+        </div>
+
+        <div v-else class="space-y-8 p-5 md:p-6">
+          <section>
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <h3 class="text-lg font-extrabold text-[var(--brand-4)]">Active campaigns</h3>
+              <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">{{ activeFilteredCampaigns.length }} active</span>
+            </div>
+
+            <div v-if="!activeFilteredCampaigns.length" class="rounded-2xl border border-stone-200 bg-white/70 p-4 text-sm text-stone-400">
+              No active campaigns match this view.
+            </div>
+
+            <div v-else class="overflow-x-auto rounded-2xl border border-stone-200 bg-white/70">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-[color:var(--brand-5)]/65 text-[var(--brand-4)]">
+                  <tr>
+                    <th class="px-5 py-4 font-extrabold">Campaign</th>
+                    <th class="px-5 py-4 font-extrabold">Target</th>
+                    <th class="px-5 py-4 font-extrabold">Status</th>
+                    <th class="px-5 py-4 font-extrabold">Donation rule</th>
+                    <th class="px-5 py-4 font-extrabold">Products</th>
+                    <th class="px-5 py-4 font-extrabold">Performance</th>
+                    <th class="px-5 py-4 font-extrabold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="campaign in activeFilteredCampaigns" :key="campaign.id" class="border-t border-stone-200 align-top">
+                    <td class="px-5 py-4">
+                      <p class="font-extrabold text-[var(--brand-4)]">{{ campaign.name }}</p>
+                      <p class="mt-1 max-w-xs text-xs text-stone-400">{{ campaign.description || 'No description' }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="font-bold">{{ campaign.donationTarget }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <span class="rounded-full px-3 py-1 text-xs font-bold" :class="getCampaignStatusClass(campaign.status)">
+                        {{ campaign.status }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="font-bold">{{ formatDonationRule(campaign) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="max-w-xs text-xs leading-relaxed text-stone-400">{{ getCampaignProductNames(campaign) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="text-xs text-stone-400">Orders</p>
+                      <p class="font-bold">{{ campaign.orderCount || 0 }}</p>
+                      <p class="mt-2 text-xs text-stone-400">Donation</p>
+                      <p class="font-bold text-[var(--success-1)]">{{ formatPrice(campaign.donationGenerated) }}</p>
+                      <p class="mt-2 text-xs text-stone-400">Revenue</p>
+                      <p class="font-bold">{{ formatPrice(campaign.revenueGenerated) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <div class="flex flex-wrap gap-2">
+                        <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="editCampaign(campaign)">
+                          Edit
+                        </button>
+                        <button class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50" @click="deleteCampaign(campaign)">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <h3 class="text-lg font-extrabold text-[var(--brand-4)]">Draft, paused & ended campaigns</h3>
+              <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-stone-600">{{ inactiveFilteredCampaigns.length }} inactive</span>
+            </div>
+
+            <div v-if="!inactiveFilteredCampaigns.length" class="rounded-2xl border border-stone-200 bg-white/70 p-4 text-sm text-stone-400">
+              No inactive campaigns match this view.
+            </div>
+
+            <div v-else class="overflow-x-auto rounded-2xl border border-stone-200 bg-white/70">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-[color:var(--brand-5)]/65 text-[var(--brand-4)]">
+                  <tr>
+                    <th class="px-5 py-4 font-extrabold">Campaign</th>
+                    <th class="px-5 py-4 font-extrabold">Target</th>
+                    <th class="px-5 py-4 font-extrabold">Status</th>
+                    <th class="px-5 py-4 font-extrabold">Donation rule</th>
+                    <th class="px-5 py-4 font-extrabold">Products</th>
+                    <th class="px-5 py-4 font-extrabold">Performance</th>
+                    <th class="px-5 py-4 font-extrabold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="campaign in inactiveFilteredCampaigns" :key="campaign.id" class="border-t border-stone-200 align-top">
+                    <td class="px-5 py-4">
+                      <p class="font-extrabold text-[var(--brand-4)]">{{ campaign.name }}</p>
+                      <p class="mt-1 max-w-xs text-xs text-stone-400">{{ campaign.description || 'No description' }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="font-bold">{{ campaign.donationTarget }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <span class="rounded-full px-3 py-1 text-xs font-bold" :class="getCampaignStatusClass(campaign.status)">
+                        {{ campaign.status }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="font-bold">{{ formatDonationRule(campaign) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="max-w-xs text-xs leading-relaxed text-stone-400">{{ getCampaignProductNames(campaign) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <p class="text-xs text-stone-400">Orders</p>
+                      <p class="font-bold">{{ campaign.orderCount || 0 }}</p>
+                      <p class="mt-2 text-xs text-stone-400">Donation</p>
+                      <p class="font-bold text-[var(--success-1)]">{{ formatPrice(campaign.donationGenerated) }}</p>
+                      <p class="mt-2 text-xs text-stone-400">Revenue</p>
+                      <p class="font-bold">{{ formatPrice(campaign.revenueGenerated) }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                      <div class="flex flex-wrap gap-2">
+                        <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="editCampaign(campaign)">
+                          Edit
+                        </button>
+                        <button class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50" @click="deleteCampaign(campaign)">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </section>
     </div>

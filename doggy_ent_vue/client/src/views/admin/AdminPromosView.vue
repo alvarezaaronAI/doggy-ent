@@ -143,6 +143,12 @@ function getPromoStatusClass(status) {
   return 'bg-stone-100 text-stone-500'
 }
 
+function clearPromoFilters() {
+  promoSearchQuery.value = ''
+  promoTypeFilter.value = 'all'
+  promoStatusFilter.value = 'all'
+}
+
 
 function getPromoTypeLabel(type) {
   const labels = {
@@ -332,7 +338,7 @@ onMounted(loadPromos)
 
 <template>
   <section class="mx-auto max-w-7xl px-5 py-8 md:px-6">
-    <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Admin</p>
         <h1 class="mt-2 text-3xl font-extrabold text-[var(--brand-4)]">Promo Codes</h1>
@@ -340,6 +346,13 @@ onMounted(loadPromos)
           Create global discounts, unique one-time customer codes, and referral promo codes.
         </p>
       </div>
+
+      <RouterLink
+        to="/admin"
+        class="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-[var(--brand-4)] transition hover:border-emerald-400 hover:bg-emerald-50"
+      >
+        ← Back to Dashboard
+      </RouterLink>
     </div>
 
     <div class="mb-8 grid gap-4 md:grid-cols-3">
@@ -551,37 +564,77 @@ onMounted(loadPromos)
           </label>
         </div>
 
-        <div class="rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
-          <h3 class="font-extrabold text-[var(--brand-4)]">Schedule</h3>
-          <p class="mt-1 text-sm text-stone-300">
-            Optional. Leave blank for codes that are available until paused, expired, or deleted.
-          </p>
+        <div class="rounded-2xl border border-stone-200 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="font-extrabold text-[var(--brand-4)]">Schedule</h3>
+              <p class="mt-1 text-sm text-stone-400">
+                Optional. Leave blank for codes that are available until paused, expired, or deleted.
+              </p>
+            </div>
+          </div>
 
-          <div class="mt-4 grid gap-4 md:grid-cols-2">
-            <div class="rounded-xl bg-white/70 p-3">
-              <p class="mb-3 text-sm font-bold text-[var(--brand-4)]">Starts</p>
-              <div class="grid gap-3 sm:grid-cols-2">
+          <div class="mt-4 space-y-4">
+            <div class="rounded-2xl border border-stone-200 bg-white/80 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-sm font-extrabold text-[var(--brand-4)]">Starts</p>
+                <button
+                  type="button"
+                  class="text-xs font-bold text-stone-400 transition hover:text-red-500"
+                  @click="form.startsDate = ''; form.startsTime = ''"
+                >
+                  Clear start
+                </button>
+              </div>
+              <div class="mt-3 grid gap-3">
                 <label class="block">
-                  <span class="mb-2 block text-xs font-semibold text-stone-400">Date</span>
-                  <input v-model="form.startsDate" type="date" class="w-full rounded-xl border border-stone-700 bg-white px-3 py-2 outline-none focus:border-emerald-400" />
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">Start date</span>
+                  <input
+                    v-model="form.startsDate"
+                    type="date"
+                    class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-400"
+                  />
                 </label>
+
                 <label class="block">
-                  <span class="mb-2 block text-xs font-semibold text-stone-400">Time</span>
-                  <input v-model="form.startsTime" type="time" class="w-full rounded-xl border border-stone-700 bg-white px-3 py-2 outline-none focus:border-emerald-400" />
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">Start time</span>
+                  <input
+                    v-model="form.startsTime"
+                    type="time"
+                    class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-400"
+                  />
                 </label>
               </div>
             </div>
 
-            <div class="rounded-xl bg-white/70 p-3">
-              <p class="mb-3 text-sm font-bold text-[var(--brand-4)]">Ends</p>
-              <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl border border-stone-200 bg-white/80 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-sm font-extrabold text-[var(--brand-4)]">Ends</p>
+                <button
+                  type="button"
+                  class="text-xs font-bold text-stone-400 transition hover:text-red-500"
+                  @click="form.endsDate = ''; form.endsTime = ''"
+                >
+                  Clear end
+                </button>
+              </div>
+              <div class="mt-3 grid gap-3">
                 <label class="block">
-                  <span class="mb-2 block text-xs font-semibold text-stone-400">Date</span>
-                  <input v-model="form.endsDate" type="date" class="w-full rounded-xl border border-stone-700 bg-white px-3 py-2 outline-none focus:border-emerald-400" />
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">End date</span>
+                  <input
+                    v-model="form.endsDate"
+                    type="date"
+                    class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-400"
+                  />
                 </label>
+
                 <label class="block">
-                  <span class="mb-2 block text-xs font-semibold text-stone-400">Time</span>
-                  <input v-model="form.endsTime" type="time" class="w-full rounded-xl border border-stone-700 bg-white px-3 py-2 outline-none focus:border-emerald-400" />
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">End time</span>
+                  <input
+                    v-model="form.endsTime"
+                    type="time"
+                    class="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-400"
+                  />
                 </label>
               </div>
             </div>
@@ -613,7 +666,7 @@ onMounted(loadPromos)
             </button>
           </div>
 
-          <div class="mt-5 grid gap-3 lg:grid-cols-[1.4fr_0.8fr_0.8fr]">
+          <div class="mt-5 grid gap-3 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto] lg:items-end">
             <label class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Search</span>
               <input
@@ -643,6 +696,14 @@ onMounted(loadPromos)
                 <option value="expired">Expired</option>
               </select>
             </label>
+
+            <button
+              type="button"
+              class="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-bold text-[var(--brand-4)] transition hover:border-emerald-400 hover:bg-emerald-50"
+              @click="clearPromoFilters"
+            >
+              Clear
+            </button>
           </div>
         </div>
 

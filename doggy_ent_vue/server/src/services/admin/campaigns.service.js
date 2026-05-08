@@ -85,7 +85,11 @@ function isCampaignActive(campaign) {
   const endsAt = campaign.endsAt ? Date.parse(campaign.endsAt) : null
 
   if (startsAt && currentTime < startsAt) return false
-  if (endsAt && currentTime > endsAt) return false
+  if (endsAt && currentTime > endsAt) {
+    campaign.status = 'ended'
+    campaign.updatedAt = nowISO()
+    return false
+  }
 
   return true
 }
