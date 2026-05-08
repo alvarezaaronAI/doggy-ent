@@ -230,7 +230,7 @@ function formatPrice(value) {
       />
 
 
-      <section id="catalog" class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6">
+      <section id="shop" class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">

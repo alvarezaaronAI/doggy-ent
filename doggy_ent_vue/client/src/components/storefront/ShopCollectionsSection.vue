@@ -1,12 +1,12 @@
 <template>
   <section id="shop" class="max-w-7xl mx-auto px-4 py-14 section-panel">
     <div class="mb-8 flex items-end justify-between">
-      <h2 class="text-3xl font-bold u-underline-blue">Shop Treats</h2>
-      <a href="#catalog" class="text-emerald-400 hover:underline">View All →</a>
+      <h2 class="text-3xl font-bold u-underline-blue">All Treats</h2>
+      <a href="#shop" class="text-emerald-400 hover:underline">View All →</a>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue hover:border-emerald-400" href="#catalog">
+      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue hover:border-emerald-400" href="#shop">
         <img
           class="h-44 w-full object-cover opacity-80 group-hover:opacity-100 transition"
           src="https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?q=80&w=1200&auto=format&fit=crop"
@@ -35,7 +35,7 @@
         </div>
       </div>
 
-      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue" href="#catalog">
+      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue" href="#shop">
         <img
           class="h-44 w-full object-cover"
           src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?q=80&w=1200&auto=format&fit=crop"
@@ -47,7 +47,7 @@
         </div>
       </a>
 
-      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue" href="#bundles">
+      <a class="group relative overflow-hidden rounded-2xl tile-strong tile-blue" href="#coming-soon">
         <img
           class="h-44 w-full object-cover"
           src="https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200&auto=format&fit=crop"

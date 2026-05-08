@@ -7,6 +7,10 @@
   --brand-4: #6A3C2B; /* Cacao center - heading color */
   --brand-5: #F3E8D2; /* Oat - neutral base */
 
+  --section-panel-radius: 1.5rem;
+  --section-panel-padding: clamp(1rem, 1.8vw, 1.5rem);
+  --section-panel-gap: 1.5rem;
+
   --success-1: #2F855A;
   --danger-1: #C53030;
 }
@@ -60,17 +64,99 @@ h4 {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.tile-strong {
-  background: #ffffff;
-  border: 2px solid color-mix(in srgb, var(--brand-3) 60%, white);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
-}
+ .tile-strong {
+   background: #ffffff;
+   border: 2px solid color-mix(in srgb, var(--brand-3) 60%, white);
+   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
+ }
+
+ /* Shared storefront card system */
+ .card-grid {
+   display: grid;
+   grid-template-columns: 1fr;
+   gap: 1.25rem;
+   align-items: stretch;
+ }
+
+ @media (min-width: 640px) {
+   .card-grid {
+     grid-template-columns: repeat(2, minmax(0, 1fr));
+   }
+ }
+
+ @media (min-width: 1024px) {
+   .card-grid {
+     grid-template-columns: repeat(3, minmax(0, 1fr));
+   }
+ }
+
+ .card-grid-four {
+   display: grid;
+   grid-template-columns: 1fr;
+   gap: 1.25rem;
+   align-items: stretch;
+ }
+
+ @media (min-width: 768px) {
+   .card-grid-four {
+     grid-template-columns: repeat(3, minmax(0, 1fr));
+   }
+ }
+
+ @media (min-width: 1280px) {
+   .card-grid-four {
+     grid-template-columns: repeat(4, minmax(0, 1fr));
+   }
+ }
+
+ .content-card {
+   display: flex;
+   height: 100%;
+   min-width: 0;
+   flex-direction: column;
+   overflow: hidden;
+   border-radius: 1rem;
+ }
+
+ .content-card-media {
+   aspect-ratio: 4 / 3;
+   width: 100%;
+   flex-shrink: 0;
+   object-fit: cover;
+ }
+
+ .content-card-body {
+   display: flex;
+   flex: 1;
+   flex-direction: column;
+   min-width: 0;
+ }
+
+ .content-card-title {
+   line-height: 1.2;
+ }
+
+ .content-card-text {
+   line-height: 1.6;
+ }
+
+ .content-card-footer {
+   margin-top: auto;
+ }
 
 .section-panel {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   background: #ffffff;
   border: 1px solid color-mix(in srgb, var(--brand-3) 45%, white);
-  border-radius: 1.5rem;
+  border-radius: var(--section-panel-radius);
+  padding: var(--section-panel-padding);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+}
+
+.section-panel > * + * {
+  margin-top: var(--section-panel-gap);
 }
 
 .u-underline-blue {
@@ -166,6 +252,10 @@ img {
 
 .section-panel:hover {
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.10);
+}
+
+.section-panel > :first-child {
+  margin-top: 0;
 }
 
 /* Images inside cards */

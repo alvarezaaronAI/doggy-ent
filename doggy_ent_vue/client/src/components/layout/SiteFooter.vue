@@ -8,18 +8,17 @@
           </span>
           <span>Chase &amp; Evie Co.</span>
         </div>
-        <p class="text-sm text-stone-400">Small-batch treats made with simple ingredients.</p>
+        <p class="text-sm text-stone-400">Small-batch dog treats inspired by Chase &amp; Evie.</p>
       </div>
 
       <ul class="flex flex-wrap gap-4 justify-center text-sm">
-        <li><a class="hover:text-emerald-400" href="#shop">Shop</a></li>
-        <li><a class="hover:text-emerald-400" href="#process">How It’s Made</a></li>
+        <li><a class="hover:text-emerald-400" href="#shop">All Treats</a></li>
+        <li><a class="hover:text-emerald-400" href="#coming-soon">Coming Soon</a></li>
+        <li><a class="hover:text-emerald-400" href="#process">How We Make Them</a></li>
         <li><a class="hover:text-emerald-400" href="#ingredients">Ingredients</a></li>
-        <li><a class="hover:text-emerald-400" href="#bundles">Bundles</a></li>
-        <li><a class="hover:text-emerald-400" href="#reviews">Reviews</a></li>
-        <li><a class="hover:text-emerald-400" href="#about">About</a></li>
+        <li><a class="hover:text-emerald-400" href="#reviews">Happy Pups</a></li>
+        <li><a class="hover:text-emerald-400" href="#about">Meet Chase &amp; Evie</a></li>
         <li><a class="hover:text-emerald-400" href="#faq">FAQ</a></li>
-        <li><a class="hover:text-emerald-400" href="#contact">Contact</a></li>
       </ul>
 
       <div class="flex md:justify-end justify-center gap-4 text-stone-300">
@@ -32,7 +31,7 @@
     <div class="border-t border-stone-800">
       <div class="max-w-7xl mx-auto px-4 py-4 text-xs text-stone-400 flex flex-col md:flex-row items-center justify-between gap-2">
         <p>© 2025 Chase &amp; Evie Co.</p>
-        <p>Terms • Privacy • Accessibility • Sitemap</p>
+        <p>Made for happy pups, simple treats, and small-batch drops.</p>
       </div>
     </div>
   </footer>

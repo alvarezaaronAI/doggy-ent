@@ -20,24 +20,43 @@ const emit = defineEmits(['open-cart'])
       </RouterLink>
 
       <ul class="hidden md:flex items-center gap-6 text-sm text-stone-200">
-        <li><a class="hover:text-emerald-400" href="#shop">Shop</a></li>
-        <li><a class="hover:text-emerald-400" href="#process">How It’s Made</a></li>
+        <li><a class="hover:text-emerald-400" href="#shop">All Treats</a></li>
+        <li><a class="hover:text-emerald-400" href="#coming-soon">Coming Soon</a></li>
+        <li><a class="hover:text-emerald-400" href="#process">How We Make Them</a></li>
         <li><a class="hover:text-emerald-400" href="#ingredients">Ingredients</a></li>
-        <li><a class="hover:text-emerald-400" href="#bundles">Bundles</a></li>
-        <li><a class="hover:text-emerald-400" href="#reviews">Reviews</a></li>
-        <li><a class="hover:text-emerald-400" href="#about">About</a></li>
+        <li><a class="hover:text-emerald-400" href="#reviews">Happy Pups</a></li>
+        <li><a class="hover:text-emerald-400" href="#about">Meet Chase &amp; Evie</a></li>
         <li><a class="hover:text-emerald-400" href="#faq">FAQ</a></li>
-        <li><a class="hover:text-emerald-400" href="#contact">Contact</a></li>
       </ul>
 
       <div class="hidden md:flex items-center gap-4">
-        <button class="text-stone-300 hover:text-white" aria-label="Search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
+        <div class="group relative">
+          <button
+            class="text-stone-300 opacity-50 transition hover:text-white hover:opacity-80"
+            aria-label="Search coming soon"
+            type="button"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
 
-        <button class="text-stone-300 hover:text-white" aria-label="Account">
-          <i class="fa-regular fa-user"></i>
-        </button>
+          <div class="pointer-events-none absolute left-1/2 top-full z-20 mt-3 -translate-x-1/2 rounded-xl border border-[color-mix(in_srgb,var(--brand-3)_40%,white)] bg-white px-3 py-2 text-xs font-medium text-stone-600 opacity-0 shadow-xl transition duration-200 group-hover:opacity-100 whitespace-nowrap">
+            Feature coming later • Summer 2026
+          </div>
+        </div>
+
+        <div class="group relative">
+          <button
+            class="text-stone-300 opacity-50 transition hover:text-white hover:opacity-80"
+            aria-label="Account system coming soon"
+            type="button"
+          >
+            <i class="fa-regular fa-user"></i>
+          </button>
+
+          <div class="pointer-events-none absolute left-1/2 top-full z-20 mt-3 -translate-x-1/2 rounded-xl border border-[color-mix(in_srgb,var(--brand-3)_40%,white)] bg-white px-3 py-2 text-xs font-medium text-stone-600 opacity-0 shadow-xl transition duration-200 group-hover:opacity-100 whitespace-nowrap">
+            Accounts coming later • Summer 2026
+          </div>
+        </div>
 
         <button
           class="relative text-stone-300 hover:text-white"
