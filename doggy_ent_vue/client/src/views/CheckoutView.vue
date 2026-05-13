@@ -1,10 +1,13 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+import StripeElementsForm from '../components/checkout/StripeElementsForm.vue'
 
 const CART_STORAGE_KEY = 'doggy-ent-cart'
 const CUSTOMER_STORAGE_KEY = 'doggy-ent-checkout-customer'
 const TAX_RATE = 0.075
+
+const router = useRouter()
 
 const cartItems = ref(loadSavedCart())
 const selectedShipping = ref('standard')
@@ -20,6 +23,59 @@ const checkoutResult = ref(null)
 const campaignPreview = ref([])
 const isLoadingCampaignPreview = ref(false)
 const isRefreshingCheckoutPreview = ref(false)
+const paymentCompleted = ref(false)
+const completedPaymentIntent = ref(null)
+const paymentFormComplete = ref(false)
+const mobileSummaryOpen = ref(false)
+
+
+const checkoutChecklist = computed(() => [
+  {
+    id: 'contact',
+    label: 'Contact information',
+    complete: customer.value.email.includes('@') && customer.value.phone.trim(),
+  },
+  {
+    id: 'shipping',
+    label: 'Shipping details',
+    complete:
+      customer.value.firstName.trim()
+      && customer.value.lastName.trim()
+      && customer.value.address1.trim()
+      && customer.value.city.trim()
+      && customer.value.state.trim()
+      && customer.value.zip.trim(),
+  },
+  {
+    id: 'delivery',
+    label: 'Delivery method',
+    // Use actual shipping options to verify selection is valid
+    complete: shippingOptions.some((option) => option.code === selectedShipping.value),
+  },
+  {
+    id: 'payment',
+    label: 'Payment information',
+    complete: paymentFormComplete.value || paymentCompleted.value || !!completedPaymentIntent.value,
+  },
+])
+
+const stripePaymentForm = ref(null)
+
+const checkoutRequirementsComplete = computed(() => {
+  return (
+    customer.value.email.includes('@')
+    && customer.value.phone.trim()
+    && customer.value.firstName.trim()
+    && customer.value.lastName.trim()
+    && customer.value.address1.trim()
+    && customer.value.city.trim()
+    && customer.value.state.trim()
+    && customer.value.zip.trim()
+    && paymentFormComplete.value
+    && cartItems.value.length
+  )
+})
+
 let checkoutPreviewTimer = null
 
 const customer = ref(loadSavedCustomer())
@@ -74,12 +130,6 @@ function saveCustomerForNextCheckout() {
   }))
 }
 
-const payment = ref({
-  nameOnCard: '',
-  cardNumber: '',
-  expiry: '',
-  cvc: '',
-})
 
 const shippingOptions = [
   {
@@ -253,16 +303,9 @@ function validateCheckout() {
     return false
   }
 
-  const requiredPaymentFields = [
-    payment.value.nameOnCard,
-    payment.value.cardNumber,
-    payment.value.expiry,
-    payment.value.cvc,
-  ]
-
-  if (requiredPaymentFields.some((field) => !String(field || '').trim())) {
+  if (!stripePaymentForm.value) {
     checkoutStatusType.value = 'error'
-    checkoutStatus.value = 'Please complete the payment fields before placing the order.'
+    checkoutStatus.value = 'Secure payment form is still loading.'
     return false
   }
 
@@ -353,6 +396,20 @@ async function placeOrder() {
   if (!validateCheckout()) return
 
   isProcessingOrder.value = true
+
+  try {
+    if (!paymentCompleted.value) {
+      const paymentResult = await stripePaymentForm.value.submitPayment()
+
+      paymentCompleted.value = true
+      completedPaymentIntent.value = paymentResult
+    }
+  } catch (error) {
+    checkoutStatusType.value = 'error'
+    checkoutStatus.value = error.message || 'Payment failed. Please try again.'
+    return
+  }
+
   checkoutStatus.value = ''
   checkoutResult.value = null
 
@@ -371,9 +428,13 @@ async function placeOrder() {
     appliedPromoDiscount.value = 0
     promoStatus.value = 'idle'
     promoMessage.value = 'Enter a promo code if you have one.'
+    paymentCompleted.value = false
+    completedPaymentIntent.value = null
 
     checkoutStatusType.value = 'success'
-    checkoutStatus.value = `Order placed successfully! Order ID: ${result.order?.id || 'Pending'}`
+    checkoutStatus.value = 'Order placed successfully! Redirecting...'
+
+    await router.push(`/order-success/${result.order?.id || 'pending'}`)
   } catch (error) {
     checkoutStatusType.value = 'error'
     checkoutStatus.value = error.message || 'Checkout failed. Please try again.'
@@ -431,7 +492,35 @@ onMounted(() => {
       </nav>
     </header>
 
-    <main>
+    
+<div
+  v-if="isProcessingOrder"
+  class="fixed inset-0 z-[120] flex items-center justify-center bg-white/78 backdrop-blur-md"
+>
+  <div class="mx-4 flex w-full max-w-md flex-col items-center rounded-[2rem] border border-stone-200 bg-white px-8 py-10 text-center shadow-[0_30px_80px_rgba(0,0,0,0.12)]">
+    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-4xl text-emerald-600 shadow-inner">
+      <i class="fa-solid fa-spinner animate-spin"></i>
+    </div>
+
+    <p class="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-500">
+      Secure Checkout
+    </p>
+
+    <h2 class="mt-3 text-3xl font-black tracking-tight text-[var(--brand-4)]">
+      Processing Payment
+    </h2>
+
+    <p class="mt-4 text-sm leading-relaxed text-stone-500">
+      Please wait while we securely confirm your payment. Do not refresh or close this window.
+    </p>
+
+    <div class="mt-6 h-2 w-full overflow-hidden rounded-full bg-stone-100">
+      <div class="h-full w-1/2 animate-pulse rounded-full bg-emerald-400"></div>
+    </div>
+  </div>
+</div>
+
+<main class="pb-28 xl:pb-0">
       <div class="mx-auto max-w-7xl px-4 py-10">
         <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -452,16 +541,124 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start">
-          <section class="section-panel p-5 md:p-8">
-            <div class="flex items-center justify-between gap-4 border-b border-stone-800 pb-5">
+        <div class="grid gap-6 xl:grid-cols-[220px_minmax(0,1.35fr)_minmax(320px,400px)] xl:items-start">
+          <aside class="hidden xl:sticky xl:top-24 xl:block xl:self-start xl:max-w-[220px]">
+            <section class="section-panel p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+                    Checkout Progress
+                  </p>
+
+                  <h2 class="mt-1 text-lg font-extrabold leading-tight">
+                    Before checkout
+                  </h2>
+                </div>
+
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-5)_72%,white)] text-[var(--brand-4)]">
+                  <i class="fa-solid fa-list-check"></i>
+                </span>
+              </div>
+
+              <div class="mt-5 space-y-3">
+                <div
+                  v-for="item in checkoutChecklist"
+                  :key="item.id"
+                  class="flex items-center gap-3 rounded-2xl border px-3 py-3 transition"
+                  :class="item.complete
+                    ? 'border-emerald-200 bg-emerald-50/70'
+                    : 'border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)]'
+                  "
+                >
+                  <span
+                    class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm"
+                    :class="item.complete
+                      ? 'bg-emerald-400 text-[var(--brand-4)]'
+                      : 'bg-stone-200 text-stone-500'
+                    "
+                  >
+                    <i
+                      :class="item.complete
+                        ? 'fa-solid fa-check'
+                        : 'fa-solid fa-circle'
+                      "
+                    ></i>
+                  </span>
+
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-bold leading-tight">
+                      {{ item.label }}
+                    </p>
+
+                    <p
+                      class="mt-0.5 text-xs font-medium"
+                      :class="item.complete
+                        ? 'text-emerald-700'
+                        : 'text-stone-400'
+                      "
+                    >
+                      {{ item.complete ? 'Completed' : 'Still required' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="mt-5 rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4"
+              >
+                <div class="flex items-start gap-3">
+                  <i class="fa-solid fa-shield-heart mt-0.5 text-emerald-400"></i>
+
+                  <div>
+                    <p class="text-sm font-bold leading-tight">
+                      Secure checkout
+                    </p>
+
+                    <p class="mt-1 text-xs leading-relaxed text-stone-300">
+                      Your card details are encrypted and securely processed through Stripe.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </aside>
+          
+<section class="sticky top-[73px] z-40 border-b border-stone-200 bg-white/92 px-4 py-3 backdrop-blur xl:hidden">
+  <div class="flex items-center justify-between gap-3">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+        Checkout Progress
+      </p>
+
+      <div class="mt-2 flex gap-2 overflow-x-auto scrollbar-hide">
+        <span
+          v-for="item in checkoutChecklist"
+          :key="item.id"
+          class="inline-flex flex-shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold whitespace-nowrap"
+          :class="item.complete
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : 'border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] text-stone-400'
+          "
+        >
+          <i :class="item.complete ? 'fa-solid fa-check' : 'fa-regular fa-circle'"></i>
+          {{ item.label }}
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section
+            class="section-panel p-5 md:p-8"
+            :class="isProcessingOrder ? 'pointer-events-none opacity-75' : ''"
+          >            <div class="flex items-center justify-between gap-4 border-b border-stone-800 pb-5">
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Checkout Flow</p>
                 <h2 class="text-2xl font-extrabold">Secure order details</h2>
               </div>
               <div class="text-right">
                 <p class="text-sm text-stone-300">Estimated time</p>
-                <p class="font-bold">~2 minutes</p>
+                <p class="text-sm font-bold leading-tight">~2 minutes</p>
               </div>
             </div>
 
@@ -471,7 +668,7 @@ onMounted(() => {
                   <span class="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-400 font-extrabold text-[var(--brand-4)]">1</span>
                   <div class="min-w-0 flex-1">
                     <h3 class="text-xl font-extrabold">Contact</h3>
-                    <p class="mt-1 text-sm text-stone-300">We’ll send your confirmation and shipping updates here.</p>
+                    <p class="mt-1 text-xs leading-relaxed text-stone-300">We’ll send your confirmation and shipping updates here.</p>
 
                     <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                       <label class="md:col-span-2">
@@ -509,7 +706,7 @@ onMounted(() => {
                   <span class="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-400 font-extrabold text-[var(--brand-4)]">2</span>
                   <div class="min-w-0 flex-1">
                     <h3 class="text-xl font-extrabold">Shipping</h3>
-                    <p class="mt-1 text-sm text-stone-300">Enter the shipping address where you’d like your order delivered.</p>
+                    <p class="mt-1 text-xs leading-relaxed text-stone-300">Enter the shipping address where you’d like your order delivered.</p>
 
                     <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                       <input v-model="customer.firstName" class="rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="First name" />
@@ -539,7 +736,7 @@ onMounted(() => {
                   <span class="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-400 font-extrabold text-[var(--brand-4)]">3</span>
                   <div class="min-w-0 flex-1">
                     <h3 class="text-xl font-extrabold">Delivery</h3>
-                    <p class="mt-1 text-sm text-stone-300">Choose the shipping method that works best for your timeline.</p>
+                    <p class="mt-1 text-xs leading-relaxed text-stone-300">Choose the shipping method that works best for your timeline.</p>
 
                     <div class="mt-5 space-y-3">
                       <label
@@ -551,7 +748,7 @@ onMounted(() => {
                         <input v-model="selectedShipping" class="sr-only" type="radio" :value="option.code" />
                         <div>
                           <p class="font-extrabold">{{ option.label }}</p>
-                          <p class="mt-1 text-sm text-stone-300">{{ option.description }}</p>
+                          <p class="mt-1 text-xs leading-relaxed text-stone-300">{{ option.description }}</p>
                         </div>
                         <div class="font-extrabold">{{ formatPrice(option.price) }}</div>
                       </label>
@@ -565,13 +762,15 @@ onMounted(() => {
                   <span class="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-400 font-extrabold text-[var(--brand-4)]">4</span>
                   <div class="min-w-0 flex-1">
                     <h3 class="text-xl font-extrabold">Payment</h3>
-                    <p class="mt-1 text-sm text-stone-300">Use express checkout or enter card details below.</p>
+                    <p class="mt-1 text-xs leading-relaxed text-stone-300">
+                      Your payment details are securely processed with Stripe while keeping the Doggy Ent checkout experience.
+                    </p>
 
                     <div class="mt-5 rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4">
                       <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
                           <p class="text-sm font-extrabold text-[var(--brand-4)]">Express checkout</p>
-                          <p class="mt-1 text-sm text-stone-300">Pay faster with your saved wallet details.</p>
+                          <p class="mt-1 text-xs leading-relaxed text-stone-300">Pay faster with your saved wallet details.</p>
                         </div>
                         <span class="rounded-full border border-stone-800 bg-white px-3 py-2 text-sm font-bold text-[var(--brand-4)]">
                           <i class="fa-solid fa-bolt mr-2"></i> Faster checkout
@@ -591,41 +790,50 @@ onMounted(() => {
                       <div class="h-px flex-1 bg-[color-mix(in_srgb,var(--brand-3)_30%,white)]"></div>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <input v-model="payment.nameOnCard" class="rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400 md:col-span-2" placeholder="Name on card" />
-                      <input v-model="payment.cardNumber" class="rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400 md:col-span-2" placeholder="1234 1234 1234 1234" />
-                      <input v-model="payment.expiry" class="rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="MM / YY" />
-                      <input v-model="payment.cvc" class="rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="CVC" />
-                    </div>
-
+                    
                     <div class="mt-5 rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_60%,white)] p-4">
                       <div class="flex items-start gap-3">
                         <i class="fa-solid fa-shield-heart mt-0.5 text-xl text-emerald-400"></i>
                         <div>
                           <p class="font-extrabold">Protected payment</p>
-                          <p class="mt-1 text-sm text-stone-300">
-                            Card fields are placeholders for now. Later this should become Stripe Elements or a hosted secure payment field.
+                          <p class="mt-1 text-xs leading-relaxed text-stone-300">
+                            Your payment details are securely encrypted and processed through Stripe.
                           </p>
                         </div>
                       </div>
+                    </div>
+                    <div class="mt-5 overflow-hidden rounded-2xl border border-stone-700 bg-white shadow-sm">
+                      <StripeElementsForm
+                        ref="stripePaymentForm"
+                        @card-complete="paymentFormComplete = $event"
+                      />
                     </div>
                   </div>
                 </div>
               </div>
 
               <div class="rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-5">
-                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="hidden flex-col gap-4 md:flex-row md:items-center md:justify-between xl:flex">
                   <p class="max-w-2xl text-sm text-stone-300">
                     By placing your order, you agree to our store policies, shipping terms, and secure payment authorization.
                   </p>
 
                   <button
                     type="submit"
-                    class="focus-ring rounded-2xl bg-emerald-400 px-6 py-4 font-extrabold text-[var(--brand-4)] shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60 md:min-w-[240px]"
-                    :disabled="isProcessingOrder"
+                    class="focus-ring rounded-2xl px-6 py-4 font-extrabold transition md:min-w-[240px]"
+                    :disabled="isProcessingOrder || !checkoutRequirementsComplete"
+                    :class="checkoutRequirementsComplete
+                      ? 'bg-emerald-400 hover:bg-emerald-300 text-[var(--brand-4)] shadow-md hover:-translate-y-0.5'
+                      : 'bg-stone-200 text-stone-400 shadow-none cursor-not-allowed grayscale saturate-0'
+                    "
                   >
-                    <i class="fa-solid fa-lock mr-2"></i>
-                    {{ isProcessingOrder ? 'Processing...' : 'Place Secure Order' }}
+                    <i
+                      :class="isProcessingOrder
+                        ? 'fa-solid fa-spinner animate-spin mr-2'
+                        : 'fa-solid fa-lock mr-2'
+                      "
+                    ></i>
+                    {{ isProcessingOrder ? 'Processing Secure Payment...' : 'Complete Secure Order' }}
                   </button>
                 </div>
 
@@ -637,26 +845,46 @@ onMounted(() => {
                     : 'border-red-200 bg-red-50 text-red-800'"
                 >
                   {{ checkoutStatus }}
-                  <div v-if="checkoutStatusType === 'success' && checkoutResult?.order" class="mt-3 text-xs">
-                    <p><strong>Order ID:</strong> {{ checkoutResult.order.id }}</p>
-                    <p><strong>Total Paid:</strong> {{ formatPrice(checkoutResult.pricing.total) }}</p>
-                    <p v-if="checkoutResult.pricing.donationAmount">
-                      <strong>Donation Generated:</strong> {{ formatPrice(checkoutResult.pricing.donationAmount) }}
-                    </p>
-                  </div>
-                  <div v-if="checkoutResult?.pricing" class="mt-3 grid gap-2 text-xs md:grid-cols-2">
-                    <span>Backend subtotal: {{ formatPrice(checkoutResult.pricing.subtotal) }}</span>
-                    <span>Backend discount: {{ formatPrice(checkoutResult.pricing.discountAmount) }}</span>
-                    <span>Backend donation: {{ formatPrice(checkoutResult.pricing.donationAmount) }}</span>
-                    <span>Backend total: {{ formatPrice(checkoutResult.pricing.total) }}</span>
-                  </div>
                 </div>
               </div>
             </form>
           </section>
 
-          <aside class="space-y-4 lg:sticky lg:top-24">
-            <section class="section-panel p-5 md:p-6">
+          
+<section class="section-panel overflow-hidden xl:hidden mb-28">
+  <button
+    type="button"
+    class="flex w-full items-center justify-between gap-4 p-4 text-left"
+    @click="mobileSummaryOpen = !mobileSummaryOpen"
+  >
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+        Order Summary
+      </p>
+
+      <p class="mt-1 text-lg font-extrabold text-[var(--brand-4)]">
+        {{ formatPrice(summaryTotal) }}
+      </p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <span class="rounded-full border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_72%,white)] px-3 py-1.5 text-xs font-bold text-[var(--brand-4)]">
+        {{ itemCount }} items
+      </span>
+
+      <i
+        class="fa-solid transition"
+        :class="mobileSummaryOpen ? 'fa-chevron-up rotate-180' : 'fa-chevron-down'"
+      ></i>
+    </div>
+  </button>
+</section>
+
+<aside class="space-y-4 lg:sticky lg:top-24">
+            <section
+              class="section-panel p-5 md:p-6"
+              :class="mobileSummaryOpen ? 'block' : 'hidden xl:block'"
+            >
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Order Summary</p>
@@ -674,7 +902,7 @@ onMounted(() => {
                     <div class="flex items-start justify-between gap-3">
                       <div>
                         <h3 class="font-extrabold leading-tight">{{ item.name }}</h3>
-                        <p class="mt-1 text-sm text-stone-300">{{ item.size }} • Qty {{ item.quantity }}</p>
+                        <p class="mt-1 text-xs leading-relaxed text-stone-300">{{ item.size }} • Qty {{ item.quantity }}</p>
                       </div>
                       <p class="font-extrabold">{{ formatPrice(item.price * item.quantity) }}</p>
                     </div>
@@ -715,7 +943,7 @@ onMounted(() => {
                   >
                     <div class="flex items-start justify-between gap-3">
                       <div>
-                        <p class="font-bold">{{ campaign.campaignName }}</p>
+                        <p class="text-sm font-bold leading-tight">{{ campaign.campaignName }}</p>
                         <p class="mt-1 text-xs opacity-80">Supports {{ campaign.donationTarget }}</p>
                       </div>
                       <p class="font-extrabold">{{ formatPrice(campaign.donationAmount) }}</p>
@@ -769,7 +997,7 @@ onMounted(() => {
 
               <div v-if="cartItems.length">
                 <h3 class="text-base font-extrabold">Promo code</h3>
-                <p class="mt-1 text-sm text-stone-300">Have a discount code? Apply it before placing your order.</p>
+                <p class="mt-1 text-xs leading-relaxed text-stone-300">Have a discount code? Apply it before placing your order.</p>
 
                 <div class="mt-4 flex flex-col gap-3 sm:flex-row">
                   <input
@@ -802,7 +1030,7 @@ onMounted(() => {
                 <li class="flex gap-3"><i class="fa-solid fa-envelope mt-1 text-emerald-400"></i><span>Order confirmation and tracking updates are sent by email after purchase.</span></li>
               </ul>
               <div class="my-5 h-px bg-[color-mix(in_srgb,var(--brand-3)_30%,white)]"></div>
-              <RouterLink to="/" class="inline-flex items-center gap-2 font-semibold text-emerald-400 hover:underline">
+              <RouterLink to="/cart" class="inline-flex items-center gap-2 font-semibold text-emerald-400 hover:underline">
                 <i class="fa-solid fa-arrow-left"></i>
                 Back to cart
               </RouterLink>
@@ -810,6 +1038,40 @@ onMounted(() => {
           </aside>
         </div>
       </div>
-    </main>
+    
+<div class="fixed inset-x-0 bottom-0 z-[90] border-t border-stone-300 bg-white/95 p-4 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur supports-[backdrop-filter]:bg-white/80 xl:hidden">
+  <div class="mx-auto flex max-w-7xl items-center gap-3 pb-[env(safe-area-inset-bottom)]">
+    <div class="min-w-0 flex-1">
+      <p class="text-xs font-semibold uppercase tracking-[0.08em] text-stone-400">
+        Total
+      </p>
+
+      <p class="truncate text-lg font-extrabold text-[var(--brand-4)]">
+        {{ formatPrice(summaryTotal) }}
+      </p>
+    </div>
+
+    <button
+      type="button"
+      @click="placeOrder"
+      class="focus-ring rounded-2xl px-5 py-3 font-extrabold transition"
+      :disabled="isProcessingOrder || !checkoutRequirementsComplete"
+      :class="checkoutRequirementsComplete
+        ? 'bg-emerald-400 text-[var(--brand-4)] shadow-md'
+        : 'bg-stone-200 text-stone-400 shadow-none cursor-not-allowed grayscale saturate-0'
+      "
+    >
+      <i
+        :class="isProcessingOrder
+          ? 'fa-solid fa-spinner animate-spin mr-2'
+          : 'fa-solid fa-lock mr-2'
+        "
+      ></i>
+      {{ isProcessingOrder ? 'Processing...' : 'Complete Order' }}
+    </button>
+  </div>
+</div>
+
+</main>
   </div>
 </template>
