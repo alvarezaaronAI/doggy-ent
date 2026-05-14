@@ -6,6 +6,7 @@ import AdminOrdersView from '../views/admin/AdminOrdersView.vue'
 import AdminPromosView from '../views/admin/AdminPromosView.vue'
 import AdminCampaignsView from '../views/admin/AdminCampaignsView.vue'
 import CheckoutView from '../views/CheckoutView.vue'
+import OrderSuccessView from '../views/OrderSuccessView.vue'
 import AdminLoginView from '../views/admin/AdminLoginView.vue'
 
 const routes = [
@@ -59,6 +60,12 @@ const routes = [
     path: '/checkout',
     name: 'checkout',
     component: CheckoutView,
+  },
+  {
+    path: '/order-success/:orderId',
+    name: 'order-success',
+    component: OrderSuccessView,
+    props: true,
   },
 ]
 
