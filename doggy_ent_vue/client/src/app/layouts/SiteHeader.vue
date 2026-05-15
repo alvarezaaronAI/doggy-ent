@@ -40,7 +40,7 @@ const emit = defineEmits(['open-cart', 'update:search-query'])
           <input
             :value="props.searchQuery"
             type="text"
-            placeholder="Search treats..."
+            placeholder="Search treats, proteins, tags..."
             class="w-56 rounded-xl border border-stone-700 bg-white py-2 pl-9 pr-3 text-sm text-stone-700 outline-none transition focus:border-emerald-400"
             @input="emit('update:search-query', $event.target.value)"
           />

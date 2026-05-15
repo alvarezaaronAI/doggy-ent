@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../../domains/storefront/views/HomeView.vue'
+import ProductDetailView from '../../domains/storefront/views/ProductDetailView.vue'
 import AdminDashboardView from '../../domains/admin/views/AdminDashboardView.vue'
 import AdminProductsView from '../../domains/admin/views/AdminProductsView.vue'
 import AdminOrdersView from '../../domains/admin/views/AdminOrdersView.vue'
@@ -14,6 +15,12 @@ const routes = [
     path: '/',
     name: 'home',
     component: HomeView,
+  },
+  {
+    path: '/products/:slug',
+    name: 'product-detail',
+    component: ProductDetailView,
+    props: true,
   },
   {
     path: '/admin/login',

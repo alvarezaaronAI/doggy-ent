@@ -13,43 +13,29 @@ import IngredientsAnalysisSection from '../components/IngredientsAnalysisSection
 import ReviewsPreviewSection from '../components/ReviewsPreviewSection.vue'
 import AboutBrandSection from '../components/AboutBrandSection.vue'
 import QuickViewModal from '../components/QuickViewModal.vue'
-import { fetchProducts } from '../services/products.api'
-import {
-  getSellingMode,
-  isPurchasable,
-  getAvailableQuantity,
-  limitQuantity,
-  getStockLabel,
-} from '../../../shared/constants/sellingMode'
+import ProductCard from '../components/ProductCard.vue'
+import FilterBar from '../components/FilterBar.vue'
+import { useProducts } from '../composables/useProducts'
+import { useProductFilters } from '../composables/useProductFilters'
+import { useProductVariants } from '../composables/useProductVariants'
 
-const products = ref([])
 const cart = ref([])
 const isCartOpen = ref(false)
-const isLoading = ref(true)
 const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
-const errorMessage = ref('')
-const searchQuery = ref('')
-const selectedCardSizes = ref({})
 const CART_STORAGE_KEY = 'doggy-ent-cart'
 
-async function loadProducts() {
-  isLoading.value = true
-  errorMessage.value = ''
-
-  try {
-    products.value = await fetchProducts()
-  } catch (error) {
-    products.value = []
-    errorMessage.value = error.message || 'Unable to load products.'
-  } finally {
-    isLoading.value = false
-  }
-}
+const {
+  products,
+  isLoading,
+  errorMessage,
+  availableCategories,
+  availableProteins,
+  comingSoonProducts,
+} = useProducts()
 
 onMounted(() => {
   loadSavedCart()
-  loadProducts()
 })
 
 watch(
@@ -146,38 +132,33 @@ const itemCount = computed(() =>
   cart.value.reduce((sum, item) => sum + item.quantity, 0)
 )
 
-const activeProducts = computed(() => {
-  const normalizedSearch = searchQuery.value.trim().toLowerCase()
 
-  return products.value.filter((product) => {
-    if (product.status !== 'active') {
-      return false
-    }
 
-    if (!normalizedSearch) {
-      return true
-    }
-
-    return [
-      product.name,
-      product.category,
-      product.protein,
-      ...(Array.isArray(product.tags) ? product.tags : []),
-    ]
-      .filter(Boolean)
-      .some((value) =>
-        String(value).toLowerCase().includes(normalizedSearch)
-      )
-  })
-})
-
-const comingSoonProducts = computed(() =>
-  products.value.filter((product) => product.status === 'coming-soon')
-)
 
 const featuredProduct = computed(() =>
   activeProducts.value.find((product) => product.featured) || activeProducts.value[0] || null
 )
+
+const {
+  searchQuery,
+  selectedCategory,
+  selectedProtein,
+  selectedSort,
+  activeProducts,
+} = useProductFilters(products, getSelectedCardPrice)
+
+const {
+  getSellingMode,
+  isPurchasable,
+  getAvailableQuantity,
+  limitQuantity,
+  getProductVariants,
+  getSelectedCardSize,
+  selectCardSize,
+  getSelectedCardPrice,
+  getSelectedCardVariant,
+  getSelectedStockLabel,
+} = useProductVariants()
 
 function getDisplayTags(product) {
   if (Array.isArray(product.tags) && product.tags.length) {
@@ -187,43 +168,6 @@ function getDisplayTags(product) {
   return ['Small-batch', 'No fillers']
 }
 
-function getVariantPrice(product, size) {
-  return product.variants?.find((variant) => variant.size === size)?.price || product.price || 0
-}
-
-function hasVariant(product, size) {
-  return Boolean(product.variants?.find((variant) => variant.size === size))
-}
-
-function getProductVariants(product) {
-  return Array.isArray(product.variants) ? product.variants : []
-}
-
-function getSelectedCardSize(product) {
-  return selectedCardSizes.value[product.id] || getProductVariants(product)[0]?.size || '6 oz'
-}
-
-function selectCardSize(product, size) {
-  selectedCardSizes.value = {
-    ...selectedCardSizes.value,
-    [product.id]: size,
-  }
-}
-
-function getSelectedCardPrice(product) {
-  return getVariantPrice(product, getSelectedCardSize(product))
-}
-
-function getSelectedCardVariant(product) {
-  return getProductVariants(product).find(
-    (variant) => variant.size === getSelectedCardSize(product)
-  )
-}
-
-
-function getSelectedStockLabel(product) {
-  return getStockLabel(product, getSelectedCardVariant(product))
-}
 
 function formatPrice(value) {
   return `$${Number(value).toFixed(2)}`
@@ -256,6 +200,16 @@ function formatPrice(value) {
 
       <section id="shop" class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
+        <FilterBar
+          :available-categories="availableCategories"
+          :available-proteins="availableProteins"
+          :selected-category="selectedCategory"
+          :selected-protein="selectedProtein"
+          :selected-sort="selectedSort"
+          @update:selected-category="selectedCategory = $event"
+          @update:selected-protein="selectedProtein = $event"
+          @update:selected-sort="selectedSort = $event"
+        />
           <div>
             <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">
               Product feed
@@ -284,104 +238,22 @@ function formatPrice(value) {
         </div>
 
         <div v-else class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <article
+          <ProductCard
             v-for="product in activeProducts"
             :key="product.id"
-            class="tile-strong flex h-full min-h-[500px] flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
-          >
-            <RouterLink :to="`/products/${product.slug}`">
-              <img
-                class="h-44 w-full flex-shrink-0 cursor-pointer object-cover transition hover:opacity-90"
-                :src="product.image"
-                :alt="product.name"
-              />
-            </RouterLink>
-
-            <div class="flex flex-1 flex-col p-4">
-              <div>
-                <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
-                  {{ product.category }}
-                </p>
-                <RouterLink
-                  :to="`/products/${product.slug}`"
-                  class="mt-2 block text-xl font-semibold transition hover:text-emerald-400"
-                >
-                  {{ product.name }}
-                </RouterLink>
-              </div>
-
-              <div class="mt-3 flex min-h-[28px] flex-wrap gap-2">
-                <span
-                  v-for="tag in getDisplayTags(product).slice(0, 2)"
-                  :key="tag"
-                  class="rounded-full bg-[color-mix(in_srgb,var(--brand-2)_88%,white)] px-3 py-1 text-[11px] font-extrabold text-[var(--brand-4)] shadow-sm"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-
-              <p class="mt-3 min-h-[52px] text-sm text-stone-300">
-                {{ product.shortDescription }}
-              </p>
-              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">
-                {{ product.protein }}<span v-if="product.cut"> • {{ product.cut }}</span>
-              </p>
-
-              <div class="mt-3 border-t border-[color-mix(in_srgb,var(--brand-3)_30%,white)] pt-3">
-                <div class="flex items-center gap-2">
-                  <button
-                    v-for="variant in getProductVariants(product)"
-                    :key="variant.size"
-                    class="rounded-full px-3 py-1 text-xs font-extrabold border transition"
-                    :class="getSelectedCardSize(product) === variant.size
-                      ? 'bg-emerald-400 text-[var(--brand-4)] border-emerald-400'
-                      : 'bg-white text-stone-700 border-stone-700 hover:border-emerald-400'"
-                    @click.stop="selectCardSize(product, variant.size)"
-                  >
-                    {{ variant.size }}
-                  </button>
-                </div>
-
-                <div class="mt-3 flex items-end justify-between gap-3">
-                  <p class="text-lg font-extrabold text-[var(--brand-4)]">
-                    {{ formatPrice(getSelectedCardPrice(product)) }}
-                  </p>
-                  <p
-                    class="text-xs font-bold uppercase tracking-[0.12em]"
-                  :class="isPurchasable(product, getSelectedCardVariant(product))
-                    ? 'text-[color:var(--success-1)]'
-                    : 'text-amber-700'"
-                  >
-                    {{ getSelectedStockLabel(product) }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="mt-auto flex items-center justify-between gap-2 pt-5">
-                <button
-                  class="rounded-lg border border-stone-700 px-4 py-2 font-semibold text-stone-700 transition hover:border-emerald-400 hover:text-emerald-400"
-                  @click.stop="openQuickView(product)"
-                >
-                  Quick View
-                </button>
-                <button
-                  v-if="isPurchasable(product, getSelectedCardVariant(product))"
-                  class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-                  @click.stop="addToCart(product)"
-                >
-                  Add to Cart
-                </button>
-
-                <button
-                  v-else
-                  class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-                  @click.stop="openQuickView(product)"
-                >
-                  Notify Me
-                </button>
-              </div>
-            </div>
-          </article>
+            :product="product"
+            :format-price="formatPrice"
+            :get-display-tags="getDisplayTags"
+            :get-product-variants="getProductVariants"
+            :get-selected-card-size="getSelectedCardSize"
+            :select-card-size="selectCardSize"
+            :get-selected-card-price="getSelectedCardPrice"
+            :get-selected-card-variant="getSelectedCardVariant"
+            :get-selected-stock-label="getSelectedStockLabel"
+            :is-purchasable="isPurchasable"
+            @quick-view="openQuickView"
+            @add-to-cart="addToCart"
+          />
         </div>
       </section>
 
