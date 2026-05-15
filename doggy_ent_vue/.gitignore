@@ -128,7 +128,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+dist/
 
 # Gatsby files
 .cache/
@@ -234,5 +234,37 @@ prisma/dev.db-journal
 
 # Allow safe environment example file
 !.env.example
+
+# Prisma generated client
+server/src/generated/prisma
+
+# Prisma local databases
+server/prisma/*.db
+server/prisma/*.db-journal
+
+
+# Prisma migrations lock
+server/prisma/migrations/
+
+# Environment overrides
+*.env
+!.env.example
+
+# OS/editor temp files
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# Turbo / monorepo caches
+.turbo/
+
+# Local SSL certs
+*.pem
+*.key
 
 # End of https://www.toptal.com/developers/gitignore/api/node,vue,macos,visualstudiocode,dotenv

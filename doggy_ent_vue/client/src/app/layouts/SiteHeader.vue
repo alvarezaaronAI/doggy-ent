@@ -1,12 +1,16 @@
 <script setup>
-defineProps({
+const props = defineProps({
   cartCount: {
     type: Number,
     default: 0,
   },
+  searchQuery: {
+    type: String,
+    default: '',
+  },
 })
 
-const emit = defineEmits(['open-cart'])
+const emit = defineEmits(['open-cart', 'update:search-query'])
 </script>
 
 <template>
@@ -30,18 +34,16 @@ const emit = defineEmits(['open-cart'])
       </ul>
 
       <div class="hidden md:flex items-center gap-4">
-        <div class="group relative">
-          <button
-            class="text-stone-300 opacity-50 transition hover:text-white hover:opacity-80"
-            aria-label="Search coming soon"
-            type="button"
-          >
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </button>
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400"></i>
 
-          <div class="pointer-events-none absolute left-1/2 top-full z-20 mt-3 -translate-x-1/2 rounded-xl border border-[color-mix(in_srgb,var(--brand-3)_40%,white)] bg-white px-3 py-2 text-xs font-medium text-stone-600 opacity-0 shadow-xl transition duration-200 group-hover:opacity-100 whitespace-nowrap">
-            Feature coming later • Summer 2026
-          </div>
+          <input
+            :value="props.searchQuery"
+            type="text"
+            placeholder="Search treats..."
+            class="w-56 rounded-xl border border-stone-700 bg-white py-2 pl-9 pr-3 text-sm text-stone-700 outline-none transition focus:border-emerald-400"
+            @input="emit('update:search-query', $event.target.value)"
+          />
         </div>
 
         <div class="group relative">

@@ -1,239 +1,4 @@
-let mockProducts = [
-  {
-    id: 'chicken-breast-jerky',
-    name: 'Chicken Breast Jerky',
-    protein: 'Chicken',
-    cut: 'Breast',
-    shortDescription: 'Lean, hand-sliced chicken breast dehydrated low and slow.',
-    category: 'Jerky',
-    status: 'active',
-    sellingMode: 'made-to-order',
-    featured: true,
-    tags: ['Single-ingredient', 'Grain-free'],
-    image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop',
-    ingredients: 'Chicken breast. No salt, no sugar, no glycerin, no preservatives.',
-    texture: 'Firm jerky texture that can be broken into smaller pieces.',
-    bestFor: 'Training rewards, bigger dogs, picky pups, and simple-ingredient routines.',
-    notIncluded: ['No salt', 'No sugar', 'No glycerin', 'No preservatives', 'No fillers'],
-    freshness: 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.',
-    storageFeeding: 'Keep sealed in a cool, dry place. Refrigerate after opening for max freshness. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.',
-    variants: [
-      {
-        size: '6 oz',
-        price: 14.99,
-        sku: 'CNE-DT-CHICKEN-6OZ',
-        quantity: 24,
-        stockStatus: 'in-stock',
-        lowStockThreshold: 5,
-      },
-      {
-        size: '18 oz',
-        price: 39.99,
-        sku: 'CNE-DT-CHICKEN-18OZ',
-        quantity: 10,
-        stockStatus: 'in-stock',
-        lowStockThreshold: 3,
-      },
-    ],
-    showGuaranteedAnalysis: false,
-    guaranteedAnalysis: {},
-  },
-  {
-    id: 'beef-jerky',
-    name: 'Beef Jerky',
-    protein: 'Beef',
-    cut: 'Lean Cut',
-    shortDescription: 'Rich beef jerky made for bigger dogs who love a stronger flavor.',
-    category: 'Jerky',
-    status: 'active',
-    sellingMode: 'inventory-limited',
-    featured: false,
-    tags: ['High Protein', 'Rich Flavor'],
-    image: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?q=80&w=1200&auto=format&fit=crop',
-    ingredients: 'Beef. No salt, no sugar, no glycerin, no preservatives.',
-    texture: 'Firm, rich jerky texture with a stronger chew.',
-    bestFor: 'Bigger dogs, rich-flavor lovers, high-value rewards, and dogs who enjoy beef treats.',
-    notIncluded: ['No salt', 'No sugar', 'No glycerin', 'No preservatives', 'No fillers'],
-    freshness: 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.',
-    storageFeeding: 'Keep sealed in a cool, dry place. Refrigerate after opening for max freshness. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.',
-    variants: [
-      {
-        size: '6 oz',
-        price: 17.99,
-        sku: 'CNE-DT-BEEF-6OZ',
-        quantity: 18,
-        stockStatus: 'in-stock',
-        lowStockThreshold: 5,
-      },
-      {
-        size: '18 oz',
-        price: 47.99,
-        sku: 'CNE-DT-BEEF-18OZ',
-        quantity: 0,
-        stockStatus: 'out-of-stock',
-        lowStockThreshold: 3,
-      },
-    ],
-    showGuaranteedAnalysis: false,
-    guaranteedAnalysis: {},
-  },
-  {
-    id: 'turkey-jerky',
-    name: 'Turkey Jerky',
-    protein: 'Turkey',
-    cut: 'Breast',
-    shortDescription: 'A lighter protein option with a clean, simple ingredient list.',
-    category: 'Jerky',
-    status: 'draft',
-    sellingMode: 'inventory-limited',
-    featured: false,
-    tags: ['Lean Protein', 'Easy to Digest'],
-    image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1200&auto=format&fit=crop',
-    ingredients: 'Turkey breast. No salt, no sugar, no glycerin, no preservatives.',
-    texture: 'Lean jerky texture that breaks down into smaller training pieces.',
-    bestFor: 'Dogs who prefer lighter proteins, training rewards, and simple-ingredient treat routines.',
-    notIncluded: ['No salt', 'No sugar', 'No glycerin', 'No preservatives', 'No fillers'],
-    freshness: 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.',
-    storageFeeding: 'Keep sealed in a cool, dry place. Refrigerate after opening for max freshness. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.',
-    variants: [
-      {
-        size: '6 oz',
-        price: 16.99,
-        sku: 'CNE-DT-TURKEY-6OZ',
-        quantity: 0,
-        stockStatus: 'out-of-stock',
-        lowStockThreshold: 5,
-      },
-      {
-        size: '18 oz',
-        price: 44.99,
-        sku: 'CNE-DT-TURKEY-18OZ',
-        quantity: 0,
-        stockStatus: 'out-of-stock',
-        lowStockThreshold: 3,
-      },
-    ],
-    showGuaranteedAnalysis: false,
-    guaranteedAnalysis: {},
-  },
-  {
-    id: 'lamb-jerky',
-    name: 'Lamb Jerky',
-    protein: 'Lamb',
-    cut: 'Lean Cut',
-    shortDescription: 'A premium lamb treat option for dogs who love richer proteins.',
-    category: 'Jerky',
-    status: 'draft',
-    sellingMode: 'inventory-limited',
-    featured: false,
-    tags: ['Premium Cut', 'Rich Protein'],
-    image: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200&auto=format&fit=crop',
-    ingredients: 'Lamb. No salt, no sugar, no glycerin, no preservatives.',
-    texture: 'Premium firm jerky texture with a richer chew.',
-    bestFor: 'Premium treat routines, richer protein variety, bigger dogs, and high-value rewards.',
-    notIncluded: ['No salt', 'No sugar', 'No glycerin', 'No preservatives', 'No fillers'],
-    freshness: 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.',
-    storageFeeding: 'Keep sealed in a cool, dry place. Refrigerate after opening for max freshness. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.',
-    variants: [
-      {
-        size: '6 oz',
-        price: 22.99,
-        sku: 'CNE-DT-LAMB-6OZ',
-        quantity: 0,
-        stockStatus: 'out-of-stock',
-        lowStockThreshold: 5,
-      },
-      {
-        size: '18 oz',
-        price: 59.99,
-        sku: 'CNE-DT-LAMB-18OZ',
-        quantity: 0,
-        stockStatus: 'out-of-stock',
-        lowStockThreshold: 3,
-      },
-    ],
-    showGuaranteedAnalysis: false,
-    guaranteedAnalysis: {},
-  },
-  {
-    id: 'training-bites',
-    name: 'Training Bites',
-    protein: 'Chicken',
-    cut: 'Small Bite',
-    shortDescription: 'Tiny, high-reward morsels for focused sessions.',
-    category: 'Training',
-    status: 'coming-soon',
-    sellingMode: 'preorder',
-    featured: false,
-    tags: ['Training Size', 'Coming Soon'],
-    image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1200&auto=format&fit=crop',
-    ingredients: 'Chicken. No salt, no sugar, no glycerin, no preservatives.',
-    texture: 'Small bite-sized pieces designed for quick rewards.',
-    bestFor: 'Training sessions, puppy practice, small rewards, and repeated commands.',
-    notIncluded: ['No salt', 'No sugar', 'No glycerin', 'No preservatives', 'No fillers'],
-    freshness: 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.',
-    storageFeeding: 'Keep sealed in a cool, dry place. Refrigerate after opening for max freshness. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.',
-    variants: [
-      {
-        size: '6 oz',
-        price: 13.99,
-        sku: 'CNE-DT-TRAINING-6OZ',
-        quantity: 0,
-        stockStatus: 'coming-soon',
-        lowStockThreshold: 5,
-      },
-      {
-        size: '18 oz',
-        price: 36.99,
-        sku: 'CNE-DT-TRAINING-18OZ',
-        quantity: 0,
-        stockStatus: 'coming-soon',
-        lowStockThreshold: 3,
-      },
-    ],
-    showGuaranteedAnalysis: false,
-    guaranteedAnalysis: {},
-  },
-  {
-    id: 'seasonal-drop',
-    name: 'Seasonal Drop',
-    protein: 'Rotating',
-    cut: 'Limited Batch',
-    shortDescription: 'Limited runs inspired by the season. New flavors, same clean promise.',
-    category: 'Seasonal',
-    status: 'coming-soon',
-    sellingMode: 'preorder',
-    featured: false,
-    tags: ['Limited Time', 'Special Flavor'],
-    image: 'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?q=80&w=1200&auto=format&fit=crop',
-    ingredients: 'Rotating seasonal protein. Final ingredients listed on each batch.',
-    texture: 'Limited-batch texture varies by seasonal recipe.',
-    bestFor: 'Seasonal variety, limited drops, giftable treat moments, and dogs who enjoy new flavors.',
-    notIncluded: ['No unnecessary fillers', 'No artificial preservatives', 'No artificial colors'],
-    freshness: 'Freshness guidance will be listed on each seasonal batch.',
-    storageFeeding: 'Follow the storage guidance listed on each seasonal batch. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.',
-    variants: [
-      {
-        size: '6 oz',
-        price: 18.99,
-        sku: 'CNE-DT-SEASONAL-6OZ',
-        quantity: 0,
-        stockStatus: 'coming-soon',
-        lowStockThreshold: 5,
-      },
-      {
-        size: '18 oz',
-        price: 49.99,
-        sku: 'CNE-DT-SEASONAL-18OZ',
-        quantity: 0,
-        stockStatus: 'coming-soon',
-        lowStockThreshold: 3,
-      },
-    ],
-    showGuaranteedAnalysis: false,
-    guaranteedAnalysis: {},
-  },
-]
+import { prisma } from '../../../db/prisma.js'
 
 function slugify(value) {
   return String(value)
@@ -321,62 +86,169 @@ function normalizeProductInput(productInput) {
 }
 
 export async function fetchAllProducts() {
-  return mockProducts.map((product) => ({
+  const products = await prisma.product.findMany({
+    include: {
+      variants: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  })
+
+  return products.map((product) => ({
     ...product,
-    price: product.variants?.[0]?.price || 0,
+    price: product.variants?.[0]?.price
+      ? product.variants[0].price / 100
+      : 0,
   }))
 }
 
-export async function createProduct(productInput) {
-  const idBase = slugify(productInput.name || 'product')
-  const duplicateCount = mockProducts.filter((product) => product.id.startsWith(idBase)).length
-  const id = duplicateCount > 0 ? `${idBase}-${duplicateCount + 1}` : idBase
+export async function fetchProductBySlug(slug) {
+  const product = await prisma.product.findUnique({
+    where: {
+      slug,
+    },
+    include: {
+      variants: true,
+    },
+  })
 
-  const newProduct = {
-    id,
-    ...normalizeProductInput(productInput),
+  if (!product) {
+    return null
   }
 
-  mockProducts.unshift(newProduct)
+  return {
+    ...product,
+    price: product.variants?.[0]?.price
+      ? product.variants[0].price / 100
+      : 0,
+  }
+}
+
+export async function createProduct(productInput) {
+  const normalizedProduct = normalizeProductInput(productInput)
+
+  const createdProduct = await prisma.product.create({
+    data: {
+      name: normalizedProduct.name,
+      slug: slugify(normalizedProduct.name),
+      description: normalizedProduct.shortDescription,
+      protein: normalizedProduct.protein,
+      cut: normalizedProduct.cut,
+      category: normalizedProduct.category,
+      image: normalizedProduct.image,
+      ingredients: normalizedProduct.ingredients,
+      texture: normalizedProduct.texture,
+      bestFor: normalizedProduct.bestFor,
+      freshness: normalizedProduct.freshness,
+      storageFeeding: normalizedProduct.storageFeeding,
+      featured: normalizedProduct.featured,
+      sellingMode: normalizedProduct.sellingMode?.toUpperCase().replace(/-/g, '_'),
+      tags: normalizedProduct.tags,
+      status: normalizedProduct.status?.toUpperCase().replace(/-/g, '_'),
+      variants: {
+        create: normalizedProduct.variants.map((variant) => ({
+          size: variant.size,
+          price: Math.round(Number(variant.price) * 100),
+          inventory: variant.quantity,
+          sku: variant.sku,
+        })),
+      },
+    },
+    include: {
+      variants: true,
+    },
+  })
 
   return {
-    ...newProduct,
-    price: newProduct.variants?.[0]?.price || 0,
+    ...createdProduct,
+    price: createdProduct.variants?.[0]?.price
+      ? createdProduct.variants[0].price / 100
+      : 0,
   }
 }
 
 export async function updateProductById(productId, productInput) {
-  const existingIndex = mockProducts.findIndex((product) => product.id === productId)
+  const existingProduct = await prisma.product.findUnique({
+    where: {
+      id: productId,
+    },
+    include: {
+      variants: true,
+    },
+  })
 
-  if (existingIndex === -1) {
+  if (!existingProduct) {
     return null
   }
 
-  const existingProduct = mockProducts[existingIndex]
+  const normalizedProduct = normalizeProductInput(productInput)
 
-  const updatedProduct = {
-    ...existingProduct,
-    ...normalizeProductInput({
-      ...existingProduct,
-      ...productInput,
-    }),
-  }
+  await prisma.productVariant.deleteMany({
+    where: {
+      productId,
+    },
+  })
 
-  mockProducts[existingIndex] = updatedProduct
+  const updatedProduct = await prisma.product.update({
+    where: {
+      id: productId,
+    },
+    data: {
+      name: normalizedProduct.name,
+      slug: slugify(normalizedProduct.name),
+      description: normalizedProduct.shortDescription,
+      protein: normalizedProduct.protein,
+      cut: normalizedProduct.cut,
+      category: normalizedProduct.category,
+      image: normalizedProduct.image,
+      ingredients: normalizedProduct.ingredients,
+      texture: normalizedProduct.texture,
+      bestFor: normalizedProduct.bestFor,
+      freshness: normalizedProduct.freshness,
+      storageFeeding: normalizedProduct.storageFeeding,
+      featured: normalizedProduct.featured,
+      sellingMode: normalizedProduct.sellingMode?.toUpperCase().replace(/-/g, '_'),
+      tags: normalizedProduct.tags,
+      status: normalizedProduct.status?.toUpperCase().replace(/-/g, '_'),
+      variants: {
+        create: normalizedProduct.variants.map((variant) => ({
+          size: variant.size,
+          price: Math.round(Number(variant.price) * 100),
+          inventory: variant.quantity,
+          sku: variant.sku,
+        })),
+      },
+    },
+    include: {
+      variants: true,
+    },
+  })
 
   return {
     ...updatedProduct,
-    price: updatedProduct.variants?.[0]?.price || 0,
+    price: updatedProduct.variants?.[0]?.price
+      ? updatedProduct.variants[0].price / 100
+      : 0,
   }
 }
 
 export async function deleteProductById(productId) {
-  const existingIndex = mockProducts.findIndex((product) => product.id === productId)
+  const existingProduct = await prisma.product.findUnique({
+    where: {
+      id: productId,
+    },
+  })
 
-  if (existingIndex === -1) {
+  if (!existingProduct) {
     return null
   }
 
-  const deletedProducts = mockProducts.splice(existingIndex, 1)
-  return deletedProducts[0]
+  await prisma.product.delete({
+    where: {
+      id: productId,
+    },
+  })
+
+  return existingProduct
 }

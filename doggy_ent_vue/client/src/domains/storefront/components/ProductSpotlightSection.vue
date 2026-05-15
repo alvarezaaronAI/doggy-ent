@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   getSellingMode,
   canIgnoreInventory,
@@ -17,6 +18,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['add-to-cart'])
+
+const router = useRouter()
 
 const selectedSize = ref('6 oz')
 
@@ -98,13 +101,22 @@ function addFeaturedToCart() {
     sellingMode: getSellingMode(props.featuredProduct),
   })
 }
+
+function navigateToProduct() {
+  if (!props.featuredProduct?.slug) return
+
+  router.push(`/products/${props.featuredProduct.slug}`)
+}
 </script>
 
 <template>
   <section id="spotlight" class="mx-auto max-w-7xl px-5 py-10 md:px-6">
     <div class="section-panel overflow-hidden p-5 md:p-6">
       <div class="grid gap-6 md:grid-cols-2 md:items-stretch">
-        <div class="tile-strong overflow-hidden rounded-2xl border border-stone-800 bg-white">
+        <div
+          class="tile-strong overflow-hidden rounded-2xl border border-stone-800 bg-white cursor-pointer transition hover:scale-[1.01]"
+          @click="navigateToProduct"
+        >
           <img
             :src="featuredProduct?.image || 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?q=80&w=1200&auto=format&fit=crop'"
             :alt="featuredProduct?.name || 'Chicken breast jerky'"
@@ -117,7 +129,10 @@ function addFeaturedToCart() {
             Featured treat
           </p>
 
-          <h2 class="mt-2 text-2xl font-extrabold text-[var(--brand-4)] md:text-3xl">
+          <h2
+            class="mt-2 cursor-pointer text-2xl font-extrabold text-[var(--brand-4)] transition hover:text-emerald-400 md:text-3xl"
+            @click="navigateToProduct"
+          >
             {{ featuredProduct?.name }}
           </h2>
 

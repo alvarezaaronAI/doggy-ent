@@ -1,16 +1,19 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import CartDrawer from '../../cart/components/CartDrawer.vue'
 import PromoStrip from '../../../app/layouts/PromoStrip.vue'
 import SiteHeader from '../../../app/layouts/SiteHeader.vue'
 import SiteFooter from '../../../app/layouts/SiteFooter.vue'
 import HeroSection from '../components/HeroSection.vue'
 import ProductSpotlightSection from '../components/ProductSpotlightSection.vue'
+import ShopCollectionsSection from '../components/ShopCollectionsSection.vue'
 import ProcessSection from '../components/ProcessSection.vue'
 import IngredientsAnalysisSection from '../components/IngredientsAnalysisSection.vue'
 import ReviewsPreviewSection from '../components/ReviewsPreviewSection.vue'
 import AboutBrandSection from '../components/AboutBrandSection.vue'
 import QuickViewModal from '../components/QuickViewModal.vue'
+import { fetchProducts } from '../services/products.api'
 import {
   getSellingMode,
   isPurchasable,
@@ -26,6 +29,7 @@ const isLoading = ref(true)
 const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
 const errorMessage = ref('')
+const searchQuery = ref('')
 const selectedCardSizes = ref({})
 const CART_STORAGE_KEY = 'doggy-ent-cart'
 
@@ -34,14 +38,7 @@ async function loadProducts() {
   errorMessage.value = ''
 
   try {
-    const res = await fetch('/api/products')
-
-    if (!res.ok) {
-      throw new Error(`Products request failed with status ${res.status}`)
-    }
-
-    const data = await res.json()
-    products.value = Array.isArray(data) ? data : []
+    products.value = await fetchProducts()
   } catch (error) {
     products.value = []
     errorMessage.value = error.message || 'Unable to load products.'
@@ -149,9 +146,30 @@ const itemCount = computed(() =>
   cart.value.reduce((sum, item) => sum + item.quantity, 0)
 )
 
-const activeProducts = computed(() =>
-  products.value.filter((product) => product.status === 'active')
-)
+const activeProducts = computed(() => {
+  const normalizedSearch = searchQuery.value.trim().toLowerCase()
+
+  return products.value.filter((product) => {
+    if (product.status !== 'active') {
+      return false
+    }
+
+    if (!normalizedSearch) {
+      return true
+    }
+
+    return [
+      product.name,
+      product.category,
+      product.protein,
+      ...(Array.isArray(product.tags) ? product.tags : []),
+    ]
+      .filter(Boolean)
+      .some((value) =>
+        String(value).toLowerCase().includes(normalizedSearch)
+      )
+  })
+})
 
 const comingSoonProducts = computed(() =>
   products.value.filter((product) => product.status === 'coming-soon')
@@ -218,7 +236,9 @@ function formatPrice(value) {
 
     <SiteHeader
       :cart-count="itemCount"
+      :search-query="searchQuery"
       @open-cart="isCartOpen = true"
+      @update:search-query="searchQuery = $event"
     />
 
     <HeroSection />
@@ -227,6 +247,10 @@ function formatPrice(value) {
       <ProductSpotlightSection
         :featured-product="featuredProduct"
         @add-to-cart="addToCart"
+      />
+
+      <ShopCollectionsSection
+        :products="products"
       />
 
 
@@ -256,28 +280,34 @@ function formatPrice(value) {
         </div>
 
         <div v-else-if="!activeProducts.length" class="mt-8 rounded-2xl border border-stone-800 bg-white p-6 text-stone-300">
-          No active products are available yet. Add or activate products from the admin dashboard.
+          No matching products found. Try a different search term or add more products from the admin dashboard.
         </div>
 
         <div v-else class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <article
             v-for="product in activeProducts"
             :key="product.id"
-            class="tile-strong flex h-full min-h-[500px] cursor-pointer flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
-            @click="openQuickView(product)"
+            class="tile-strong flex h-full min-h-[500px] flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
           >
-            <img
-              class="h-44 w-full flex-shrink-0 object-cover"
-              :src="product.image"
-              :alt="product.name"
-            />
+            <RouterLink :to="`/products/${product.slug}`">
+              <img
+                class="h-44 w-full flex-shrink-0 cursor-pointer object-cover transition hover:opacity-90"
+                :src="product.image"
+                :alt="product.name"
+              />
+            </RouterLink>
 
             <div class="flex flex-1 flex-col p-4">
               <div>
                 <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
                   {{ product.category }}
                 </p>
-                <h3 class="mt-2 text-xl font-semibold">{{ product.name }}</h3>
+                <RouterLink
+                  :to="`/products/${product.slug}`"
+                  class="mt-2 block text-xl font-semibold transition hover:text-emerald-400"
+                >
+                  {{ product.name }}
+                </RouterLink>
               </div>
 
               <div class="mt-3 flex min-h-[28px] flex-wrap gap-2">
@@ -329,6 +359,12 @@ function formatPrice(value) {
 
               <div class="mt-auto flex items-center justify-between gap-2 pt-5">
                 <button
+                  class="rounded-lg border border-stone-700 px-4 py-2 font-semibold text-stone-700 transition hover:border-emerald-400 hover:text-emerald-400"
+                  @click.stop="openQuickView(product)"
+                >
+                  Quick View
+                </button>
+                <button
                   v-if="isPurchasable(product, getSelectedCardVariant(product))"
                   class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
                   @click.stop="addToCart(product)"
@@ -370,21 +406,27 @@ function formatPrice(value) {
           <article
             v-for="product in comingSoonProducts"
             :key="product.id"
-            class="tile-strong flex h-full min-h-[450px] cursor-pointer flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
-            @click="openQuickView(product)"
+            class="tile-strong flex h-full min-h-[450px] flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
           >
-            <img
-              class="h-44 w-full flex-shrink-0 object-cover"
-              :src="product.image"
-              :alt="product.name"
-            />
+            <RouterLink :to="`/products/${product.slug}`">
+              <img
+                class="h-44 w-full flex-shrink-0 cursor-pointer object-cover transition hover:opacity-90"
+                :src="product.image"
+                :alt="product.name"
+              />
+            </RouterLink>
 
             <div class="flex flex-1 flex-col p-4">
               <div>
                 <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
                   {{ product.category }}
                 </p>
-                <h3 class="mt-2 text-xl font-semibold">{{ product.name }}</h3>
+                <RouterLink
+                  :to="`/products/${product.slug}`"
+                  class="mt-2 block text-xl font-semibold transition hover:text-emerald-400"
+                >
+                  {{ product.name }}
+                </RouterLink>
               </div>
 
               <div class="mt-3 flex min-h-[28px] flex-wrap gap-2">

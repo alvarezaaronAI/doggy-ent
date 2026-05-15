@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   getSellingMode,
   canIgnoreInventory,
@@ -21,6 +22,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'add-to-cart'])
+
+const router = useRouter()
 
 const selectedSize = ref('6 oz')
 const quantity = ref(1)
@@ -145,6 +148,13 @@ function addProductToCart() {
     sellingMode: getSellingMode(props.product),
   })
 }
+
+function navigateToProductPage() {
+  if (!props.product?.slug) return
+
+  emit('close')
+  router.push(`/products/${props.product.slug}`)
+}
 </script>
 
 <template>
@@ -180,6 +190,12 @@ function addProductToCart() {
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">
               Quick View
             </p>
+            <button
+              class="mt-3 text-sm font-bold text-emerald-400 transition hover:text-emerald-300"
+              @click="navigateToProductPage"
+            >
+              View Full Product Page →
+            </button>
 
             <h2 class="mt-2 text-3xl font-extrabold">
               {{ product.name }}
