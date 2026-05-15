@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import StripeElementsForm from '../components/checkout/StripeElementsForm.vue'
+import StripeElementsForm from '../components/StripeElementsForm.vue'
 
 const CART_STORAGE_KEY = 'doggy-ent-cart'
 const CUSTOMER_STORAGE_KEY = 'doggy-ent-checkout-customer'

@@ -2,7 +2,7 @@
 import {
   getSellingMode,
   canIgnoreInventory,
-} from '../../utils/sellingMode'
+} from '../../../shared/constants/sellingMode'
 
 const props = defineProps({
   isOpen: {

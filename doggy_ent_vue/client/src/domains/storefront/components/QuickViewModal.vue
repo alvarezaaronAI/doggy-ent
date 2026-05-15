@@ -7,7 +7,7 @@ import {
   isPurchasable as isProductPurchasable,
   getAvailableQuantity,
   getStockLabel,
-} from '../../utils/sellingMode'
+} from '../../../shared/constants/sellingMode'
 
 const props = defineProps({
   product: {

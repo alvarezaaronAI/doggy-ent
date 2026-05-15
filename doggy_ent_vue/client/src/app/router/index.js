@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
-import AdminProductsView from '../views/admin/AdminProductsView.vue'
-import AdminOrdersView from '../views/admin/AdminOrdersView.vue'
-import AdminPromosView from '../views/admin/AdminPromosView.vue'
-import AdminCampaignsView from '../views/admin/AdminCampaignsView.vue'
-import CheckoutView from '../views/CheckoutView.vue'
-import OrderSuccessView from '../views/OrderSuccessView.vue'
-import AdminLoginView from '../views/admin/AdminLoginView.vue'
+import HomeView from '../../domains/storefront/views/HomeView.vue'
+import AdminDashboardView from '../../domains/admin/views/AdminDashboardView.vue'
+import AdminProductsView from '../../domains/admin/views/AdminProductsView.vue'
+import AdminOrdersView from '../../domains/admin/views/AdminOrdersView.vue'
+import AdminPromosView from '../../domains/admin/views/AdminPromosView.vue'
+import AdminCampaignsView from '../../domains/admin/views/AdminCampaignsView.vue'
+import CheckoutView from '../../domains/checkout/views/CheckoutView.vue'
+import OrderSuccessView from '../../domains/checkout/views/OrderSuccessView.vue'
+import AdminLoginView from '../../domains/admin/views/AdminLoginView.vue'
 
 const routes = [
   {
@@ -41,7 +41,7 @@ const routes = [
   {
     path: '/admin/orders/:orderId',
     name: 'admin-order-detail',
-    component: () => import('../views/admin/AdminOrderDetailView.vue'),
+    component: () => import('../../domains/admin/views/AdminOrderDetailView.vue'),
     meta: { requiresAdminAuth: true },
   },
   {

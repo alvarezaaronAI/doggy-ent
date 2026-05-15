@@ -1,23 +1,23 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import CartDrawer from '../components/cart/CartDrawer.vue'
-import PromoStrip from '../components/layout/PromoStrip.vue'
-import SiteHeader from '../components/layout/SiteHeader.vue'
-import SiteFooter from '../components/layout/SiteFooter.vue'
-import HeroSection from '../components/storefront/HeroSection.vue'
-import ProductSpotlightSection from '../components/storefront/ProductSpotlightSection.vue'
-import ProcessSection from '../components/storefront/ProcessSection.vue'
-import IngredientsAnalysisSection from '../components/storefront/IngredientsAnalysisSection.vue'
-import ReviewsPreviewSection from '../components/storefront/ReviewsPreviewSection.vue'
-import AboutBrandSection from '../components/storefront/AboutBrandSection.vue'
-import QuickViewModal from '../components/storefront/QuickViewModal.vue'
+import CartDrawer from '../../cart/components/CartDrawer.vue'
+import PromoStrip from '../../../app/layouts/PromoStrip.vue'
+import SiteHeader from '../../../app/layouts/SiteHeader.vue'
+import SiteFooter from '../../../app/layouts/SiteFooter.vue'
+import HeroSection from '../components/HeroSection.vue'
+import ProductSpotlightSection from '../components/ProductSpotlightSection.vue'
+import ProcessSection from '../components/ProcessSection.vue'
+import IngredientsAnalysisSection from '../components/IngredientsAnalysisSection.vue'
+import ReviewsPreviewSection from '../components/ReviewsPreviewSection.vue'
+import AboutBrandSection from '../components/AboutBrandSection.vue'
+import QuickViewModal from '../components/QuickViewModal.vue'
 import {
   getSellingMode,
   isPurchasable,
   getAvailableQuantity,
   limitQuantity,
   getStockLabel,
-} from '../utils/sellingMode'
+} from '../../../shared/constants/sellingMode'
 
 const products = ref([])
 const cart = ref([])
