@@ -9,7 +9,7 @@ import {
   getAdminFromSession,
   getSessionCookieName,
   getSessionCookieOptions,
-} from '../../services/auth/auth.service.js'
+} from '../services/auth.service.js'
 
 
 const router = express.Router()

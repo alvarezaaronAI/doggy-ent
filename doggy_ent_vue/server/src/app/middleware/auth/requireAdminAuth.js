@@ -3,7 +3,7 @@
 import {
   getAdminFromSession,
   getSessionCookieName,
-} from '../../services/auth/auth.service.js'
+} from '../../../domains/auth/services/auth.service.js'
 
 export async function requireAdminAuth(req, res, next) {
   try {

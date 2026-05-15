@@ -9,8 +9,8 @@ import {
   updatePaymentStatus,
   updateFulfillmentStatus,
   getOrderStats,
-} from '../../services/admin/orders.service.js'
-import { requireAdminAuth } from '../../middleware/auth/requireAdminAuth.js'
+} from '../services/orders.service.js'
+import { requireAdminAuth } from '../../../a../../../src/app/middleware/auth/requireAdminAuth.js'
 
 const router = express.Router()
 router.use(requireAdminAuth)

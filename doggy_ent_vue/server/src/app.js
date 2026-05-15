@@ -1,13 +1,13 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import productsRoutes from './routes/products.routes.js'
-import adminPromosRoutes from './routes/admin/promos.routes.js'
-import campaignsRoutes from './routes/admin/campaigns.routes.js'
-import checkoutRoutes from './routes/checkout.routes.js'
-import paymentRoutes from './routes/payment.routes.js'
-import ordersRoutes from './routes/admin/orders.routes.js'
-import authRoutes from './routes/auth/auth.routes.js'
+import productsRoutes from './domains/products/routes/products.routes.js'
+import adminPromosRoutes from './domains/admin/routes/promos.routes.js'
+import campaignsRoutes from './domains/admin/routes/campaigns.routes.js'
+import checkoutRoutes from './domains/checkout/routes/checkout.routes.js'
+import paymentRoutes from './domains/payments/routes/payment.routes.js'
+import ordersRoutes from './domains/admin/routes/orders.routes.js'
+import authRoutes from './domains/auth/routes/auth.routes.js'
 
 const app = express()
 

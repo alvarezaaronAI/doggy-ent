@@ -9,8 +9,8 @@ import {
   updatePromoById,
   deletePromoById,
   validatePromoCode,
-} from '../../services/admin/promos.service.js'
-import { requireAdminAuth } from '../../middleware/auth/requireAdminAuth.js'
+} from '../services/promos.service.js'
+import { requireAdminAuth } from '../../../a../../../src/app/middleware/auth/requireAdminAuth.js'
 
 
 const router = express.Router()

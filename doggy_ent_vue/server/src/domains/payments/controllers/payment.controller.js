@@ -1,6 +1,6 @@
 
 
-import { createStripePaymentIntent } from '../../services/payments/stripe.payment.js'
+import { createStripePaymentIntent } from '../services/stripe.payment.js'
 
 export const createPaymentIntent = async (req, res) => {
   try {

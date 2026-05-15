@@ -8,8 +8,8 @@ import {
   deleteCampaignById,
   previewCampaignDonations,
   recordCampaignDonationUsage,
-} from '../../services/admin/campaigns.service.js'
-import { requireAdminAuth } from '../../middleware/auth/requireAdminAuth.js'
+} from '../services/campaigns.service.js'
+import { requireAdminAuth } from '../../../a../../../src/app/middleware/auth/requireAdminAuth.js'
 
 const router = express.Router()
 

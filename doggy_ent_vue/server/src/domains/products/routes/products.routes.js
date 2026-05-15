@@ -5,7 +5,7 @@ import {
   getAllProducts,
   updateExistingProduct,
 } from '../controllers/products.controller.js'
-import { requireAdminAuth } from '../middleware/auth/requireAdminAuth.js'
+import { requireAdminAuth } from '../../../app/middleware/auth/requireAdminAuth.js'
 
 const router = Router()
 
