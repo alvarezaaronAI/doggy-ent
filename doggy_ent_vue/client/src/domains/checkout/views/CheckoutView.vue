@@ -167,7 +167,10 @@ const total = computed(() => taxableTotal.value + tax.value)
 function loadSavedCart() {
   try {
     const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]')
-    return Array.isArray(savedCart) ? savedCart : []
+
+    return Array.isArray(savedCart)
+      ? savedCart.map(normalizeCartItem)
+      : []
   } catch {
     return []
   }
@@ -175,6 +178,19 @@ function loadSavedCart() {
 
 function formatPrice(value) {
   return `$${Number(value || 0).toFixed(2)}`
+}
+
+function normalizeCartItem(item) {
+  return {
+    ...item,
+    price: Number(item.price || 0),
+    quantity: Number(item.quantity || 1),
+    availableQuantity: Number(item.availableQuantity || 0),
+  }
+}
+
+function getLineTotal(item) {
+  return Number(item.price || 0) * Number(item.quantity || 0)
 }
 
 async function loadCampaignPreview() {
@@ -805,6 +821,8 @@ onMounted(() => {
                     <div class="mt-5 overflow-hidden rounded-2xl border border-stone-700 bg-white shadow-sm">
                       <StripeElementsForm
                         ref="stripePaymentForm"
+                        :cart-items="cartItems"
+                        :checkout-total="summaryTotal"
                         @card-complete="paymentFormComplete = $event"
                       />
                     </div>
@@ -904,7 +922,7 @@ onMounted(() => {
                         <h3 class="font-extrabold leading-tight">{{ item.name }}</h3>
                         <p class="mt-1 text-xs leading-relaxed text-stone-300">{{ item.size }} • Qty {{ item.quantity }}</p>
                       </div>
-                      <p class="font-extrabold">{{ formatPrice(item.price * item.quantity) }}</p>
+                      <p class="font-extrabold">{{ formatPrice(getLineTotal(item)) }}</p>
                     </div>
                   </div>
                 </article>
@@ -1030,7 +1048,7 @@ onMounted(() => {
                 <li class="flex gap-3"><i class="fa-solid fa-envelope mt-1 text-emerald-400"></i><span>Order confirmation and tracking updates are sent by email after purchase.</span></li>
               </ul>
               <div class="my-5 h-px bg-[color-mix(in_srgb,var(--brand-3)_30%,white)]"></div>
-              <RouterLink to="/cart" class="inline-flex items-center gap-2 font-semibold text-emerald-400 hover:underline">
+              <RouterLink to="/" class="inline-flex items-center gap-2 font-semibold text-emerald-400 hover:underline">
                 <i class="fa-solid fa-arrow-left"></i>
                 Back to cart
               </RouterLink>

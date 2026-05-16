@@ -165,20 +165,20 @@
                     </div>
 
                     <p class="mt-2 text-sm text-stone-500">
-                      {{ order.customer.firstName }} {{ order.customer.lastName }} · {{ order.customer.email }}
+                      {{ order.customerName }} · {{ order.customerEmail }}
                     </p>
                     <div class="mt-3 flex flex-wrap items-end gap-4">
                       <div>
                         <p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">Order total</p>
                         <p class="mt-1 text-2xl font-extrabold" :class="getOrderValueTier(order).amountClassName">
-                          {{ formatPrice(order.pricing.total) }}
+                          {{ formatPrice(order.total) }}
                         </p>
                       </div>
 
                       <div>
                         <p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">Donation</p>
                         <p class="mt-1 text-sm font-bold text-[var(--success-1)]">
-                          {{ formatPrice(order.pricing.donationAmount) }}
+                          {{ formatPrice(0) }}
                         </p>
                       </div>
                     </div>
@@ -226,6 +226,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const orders = ref([])
 const loading = ref(false)
@@ -248,15 +249,10 @@ const filteredOrders = computed(() => {
   return orders.value.filter((order) => {
     const matchesQuery = !query || [
       order.id,
-      order.customer?.firstName,
-      order.customer?.lastName,
-      order.customer?.email,
-      order.customer?.phone,
-      order.customer?.city,
-      order.customer?.state,
+      order.orderNumber,
+      order.customerName,
+      order.customerEmail,
       order.status,
-      order.paymentStatus,
-      order.fulfillmentStatus,
     ]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query))
@@ -270,22 +266,18 @@ const filteredOrders = computed(() => {
   })
 })
 
-const cancelledOrders = computed(() => filteredOrders.value.filter((order) => order.status === 'cancelled'))
+const cancelledOrders = computed(() => filteredOrders.value.filter((order) => order.status === 'CANCELLED'))
 
 const fulfilledOrders = computed(() => filteredOrders.value.filter((order) => (
-  order.status !== 'cancelled' && order.fulfillmentStatus === 'fulfilled'
+  order.status === 'DELIVERED'
 )))
 
 const readyToFulfillOrders = computed(() => filteredOrders.value.filter((order) => (
-  order.status !== 'cancelled'
-  && order.paymentStatus === 'paid'
-  && order.fulfillmentStatus !== 'fulfilled'
+  ['PAID', 'PROCESSING', 'SHIPPED'].includes(order.status)
 )))
 
 const needsAttentionOrders = computed(() => filteredOrders.value.filter((order) => (
-  order.status !== 'cancelled'
-  && order.fulfillmentStatus !== 'fulfilled'
-  && (order.paymentStatus !== 'paid' || order.status === 'pending')
+  ['PENDING'].includes(order.status)
 )))
 
 const orderGroups = computed(() => [
@@ -344,10 +336,10 @@ function getOrderAgeLabel(value) {
 }
 
 function getTimelineStepClass(order, step) {
-  const isPaid = order.paymentStatus === 'paid'
-  const isPacked = ['packed', 'shipped', 'fulfilled'].includes(order.fulfillmentStatus)
-  const isShipped = ['shipped', 'fulfilled'].includes(order.fulfillmentStatus)
-  const isFulfilled = order.fulfillmentStatus === 'fulfilled'
+  const isPaid = ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status)
+  const isPacked = ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status)
+  const isShipped = ['SHIPPED', 'DELIVERED'].includes(order.status)
+  const isFulfilled = order.status === 'DELIVERED'
 
   const activeSteps = {
     paid: isPaid,
@@ -361,19 +353,19 @@ function getTimelineStepClass(order, step) {
     : 'border-stone-200 bg-white/70 text-stone-400'
 }
 function getOrderCardClass(order) {
-  if (order.status === 'cancelled') {
+  if (order.status === 'CANCELLED') {
     return 'border-stone-300 bg-stone-100/80 opacity-80'
   }
 
-  if (order.paymentStatus !== 'paid') {
+  if (order.status === 'PENDING') {
     return 'border-red-200 bg-red-50'
   }
 
-  if (order.paymentStatus === 'paid' && order.fulfillmentStatus !== 'fulfilled') {
+  if (['PAID', 'PROCESSING', 'SHIPPED'].includes(order.status)) {
     return 'border-emerald-200 bg-emerald-50'
   }
 
-  if (order.fulfillmentStatus === 'fulfilled') {
+  if (order.status === 'DELIVERED') {
     return 'border-blue-100 bg-white'
   }
 
@@ -383,30 +375,24 @@ function getOrderCardClass(order) {
 function getPriorityLabels(order) {
   const labels = []
 
-  if (order.status === 'cancelled') {
+  if (order.status === 'CANCELLED') {
     labels.push({ text: 'Cancelled', className: 'bg-stone-200 text-stone-700' })
     return labels
   }
 
-  if (order.paymentStatus !== 'paid') {
-    labels.push({ text: 'Payment needed', className: 'bg-red-100 text-red-700' })
+  if (order.status === 'PENDING') {
+    labels.push({ text: 'Payment pending', className: 'bg-red-100 text-red-700' })
   }
 
-  if (order.status === 'pending') {
-    labels.push({ text: 'Review', className: 'bg-amber-100 text-amber-700' })
+  if (['PAID', 'PROCESSING'].includes(order.status)) {
+    labels.push({ text: 'Ready to fulfill', className: 'bg-emerald-100 text-emerald-700' })
   }
 
-  if (order.paymentStatus === 'paid' && order.fulfillmentStatus !== 'fulfilled') {
-    labels.push({ text: 'Pack order', className: 'bg-emerald-100 text-emerald-700' })
+  if (order.status === 'SHIPPED') {
+    labels.push({ text: 'Shipped', className: 'bg-sky-100 text-sky-700' })
   }
 
-  if (Number(order.pricing?.donationAmount || 0) > 0) {
-    labels.push({ text: 'Donation order', className: 'bg-green-100 text-green-700' })
-  }
-
-  // Removed high value label, now handled by getOrderValueTier
-
-  if (order.fulfillmentStatus === 'fulfilled') {
+  if (order.status === 'DELIVERED') {
     labels.push({ text: 'Completed', className: 'bg-blue-100 text-blue-700' })
   }
 
@@ -442,8 +428,8 @@ async function loadOrders() {
   try {
     const res = await fetch('/api/admin/orders')
     const data = await res.json()
-    if (res.ok && data.success) {
-      orders.value = data.orders || []
+    if (res.ok) {
+      orders.value = Array.isArray(data) ? data : []
     }
   } catch (e) {
     // noop for now
@@ -457,8 +443,11 @@ async function loadStats() {
   const res = await fetch('/api/admin/orders/stats')
   const data = await res.json()
 
-  if (res.ok && data.success) {
-    stats.value = data.stats || stats.value
+  if (res.ok) {
+    stats.value = {
+      ...stats.value,
+      ...data,
+    }
   }
 }
 
@@ -467,7 +456,7 @@ onMounted(async () => {
 })
 
 function getOrderValueTier(order) {
-  const total = Number(order.pricing?.total || 0)
+  const total = Number(order.total || 0)
 
   if (total >= 500) {
     return {
@@ -509,16 +498,14 @@ function getOrderValueTier(order) {
 }
 
 function isFirstTimeCustomer(order) {
-  const email = String(order.customer?.email || '').trim().toLowerCase()
-  const phone = String(order.customer?.phone || '').trim()
+  const email = String(order.customerEmail || '').trim().toLowerCase()
 
-  if (!email && !phone) return true
+  if (!email) return true
 
   const matchingOrders = orders.value.filter((candidate) => {
-    const candidateEmail = String(candidate.customer?.email || '').trim().toLowerCase()
-    const candidatePhone = String(candidate.customer?.phone || '').trim()
+    const candidateEmail = String(candidate.customerEmail || '').trim().toLowerCase()
 
-    return (email && candidateEmail === email) || (phone && candidatePhone === phone)
+    return email && candidateEmail === email
   })
 
   return matchingOrders.length <= 1

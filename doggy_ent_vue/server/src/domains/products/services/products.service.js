@@ -9,6 +9,12 @@ function slugify(value) {
     .replace(/-+/g, '-')
 }
 
+function buildVariantSku(productInput, size) {
+  return `CNE-DT-${slugify(
+    productInput.protein || productInput.name
+  ).toUpperCase()}-${size.replace(/\s+/g, '').toUpperCase()}`
+}
+
 function normalizeProductInput(productInput) {
   const tags = Array.isArray(productInput.tags)
     ? productInput.tags
@@ -24,13 +30,39 @@ function normalizeProductInput(productInput) {
         .map((item) => item.trim())
         .filter(Boolean)
 
-  const sixOzPrice = Number(productInput.sixOzPrice ?? productInput.variants?.[0]?.price ?? 0)
-  const eighteenOzPrice = Number(productInput.eighteenOzPrice ?? productInput.variants?.[1]?.price ?? 0)
+  const variants = Array.isArray(productInput.variants)
+    ? productInput.variants
+    : []
 
-  const sixOzQuantity = Number(productInput.sixOzQuantity ?? productInput.variants?.[0]?.quantity ?? 0)
-  const eighteenOzQuantity = Number(productInput.eighteenOzQuantity ?? productInput.variants?.[1]?.quantity ?? 0)
-  const sixOzLowStockThreshold = Number(productInput.sixOzLowStockThreshold ?? productInput.variants?.[0]?.lowStockThreshold ?? 5)
-  const eighteenOzLowStockThreshold = Number(productInput.eighteenOzLowStockThreshold ?? productInput.variants?.[1]?.lowStockThreshold ?? 3)
+  const normalizedVariants = variants.map((variant) => ({
+    size: variant.size,
+    price: Number(variant.price ?? 0),
+    quantity: Number(variant.quantity ?? 0),
+    lowStockThreshold: Number(variant.lowStockThreshold ?? 0),
+    sku:
+      variant.sku ||
+      buildVariantSku(productInput, variant.size || 'variant'),
+  }))
+
+  const sixOzVariant =
+    normalizedVariants.find((variant) => variant.size === '6 oz') || {}
+
+  const eighteenOzVariant =
+    normalizedVariants.find((variant) => variant.size === '18 oz') || {}
+
+  const sixOzPrice = Number(sixOzVariant.price ?? 0)
+  const eighteenOzPrice = Number(eighteenOzVariant.price ?? 0)
+
+  const sixOzQuantity = Number(sixOzVariant.quantity ?? 0)
+  const eighteenOzQuantity = Number(eighteenOzVariant.quantity ?? 0)
+
+  const sixOzLowStockThreshold = Number(
+    sixOzVariant.lowStockThreshold ?? 5
+  )
+
+  const eighteenOzLowStockThreshold = Number(
+    eighteenOzVariant.lowStockThreshold ?? 3
+  )
 
   const getStockStatus = (quantity, incomingStatus) => {
     if (incomingStatus === 'coming-soon') return 'coming-soon'
@@ -60,7 +92,7 @@ function normalizeProductInput(productInput) {
       {
         size: '6 oz',
         price: sixOzPrice,
-        sku: productInput.sixOzSku || `CNE-DT-${slugify(productInput.protein || productInput.name).toUpperCase()}-6OZ`,
+        sku: sixOzVariant.sku,
         quantity: sixOzQuantity,
         stockStatus: getStockStatus(sixOzQuantity, productInput.sixOzStockStatus || productInput.variants?.[0]?.stockStatus),
         lowStockThreshold: sixOzLowStockThreshold,
@@ -68,7 +100,7 @@ function normalizeProductInput(productInput) {
       {
         size: '18 oz',
         price: eighteenOzPrice,
-        sku: productInput.eighteenOzSku || `CNE-DT-${slugify(productInput.protein || productInput.name).toUpperCase()}-18OZ`,
+        sku: eighteenOzVariant.sku,
         quantity: eighteenOzQuantity,
         stockStatus: getStockStatus(eighteenOzQuantity, productInput.eighteenOzStockStatus || productInput.variants?.[1]?.stockStatus),
         lowStockThreshold: eighteenOzLowStockThreshold,

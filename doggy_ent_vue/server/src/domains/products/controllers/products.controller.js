@@ -13,14 +13,13 @@ function validateProductPayload(req, res) {
     category,
     status,
     image,
-    sixOzPrice,
-    eighteenOzPrice,
     variants,
   } = req.body
 
   const hasVariantPrices =
-    (sixOzPrice && eighteenOzPrice) ||
-    (Array.isArray(variants) && variants.length >= 2)
+    Array.isArray(variants) &&
+    variants.length >= 2 &&
+    variants.every((variant) => Number(variant.price) > 0)
 
   if (!name || !shortDescription || !category || !status || !image || !hasVariantPrices) {
     res.status(400).json({

@@ -1,5 +1,9 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+// NOTE:
+// This file is currently acting as a storefront collections showcase,
+// not a true product detail page yet.
+// We are preserving the existing UX while auditing routing/domain ownership.
 </script>
 
 <template>

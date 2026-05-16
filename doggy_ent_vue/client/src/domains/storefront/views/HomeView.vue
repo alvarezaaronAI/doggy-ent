@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import CartDrawer from '../../cart/components/CartDrawer.vue'
 import PromoStrip from '../../../app/layouts/PromoStrip.vue'
@@ -15,15 +15,14 @@ import AboutBrandSection from '../components/AboutBrandSection.vue'
 import QuickViewModal from '../components/QuickViewModal.vue'
 import ProductCard from '../components/ProductCard.vue'
 import FilterBar from '../components/FilterBar.vue'
+import ComingSoonCard from '../components/ComingSoonCard.vue'
 import { useProducts } from '../composables/useProducts'
 import { useProductFilters } from '../composables/useProductFilters'
 import { useProductVariants } from '../composables/useProductVariants'
+import { useCart } from '../../cart/composables/useCart'
 
-const cart = ref([])
-const isCartOpen = ref(false)
 const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
-const CART_STORAGE_KEY = 'doggy-ent-cart'
 
 const {
   products,
@@ -32,120 +31,17 @@ const {
   availableCategories,
   availableProteins,
   comingSoonProducts,
+  storefrontProducts,
+  loadProducts,
 } = useProducts()
 
-onMounted(() => {
+onMounted(async () => {
   loadSavedCart()
+
+  await loadProducts()
 })
 
-watch(
-  cart,
-  (updatedCart) => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updatedCart))
-  },
-  { deep: true }
-)
 
-function loadSavedCart() {
-  try {
-    const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]')
-    cart.value = Array.isArray(savedCart) ? savedCart : []
-  } catch {
-    cart.value = []
-  }
-}
-
-function openQuickView(product) {
-  selectedProduct.value = product
-  isQuickViewOpen.value = true
-}
-
-function closeQuickView() {
-  selectedProduct.value = null
-  isQuickViewOpen.value = false
-}
-
-function addToCart(product) {
-  const selectedSize = selectedCardSizes.value[product.id]
-  const defaultSize = product.category === 'Bundle' ? 'Bundle' : '6 oz'
-  const size = product.size || selectedSize || defaultSize
-  const quantityToAdd = product.quantity || 1
-  const selectedVariant = product.variants?.find((variant) => variant.size === size)
-  const availableQuantity = getAvailableQuantity(product, selectedVariant)
-
-  if (!isPurchasable(product, selectedVariant)) return
-
-  const price = Number(product.price || selectedVariant?.price || product.variants?.[0]?.price || 0)
-  const existing = cart.value.find((item) => item.id === product.id && item.size === size)
-
-  if (existing) {
-    const nextQuantity = existing.quantity + quantityToAdd
-    existing.quantity = limitQuantity(product, nextQuantity, availableQuantity)
-  } else {
-    cart.value.push({
-      ...product,
-      price,
-      size,
-      quantity: limitQuantity(product, quantityToAdd, availableQuantity),
-      availableQuantity,
-      sellingMode: getSellingMode(product),
-    })
-  }
-
-  isCartOpen.value = true
-  isQuickViewOpen.value = false
-}
-
-function increase(id, size) {
-  const item = cart.value.find((cartItem) => cartItem.id === id && cartItem.size === size)
-  if (!item) return
-
-  const currentProduct = products.value.find((product) => product.id === id)
-  const currentVariant = currentProduct?.variants?.find((variant) => variant.size === size)
-  const availableQuantity = getAvailableQuantity(currentProduct || item, currentVariant)
-
-  const nextQuantity = item.quantity + 1
-  item.quantity = limitQuantity(currentProduct || item, nextQuantity, availableQuantity)
-}
-
-function decrease(id, size) {
-  const item = cart.value.find((cartItem) => cartItem.id === id && cartItem.size === size)
-
-  if (!item) return
-
-  item.quantity -= 1
-
-  if (item.quantity <= 0) {
-    remove(id, size)
-  }
-}
-
-function remove(id, size) {
-  cart.value = cart.value.filter((cartItem) => !(cartItem.id === id && cartItem.size === size))
-}
-
-const subtotal = computed(() =>
-  cart.value.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
-)
-
-const itemCount = computed(() =>
-  cart.value.reduce((sum, item) => sum + item.quantity, 0)
-)
-
-
-
-
-const featuredProduct = computed(() =>
-  activeProducts.value.find((product) => product.featured) || activeProducts.value[0] || null
-)
-
-const {
-  searchQuery,
-  selectedCategory,
-  selectedProtein,
-  selectedSort,
-  activeProducts,
-} = useProductFilters(products, getSelectedCardPrice)
 
 const {
   getSellingMode,
@@ -159,6 +55,48 @@ const {
   getSelectedCardVariant,
   getSelectedStockLabel,
 } = useProductVariants()
+
+const {
+  searchQuery,
+  selectedCategory,
+  selectedProtein,
+  selectedSort,
+  activeProducts,
+} = useProductFilters(storefrontProducts, getSelectedCardPrice)
+
+const featuredProduct = computed(() =>
+  activeProducts.value.find((product) => product.featured) ||
+  activeProducts.value[0] ||
+  null
+)
+
+const {
+  cart,
+  isCartOpen,
+  subtotal,
+  itemCount,
+  loadSavedCart,
+  addToCart,
+  increase,
+  decrease,
+  remove,
+} = useCart({
+  products,
+  getSellingMode,
+  isPurchasable,
+  getAvailableQuantity,
+  limitQuantity,
+})
+
+function openQuickView(product) {
+  selectedProduct.value = product
+  isQuickViewOpen.value = true
+}
+
+function closeQuickView() {
+  selectedProduct.value = null
+  isQuickViewOpen.value = false
+}
 
 function getDisplayTags(product) {
   if (Array.isArray(product.tags) && product.tags.length) {
@@ -200,16 +138,6 @@ function formatPrice(value) {
 
       <section id="shop" class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
-        <FilterBar
-          :available-categories="availableCategories"
-          :available-proteins="availableProteins"
-          :selected-category="selectedCategory"
-          :selected-protein="selectedProtein"
-          :selected-sort="selectedSort"
-          @update:selected-category="selectedCategory = $event"
-          @update:selected-protein="selectedProtein = $event"
-          @update:selected-sort="selectedSort = $event"
-        />
           <div>
             <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">
               Product feed
@@ -224,6 +152,17 @@ function formatPrice(value) {
             Admin Products
           </RouterLink>
         </div>
+
+        <FilterBar
+          :available-categories="availableCategories"
+          :available-proteins="availableProteins"
+          :selected-category="selectedCategory"
+          :selected-protein="selectedProtein"
+          :selected-sort="selectedSort"
+          @update:selected-category="selectedCategory = $event"
+          @update:selected-protein="selectedProtein = $event"
+          @update:selected-sort="selectedSort = $event"
+        />
 
         <div v-if="isLoading" class="mt-8 text-stone-300">
           Loading treats...
@@ -252,7 +191,7 @@ function formatPrice(value) {
             :get-selected-stock-label="getSelectedStockLabel"
             :is-purchasable="isPurchasable"
             @quick-view="openQuickView"
-            @add-to-cart="addToCart"
+            @add-to-cart="addToCart($event, getSelectedCardSize($event))"
           />
         </div>
       </section>
@@ -275,79 +214,13 @@ function formatPrice(value) {
         </div>
 
         <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <article
+          <ComingSoonCard
             v-for="product in comingSoonProducts"
             :key="product.id"
-            class="tile-strong flex h-full min-h-[450px] flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
-          >
-            <RouterLink :to="`/products/${product.slug}`">
-              <img
-                class="h-44 w-full flex-shrink-0 cursor-pointer object-cover transition hover:opacity-90"
-                :src="product.image"
-                :alt="product.name"
-              />
-            </RouterLink>
-
-            <div class="flex flex-1 flex-col p-4">
-              <div>
-                <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
-                  {{ product.category }}
-                </p>
-                <RouterLink
-                  :to="`/products/${product.slug}`"
-                  class="mt-2 block text-xl font-semibold transition hover:text-emerald-400"
-                >
-                  {{ product.name }}
-                </RouterLink>
-              </div>
-
-              <div class="mt-3 flex min-h-[28px] flex-wrap gap-2">
-                <span
-                  v-for="tag in getDisplayTags(product).slice(0, 2)"
-                  :key="tag"
-                  class="rounded-full bg-[color-mix(in_srgb,var(--brand-2)_88%,white)] px-3 py-1 text-[11px] font-extrabold text-[var(--brand-4)] shadow-sm"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-
-              <p class="mt-3 min-h-[48px] text-sm text-stone-300">
-                {{ product.shortDescription }}
-              </p>
-
-              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">
-                {{ product.protein }}<span v-if="product.cut"> • {{ product.cut }}</span>
-              </p>
-
-              <div class="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--brand-3)_35%,white)] bg-[color-mix(in_srgb,var(--brand-5)_62%,white)] p-3">
-                <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-400">
-                  Coming Soon
-                </p>
-                <h4 class="mt-1 text-base font-extrabold text-[var(--brand-4)]">
-                  This product is not available yet
-                </h4>
-                <p class="mt-1 text-sm leading-relaxed text-stone-300">
-                  Pricing, sizes, and launch details will be announced when this treat goes live.
-                </p>
-              </div>
-
-              <div class="mt-auto flex items-center justify-between gap-2 pt-5">
-                <button
-                  class="rounded-lg border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-400 hover:bg-stone-900"
-                  @click.stop="openQuickView(product)"
-                >
-                  Preview
-                </button>
-
-                <button
-                  class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-                  @click.stop="openQuickView(product)"
-                >
-                  Notify Me
-                </button>
-              </div>
-            </div>
-          </article>
+            :product="product"
+            :get-display-tags="getDisplayTags"
+            @preview="openQuickView"
+          />
         </div>
       </section>
 
@@ -367,7 +240,7 @@ function formatPrice(value) {
       :product="selectedProduct"
       :is-open="isQuickViewOpen"
       @close="closeQuickView"
-      @add-to-cart="addToCart"
+      @add-to-cart="addToCart($event, $event.size)"
     />
 
     <CartDrawer

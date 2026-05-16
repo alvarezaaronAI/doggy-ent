@@ -1,6 +1,4 @@
-
-
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { fetchProducts } from '../services/products.api'
 
 export function useProducts() {
@@ -22,10 +20,6 @@ export function useProducts() {
     }
   }
 
-  onMounted(() => {
-    loadProducts()
-  })
-
   const availableCategories = computed(() => {
     const categories = products.value
       .map((product) => product.category)
@@ -46,6 +40,10 @@ export function useProducts() {
     products.value.filter((product) => product.status === 'coming-soon')
   )
 
+  const storefrontProducts = computed(() =>
+    products.value.filter((product) => product.status !== 'coming-soon')
+  )
+
   return {
     products,
     isLoading,
@@ -53,6 +51,7 @@ export function useProducts() {
     availableCategories,
     availableProteins,
     comingSoonProducts,
+    storefrontProducts,
     loadProducts,
   }
 }

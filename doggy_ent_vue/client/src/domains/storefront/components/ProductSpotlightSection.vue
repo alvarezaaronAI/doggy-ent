@@ -1,13 +1,10 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useProductVariants } from '../composables/useProductVariants'
 import {
-  getSellingMode,
   canIgnoreInventory,
   isInventoryLimited,
-  isPurchasable as isProductPurchasable,
-  getAvailableQuantity,
-  getStockLabel,
 } from '../../../shared/constants/sellingMode'
 
 const props = defineProps({
@@ -21,26 +18,30 @@ const emit = defineEmits(['add-to-cart'])
 
 const router = useRouter()
 
+const {
+  getProductVariants,
+  getDefaultVariant,
+  getVariantBySize,
+  getSellingMode,
+  isPurchasable: isProductPurchasable,
+  getAvailableQuantity,
+  getSelectedStockLabel,
+} = useProductVariants()
+
 const selectedSize = ref('6 oz')
 
 const variants = computed(() => {
-  if (Array.isArray(props.featuredProduct?.variants) && props.featuredProduct.variants.length) {
-    return props.featuredProduct.variants
+  const productVariants = getProductVariants(props.featuredProduct)
+
+  if (productVariants.length) {
+    return productVariants
   }
 
-  return [
-    {
-      size: '6 oz',
-      price: Number(props.featuredProduct?.price || 0),
-      quantity: 0,
-      stockStatus: 'out-of-stock',
-      lowStockThreshold: 0,
-    },
-  ]
+  return [getDefaultVariant(props.featuredProduct)]
 })
 
 const selectedVariant = computed(() =>
-  variants.value.find((variant) => normalizeSize(variant.size) === normalizeSize(selectedSize.value)) || variants.value[0]
+  getVariantBySize(props.featuredProduct, selectedSize.value)
 )
 
 const selectedPrice = computed(() =>
@@ -52,7 +53,7 @@ const isPurchasable = computed(() =>
 )
 
 const stockLabel = computed(() =>
-  getStockLabel(props.featuredProduct, selectedVariant.value)
+  getSelectedStockLabel(props.featuredProduct, selectedVariant.value)
 )
 
 const displayTags = computed(() => {
@@ -110,7 +111,11 @@ function navigateToProduct() {
 </script>
 
 <template>
-  <section id="spotlight" class="mx-auto max-w-7xl px-5 py-10 md:px-6">
+  <section
+    v-if="featuredProduct"
+    id="spotlight"
+    class="mx-auto max-w-7xl px-5 py-10 md:px-6"
+  >
     <div class="section-panel overflow-hidden p-5 md:p-6">
       <div class="grid gap-6 md:grid-cols-2 md:items-stretch">
         <div

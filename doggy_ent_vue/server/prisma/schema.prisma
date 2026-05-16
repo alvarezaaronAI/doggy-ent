@@ -50,6 +50,48 @@ model ProductVariant {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
+model Order {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  customerName  String
+  customerEmail String
+  status        OrderStatus   @default(PENDING)
+  total         Float
+  subtotal      Float
+  currency      String        @default("usd")
+  stripePaymentIntentId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String?
+  productName String
+  productImage String?
+  size        String
+  sku         String?
+  quantity    Int
+  unitPrice   Float
+  lineTotal   Float
+  createdAt   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
 enum ProductStatus {
   DRAFT
   ACTIVE

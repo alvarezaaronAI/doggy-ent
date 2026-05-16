@@ -1,5 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { fetchProducts } from '../../storefront/services/products.api'
 
 const products = ref([])
 const isLoading = ref(true)
@@ -86,13 +88,7 @@ async function loadProducts() {
   errorMessage.value = ''
 
   try {
-    const response = await fetch('/api/products')
-
-    if (!response.ok) {
-      throw new Error(`Products request failed with status ${response.status}`)
-    }
-
-    products.value = await response.json()
+    products.value = await fetchProducts()
   } catch (error) {
     errorMessage.value = error.message || 'Unable to load products.'
   } finally {
@@ -239,15 +235,23 @@ function buildPayload() {
       .filter(Boolean),
     freshness: form.value.freshness,
     storageFeeding: form.value.storageFeeding,
+    variants: [
+      {
+        size: '6 oz',
+        price: Number(form.value.sixOzPrice),
+        quantity: Number(form.value.sixOzQuantity),
+        lowStockThreshold: Number(form.value.sixOzLowStockThreshold),
+        sku: form.value.sixOzSku,
+      },
+      {
+        size: '18 oz',
+        price: Number(form.value.eighteenOzPrice),
+        quantity: Number(form.value.eighteenOzQuantity),
+        lowStockThreshold: Number(form.value.eighteenOzLowStockThreshold),
+        sku: form.value.eighteenOzSku,
+      },
+    ],
     showGuaranteedAnalysis: Boolean(form.value.showGuaranteedAnalysis),
-    sixOzPrice: Number(form.value.sixOzPrice),
-    eighteenOzPrice: Number(form.value.eighteenOzPrice),
-    sixOzQuantity: Number(form.value.sixOzQuantity),
-    eighteenOzQuantity: Number(form.value.eighteenOzQuantity),
-    sixOzLowStockThreshold: Number(form.value.sixOzLowStockThreshold),
-    eighteenOzLowStockThreshold: Number(form.value.eighteenOzLowStockThreshold),
-    sixOzSku: form.value.sixOzSku,
-    eighteenOzSku: form.value.eighteenOzSku,
     guaranteedAnalysis: form.value.showGuaranteedAnalysis
       ? {
           crudeProteinMin: form.value.crudeProteinMin,

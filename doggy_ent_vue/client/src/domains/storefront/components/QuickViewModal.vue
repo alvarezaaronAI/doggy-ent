@@ -1,13 +1,10 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useProductVariants } from '../composables/useProductVariants'
 import {
-  getSellingMode,
   canIgnoreInventory,
   isInventoryLimited,
-  isPurchasable as isProductPurchasable,
-  getAvailableQuantity,
-  getStockLabel,
 } from '../../../shared/constants/sellingMode'
 
 const props = defineProps({
@@ -25,28 +22,31 @@ const emit = defineEmits(['close', 'add-to-cart'])
 
 const router = useRouter()
 
+const {
+  getProductVariants,
+  getDefaultVariant,
+  getVariantBySize,
+  getSellingMode,
+  isPurchasable: isProductPurchasable,
+  getAvailableQuantity,
+  getSelectedStockLabel,
+} = useProductVariants()
+
 const selectedSize = ref('6 oz')
 const quantity = ref(1)
 
 const variants = computed(() => {
-  if (Array.isArray(props.product?.variants) && props.product.variants.length) {
-    return props.product.variants
+  const productVariants = getProductVariants(props.product)
+
+  if (productVariants.length) {
+    return productVariants
   }
 
-  return [
-    {
-      size: '6 oz',
-      price: Number(props.product?.price || 0),
-      sku: '',
-      quantity: 0,
-      stockStatus: 'out-of-stock',
-      lowStockThreshold: 0,
-    },
-  ]
+  return [getDefaultVariant(props.product)]
 })
 
 const selectedVariant = computed(() =>
-  variants.value.find((variant) => variant.size === selectedSize.value) || variants.value[0]
+  getVariantBySize(props.product, selectedSize.value)
 )
 
 const unitPrice = computed(() => Number(selectedVariant.value?.price || 0))
@@ -78,7 +78,9 @@ const notIncludedItems = computed(() => {
 
 const isPurchasable = computed(() => isProductPurchasable(props.product, selectedVariant.value))
 
-const selectedStockLabel = computed(() => getStockLabel(props.product, selectedVariant.value))
+const selectedStockLabel = computed(() =>
+  getSelectedStockLabel(props.product, selectedVariant.value)
+)
 
 watch(
   () => props.isOpen,

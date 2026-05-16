@@ -6,7 +6,7 @@ import adminPromosRoutes from './domains/admin/routes/promos.routes.js'
 import campaignsRoutes from './domains/admin/routes/campaigns.routes.js'
 import checkoutRoutes from './domains/checkout/routes/checkout.routes.js'
 import paymentRoutes from './domains/payments/routes/payment.routes.js'
-import ordersRoutes from './domains/admin/routes/orders.routes.js'
+import ordersRoutes from './domains/orders/routes/orders.routes.js'
 import authRoutes from './domains/auth/routes/auth.routes.js'
 
 const app = express()

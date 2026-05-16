@@ -4,6 +4,8 @@ import {
   canIgnoreInventory,
 } from '../../../shared/constants/sellingMode'
 
+import { RouterLink } from 'vue-router'
+
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -35,6 +37,9 @@ function formatPrice(value) {
   return `$${Number(value).toFixed(2)}`
 }
 
+function getLineTotal(item) {
+  return Number(item.price || 0) * Number(item.quantity || 0)
+}
 
 function isAtMax(item) {
   if (canIgnoreInventory(item)) return false
@@ -134,7 +139,16 @@ function getAvailabilityLabel(item) {
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <h3 class="font-semibold leading-tight">{{ item.name }}</h3>
-                    <p class="mt-1 text-sm text-stone-300">{{ item.size }}</p>
+                    <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-stone-300">
+                      <span>{{ item.size }}</span>
+
+                      <span
+                        v-if="item.variant?.sku"
+                        class="rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold tracking-[0.08em] text-stone-500"
+                      >
+                        {{ item.variant.sku }}
+                      </span>
+                    </p>
                     <p class="mt-1 text-xs text-stone-400">
                       {{ getSellingModeLabel(item) }} · {{ getAvailabilityLabel(item) }}
                     </p>
@@ -176,7 +190,7 @@ function getAvailabilityLabel(item) {
 
                   <div class="text-right">
                     <p class="text-sm text-stone-300">{{ formatPrice(item.price) }} each</p>
-                    <p class="font-semibold">{{ formatPrice(item.price * item.quantity) }}</p>
+                    <p class="font-semibold">{{ formatPrice(getLineTotal(item)) }}</p>
                   </div>
                 </div>
                 <p

@@ -4,6 +4,17 @@ import { onMounted, ref } from 'vue'
 import { stripePromise } from '../services/stripe.js'
 import { createPaymentIntent } from '../services/payment.service.js'
 
+const props = defineProps({
+  cartItems: {
+    type: Array,
+    default: () => [],
+  },
+  checkoutTotal: {
+    type: Number,
+    default: 0,
+  },
+})
+
 const emit = defineEmits(['card-complete'])
 
 const stripeInstance = ref(null)
@@ -25,14 +36,8 @@ defineExpose({
     }
 
     const paymentIntentResponse = await createPaymentIntent({
-      items: [
-        {
-          id: 1,
-          name: 'Doggy Ent Treats',
-          quantity: 1,
-        },
-      ],
-      amount: 2499,
+      items: props.cartItems,
+      amount: Math.round(Number(props.checkoutTotal || 0) * 100),
     })
 
     const { clientSecret } = paymentIntentResponse
@@ -110,6 +115,18 @@ onMounted(async () => {
     </div>
 
     <div class="mt-6 grid gap-4">
+      <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 text-sm">
+          <span class="font-semibold text-stone-700">
+            {{ props.cartItems.length }} items
+          </span>
+
+          <span class="text-lg font-extrabold text-stone-900">
+            ${{ Number(props.checkoutTotal || 0).toFixed(2) }}
+          </span>
+        </div>
+      </div>
+
       <div>
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.08em] text-stone-700">
           Name on card
