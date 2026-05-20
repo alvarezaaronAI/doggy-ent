@@ -1,13 +1,53 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import {
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
 
-const API_BASE_URL = '/api/admin/promos'
+import {
+  DISCOUNT_TYPE_OPTIONS,
+  PROMO_STATUS_OPTIONS,
+  PROMO_TYPE_OPTIONS,
+} from '../../promos/constants/promo.constants'
 
-const promos = ref([])
-const isLoading = ref(false)
-const isSaving = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+import {
+  formatPromoDiscount,
+  formatPromoType,
+  formatPromoUsageLimit,
+} from '../../promos/utils/promo.utils'
+
+import {
+  normalizePromoForm,
+  validatePromoForm,
+} from '../../promos/utils/promo.rules'
+
+
+import {
+  fetchPromoAnalytics,
+  validatePromoCode,
+} from '../../promos/api/promos.api'
+import { usePromos } from '../../promos/composables/usePromos'
+
+import PromoBadge from '../../promos/components/PromoBadge.vue'
+import PromoStatusPill from '../../promos/components/PromoStatusPill.vue'
+import PromoForm from '../../promos/components/PromoForm.vue'
+import PromoCodeTester from '../../promos/components/PromoCodeTester.vue'
+import PromoTable from '../../promos/components/PromoTable.vue'
+import PromoAnalyticsModal from '../../promos/components/PromoAnalyticsModal.vue'
+
+const {
+  promos,
+  isLoading,
+  isSaving,
+  errorMessage,
+  successMessage,
+  loadPromos,
+  savePromo: savePromoRequest,
+  removePromo,
+  clearMessages,
+} = usePromos()
 const editingPromoId = ref(null)
 
 const isTestingPromo = ref(false)
@@ -18,6 +58,10 @@ const promoTestForm = ref({
   customerEmail: '',
 })
 
+const isAnalyticsModalOpen = ref(false)
+const isLoadingAnalytics = ref(false)
+const selectedPromoAnalytics = ref(null)
+
 
 const form = ref(getEmptyForm())
 
@@ -26,7 +70,19 @@ const promoSearchQuery = ref('')
 const promoTypeFilter = ref('all')
 const promoStatusFilter = ref('all')
 
-const activePromos = computed(() => promos.value.filter((promo) => promo.status === 'active'))
+const isUniquePromo = computed(
+  () => form.value.type === 'UNIQUE',
+)
+
+const isReferralPromo = computed(
+  () => form.value.type === 'REFERRAL',
+)
+
+const activePromos = computed(
+  () => promos.value.filter(
+    (promo) => promo.status === 'ACTIVE',
+  ),
+)
 const totalUses = computed(() => promos.value.reduce((total, promo) => total + Number(promo.usedCount || 0), 0))
 const totalDiscountGiven = computed(() => promos.value.reduce((total, promo) => total + Number(promo.discountGiven || 0), 0))
 
@@ -48,23 +104,39 @@ const filteredPromos = computed(() => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query))
 
-    const matchesType = promoTypeFilter.value === 'all' || promo.type === promoTypeFilter.value
-    const matchesStatus = promoStatusFilter.value === 'all' || promo.status === promoStatusFilter.value
+    const matchesType = (
+      promoTypeFilter.value === 'all'
+      || promo.type === promoTypeFilter.value
+    )
+
+    const matchesStatus = (
+      promoStatusFilter.value === 'all'
+      || promo.status === promoStatusFilter.value
+    )
 
     return matchesQuery && matchesType && matchesStatus
   })
 })
 
-const activeFilteredPromos = computed(() => filteredPromos.value.filter((promo) => promo.status === 'active'))
-const inactiveFilteredPromos = computed(() => filteredPromos.value.filter((promo) => promo.status !== 'active'))
+const activeFilteredPromos = computed(
+  () => filteredPromos.value.filter(
+    (promo) => promo.status === 'ACTIVE',
+  ),
+)
+
+const inactiveFilteredPromos = computed(
+  () => filteredPromos.value.filter(
+    (promo) => promo.status !== 'ACTIVE',
+  ),
+)
 
 function getEmptyForm() {
   return {
     code: '',
     name: '',
-    type: 'global',
-    status: 'draft',
-    discountType: 'fixed',
+    type: 'GLOBAL',
+    status: 'DRAFT',
+    discountType: 'FIXED',
     discountValue: 0,
     minimumSubtotal: 0,
     usageLimitTotal: '',
@@ -105,7 +177,7 @@ function combineDateTime(date, time) {
 }
 
 function buildPayload() {
-  return {
+  return normalizePromoForm({
     code: form.value.code,
     name: form.value.name,
     type: form.value.type,
@@ -113,13 +185,31 @@ function buildPayload() {
     discountType: form.value.discountType,
     discountValue: Number(form.value.discountValue || 0),
     minimumSubtotal: Number(form.value.minimumSubtotal || 0),
-    usageLimitTotal: normalizeOptionalNumber(form.value.usageLimitTotal),
-    usageLimitPerCustomer: normalizeOptionalNumber(form.value.usageLimitPerCustomer),
-    assignedCustomerEmail: normalizeOptionalString(form.value.assignedCustomerEmail),
-    referralOwnerName: normalizeOptionalString(form.value.referralOwnerName),
-    startsAt: combineDateTime(form.value.startsDate, form.value.startsTime),
-    endsAt: combineDateTime(form.value.endsDate, form.value.endsTime),
-  }
+    usageLimitTotal: normalizeOptionalNumber(
+      form.value.usageLimitTotal,
+    ),
+    usageLimitPerCustomer: normalizeOptionalNumber(
+      form.value.usageLimitPerCustomer,
+    ),
+    assignedCustomerEmail: normalizeOptionalString(
+      form.value.assignedCustomerEmail,
+    ),
+    referralOwnerName: normalizeOptionalString(
+      form.value.referralOwnerName,
+    ),
+    startsDate: form.value.startsDate,
+    startsTime: form.value.startsTime,
+    endsDate: form.value.endsDate,
+    endsTime: form.value.endsTime,
+    startsAt: combineDateTime(
+      form.value.startsDate,
+      form.value.startsTime,
+    ),
+    endsAt: combineDateTime(
+      form.value.endsDate,
+      form.value.endsTime,
+    ),
+  })
 }
 
 function formatPrice(value) {
@@ -128,19 +218,13 @@ function formatPrice(value) {
 
 
 function formatDiscount(promo) {
-  if (promo.discountType === 'percent') return `${Number(promo.discountValue || 0)}% off`
-  return `${formatPrice(promo.discountValue)} off`
+  return formatPromoDiscount(promo)
 }
 
 function getUsageLabel(promo) {
-  return `${promo.usedCount || 0} / ${promo.usageLimitTotal || 'Unlimited'}`
-}
-
-function getPromoStatusClass(status) {
-  if (status === 'active') return 'bg-green-50 text-green-700'
-  if (status === 'expired') return 'bg-red-50 text-red-700'
-  if (status === 'paused') return 'bg-amber-50 text-amber-700'
-  return 'bg-stone-100 text-stone-500'
+  return `${promo.usedCount || 0} / ${formatPromoUsageLimit(
+    promo.usageLimitTotal,
+  )}`
 }
 
 function clearPromoFilters() {
@@ -150,18 +234,34 @@ function clearPromoFilters() {
 }
 
 
-function getPromoTypeLabel(type) {
-  const labels = {
-    global: 'Global',
-    unique: 'Unique customer',
-    referral: 'Referral',
-  }
-
-  return labels[type] || type
-}
 
 function selectPromoForTest(promo) {
   promoTestForm.value.code = promo.code
+}
+
+async function openPromoAnalytics(promo) {
+  isAnalyticsModalOpen.value = true
+  isLoadingAnalytics.value = true
+  selectedPromoAnalytics.value = null
+
+  try {
+    selectedPromoAnalytics.value = (
+      await fetchPromoAnalytics(promo.id)
+    )
+  }
+  catch (error) {
+    errorMessage.value = (
+      error.message
+      || 'Unable to load promo analytics.'
+    )
+  }
+  finally {
+    isLoadingAnalytics.value = false
+  }
+}
+
+function closePromoAnalytics() {
+  isAnalyticsModalOpen.value = false
 }
 
 function getSecureRandomCode(length = 12) {
@@ -176,8 +276,8 @@ function generateUniquePromoCode() {
   const suffix = getSecureRandomCode(12)
 
   form.value.code = `VIP-${suffix}`
-  form.value.type = 'unique'
-  form.value.status = 'active'
+  form.value.type = 'UNIQUE'
+  form.value.status = 'ACTIVE'
   form.value.usageLimitTotal = 1
   form.value.usageLimitPerCustomer = 1
 
@@ -192,26 +292,22 @@ async function testPromoCode() {
   errorMessage.value = ''
 
   try {
-    const response = await fetch('/api/promos/validate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const data = await validatePromoCode({
+      code: promoTestForm.value.code,
+      customerEmail: normalizeOptionalString(
+        promoTestForm.value.customerEmail,
+      ),
+      cart: {
+        subtotal: Number(
+          promoTestForm.value.subtotal || 0,
+        ),
+        items: [],
       },
-      body: JSON.stringify({
-        code: promoTestForm.value.code,
-        customerEmail: normalizeOptionalString(promoTestForm.value.customerEmail),
-        cart: {
-          subtotal: Number(promoTestForm.value.subtotal || 0),
-          items: [],
-        },
-      }),
     })
-
-    const data = await response.json()
 
     promoTestResult.value = {
       ...data,
-      statusCode: response.status,
+      statusCode: 200,
     }
   } catch (error) {
     promoTestResult.value = {
@@ -225,59 +321,44 @@ async function testPromoCode() {
   }
 }
 
-async function loadPromos() {
-  isLoading.value = true
-  errorMessage.value = ''
-
-  try {
-    const response = await fetch(API_BASE_URL)
-    if (!response.ok) throw new Error('Unable to load promo codes.')
-    promos.value = await response.json()
-  } catch (error) {
-    errorMessage.value = error.message || 'Unable to load promo codes.'
-  } finally {
-    isLoading.value = false
-  }
-}
 
 async function savePromo() {
-  isSaving.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
+  const payload = buildPayload()
 
-  try {
-    const payload = buildPayload()
-    const url = editingPromoId.value ? `${API_BASE_URL}/${editingPromoId.value}` : API_BASE_URL
-    const method = editingPromoId.value ? 'PUT' : 'POST'
+  const validation = validatePromoForm(payload)
 
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
+  if (!validation.valid) {
+    errorMessage.value = validation.errors.join(' ')
+    successMessage.value = ''
 
-    const data = await response.json()
+    return
+  }
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Unable to save promo code.')
-    }
+  form.value = {
+    ...form.value,
+    ...payload,
+  }
 
-    successMessage.value = editingPromoId.value ? 'Promo updated successfully.' : 'Promo created successfully.'
-    resetForm()
-    await loadPromos()
-  } catch (error) {
-    errorMessage.value = error.message || 'Unable to save promo code.'
-  } finally {
-    isSaving.value = false
+  await savePromoRequest({
+    editingPromoId: editingPromoId.value,
+    payload,
+    onSuccess: resetForm,
+  })
+}
+function enforcePromoRules() {
+  const normalized = normalizePromoForm({
+    ...form.value,
+  })
+
+  form.value = {
+    ...form.value,
+    ...normalized,
   }
 }
 
 function editPromo(promo) {
   editingPromoId.value = promo.id
-  successMessage.value = ''
-  errorMessage.value = ''
+  clearMessages()
 
   const starts = splitDateTime(promo.startsAt)
   const ends = splitDateTime(promo.endsAt)
@@ -285,9 +366,9 @@ function editPromo(promo) {
   form.value = {
     code: promo.code || '',
     name: promo.name || '',
-    type: promo.type || 'global',
-    status: promo.status || 'draft',
-    discountType: promo.discountType || 'fixed',
+    type: promo.type || 'GLOBAL',
+    status: promo.status || 'DRAFT',
+    discountType: promo.discountType || 'FIXED',
     discountValue: Number(promo.discountValue || 0),
     minimumSubtotal: Number(promo.minimumSubtotal || 0),
     usageLimitTotal: promo.usageLimitTotal ?? '',
@@ -304,34 +385,34 @@ function editPromo(promo) {
 }
 
 async function deletePromo(promo) {
-  const shouldDelete = window.confirm(`Delete promo code ${promo.code}?`)
-  if (!shouldDelete) return
+  const shouldDelete = window.confirm(
+    `Delete promo code ${promo.code}?`,
+  )
 
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/${promo.id}`, {
-      method: 'DELETE',
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Unable to delete promo code.')
-    }
-
-    successMessage.value = 'Promo deleted successfully.'
-    await loadPromos()
-  } catch (error) {
-    errorMessage.value = error.message || 'Unable to delete promo code.'
+  if (!shouldDelete) {
+    return
   }
+
+  await removePromo({
+    promoId: promo.id,
+  })
 }
 
 function resetForm() {
   editingPromoId.value = null
   form.value = getEmptyForm()
 }
+
+watch(
+  () => [
+    form.value.type,
+    form.value.assignedCustomerEmail,
+    form.value.referralOwnerName,
+    form.value.usageLimitTotal,
+    form.value.usageLimitPerCustomer,
+  ],
+  enforcePromoRules,
+)
 
 onMounted(loadPromos)
 </script>
@@ -370,163 +451,27 @@ onMounted(loadPromos)
       </article>
     </div>
 
-    <section class="section-panel mb-8 p-5 md:p-6">
-      <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Test promo</p>
-          <h2 class="mt-2 text-2xl font-extrabold text-[var(--brand-4)]">Preview code behavior</h2>
-          <p class="mt-2 max-w-2xl text-sm text-stone-300">
-            Check if a promo is valid for a subtotal and customer email before using it at checkout.
-          </p>
-        </div>
-      </div>
-
-      <form class="mt-5 grid gap-4 md:grid-cols-[1.2fr_0.8fr_1.2fr_auto] md:items-end" @submit.prevent="testPromoCode">
-        <label class="block">
-          <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Promo code</span>
-          <input
-            v-model="promoTestForm.code"
-            required
-            class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400"
-            placeholder="CHASE10"
-          />
-        </label>
-
-        <label class="block">
-          <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Subtotal</span>
-          <input
-            v-model.number="promoTestForm.subtotal"
-            type="number"
-            min="0"
-            step="0.01"
-            class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400"
-          />
-        </label>
-
-        <label class="block">
-          <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Customer email</span>
-          <input
-            v-model="promoTestForm.customerEmail"
-            type="email"
-            class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400"
-            placeholder="optional for unique codes"
-          />
-        </label>
-
-        <button
-          type="submit"
-          class="focus-ring rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] hover:bg-emerald-300 disabled:opacity-60"
-          :disabled="isTestingPromo"
-        >
-          {{ isTestingPromo ? 'Testing...' : 'Test Code' }}
-        </button>
-      </form>
-
-      <div
-        v-if="promoTestResult"
-        class="mt-5 rounded-2xl border p-4"
-        :class="promoTestResult.valid ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800'"
-      >
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="text-sm font-extrabold">
-              {{ promoTestResult.valid ? 'Promo is valid' : 'Promo is not valid' }}
-            </p>
-            <p class="mt-1 text-sm">{{ promoTestResult.message }}</p>
-          </div>
-          <span class="rounded-full bg-white/70 px-3 py-1 text-xs font-bold">
-            Status {{ promoTestResult.statusCode }}
-          </span>
-        </div>
-
-        <div v-if="promoTestResult.valid" class="mt-4 grid gap-3 md:grid-cols-2">
-          <div class="rounded-xl bg-white/70 p-3">
-            <p class="text-xs font-semibold opacity-70">Discount</p>
-            <p class="mt-1 text-lg font-extrabold">{{ formatPrice(promoTestResult.discountAmount) }}</p>
-          </div>
-          <div class="rounded-xl bg-white/70 p-3">
-            <p class="text-xs font-semibold opacity-70">Referral owner</p>
-            <p class="mt-1 text-sm font-extrabold">{{ promoTestResult.referralOwnerName || 'None' }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <PromoCodeTester
+      :form="promoTestForm"
+      :result="promoTestResult"
+      :is-testing="isTestingPromo"
+      @submit="testPromoCode"
+    />
 
     <div class="grid gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
-      <form class="section-panel space-y-5 p-5 md:p-6" @submit.prevent="savePromo">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
-            {{ editingPromoId ? 'Edit promo' : 'Create promo' }}
-          </p>
-          <h2 class="mt-2 text-2xl font-extrabold text-[var(--brand-4)]">
-            {{ editingPromoId ? 'Update promo code' : 'New promo code' }}
-          </h2>
-        </div>
-
-        <div v-if="errorMessage" class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
-          {{ errorMessage }}
-        </div>
-        <div v-if="successMessage" class="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800">
-          {{ successMessage }}
-        </div>
-
-        <div class="block">
-          <div class="mb-2 flex items-center justify-between gap-3">
-            <span class="block text-sm font-semibold text-[var(--brand-4)]">Code *</span>
-            <button
-              type="button"
-              class="rounded-lg border border-emerald-400 px-3 py-1.5 text-xs font-bold text-emerald-500 hover:bg-emerald-50"
-              @click="generateUniquePromoCode"
-            >
-              Generate Unique Code
-            </button>
-          </div>
-          <input v-model="form.code" required class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="CHASE10 or VIP-K7X2P9" />
-          <p class="mt-2 text-xs text-stone-400">
-            Use manual codes for public sales, or generate hard-to-guess one-time codes for specific customers.
-          </p>
-        </div>
-
-        <label class="block">
-          <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Name *</span>
-          <input v-model="form.name" required class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="Spring shelter campaign" />
-        </label>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="block">
-            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Type</span>
-            <select v-model="form.type" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
-              <option value="global">Global</option>
-              <option value="unique">Unique customer</option>
-              <option value="referral">Referral</option>
-            </select>
-          </label>
-
-          <label class="block">
-            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Status</span>
-            <select v-model="form.status" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="expired">Expired</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="block">
-            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Discount type</span>
-            <select v-model="form.discountType" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
-              <option value="fixed">Fixed amount</option>
-              <option value="percent">Percent</option>
-            </select>
-          </label>
-
-          <label class="block">
-            <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Discount value</span>
-            <input v-model.number="form.discountValue" type="number" min="0" step="0.01" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" />
-          </label>
-        </div>
+      <PromoForm
+        :form="form"
+        :is-saving="isSaving"
+        :is-editing="Boolean(editingPromoId)"
+        :is-unique-promo="isUniquePromo"
+        :is-referral-promo="isReferralPromo"
+        :error-message="errorMessage"
+        :success-message="successMessage"
+        @submit="savePromo"
+        @reset="resetForm"
+        @generate-code="generateUniquePromoCode"
+      >
+        <template #default>
 
         <div class="grid gap-4 md:grid-cols-2">
           <label class="block">
@@ -546,13 +491,19 @@ onMounted(loadPromos)
             <input v-model="form.usageLimitPerCustomer" type="number" min="0" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" />
           </label>
 
-          <label class="block">
+          <label
+            class="block"
+            v-if="isUniquePromo"
+          >
             <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Assigned customer email</span>
             <input v-model="form.assignedCustomerEmail" type="email" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="for unique codes" />
           </label>
         </div>
 
-        <div class="rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4">
+        <div
+          class="rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4"
+          v-if="isReferralPromo"
+        >
           <h3 class="font-extrabold text-[var(--brand-4)]">Referral tracking</h3>
           <p class="mt-1 text-sm text-stone-300">
             Optional owner name for influencer, customer, or partner referral codes.
@@ -641,15 +592,8 @@ onMounted(loadPromos)
           </div>
         </div>
 
-        <div class="flex flex-wrap gap-3">
-          <button type="submit" class="focus-ring rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] hover:bg-emerald-300 disabled:opacity-60" :disabled="isSaving">
-            {{ isSaving ? 'Saving...' : editingPromoId ? 'Update Promo' : 'Create Promo' }}
-          </button>
-          <button type="button" class="rounded-lg border border-stone-700 px-5 py-3 font-semibold text-stone-500 hover:border-emerald-400" @click="resetForm">
-            Reset
-          </button>
-        </div>
-      </form>
+      </template>
+      </PromoForm>
 
       <section class="section-panel overflow-hidden">
         <div class="border-b border-stone-800 p-5 md:p-6">
@@ -678,23 +622,30 @@ onMounted(loadPromos)
 
             <label class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Type</span>
-              <select v-model="promoTypeFilter" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
-                <option value="all">All types</option>
-                <option value="global">Global</option>
-                <option value="unique">Unique customer</option>
-                <option value="referral">Referral</option>
-              </select>
+            <select v-model="promoTypeFilter" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
+              <option value="all">All types</option>
+              <option
+                v-for="option in PROMO_TYPE_OPTIONS"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
             </label>
 
             <label class="block">
               <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Status</span>
-              <select v-model="promoStatusFilter" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
-                <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="draft">Draft</option>
-                <option value="paused">Paused</option>
-                <option value="expired">Expired</option>
-              </select>
+            <select v-model="promoStatusFilter" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
+              <option value="all">All statuses</option>
+              <option
+                v-for="option in PROMO_STATUS_OPTIONS"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
             </label>
 
             <button
@@ -718,155 +669,37 @@ onMounted(loadPromos)
         </div>
 
         <div v-else class="space-y-8 p-5 md:p-6">
-          <section>
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <h3 class="text-lg font-extrabold text-[var(--brand-4)]">Active promos</h3>
-              <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">{{ activeFilteredPromos.length }} active</span>
-            </div>
+          <PromoTable
+            title="Active promos"
+            :promos="activeFilteredPromos"
+            empty-message="No active promos match this view."
+            :count-label="`${activeFilteredPromos.length} active`"
+            count-class="bg-green-50 text-green-700"
+            @test="selectPromoForTest"
+            @edit="editPromo"
+            @delete="deletePromo"
+            @analytics="openPromoAnalytics"
+          />
 
-            <div v-if="!activeFilteredPromos.length" class="rounded-2xl border border-stone-200 bg-white/70 p-4 text-sm text-stone-400">
-              No active promos match this view.
-            </div>
-
-            <div v-else class="overflow-x-auto rounded-2xl border border-stone-200 bg-white/70">
-              <table class="min-w-full text-left text-sm">
-                <thead class="bg-[color:var(--brand-5)]/65 text-[var(--brand-4)]">
-                  <tr>
-                    <th class="px-5 py-4 font-extrabold">Code</th>
-                    <th class="px-5 py-4 font-extrabold">Type</th>
-                    <th class="px-5 py-4 font-extrabold">Status</th>
-                    <th class="px-5 py-4 font-extrabold">Discount</th>
-                    <th class="px-5 py-4 font-extrabold">Usage</th>
-                    <th class="px-5 py-4 font-extrabold">Performance</th>
-                    <th class="px-5 py-4 font-extrabold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="promo in activeFilteredPromos" :key="promo.id" class="border-t border-stone-200 align-top">
-                    <td class="px-5 py-4">
-                      <p class="font-extrabold text-[var(--brand-4)]">{{ promo.code }}</p>
-                      <p class="mt-1 text-xs text-stone-400">{{ promo.name }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <span class="rounded-full bg-[color-mix(in_srgb,var(--brand-5)_70%,white)] px-3 py-1 text-xs font-bold text-[var(--brand-4)]">
-                        {{ getPromoTypeLabel(promo.type) }}
-                      </span>
-                      <p v-if="promo.assignedCustomerEmail" class="mt-2 text-xs text-stone-400">{{ promo.assignedCustomerEmail }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <span class="rounded-full px-3 py-1 text-xs font-bold" :class="getPromoStatusClass(promo.status)">
-                        {{ promo.status }}
-                      </span>
-                    </td>
-                    <td class="px-5 py-4">
-                      <p class="font-bold">{{ formatDiscount(promo) }}</p>
-                      <p class="mt-1 text-xs text-stone-400">Minimum {{ formatPrice(promo.minimumSubtotal) }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <p class="font-bold">{{ getUsageLabel(promo) }} used</p>
-                      <p v-if="promo.usageLimitTotal && promo.usedCount >= promo.usageLimitTotal" class="mt-1 text-xs font-bold text-red-600">Limit reached</p>
-                      <p class="mt-1 text-xs text-stone-400">Per customer {{ promo.usageLimitPerCustomer || 'Unlimited' }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <p class="text-xs text-stone-400">Revenue</p>
-                      <p class="font-bold">{{ formatPrice(promo.revenueGenerated) }}</p>
-                      <p class="mt-2 text-xs text-stone-400">Discount</p>
-                      <p class="font-bold">{{ formatPrice(promo.discountGiven) }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <div class="flex flex-wrap gap-2">
-                        <button class="rounded-lg border border-stone-700 px-3 py-2 text-xs font-bold text-stone-500 hover:border-emerald-400" @click="selectPromoForTest(promo)">
-                          Test
-                        </button>
-                        <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="editPromo(promo)">
-                          Edit
-                        </button>
-                        <button class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50" @click="deletePromo(promo)">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section>
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <h3 class="text-lg font-extrabold text-[var(--brand-4)]">Draft, paused & expired promos</h3>
-              <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-stone-600">{{ inactiveFilteredPromos.length }} inactive</span>
-            </div>
-
-            <div v-if="!inactiveFilteredPromos.length" class="rounded-2xl border border-stone-200 bg-white/70 p-4 text-sm text-stone-400">
-              No inactive promos match this view.
-            </div>
-
-            <div v-else class="overflow-x-auto rounded-2xl border border-stone-200 bg-white/70">
-              <table class="min-w-full text-left text-sm">
-                <thead class="bg-[color:var(--brand-5)]/65 text-[var(--brand-4)]">
-                  <tr>
-                    <th class="px-5 py-4 font-extrabold">Code</th>
-                    <th class="px-5 py-4 font-extrabold">Type</th>
-                    <th class="px-5 py-4 font-extrabold">Status</th>
-                    <th class="px-5 py-4 font-extrabold">Discount</th>
-                    <th class="px-5 py-4 font-extrabold">Usage</th>
-                    <th class="px-5 py-4 font-extrabold">Performance</th>
-                    <th class="px-5 py-4 font-extrabold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="promo in inactiveFilteredPromos" :key="promo.id" class="border-t border-stone-200 align-top">
-                    <td class="px-5 py-4">
-                      <p class="font-extrabold text-[var(--brand-4)]">{{ promo.code }}</p>
-                      <p class="mt-1 text-xs text-stone-400">{{ promo.name }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <span class="rounded-full bg-[color-mix(in_srgb,var(--brand-5)_70%,white)] px-3 py-1 text-xs font-bold text-[var(--brand-4)]">
-                        {{ getPromoTypeLabel(promo.type) }}
-                      </span>
-                      <p v-if="promo.assignedCustomerEmail" class="mt-2 text-xs text-stone-400">{{ promo.assignedCustomerEmail }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <span class="rounded-full px-3 py-1 text-xs font-bold" :class="getPromoStatusClass(promo.status)">
-                        {{ promo.status }}
-                      </span>
-                    </td>
-                    <td class="px-5 py-4">
-                      <p class="font-bold">{{ formatDiscount(promo) }}</p>
-                      <p class="mt-1 text-xs text-stone-400">Minimum {{ formatPrice(promo.minimumSubtotal) }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <p class="font-bold">{{ getUsageLabel(promo) }} used</p>
-                      <p v-if="promo.usageLimitTotal && promo.usedCount >= promo.usageLimitTotal" class="mt-1 text-xs font-bold text-red-600">Limit reached</p>
-                      <p class="mt-1 text-xs text-stone-400">Per customer {{ promo.usageLimitPerCustomer || 'Unlimited' }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <p class="text-xs text-stone-400">Revenue</p>
-                      <p class="font-bold">{{ formatPrice(promo.revenueGenerated) }}</p>
-                      <p class="mt-2 text-xs text-stone-400">Discount</p>
-                      <p class="font-bold">{{ formatPrice(promo.discountGiven) }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                      <div class="flex flex-wrap gap-2">
-                        <button class="rounded-lg border border-stone-700 px-3 py-2 text-xs font-bold text-stone-500 hover:border-emerald-400" @click="selectPromoForTest(promo)">
-                          Test
-                        </button>
-                        <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="editPromo(promo)">
-                          Edit
-                        </button>
-                        <button class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50" @click="deletePromo(promo)">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <PromoTable
+            title="Inactive promos"
+            :promos="inactiveFilteredPromos"
+            empty-message="No inactive promos match this view."
+            :count-label="`${inactiveFilteredPromos.length} inactive`"
+            count-class="bg-stone-100 text-stone-600"
+            @test="selectPromoForTest"
+            @edit="editPromo"
+            @delete="deletePromo"
+            @analytics="openPromoAnalytics"
+          />
         </div>
       </section>
     </div>
+    <PromoAnalyticsModal
+      :is-open="isAnalyticsModalOpen"
+      :analytics="selectedPromoAnalytics"
+      :is-loading="isLoadingAnalytics"
+      @close="closePromoAnalytics"
+    />
   </section>
 </template>

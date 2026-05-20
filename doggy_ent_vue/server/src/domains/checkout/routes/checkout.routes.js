@@ -1,31 +1,14 @@
 import express from 'express'
 
-import { previewCheckout, createCheckout } from '../services/checkout.service.js'
+import {
+  previewCheckoutController,
+  createCheckoutController,
+} from '../controllers/checkout.controller.js'
 
 const router = express.Router()
 
-router.post('/preview', async (req, res) => {
-  try {
-    const result = await previewCheckout(req.body)
-    return res.json(result)
-  } catch (error) {
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      message: error.message || 'Checkout preview failed.',
-    })
-  }
-})
+router.post('/preview', previewCheckoutController)
 
-router.post('/', async (req, res) => {
-  try {
-    const result = await createCheckout(req.body)
-    return res.json(result)
-  } catch (error) {
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      message: error.message || 'Checkout failed.',
-    })
-  }
-})
+router.post('/', createCheckoutController)
 
 export default router

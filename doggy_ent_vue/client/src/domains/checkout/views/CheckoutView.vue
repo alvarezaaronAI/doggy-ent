@@ -3,6 +3,21 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import StripeElementsForm from '../components/StripeElementsForm.vue'
 
+import {
+  submitCheckout,
+  submitCheckoutPreview,
+} from '../api/checkout.api'
+
+import {
+  useCheckoutPromos,
+} from '../composables/useCheckoutPromos'
+import {
+  useCheckoutPreview,
+} from '../composables/useCheckoutPreview'
+import {
+  useCheckout,
+} from '../composables/useCheckout'
+
 const CART_STORAGE_KEY = 'doggy-ent-cart'
 const CUSTOMER_STORAGE_KEY = 'doggy-ent-checkout-customer'
 const TAX_RATE = 0.075
@@ -11,20 +26,8 @@ const router = useRouter()
 
 const cartItems = ref(loadSavedCart())
 const selectedShipping = ref('standard')
-const promoCode = ref('')
-const appliedPromoCode = ref('')
-const appliedPromoDiscount = ref(0)
-const promoMessage = ref('Enter a promo code if you have one.')
-const promoStatus = ref('idle')
-const checkoutStatus = ref('')
-const checkoutStatusType = ref('')
-const isProcessingOrder = ref(false)
-const checkoutResult = ref(null)
 const campaignPreview = ref([])
 const isLoadingCampaignPreview = ref(false)
-const isRefreshingCheckoutPreview = ref(false)
-const paymentCompleted = ref(false)
-const completedPaymentIntent = ref(null)
 const paymentFormComplete = ref(false)
 const mobileSummaryOpen = ref(false)
 
@@ -61,6 +64,68 @@ const checkoutChecklist = computed(() => [
 
 const stripePaymentForm = ref(null)
 
+const {
+  checkoutStatus,
+  checkoutStatusType,
+  isProcessingOrder,
+  hasSubmittedOrder,
+  paymentCompleted,
+  completedPaymentIntent,
+  placeOrder,
+} = useCheckout({
+  validateCheckout,
+  stripePaymentForm,
+
+  async submitOrder({
+    completedPaymentIntent,
+  }) {
+    checkoutResult.value = null
+
+    return await submitCheckout({
+      cartItems: cartItems.value,
+      promoCode: appliedPromoCode.value || null,
+      customer: {
+        ...customer.value,
+        country:
+          customer.value.country === 'US'
+            ? 'United States'
+            : customer.value.country === 'CA'
+              ? 'Canada'
+              : customer.value.country,
+      },
+      shipping: {
+        method: selectedShipping.value,
+        price: shippingPrice.value,
+      },
+      stripePaymentIntentId:
+        completedPaymentIntent?.paymentIntentId
+        || completedPaymentIntent?.id
+        || null,
+    })
+  },
+
+  async onSuccess({ result }) {
+    checkoutResult.value = result
+
+    saveCustomerForNextCheckout()
+
+    cartItems.value = []
+
+    localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify([]),
+    )
+
+    campaignPreview.value = []
+
+    clearPromo()
+
+    await router.push(
+      `/order-success/${result.order?.id || 'pending'}`,
+    )
+  },
+})
+
 const checkoutRequirementsComplete = computed(() => {
   return (
     customer.value.email.includes('@')
@@ -76,14 +141,13 @@ const checkoutRequirementsComplete = computed(() => {
   )
 })
 
-let checkoutPreviewTimer = null
 
 const customer = ref(loadSavedCustomer())
 function getEmptyCustomer() {
   return {
     email: '',
     phone: '',
-    notes: '',
+    deliveryNotes: '',
     firstName: '',
     lastName: '',
     address1: '',
@@ -150,6 +214,20 @@ const subtotal = computed(() =>
   cartItems.value.reduce((total, item) => total + Number(item.price || 0) * Number(item.quantity || 0), 0)
 )
 
+const {
+  promoCode,
+  appliedPromoCode,
+  appliedPromoDiscount,
+  promoMessage,
+  promoStatus,
+  applyPromoCode,
+  clearPromo,
+} = useCheckoutPromos({
+  customer,
+  cartItems,
+  subtotal,
+})
+
 const itemCount = computed(() =>
   cartItems.value.reduce((total, item) => total + Number(item.quantity || 0), 0)
 )
@@ -163,6 +241,19 @@ const discount = computed(() => Math.min(Number(appliedPromoDiscount.value || 0)
 const taxableTotal = computed(() => Math.max(subtotal.value - discount.value + shippingPrice.value, 0))
 const tax = computed(() => taxableTotal.value * TAX_RATE)
 const total = computed(() => taxableTotal.value + tax.value)
+
+const {
+  checkoutResult,
+  isRefreshingCheckoutPreview,
+  refreshCheckoutPreview,
+  scheduleCheckoutPreview,
+} = useCheckoutPreview({
+  cartItems,
+  appliedPromoCode,
+  customer,
+  selectedShipping,
+  shippingPrice,
+})
 
 function loadSavedCart() {
   try {
@@ -237,58 +328,6 @@ const summaryTax = computed(() => trustedPricing.value?.tax ?? tax.value)
 const summaryDonation = computed(() => trustedPricing.value?.donationAmount ?? totalCampaignDonation.value)
 const summaryTotal = computed(() => trustedPricing.value?.total ?? total.value)
 
-async function applyPromoCode() {
-  const normalizedCode = promoCode.value.trim().toUpperCase()
-
-  if (!normalizedCode) {
-    appliedPromoCode.value = ''
-    appliedPromoDiscount.value = 0
-    promoStatus.value = 'error'
-    promoMessage.value = 'Enter a promo code to apply a discount.'
-    return
-  }
-
-  promoStatus.value = 'checking'
-  promoMessage.value = 'Checking promo code...'
-
-  try {
-    const response = await fetch('/api/promos/validate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        code: normalizedCode,
-        customerEmail: customer.value.email,
-        cart: {
-          items: cartItems.value,
-          subtotal: subtotal.value,
-        },
-      }),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok || !data.valid) {
-      appliedPromoCode.value = ''
-      appliedPromoDiscount.value = 0
-      promoStatus.value = 'error'
-      promoMessage.value = data.message || `Promo code ${normalizedCode} is not valid.`
-      return
-    }
-
-    appliedPromoCode.value = normalizedCode
-    appliedPromoDiscount.value = Number(data.discountAmount || 0)
-    promoCode.value = normalizedCode
-    promoStatus.value = 'success'
-    promoMessage.value = data.message || `Promo code ${normalizedCode} applied successfully.`
-  } catch {
-    appliedPromoCode.value = ''
-    appliedPromoDiscount.value = 0
-    promoStatus.value = 'error'
-    promoMessage.value = 'Promo validation is not available yet. Please try again later.'
-  }
-}
 
 function validateCheckout() {
   if (!cartItems.value.length) {
@@ -330,134 +369,6 @@ function validateCheckout() {
   return true
 }
 
-async function submitCheckoutToBackend() {
-  const response = await fetch('/api/checkout', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      cartItems: cartItems.value,
-      promoCode: appliedPromoCode.value || null,
-      customerEmail: customer.value.email,
-      customer: customer.value,
-      shipping: {
-        method: selectedShipping.value,
-        price: shippingPrice.value,
-      },
-    }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message || 'Checkout failed.')
-  }
-
-  return data
-}
-
-// Live checkout preview (separate endpoint)
-async function submitCheckoutPreviewToBackend() {
-  const response = await fetch('/api/checkout/preview', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      cartItems: cartItems.value,
-      promoCode: appliedPromoCode.value || null,
-      customerEmail: customer.value.email,
-      customer: customer.value,
-      shipping: {
-        method: selectedShipping.value,
-        price: shippingPrice.value,
-      },
-    }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message || 'Checkout preview failed.')
-  }
-
-  return data
-}
-
-// Live backend checkout/tax preview
-async function refreshCheckoutPreview() {
-  if (!cartItems.value.length) {
-    checkoutResult.value = null
-    return
-  }
-
-  isRefreshingCheckoutPreview.value = true
-
-  try {
-    checkoutResult.value = await submitCheckoutPreviewToBackend()
-  } catch {
-    // Live preview should fail quietly. Final checkout still shows the real error.
-  } finally {
-    isRefreshingCheckoutPreview.value = false
-  }
-}
-
-function scheduleCheckoutPreview() {
-  window.clearTimeout(checkoutPreviewTimer)
-  checkoutPreviewTimer = window.setTimeout(refreshCheckoutPreview, 350)
-}
-
-async function placeOrder() {
-  if (!validateCheckout()) return
-
-  isProcessingOrder.value = true
-
-  try {
-    if (!paymentCompleted.value) {
-      const paymentResult = await stripePaymentForm.value.submitPayment()
-
-      paymentCompleted.value = true
-      completedPaymentIntent.value = paymentResult
-    }
-  } catch (error) {
-    checkoutStatusType.value = 'error'
-    checkoutStatus.value = error.message || 'Payment failed. Please try again.'
-    return
-  }
-
-  checkoutStatus.value = ''
-  checkoutResult.value = null
-
-  try {
-    const result = await submitCheckoutToBackend()
-
-    checkoutResult.value = result
-    saveCustomerForNextCheckout()
-
-    // Clear checkout/cart state after successful order
-    cartItems.value = []
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([]))
-    campaignPreview.value = []
-    promoCode.value = ''
-    appliedPromoCode.value = ''
-    appliedPromoDiscount.value = 0
-    promoStatus.value = 'idle'
-    promoMessage.value = 'Enter a promo code if you have one.'
-    paymentCompleted.value = false
-    completedPaymentIntent.value = null
-
-    checkoutStatusType.value = 'success'
-    checkoutStatus.value = 'Order placed successfully! Redirecting...'
-
-    await router.push(`/order-success/${result.order?.id || 'pending'}`)
-  } catch (error) {
-    checkoutStatusType.value = 'error'
-    checkoutStatus.value = error.message || 'Checkout failed. Please try again.'
-  } finally {
-    isProcessingOrder.value = false
-  }
-}
 
 watch(
   [
@@ -699,7 +610,7 @@ onMounted(() => {
 
                       <label>
                         <span class="mb-2 block text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--brand-4)]">Delivery notes</span>
-                        <input v-model="customer.notes" type="text" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="Gate code, apartment, etc." />
+                        <input v-model="customer.deliveryNotes" type="text" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="Gate code, apartment, etc." />
                       </label>
                     </div>
 

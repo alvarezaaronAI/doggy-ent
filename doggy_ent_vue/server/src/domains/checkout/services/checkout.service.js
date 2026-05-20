@@ -1,7 +1,12 @@
-import { validatePromoCode, recordPromoUsage } from './../../admin/services/promos.service.js'
-import { previewCampaignDonations } from '../../admin/services/campaigns.service.js'
-import { calculateTax } from '../../../shared/services/../../shared/services/tax.service.js'
-import { createOrder } from '../../admin/services/orders.service.js'
+import {
+  validatePromoCode,
+  recordPromoUsage,
+} from '../../promos/services/promos.service.js'
+import {
+  previewCampaignDonations,
+} from '../../admin/services/campaigns.service.js'
+import { calculateTax } from '../../../shared/services/tax.service.js'
+import { createNewOrder } from '../../orders/services/orders.service.js'
 
 function calculateSubtotal(cartItems = []) {
   return cartItems.reduce((total, item) => {
@@ -113,27 +118,63 @@ export async function createCheckout(checkoutInput = {}) {
     shipping = {},
   } = checkoutInput
 
+  const order = await createNewOrder({
+    items: cartItems,
+    customerName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
+    customerEmail: customer.email || customerEmail || null,
+    customerPhone: customer.phone || null,
+    deliveryNotes: customer.deliveryNotes || null,
+    address1: customer.address1 || null,
+    address2: customer.address2 || null,
+    city: customer.city || null,
+    state: customer.state || null,
+    zip: customer.zip || null,
+    country: customer.country || 'United States',
+    marketingOptIn: Boolean(customer.marketingOptIn),
+    saveInfo: Boolean(customer.saveInfo),
+    subtotal: checkoutPreview.pricing.subtotal,
+    total: checkoutPreview.pricing.total,
+    currency: 'usd',
+    shippingAmount: checkoutPreview.pricing.shippingAmount,
+    discountAmount: checkoutPreview.pricing.discountAmount,
+    taxAmount: checkoutPreview.pricing.tax,
+    promoCode: checkoutPreview.promo?.code || null,
+    stripePaymentIntentId: checkoutInput.stripePaymentIntentId || null,
+  })
+
+  if (
+    promoCode
+    && checkoutPreview.promo
+    && !checkoutPreview.promo.valid
+  ) {
+    const error = new Error(checkoutPreview.promo.message || 'Invalid promo code.')
+    error.statusCode = 400
+    throw error
+  }
+
   let recordedPromo = checkoutPreview.promo
 
   if (promoCode && checkoutPreview.promo?.valid) {
-    recordedPromo = await recordPromoUsage({
-      code: promoCode,
-      customerEmail,
-      cart: {
-        subtotal: checkoutPreview.pricing.subtotal,
-        items: cartItems,
-      },
-    })
-  }
+    try {
+      recordedPromo = await recordPromoUsage({
+        code: promoCode,
+        customerEmail,
+        orderId: order.id,
+        cart: {
+          subtotal: checkoutPreview.pricing.subtotal,
+          items: cartItems,
+        },
+      })
+    }
+    catch (error) {
+      console.error(
+        '[checkout] Failed promo redemption persistence.',
+        error,
+      )
 
-  const order = await createOrder({
-    cartItems,
-    customer,
-    shipping,
-    pricing: checkoutPreview.pricing,
-    promo: recordedPromo,
-    campaigns: checkoutPreview.campaigns,
-  })
+      throw error
+    }
+  }
 
   return {
     ...checkoutPreview,

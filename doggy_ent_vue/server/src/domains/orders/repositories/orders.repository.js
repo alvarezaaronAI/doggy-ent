@@ -23,6 +23,23 @@ export async function findOrderById(orderId) {
   return order
 }
 
+export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
+  if (!stripePaymentIntentId) {
+    return null
+  }
+
+  const order = await prisma.order.findFirst({
+    where: {
+      stripePaymentIntentId,
+    },
+    include: {
+      items: true,
+    },
+  })
+
+  return order
+}
+
 export async function findOrderStats() {
   const orders = await prisma.order.findMany()
 
@@ -59,9 +76,22 @@ export async function createOrder(orderInput) {
       orderNumber: orderInput.orderNumber,
       customerName: orderInput.customerName,
       customerEmail: orderInput.customerEmail,
+      customerPhone: orderInput.customerPhone || null,
+      deliveryNotes: orderInput.deliveryNotes || null,
+      address1: orderInput.address1 || null,
+      address2: orderInput.address2 || null,
+      city: orderInput.city || null,
+      state: orderInput.state || null,
+      zip: orderInput.zip || null,
+      country: orderInput.country || null,
+      marketingOptIn: Boolean(orderInput.marketingOptIn),
+      saveInfo: Boolean(orderInput.saveInfo),
       status: orderInput.status || 'PENDING',
       total: Number(orderInput.total || 0),
       subtotal: Number(orderInput.subtotal || 0),
+      shippingAmount: Number(orderInput.shippingAmount || 0),
+      discountAmount: Number(orderInput.discountAmount || 0),
+      taxAmount: Number(orderInput.taxAmount || 0),
       currency: orderInput.currency || 'usd',
       stripePaymentIntentId: orderInput.stripePaymentIntentId || null,
       items: {

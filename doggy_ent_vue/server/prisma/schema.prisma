@@ -55,9 +55,22 @@ model Order {
   orderNumber   String        @unique
   customerName  String
   customerEmail String
+  customerPhone String?
+  deliveryNotes String?
+  address1      String?
+  address2      String?
+  city          String?
+  state         String?
+  zip           String?
+  country       String?
+  marketingOptIn Boolean @default(false)
+  saveInfo       Boolean @default(false)
   status        OrderStatus   @default(PENDING)
   total         Float
   subtotal      Float
+  shippingAmount Float @default(0)
+  discountAmount Float @default(0)
+  taxAmount      Float @default(0)
   currency      String        @default("usd")
   stripePaymentIntentId String?
   createdAt     DateTime      @default(now())
@@ -82,6 +95,60 @@ model OrderItem {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
+model Promo {
+  id                    String      @id @default(cuid())
+  code                  String      @unique
+  name                  String
+
+  type                  PromoType   @default(GLOBAL)
+  status                PromoStatus @default(DRAFT)
+
+  discountType          DiscountType @default(FIXED)
+  discountValue         Float
+
+  minimumSubtotal       Float        @default(0)
+  usageLimitTotal       Int?
+  usageLimitPerCustomer Int?
+
+  assignedCustomerEmail String?
+  referralOwnerName     String?
+
+  usedCount             Int          @default(0)
+  revenueGenerated      Float        @default(0)
+  discountGiven         Float        @default(0)
+
+  startsAt              DateTime?
+  endsAt                DateTime?
+
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  usages PromoUsage[]
+
+  @@index([status])
+  @@index([type])
+}
+
+model PromoUsage {
+  id             String   @id @default(cuid())
+
+  promoId        String
+  orderId        String? @unique
+
+  customerEmail  String
+
+  discountAmount Float
+  subtotalAmount Float
+
+  redeemedAt     DateTime @default(now())
+
+  @@index([promoId])
+  @@index([customerEmail])
+  @@index([orderId])
+
+  promo Promo @relation(fields: [promoId], references: [id], onDelete: Cascade)
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -104,4 +171,23 @@ enum SellingMode {
   MADE_TO_ORDER
   INVENTORY_LIMITED
   PREORDER
+}
+
+enum PromoType {
+  GLOBAL
+  UNIQUE
+  REFERRAL
+}
+
+enum PromoStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  DISABLED
+  ARCHIVED
+}
+
+enum DiscountType {
+  FIXED
+  PERCENT
 }
