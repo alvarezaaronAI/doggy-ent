@@ -2,8 +2,14 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import {
+  createCampaign,
+  deleteCampaign as deleteCampaignRequest,
+  getCampaigns,
+  updateCampaign,
+} from '../../campaigns/api/campaigns.api'
 
-const CAMPAIGNS_API_URL = '/api/admin/campaigns'
+
 const PRODUCTS_API_URL = '/api/products'
 
 const campaigns = ref([])
@@ -20,7 +26,11 @@ const form = ref(getEmptyForm())
 const campaignSearchQuery = ref('')
 const campaignStatusFilter = ref('all')
 
-const activeCampaigns = computed(() => campaigns.value.filter((campaign) => campaign.status === 'active'))
+const activeCampaigns = computed(() =>
+  campaigns.value.filter(
+    (campaign) => normalizeCampaignStatus(campaign.status) === 'ACTIVE',
+  ),
+)
 const totalDonationGenerated = computed(() => campaigns.value.reduce((total, campaign) => total + Number(campaign.donationGenerated || 0), 0))
 const totalRevenueGenerated = computed(() => campaigns.value.reduce((total, campaign) => total + Number(campaign.revenueGenerated || 0), 0))
 const totalOrders = computed(() => campaigns.value.reduce((total, campaign) => total + Number(campaign.orderCount || 0), 0))
@@ -38,22 +48,42 @@ const filteredCampaigns = computed(() => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query))
 
-    const matchesStatus = campaignStatusFilter.value === 'all' || campaign.status === campaignStatusFilter.value
+    const matchesStatus = (
+      campaignStatusFilter.value === 'all'
+      || normalizeCampaignStatus(campaign.status)
+        === normalizeCampaignStatus(campaignStatusFilter.value)
+    )
 
     return matchesQuery && matchesStatus
   })
 })
 
-const activeFilteredCampaigns = computed(() => filteredCampaigns.value.filter((campaign) => campaign.status === 'active'))
-const inactiveFilteredCampaigns = computed(() => filteredCampaigns.value.filter((campaign) => campaign.status !== 'active'))
+const activeFilteredCampaigns = computed(() =>
+  filteredCampaigns.value.filter(
+    (campaign) => normalizeCampaignStatus(campaign.status) === 'ACTIVE',
+  ),
+)
+const inactiveFilteredCampaigns = computed(() =>
+  filteredCampaigns.value.filter(
+    (campaign) => normalizeCampaignStatus(campaign.status) !== 'ACTIVE',
+  ),
+)
+
+function normalizeCampaignStatus(status) {
+  return String(status || '').toUpperCase()
+}
+
+function normalizeDonationType(type) {
+  return String(type || '').toUpperCase()
+}
 
 function getEmptyForm() {
   return {
     name: '',
     description: '',
-    status: 'draft',
+    status: 'DRAFT',
     donationTarget: '',
-    donationType: 'percent',
+    donationType: 'PERCENT',
     donationValue: 5,
     productIds: [],
     startsDate: '',
@@ -103,7 +133,7 @@ function formatPrice(value) {
 }
 
 function formatDonationRule(campaign) {
-  if (campaign.donationType === 'percent') {
+  if (normalizeDonationType(campaign.donationType) === 'PERCENT') {
     return `${Number(campaign.donationValue || 0)}% of selected product sales`
   }
 
@@ -111,9 +141,20 @@ function formatDonationRule(campaign) {
 }
 
 function getCampaignStatusClass(status) {
-  if (status === 'active') return 'bg-green-50 text-green-700'
-  if (status === 'ended') return 'bg-red-50 text-red-700'
-  if (status === 'paused') return 'bg-amber-50 text-amber-700'
+  const normalizedStatus = normalizeCampaignStatus(status)
+
+  if (normalizedStatus === 'ACTIVE') {
+    return 'bg-green-50 text-green-700'
+  }
+
+  if (normalizedStatus === 'ENDED') {
+    return 'bg-red-50 text-red-700'
+  }
+
+  if (normalizedStatus === 'PAUSED') {
+    return 'bg-amber-50 text-amber-700'
+  }
+
   return 'bg-stone-100 text-stone-500'
 }
 
@@ -133,9 +174,7 @@ function getCampaignProductNames(campaign) {
 }
 
 async function loadCampaigns() {
-  const response = await fetch(CAMPAIGNS_API_URL)
-  if (!response.ok) throw new Error('Unable to load campaigns.')
-  campaigns.value = await response.json()
+  campaigns.value = await getCampaigns()
 }
 
 async function loadProducts() {
@@ -164,21 +203,13 @@ async function saveCampaign() {
 
   try {
     const payload = buildPayload()
-    const url = editingCampaignId.value ? `${CAMPAIGNS_API_URL}/${editingCampaignId.value}` : CAMPAIGNS_API_URL
-    const method = editingCampaignId.value ? 'PUT' : 'POST'
-
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Unable to save campaign.')
+    if (editingCampaignId.value) {
+      await updateCampaign(
+        editingCampaignId.value,
+        payload,
+      )
+    } else {
+      await createCampaign(payload)
     }
 
     successMessage.value = editingCampaignId.value ? 'Campaign updated successfully.' : 'Campaign created successfully.'
@@ -202,9 +233,9 @@ function editCampaign(campaign) {
   form.value = {
     name: campaign.name || '',
     description: campaign.description || '',
-    status: campaign.status || 'draft',
+    status: String(campaign.status || 'DRAFT').toUpperCase(),
     donationTarget: campaign.donationTarget || '',
-    donationType: campaign.donationType || 'percent',
+    donationType: String(campaign.donationType || 'PERCENT').toUpperCase(),
     donationValue: Number(campaign.donationValue || 0),
     productIds: Array.isArray(campaign.productIds) ? [...campaign.productIds] : [],
     startsDate: starts.date,
@@ -224,16 +255,7 @@ async function deleteCampaign(campaign) {
   successMessage.value = ''
 
   try {
-    const response = await fetch(`${CAMPAIGNS_API_URL}/${campaign.id}`, {
-      method: 'DELETE',
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Unable to delete campaign.')
-    }
-
+    await deleteCampaignRequest(campaign.id)
     successMessage.value = 'Campaign deleted successfully.'
     await loadCampaigns()
   } catch (error) {
@@ -319,10 +341,10 @@ onMounted(loadPageData)
           <label class="block">
             <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Status</span>
             <select v-model="form.status" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="ended">Ended</option>
+              <option value="DRAFT">Draft</option>
+              <option value="ACTIVE">Active</option>
+              <option value="PAUSED">Paused</option>
+              <option value="ENDED">Ended</option>
             </select>
           </label>
 
@@ -336,8 +358,8 @@ onMounted(loadPageData)
           <label class="block">
             <span class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">Donation type</span>
             <select v-model="form.donationType" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
-              <option value="percent">Percent of product sales</option>
-              <option value="fixed">Fixed amount</option>
+              <option value="PERCENT">Percent of product sales</option>
+              <option value="FIXED">Fixed amount</option>
             </select>
           </label>
 
@@ -483,10 +505,10 @@ onMounted(loadPageData)
               <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Status</span>
               <select v-model="campaignStatusFilter" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400">
                 <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="draft">Draft</option>
-                <option value="paused">Paused</option>
-                <option value="ended">Ended</option>
+                <option value="ACTIVE">Active</option>
+                <option value="DRAFT">Draft</option>
+                <option value="PAUSED">Paused</option>
+                <option value="ENDED">Ended</option>
               </select>
             </label>
 

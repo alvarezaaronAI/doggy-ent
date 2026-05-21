@@ -1,5 +1,3 @@
-
-
 const nowISO = () => new Date().toISOString()
 
 const campaigns = [

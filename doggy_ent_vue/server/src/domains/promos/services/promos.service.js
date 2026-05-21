@@ -24,6 +24,12 @@ import {
 
 const nowISO = () => new Date().toISOString()
 
+function normalizeCurrencyAmount(value) {
+  return Number(
+    Number(value || 0).toFixed(2),
+  )
+}
+
 async function resolvePromoLifecycleStatuses() {
   const currentDate = new Date()
 
@@ -199,16 +205,25 @@ export function isPromoActive(promo) {
 }
 
 export function calculateDiscountAmount(promo, subtotal) {
-  const s = Number(subtotal || 0)
+  const s = normalizeCurrencyAmount(
+    subtotal || 0,
+  )
 
   if (promo.discountType === 'PERCENT') {
-    return Math.min(
-      s,
-      s * (Number(promo.discountValue || 0) / 100),
+    return normalizeCurrencyAmount(
+      Math.min(
+        s,
+        s * (Number(promo.discountValue || 0) / 100),
+      ),
     )
   }
 
-  return Math.min(s, Number(promo.discountValue || 0))
+  return normalizeCurrencyAmount(
+    Math.min(
+      s,
+      Number(promo.discountValue || 0),
+    ),
+  )
 }
 
 export async function getAllPromos() {
@@ -487,7 +502,9 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
 
 export async function recordPromoUsage({ code, cart, customerEmail, orderId }) {
   const normalizedCode = normalizePromoCode(code)
-  const subtotal = Number(cart?.subtotal || 0)
+  const subtotal = normalizeCurrencyAmount(
+    cart?.subtotal || 0,
+  )
   await resolvePromoLifecycleStatuses()
 
   let promo = null

@@ -1,6 +1,8 @@
 const DEFAULT_TAX_RATE = 0.08
 
 const STATE_TAX_RATES = {
+  // Estimated combined sales tax rates.
+  // Stripe Tax will replace these later.
   CA: 0.095,
   NV: 0.0825,
   AZ: 0.086,
@@ -27,9 +29,17 @@ function getTaxProvider() {
   return process.env.TAX_PROVIDER || 'local'
 }
 
+function normalizeCurrencyAmount(value) {
+  return Number(
+    Number(value || 0).toFixed(2),
+  )
+}
+
 async function calculateLocalTax({ taxableAmount, customer }) {
   const taxRate = getTaxRateByState(customer?.state)
-  const taxAmount = Number(taxableAmount || 0) * taxRate
+  const taxAmount = normalizeCurrencyAmount(
+    Number(taxableAmount || 0) * taxRate,
+  )
 
   return {
     provider: 'local',

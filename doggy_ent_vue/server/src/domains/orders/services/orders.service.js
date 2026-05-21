@@ -5,6 +5,49 @@ import {
   findOrderByStripePaymentIntentId,
   findOrderStats,
 } from '../repositories/orders.repository.js'
+import {
+  decrementProductInventory,
+} from '../../products/services/products.service.js'
+import { prisma } from '../../../db/prisma.js'
+
+async function rollbackInventoryReservation({
+  items = [],
+}) {
+  for (const item of items) {
+    const quantity = Math.max(
+      0,
+      Number.parseInt(item.quantity || 0, 10),
+    )
+
+    if (!quantity) {
+      continue
+    }
+
+    const sku = item.variant?.sku || item.sku
+
+    if (!sku) {
+      continue
+    }
+
+    await prisma.productVariant.update({
+      where: {
+        sku,
+      },
+
+      data: {
+        inventory: {
+          increment: quantity,
+        },
+      },
+    })
+  }
+}
+
+function normalizeCurrencyAmount(value) {
+  return Number(
+    Number(value || 0).toFixed(2),
+  )
+}
 
 export async function fetchAdminOrders() {
   return await findAllOrders()
@@ -21,11 +64,25 @@ export async function fetchAdminOrderStats() {
 export async function createNewOrder(orderInput) {
   const orderNumber = `DGE-${Date.now()}`
 
-  const subtotal = Number(orderInput.subtotal || 0)
-  const total = Number(orderInput.total || subtotal)
-  const shippingAmount = Number(orderInput.shippingAmount || 0)
-  const discountAmount = Number(orderInput.discountAmount || 0)
-  const taxAmount = Number(orderInput.taxAmount || 0)
+  const subtotal = normalizeCurrencyAmount(
+    orderInput.subtotal || 0,
+  )
+
+  const total = normalizeCurrencyAmount(
+    orderInput.total || subtotal,
+  )
+
+  const shippingAmount = normalizeCurrencyAmount(
+    orderInput.shippingAmount || 0,
+  )
+
+  const discountAmount = normalizeCurrencyAmount(
+    orderInput.discountAmount || 0,
+  )
+
+  const taxAmount = normalizeCurrencyAmount(
+    orderInput.taxAmount || 0,
+  )
 
   // TEMPORARY: disable idempotency return while tracing checkout flow.
   // We discovered earlier incomplete orders are being reused,
@@ -41,35 +98,60 @@ export async function createNewOrder(orderInput) {
         size: item.size || '6 oz',
         sku: item.variant?.sku || item.sku || null,
         quantity: Number(item.quantity || 1),
-        unitPrice: Number(item.price || item.unitPrice || 0),
-        lineTotal:
-          Number(item.lineTotal || 0) ||
-          Number(item.price || 0) * Number(item.quantity || 1),
+        unitPrice: normalizeCurrencyAmount(
+          item.price || item.unitPrice || 0,
+        ),
+        lineTotal: normalizeCurrencyAmount(
+          Number(item.lineTotal || 0)
+          || Number(item.price || 0)
+            * Number(item.quantity || 1),
+        ),
       }))
     : []
 
-  return await createOrder({
-    orderNumber,
-    customerName: orderInput.customerName || 'Guest Customer',
-    customerEmail: orderInput.customerEmail || 'guest@example.com',
-    customerPhone: orderInput.customerPhone || null,
-    deliveryNotes: orderInput.deliveryNotes || null,
-    address1: orderInput.address1 || null,
-    address2: orderInput.address2 || null,
-    city: orderInput.city || null,
-    state: orderInput.state || null,
-    zip: orderInput.zip || null,
-    country: orderInput.country || null,
-    marketingOptIn: Boolean(orderInput.marketingOptIn),
-    saveInfo: Boolean(orderInput.saveInfo),
-    status: 'PENDING',
-    subtotal,
-    total,
-    currency: orderInput.currency || 'usd',
-    shippingAmount,
-    discountAmount,
-    taxAmount,
-    stripePaymentIntentId: orderInput.stripePaymentIntentId || null,
+  await decrementProductInventory({
     items: normalizedItems,
   })
+
+  try {
+    return await createOrder({
+      orderNumber,
+      customerName: orderInput.customerName || 'Guest Customer',
+      customerEmail: orderInput.customerEmail || 'guest@example.com',
+      customerPhone: orderInput.customerPhone || null,
+      deliveryNotes: orderInput.deliveryNotes || null,
+      address1: orderInput.address1 || null,
+      address2: orderInput.address2 || null,
+      city: orderInput.city || null,
+      state: orderInput.state || null,
+      zip: orderInput.zip || null,
+      country: orderInput.country || null,
+      marketingOptIn: Boolean(orderInput.marketingOptIn),
+      saveInfo: Boolean(orderInput.saveInfo),
+      status: 'PENDING',
+      subtotal,
+      total,
+      currency: orderInput.currency || 'usd',
+      shippingAmount,
+      discountAmount,
+      taxAmount,
+      stripePaymentIntentId: orderInput.stripePaymentIntentId || null,
+      items: normalizedItems,
+    })
+  }
+  catch (error) {
+    try {
+      await rollbackInventoryReservation({
+        items: normalizedItems,
+      })
+    }
+    catch (rollbackError) {
+      console.error(
+        '[orders] Failed inventory rollback.',
+        rollbackError,
+      )
+    }
+
+    throw error
+  }
 }

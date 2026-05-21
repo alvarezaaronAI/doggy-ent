@@ -9,6 +9,11 @@ import {
 } from '../api/checkout.api'
 
 import {
+  previewCampaigns,
+  recordCampaignUsage,
+} from '../../campaigns/api/campaigns.api'
+
+import {
   useCheckoutPromos,
 } from '../composables/useCheckoutPromos'
 import {
@@ -17,6 +22,15 @@ import {
 import {
   useCheckout,
 } from '../composables/useCheckout'
+
+import {
+  calculateDiscount,
+  calculateItemCount,
+  calculateOrderTotal,
+  calculateSubtotal,
+  calculateTax,
+  calculateTaxableTotal,
+} from '../utils/checkout.utils'
 
 const CART_STORAGE_KEY = 'doggy-ent-cart'
 const CUSTOMER_STORAGE_KEY = 'doggy-ent-checkout-customer'
@@ -29,6 +43,7 @@ const selectedShipping = ref('standard')
 const campaignPreview = ref([])
 const isLoadingCampaignPreview = ref(false)
 const paymentFormComplete = ref(false)
+
 const mobileSummaryOpen = ref(false)
 
 
@@ -71,6 +86,7 @@ const {
   hasSubmittedOrder,
   paymentCompleted,
   completedPaymentIntent,
+  checkoutResult,
   placeOrder,
 } = useCheckout({
   validateCheckout,
@@ -78,6 +94,7 @@ const {
 
   async submitOrder({
     completedPaymentIntent,
+    stripePaymentIntentId,
   }) {
     checkoutResult.value = null
 
@@ -98,7 +115,8 @@ const {
         price: shippingPrice.value,
       },
       stripePaymentIntentId:
-        completedPaymentIntent?.paymentIntentId
+        stripePaymentIntentId
+        || completedPaymentIntent?.paymentIntentId
         || completedPaymentIntent?.id
         || null,
     })
@@ -106,6 +124,19 @@ const {
 
   async onSuccess({ result }) {
     checkoutResult.value = result
+
+    try {
+      if (campaignPreview.value.length) {
+        await recordCampaignUsage(
+          campaignPreview.value,
+        )
+      }
+    } catch (error) {
+      console.error(
+        'Failed to record campaign usage.',
+        error,
+      )
+    }
 
     saveCustomerForNextCheckout()
 
@@ -211,7 +242,7 @@ const shippingOptions = [
 ]
 
 const subtotal = computed(() =>
-  cartItems.value.reduce((total, item) => total + Number(item.price || 0) * Number(item.quantity || 0), 0)
+  calculateSubtotal(cartItems.value)
 )
 
 const {
@@ -229,21 +260,44 @@ const {
 })
 
 const itemCount = computed(() =>
-  cartItems.value.reduce((total, item) => total + Number(item.quantity || 0), 0)
+  calculateItemCount(cartItems.value)
 )
 
 const shippingPrice = computed(() =>
   shippingOptions.find((option) => option.code === selectedShipping.value)?.price || 0
 )
 
-const discount = computed(() => Math.min(Number(appliedPromoDiscount.value || 0), subtotal.value))
+const discount = computed(() =>
+  calculateDiscount({
+    subtotal: subtotal.value,
+    discountAmount: appliedPromoDiscount.value,
+  })
+)
 
-const taxableTotal = computed(() => Math.max(subtotal.value - discount.value + shippingPrice.value, 0))
-const tax = computed(() => taxableTotal.value * TAX_RATE)
-const total = computed(() => taxableTotal.value + tax.value)
+const taxableTotal = computed(() =>
+  calculateTaxableTotal({
+    subtotal: subtotal.value,
+    discount: discount.value,
+    shipping: shippingPrice.value,
+  })
+)
+
+const tax = computed(() =>
+  calculateTax({
+    taxableTotal: taxableTotal.value,
+    taxRate: TAX_RATE,
+  })
+)
+
+const total = computed(() =>
+  calculateOrderTotal({
+    taxableTotal: taxableTotal.value,
+    tax: tax.value,
+  })
+)
 
 const {
-  checkoutResult,
+  checkoutPreviewResult,
   isRefreshingCheckoutPreview,
   refreshCheckoutPreview,
   scheduleCheckoutPreview,
@@ -293,21 +347,15 @@ async function loadCampaignPreview() {
   isLoadingCampaignPreview.value = true
 
   try {
-    const response = await fetch('/api/campaigns/preview', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        cartItems: cartItems.value,
-      }),
-    })
+    campaignPreview.value = await previewCampaigns(
+      cartItems.value,
+    )
+  } catch (error) {
+    console.error(
+      'Failed to load campaign preview.',
+      error,
+    )
 
-    if (!response.ok) throw new Error('Unable to preview donation campaigns.')
-
-    const data = await response.json()
-    campaignPreview.value = Array.isArray(data) ? data : []
-  } catch {
     campaignPreview.value = []
   } finally {
     isLoadingCampaignPreview.value = false
@@ -319,12 +367,18 @@ const totalCampaignDonation = computed(() =>
   campaignPreview.value.reduce((total, campaign) => total + Number(campaign.donationAmount || 0), 0)
 )
 
-const trustedPricing = computed(() => checkoutResult.value?.pricing || null)
+const trustedPricing = computed(() =>
+  checkoutPreviewResult.value?.pricing || null,
+)
 
 const summarySubtotal = computed(() => trustedPricing.value?.subtotal ?? subtotal.value)
 const summaryDiscount = computed(() => trustedPricing.value?.discountAmount ?? discount.value)
 const summaryShipping = computed(() => trustedPricing.value?.shippingAmount ?? shippingPrice.value)
-const summaryTax = computed(() => trustedPricing.value?.tax ?? tax.value)
+const summaryTax = computed(() => (
+  trustedPricing.value?.taxAmount
+  ?? trustedPricing.value?.tax
+  ?? tax.value
+))
 const summaryDonation = computed(() => trustedPricing.value?.donationAmount ?? totalCampaignDonation.value)
 const summaryTotal = computed(() => trustedPricing.value?.total ?? total.value)
 
@@ -371,16 +425,44 @@ function validateCheckout() {
 
 
 watch(
-  [
-    selectedShipping,
-    appliedPromoCode,
-    () => customer.value.state,
-    () => customer.value.zip,
-    () => cartItems.value.map((item) => `${item.id}-${item.size}-${item.quantity}-${item.price}`).join('|'),
-  ],
+  customer,
   () => {
     scheduleCheckoutPreview()
-  }
+  },
+  {
+    deep: true,
+  },
+)
+
+watch(
+  cartItems,
+  () => {
+    scheduleCheckoutPreview()
+  },
+  {
+    deep: true,
+  },
+)
+
+watch(
+  selectedShipping,
+  () => {
+    scheduleCheckoutPreview()
+  },
+)
+
+watch(
+  appliedPromoCode,
+  () => {
+    scheduleCheckoutPreview()
+  },
+)
+
+watch(
+  shippingPrice,
+  () => {
+    scheduleCheckoutPreview()
+  },
 )
 
 onMounted(() => {
@@ -917,9 +999,6 @@ onMounted(() => {
               </div>
               <p v-if="isRefreshingCheckoutPreview" class="mt-2 text-xs font-semibold text-stone-400">
                 Updating tax and total...
-              </p>
-              <p v-else-if="trustedPricing" class="mt-2 text-xs font-semibold text-[var(--success-1)]">
-                Verified by backend checkout.
               </p>
 
               <div class="my-5 h-px bg-[color-mix(in_srgb,var(--brand-3)_30%,white)]"></div>

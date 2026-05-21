@@ -1,14 +1,18 @@
-
-
 const ADMIN_PROMOS_API_BASE_URL = '/api/admin/promos'
 const PUBLIC_PROMOS_API_BASE_URL = '/api/promos'
 
 async function parseApiResponse(response, fallbackMessage) {
-  const data = await response.json()
+  let data = null
+
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
 
   if (!response.ok) {
     throw new Error(
-      data.message || fallbackMessage,
+      data?.message || fallbackMessage,
     )
   }
 
@@ -93,6 +97,25 @@ export async function fetchPromoAnalytics(
 }
 
 export async function validatePromoCode(payload) {
+  const normalizedPayload = {
+    code: String(payload?.code || '')
+      .trim()
+      .toUpperCase(),
+
+    customerEmail: String(
+      payload?.customerEmail || '',
+    ).trim(),
+
+    cart: {
+      items: Array.isArray(payload?.cart?.items)
+        ? payload.cart.items
+        : [],
+
+      subtotal: Number(
+        payload?.cart?.subtotal || 0,
+      ),
+    },
+  }
   const response = await fetch(
     `${PUBLIC_PROMOS_API_BASE_URL}/validate`,
     {
@@ -100,7 +123,7 @@ export async function validatePromoCode(payload) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(normalizedPayload),
     },
   )
 

@@ -104,4 +104,6 @@ router.post('/record-usage', async (req, res) => {
   }
 })
 
-export default router
+export {
+  campaignsRoutes as default,
+} from '../../campaigns/routes/campaigns.routes.js'

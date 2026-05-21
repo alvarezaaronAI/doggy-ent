@@ -1,4 +1,25 @@
 
+async function parseCheckoutResponse(
+  response,
+  fallbackMessage,
+) {
+  let data = null
+
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
+
+  if (!response.ok || !data?.success) {
+    throw new Error(
+      data?.message || fallbackMessage,
+    )
+  }
+
+  return data.result
+}
+
 
 export async function submitCheckout({
   cartItems,
@@ -22,15 +43,10 @@ export async function submitCheckout({
     }),
   })
 
-  const data = await response.json()
-
-  if (!response.ok || !data.success) {
-    throw new Error(
-      data.message || 'Checkout failed.',
-    )
-  }
-
-  return data
+  return parseCheckoutResponse(
+    response,
+    'Checkout failed.',
+  )
 }
 
 export async function submitCheckoutPreview({
@@ -53,13 +69,8 @@ export async function submitCheckoutPreview({
     }),
   })
 
-  const data = await response.json()
-
-  if (!response.ok || !data.success) {
-    throw new Error(
-      data.message || 'Checkout preview failed.',
-    )
-  }
-
-  return data
+  return parseCheckoutResponse(
+    response,
+    'Checkout preview failed.',
+  )
 }

@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
 import CartDrawer from '../../cart/components/CartDrawer.vue'
 import PromoStrip from '../../../app/layouts/PromoStrip.vue'
 import SiteHeader from '../../../app/layouts/SiteHeader.vue'
@@ -20,6 +19,7 @@ import { useProducts } from '../composables/useProducts'
 import { useProductFilters } from '../composables/useProductFilters'
 import { useProductVariants } from '../composables/useProductVariants'
 import { useCart } from '../../cart/composables/useCart'
+import { formatCurrency } from '../../../shared/utils/currency'
 
 const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
@@ -40,8 +40,6 @@ onMounted(async () => {
 
   await loadProducts()
 })
-
-
 
 const {
   getSellingMode,
@@ -99,17 +97,16 @@ function closeQuickView() {
 }
 
 function getDisplayTags(product) {
-  if (Array.isArray(product.tags) && product.tags.length) {
+  if (
+    Array.isArray(product.tags)
+    && product.tags.length
+  ) {
     return product.tags
   }
 
-  return ['Small-batch', 'No fillers']
+  return []
 }
 
-
-function formatPrice(value) {
-  return `$${Number(value).toFixed(2)}`
-}
 </script>
 
 <template>
@@ -132,7 +129,7 @@ function formatPrice(value) {
       />
 
       <ShopCollectionsSection
-        :products="products"
+        :products="activeProducts"
       />
 
 
@@ -144,13 +141,6 @@ function formatPrice(value) {
             </p>
             <h2 class="u-underline-blue mt-2 text-3xl font-bold">All Treats</h2>
           </div>
-
-          <RouterLink
-            to="/admin/products"
-            class="rounded-lg border border-emerald-400 px-4 py-2 text-sm font-semibold text-emerald-400 hover:bg-stone-900"
-          >
-            Admin Products
-          </RouterLink>
         </div>
 
         <FilterBar
@@ -181,7 +171,7 @@ function formatPrice(value) {
             v-for="product in activeProducts"
             :key="product.id"
             :product="product"
-            :format-price="formatPrice"
+            :format-price="formatCurrency"
             :get-display-tags="getDisplayTags"
             :get-product-variants="getProductVariants"
             :get-selected-card-size="getSelectedCardSize"

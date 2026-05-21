@@ -149,6 +149,38 @@ model PromoUsage {
   promo Promo @relation(fields: [promoId], references: [id], onDelete: Cascade)
 }
 
+model Campaign {
+  id                  String                 @id @default(cuid())
+
+  name                String
+  slug                String                 @unique
+
+  description         String?
+  image               String?
+  featured            Boolean                @default(false)
+
+  status              CampaignStatus         @default(DRAFT)
+
+  donationTarget      String
+
+  donationType        CampaignDonationType
+  donationValue       Float
+
+  productIds          Json?
+
+  donationGenerated   Float                  @default(0)
+  revenueGenerated    Float                  @default(0)
+  orderCount          Int                    @default(0)
+
+  startsAt            DateTime?
+  endsAt              DateTime?
+
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  @@index([status])
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -188,6 +220,19 @@ enum PromoStatus {
 }
 
 enum DiscountType {
+  FIXED
+  PERCENT
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+  ARCHIVED
+}
+
+enum CampaignDonationType {
   FIXED
   PERCENT
 }

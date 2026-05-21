@@ -1,5 +1,27 @@
 import { prisma } from '../../../db/prisma.js'
 
+// Prevent one Stripe payment intent from creating multiple orders.
+export async function stripePaymentIntentAlreadyUsed(
+  stripePaymentIntentId,
+) {
+  if (!stripePaymentIntentId) {
+    return false
+  }
+
+  const existingOrder =
+    await prisma.order.findFirst({
+      where: {
+        stripePaymentIntentId,
+      },
+
+      select: {
+        id: true,
+      },
+    })
+
+  return Boolean(existingOrder)
+}
+
 export async function findAllOrders() {
   const orders = await prisma.order.findMany({
     orderBy: {
@@ -93,7 +115,8 @@ export async function createOrder(orderInput) {
       discountAmount: Number(orderInput.discountAmount || 0),
       taxAmount: Number(orderInput.taxAmount || 0),
       currency: orderInput.currency || 'usd',
-      stripePaymentIntentId: orderInput.stripePaymentIntentId || null,
+      stripePaymentIntentId:
+        orderInput.stripePaymentIntentId || null,
       items: {
         create: orderInput.items.map((item) => ({
           productId: item.productId || null,

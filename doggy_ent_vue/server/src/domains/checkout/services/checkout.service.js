@@ -4,20 +4,65 @@ import {
 } from '../../promos/services/promos.service.js'
 import {
   previewCampaignDonations,
-} from '../../admin/services/campaigns.service.js'
+} from '../../campaigns/services/campaigns.service.js'
 import { calculateTax } from '../../../shared/services/tax.service.js'
 import { createNewOrder } from '../../orders/services/orders.service.js'
 
+import {
+  validateStripePaymentIntent,
+} from '../../payments/services/stripe.payment.js'
+
+import {
+  stripePaymentIntentAlreadyUsed,
+} from '../../orders/repositories/orders.repository.js'
+
+function normalizeCurrencyAmount(value) {
+  return Number(
+    Number(value || 0).toFixed(2),
+  )
+}
+
 function calculateSubtotal(cartItems = []) {
-  return cartItems.reduce((total, item) => {
-    const price = Number(item.price || 0)
-    const quantity = Number(item.quantity || 0)
-    return total + price * quantity
-  }, 0)
+  return normalizeCurrencyAmount(
+    cartItems.reduce((total, item) => {
+      const price = Number(item.price || 0)
+      const quantity = Number(item.quantity || 0)
+
+      return total + (price * quantity)
+    }, 0),
+  )
 }
 
 function calculateShipping(shipping = {}) {
-  return Number(shipping.price || 0)
+  return normalizeCurrencyAmount(
+    shipping.price || 0,
+  )
+}
+
+function calculateDiscountAmount(promoResult) {
+  if (!promoResult?.valid) {
+    return 0
+  }
+
+  return normalizeCurrencyAmount(
+    promoResult.discountAmount || 0,
+  )
+}
+
+function calculateDonationAmount(
+  campaignPreview = [],
+) {
+  return normalizeCurrencyAmount(
+    campaignPreview.reduce(
+      (totalDonation, campaign) => {
+        return (
+          totalDonation
+          + Number(campaign.donationAmount || 0)
+        )
+      },
+      0,
+    ),
+  )
 }
 
 function buildCheckoutResponse({
@@ -29,21 +74,135 @@ function buildCheckoutResponse({
   total,
   promoResult,
   campaignPreview,
-  order = null,
 }) {
   return {
-    success: true,
     pricing: {
       subtotal,
       shippingAmount,
       discountAmount,
       donationAmount,
       tax,
+      taxAmount: tax,
       total,
     },
+
     promo: promoResult,
+
     campaigns: campaignPreview,
-    order,
+  }
+}
+
+function validateCheckoutSubmissionState({
+  stripePaymentIntentId,
+}) {
+  const normalizedPaymentIntentId = String(
+    stripePaymentIntentId || '',
+  ).trim()
+
+  if (!normalizedPaymentIntentId) {
+    const error = new Error(
+      'A completed payment is required before checkout.',
+    )
+
+    error.statusCode = 400
+
+    throw error
+  }
+}
+
+function validateRequiredCheckoutFields({
+  customer = {},
+}) {
+  const requiredFields = [
+    {
+      key: 'firstName',
+      label: 'First name',
+    },
+    {
+      key: 'lastName',
+      label: 'Last name',
+    },
+    {
+      key: 'email',
+      label: 'Email address',
+    },
+    {
+      key: 'address1',
+      label: 'Shipping address',
+    },
+    {
+      key: 'city',
+      label: 'City',
+    },
+    {
+      key: 'state',
+      label: 'State',
+    },
+    {
+      key: 'zip',
+      label: 'ZIP code',
+    },
+    {
+      key: 'country',
+      label: 'Country',
+    },
+  ]
+
+  for (const field of requiredFields) {
+    const value = String(
+      customer[field.key] || '',
+    ).trim()
+
+    if (!value) {
+      const error = new Error(
+        `${field.label} is required.`,
+      )
+
+      error.statusCode = 400
+
+      throw error
+    }
+  }
+
+  const normalizedEmail = String(
+    customer.email || '',
+  ).trim()
+
+  if (!normalizedEmail.includes('@')) {
+    const error = new Error(
+      'A valid email address is required.',
+    )
+
+    error.statusCode = 400
+
+    throw error
+  }
+}
+
+function validateFinalizedCheckoutPreview(
+  checkoutPreview,
+) {
+  if (!checkoutPreview?.pricing) {
+    const error = new Error(
+      'Checkout pricing preview is required.',
+    )
+
+    error.statusCode = 400
+
+    throw error
+  }
+
+  if (
+    Number(checkoutPreview.pricing.total || 0)
+    <= 0
+  ) {
+    const error = new Error(
+      'Checkout total must be greater than zero.',
+    )
+
+    error.statusCode = 400
+
+    throw error
   }
 }
 
@@ -77,12 +236,13 @@ export async function previewCheckout(checkoutInput = {}) {
     })
   }
 
-  const discountAmount = promoResult?.valid ? Number(promoResult.discountAmount || 0) : 0
+  const discountAmount = calculateDiscountAmount(
+    promoResult,
+  )
 
   const campaignPreview = await previewCampaignDonations(cartItems)
-  const donationAmount = campaignPreview.reduce(
-    (totalDonation, campaign) => totalDonation + Number(campaign.donationAmount || 0),
-    0
+  const donationAmount = calculateDonationAmount(
+    campaignPreview,
   )
 
   const taxableAmount = Math.max(0, subtotal - discountAmount + shippingAmount)
@@ -92,8 +252,12 @@ export async function previewCheckout(checkoutInput = {}) {
     customer,
   })
 
-  const tax = Number(taxResult.taxAmount || 0)
-  const total = taxableAmount + tax
+  const tax = normalizeCurrencyAmount(
+    taxResult.taxAmount || 0,
+  )
+  const total = normalizeCurrencyAmount(
+    taxableAmount + tax,
+  )
 
   return buildCheckoutResponse({
     subtotal,
@@ -109,6 +273,54 @@ export async function previewCheckout(checkoutInput = {}) {
 
 export async function createCheckout(checkoutInput = {}) {
   const checkoutPreview = await previewCheckout(checkoutInput)
+
+  validateRequiredCheckoutFields({
+    customer: checkoutInput.customer,
+  })
+
+  validateCheckoutSubmissionState({
+    stripePaymentIntentId:
+      checkoutInput.stripePaymentIntentId,
+  })
+
+  validateFinalizedCheckoutPreview(
+    checkoutPreview,
+  )
+
+  const stripePaymentIntentId =
+    checkoutInput.stripePaymentIntentId
+
+  const paymentIntentAlreadyUsed =
+    await stripePaymentIntentAlreadyUsed(
+      stripePaymentIntentId,
+    )
+
+  if (paymentIntentAlreadyUsed) {
+    const error = new Error(
+      'This Stripe payment has already been used for an order.',
+    )
+
+    error.statusCode = 409
+
+    throw error
+  }
+
+  await validateStripePaymentIntent({
+    stripePaymentIntentId,
+    expectedAmount:
+      checkoutPreview.pricing.total,
+    expectedCurrency: 'usd',
+  })
+
+  if (checkoutInput.completedOrderId) {
+    const error = new Error(
+      'This checkout session has already been completed.',
+    )
+
+    error.statusCode = 409
+
+    throw error
+  }
 
   const {
     cartItems = [],
@@ -139,7 +351,8 @@ export async function createCheckout(checkoutInput = {}) {
     discountAmount: checkoutPreview.pricing.discountAmount,
     taxAmount: checkoutPreview.pricing.tax,
     promoCode: checkoutPreview.promo?.code || null,
-    stripePaymentIntentId: checkoutInput.stripePaymentIntentId || null,
+    stripePaymentIntentId:
+      stripePaymentIntentId || null,
   })
 
   if (

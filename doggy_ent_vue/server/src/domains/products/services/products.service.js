@@ -1,5 +1,12 @@
 import { prisma } from '../../../db/prisma.js'
 
+function normalizeInventoryQuantity(value) {
+  return Math.max(
+    0,
+    Number.parseInt(value || 0, 10),
+  )
+}
+
 function slugify(value) {
   return String(value)
     .toLowerCase()
@@ -37,8 +44,12 @@ function normalizeProductInput(productInput) {
   const normalizedVariants = variants.map((variant) => ({
     size: variant.size,
     price: Number(variant.price ?? 0),
-    quantity: Number(variant.quantity ?? 0),
-    lowStockThreshold: Number(variant.lowStockThreshold ?? 0),
+    quantity: normalizeInventoryQuantity(
+      variant.quantity,
+    ),
+    lowStockThreshold: normalizeInventoryQuantity(
+      variant.lowStockThreshold,
+    ),
     sku:
       variant.sku ||
       buildVariantSku(productInput, variant.size || 'variant'),
@@ -53,15 +64,19 @@ function normalizeProductInput(productInput) {
   const sixOzPrice = Number(sixOzVariant.price ?? 0)
   const eighteenOzPrice = Number(eighteenOzVariant.price ?? 0)
 
-  const sixOzQuantity = Number(sixOzVariant.quantity ?? 0)
-  const eighteenOzQuantity = Number(eighteenOzVariant.quantity ?? 0)
-
-  const sixOzLowStockThreshold = Number(
-    sixOzVariant.lowStockThreshold ?? 5
+  const sixOzQuantity = normalizeInventoryQuantity(
+    sixOzVariant.quantity,
+  )
+  const eighteenOzQuantity = normalizeInventoryQuantity(
+    eighteenOzVariant.quantity,
   )
 
-  const eighteenOzLowStockThreshold = Number(
-    eighteenOzVariant.lowStockThreshold ?? 3
+  const sixOzLowStockThreshold = normalizeInventoryQuantity(
+    sixOzVariant.lowStockThreshold ?? 5,
+  )
+
+  const eighteenOzLowStockThreshold = normalizeInventoryQuantity(
+    eighteenOzVariant.lowStockThreshold ?? 3,
   )
 
   const getStockStatus = (quantity, incomingStatus) => {
@@ -262,6 +277,56 @@ export async function updateProductById(productId, productInput) {
     price: updatedProduct.variants?.[0]?.price
       ? updatedProduct.variants[0].price / 100
       : 0,
+  }
+}
+
+export async function decrementProductInventory({
+  items = [],
+}) {
+  for (const item of items) {
+    const quantityToRemove = normalizeInventoryQuantity(
+      item.quantity,
+    )
+
+    if (!quantityToRemove) {
+      continue
+    }
+
+    const sku = item.variant?.sku || item.sku
+
+    if (!sku) {
+      continue
+    }
+
+    const variant = await prisma.productVariant.findUnique({
+      where: {
+        sku,
+      },
+    })
+
+    if (!variant) {
+      throw new Error(
+        `Variant not found for SKU: ${sku}`,
+      )
+    }
+
+    if (variant.inventory < quantityToRemove) {
+      throw new Error(
+        `Insufficient inventory for SKU: ${sku}`,
+      )
+    }
+
+    await prisma.productVariant.update({
+      where: {
+        sku,
+      },
+
+      data: {
+        inventory: {
+          decrement: quantityToRemove,
+        },
+      },
+    })
   }
 }
 

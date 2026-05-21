@@ -1,5 +1,3 @@
-
-
 import { ref } from 'vue'
 
 import {
@@ -18,6 +16,7 @@ export function useCheckoutPromos({
     'Enter a promo code if you have one.',
   )
   const promoStatus = ref('idle')
+  const promoValidationMeta = ref(null)
 
   async function applyPromoCode() {
     const normalizedCode = (
@@ -29,6 +28,7 @@ export function useCheckoutPromos({
     if (!normalizedCode) {
       appliedPromoCode.value = ''
       appliedPromoDiscount.value = 0
+      promoValidationMeta.value = null
       promoStatus.value = 'error'
 
       promoMessage.value = (
@@ -59,6 +59,14 @@ export function useCheckoutPromos({
       appliedPromoDiscount.value = Number(
         data.discountAmount || 0,
       )
+      promoValidationMeta.value = {
+        promoId: data.promoId || null,
+        promoCode: normalizedCode,
+        discountType: data.discountType || null,
+        discountAmount: Number(
+          data.discountAmount || 0,
+        ),
+      }
 
       promoCode.value = normalizedCode
       promoStatus.value = 'success'
@@ -71,6 +79,7 @@ export function useCheckoutPromos({
     catch (error) {
       appliedPromoCode.value = ''
       appliedPromoDiscount.value = 0
+      promoValidationMeta.value = null
       promoStatus.value = 'error'
 
       promoMessage.value = (
@@ -84,6 +93,7 @@ export function useCheckoutPromos({
     promoCode.value = ''
     appliedPromoCode.value = ''
     appliedPromoDiscount.value = 0
+    promoValidationMeta.value = null
     promoStatus.value = 'idle'
 
     promoMessage.value = (
@@ -97,6 +107,7 @@ export function useCheckoutPromos({
     appliedPromoDiscount,
     promoMessage,
     promoStatus,
+    promoValidationMeta,
     applyPromoCode,
     clearPromo,
   }

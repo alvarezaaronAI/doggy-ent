@@ -1,5 +1,3 @@
-
-
 import { ref } from 'vue'
 
 export function useCheckout({
@@ -15,6 +13,8 @@ export function useCheckout({
   const hasSubmittedOrder = ref(false)
   const paymentCompleted = ref(false)
   const completedPaymentIntent = ref(null)
+  const checkoutResult = ref(null)
+  const checkoutAttemptId = ref(null)
 
   async function placeOrder() {
     if (isProcessingOrder.value || hasSubmittedOrder.value) {
@@ -27,6 +27,7 @@ export function useCheckout({
 
     isProcessingOrder.value = true
     hasSubmittedOrder.value = true
+    checkoutAttemptId.value = crypto.randomUUID()
 
     try {
       if (!paymentCompleted.value) {
@@ -45,6 +46,7 @@ export function useCheckout({
       )
 
       hasSubmittedOrder.value = false
+      checkoutAttemptId.value = null
       isProcessingOrder.value = false
 
       if (onError) {
@@ -57,14 +59,22 @@ export function useCheckout({
     checkoutStatus.value = ''
 
     try {
-      const result = await submitOrder({
+      checkoutResult.value = await submitOrder({
         completedPaymentIntent:
           completedPaymentIntent.value,
+
+        stripePaymentIntentId:
+          completedPaymentIntent.value?.paymentIntentId
+          || completedPaymentIntent.value?.id
+          || null,
+
+        checkoutAttemptId:
+          checkoutAttemptId.value,
       })
 
       if (onSuccess) {
         await onSuccess({
-          result,
+          result: checkoutResult.value,
           completedPaymentIntent:
             completedPaymentIntent.value,
         })
@@ -85,6 +95,8 @@ export function useCheckout({
       )
 
       hasSubmittedOrder.value = false
+      checkoutResult.value = null
+      checkoutAttemptId.value = null
 
       if (onError) {
         onError(error)
@@ -102,6 +114,8 @@ export function useCheckout({
     hasSubmittedOrder,
     paymentCompleted,
     completedPaymentIntent,
+    checkoutResult,
+    checkoutAttemptId,
     placeOrder,
   }
 }
