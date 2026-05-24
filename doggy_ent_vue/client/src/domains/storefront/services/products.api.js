@@ -1,4 +1,5 @@
-const PRODUCTS_API_BASE = '/api/products'
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+const PRODUCTS_API_BASE = `${API_BASE_URL}/api/products`
 
 function normalizeVariant(product, variant) {
   return {
