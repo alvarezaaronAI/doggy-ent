@@ -243,8 +243,9 @@ server/prisma/*.db
 server/prisma/*.db-journal
 
 
-# Prisma migrations lock
-server/prisma/migrations/
+# Prisma migrations must be committed so production databases can be created.
+!server/prisma/migrations/
+!server/prisma/migrations/**
 
 # Environment overrides
 *.env
