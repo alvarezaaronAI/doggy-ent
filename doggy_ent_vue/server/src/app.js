@@ -1,12 +1,13 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import productsRoutes from './routes/products.routes.js'
-import adminPromosRoutes from './routes/admin/promos.routes.js'
-import campaignsRoutes from './routes/admin/campaigns.routes.js'
-import checkoutRoutes from './routes/checkout.routes.js'
-import ordersRoutes from './routes/admin/orders.routes.js'
-import authRoutes from './routes/auth/auth.routes.js'
+import productsRoutes from './domains/products/routes/products.routes.js'
+import adminPromosRoutes from './domains/admin/routes/promos.routes.js'
+import campaignsRoutes from './domains/campaigns/routes/campaigns.routes.js'
+import checkoutRoutes from './domains/checkout/routes/checkout.routes.js'
+import paymentRoutes from './domains/payments/routes/payment.routes.js'
+import ordersRoutes from './domains/orders/routes/orders.routes.js'
+import authRoutes from './domains/auth/routes/auth.routes.js'
 
 const app = express()
 
@@ -24,6 +25,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/products', productsRoutes)
 app.use('/api/checkout', checkoutRoutes)
+app.use('/api/checkout', paymentRoutes)
 app.use('/api/promos', adminPromosRoutes)
 app.use('/api/admin/promos', adminPromosRoutes)
 app.use('/api/admin/campaigns', campaignsRoutes)

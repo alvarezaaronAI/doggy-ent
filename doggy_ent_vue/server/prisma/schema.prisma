@@ -1,0 +1,238 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  protein        String?
+  cut            String?
+  category       String?
+  image          String?
+  ingredients    String?
+  texture        String?
+  bestFor        String?
+  freshness      String?
+  storageFeeding String?
+  featured       Boolean       @default(false)
+  sellingMode    SellingMode?
+  tags           Json?
+  status      ProductStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  variants ProductVariant[]
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  size      String
+  price     Int
+  inventory Int      @default(0)
+  sku       String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  deliveryNotes String?
+  address1      String?
+  address2      String?
+  city          String?
+  state         String?
+  zip           String?
+  country       String?
+  marketingOptIn Boolean @default(false)
+  saveInfo       Boolean @default(false)
+  status        OrderStatus   @default(PENDING)
+  total         Float
+  subtotal      Float
+  shippingAmount Float @default(0)
+  discountAmount Float @default(0)
+  taxAmount      Float @default(0)
+  currency      String        @default("usd")
+  stripePaymentIntentId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String?
+  productName String
+  productImage String?
+  size        String
+  sku         String?
+  quantity    Int
+  unitPrice   Float
+  lineTotal   Float
+  createdAt   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Promo {
+  id                    String      @id @default(cuid())
+  code                  String      @unique
+  name                  String
+
+  type                  PromoType   @default(GLOBAL)
+  status                PromoStatus @default(DRAFT)
+
+  discountType          DiscountType @default(FIXED)
+  discountValue         Float
+
+  minimumSubtotal       Float        @default(0)
+  usageLimitTotal       Int?
+  usageLimitPerCustomer Int?
+
+  assignedCustomerEmail String?
+  referralOwnerName     String?
+
+  usedCount             Int          @default(0)
+  revenueGenerated      Float        @default(0)
+  discountGiven         Float        @default(0)
+
+  startsAt              DateTime?
+  endsAt                DateTime?
+
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  usages PromoUsage[]
+
+  @@index([status])
+  @@index([type])
+}
+
+model PromoUsage {
+  id             String   @id @default(cuid())
+
+  promoId        String
+  orderId        String? @unique
+
+  customerEmail  String
+
+  discountAmount Float
+  subtotalAmount Float
+
+  redeemedAt     DateTime @default(now())
+
+  @@index([promoId])
+  @@index([customerEmail])
+  @@index([orderId])
+
+  promo Promo @relation(fields: [promoId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id                  String                 @id @default(cuid())
+
+  name                String
+  slug                String                 @unique
+
+  description         String?
+  image               String?
+  featured            Boolean                @default(false)
+
+  status              CampaignStatus         @default(DRAFT)
+
+  donationTarget      String
+
+  donationType        CampaignDonationType
+  donationValue       Float
+
+  productIds          Json?
+
+  donationGenerated   Float                  @default(0)
+  revenueGenerated    Float                  @default(0)
+  orderCount          Int                    @default(0)
+
+  startsAt            DateTime?
+  endsAt              DateTime?
+
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  @@index([status])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  OUT_OF_STOCK
+  COMING_SOON
+  ARCHIVED
+}
+
+enum SellingMode {
+  MADE_TO_ORDER
+  INVENTORY_LIMITED
+  PREORDER
+}
+
+enum PromoType {
+  GLOBAL
+  UNIQUE
+  REFERRAL
+}
+
+enum PromoStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  DISABLED
+  ARCHIVED
+}
+
+enum DiscountType {
+  FIXED
+  PERCENT
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+  ARCHIVED
+}
+
+enum CampaignDonationType {
+  FIXED
+  PERCENT
+}
