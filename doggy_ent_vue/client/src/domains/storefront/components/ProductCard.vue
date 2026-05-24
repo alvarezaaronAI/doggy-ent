@@ -1,8 +1,4 @@
-
-
 <script setup>
-import { RouterLink } from 'vue-router'
-
 const props = defineProps({
   product: {
     type: Object,
@@ -51,15 +47,18 @@ const emit = defineEmits(['quick-view', 'add-to-cart'])
 
 <template>
   <article
-    class="tile-strong flex h-full min-h-[500px] flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
+    class="tile-strong flex h-full min-h-[500px] cursor-pointer flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
+    role="button"
+    tabindex="0"
+    @click="emit('quick-view', props.product)"
+    @keydown.enter="emit('quick-view', props.product)"
+    @keydown.space.prevent="emit('quick-view', props.product)"
   >
-    <RouterLink :to="`/products/${props.product.slug}`">
-      <img
-        class="h-44 w-full flex-shrink-0 cursor-pointer object-cover transition hover:opacity-90"
-        :src="props.product.image"
-        :alt="props.product.name"
-      />
-    </RouterLink>
+    <img
+      class="h-44 w-full flex-shrink-0 object-cover transition hover:opacity-90"
+      :src="props.product.image"
+      :alt="props.product.name"
+    />
 
     <div class="flex flex-1 flex-col p-4">
       <div>
@@ -67,12 +66,9 @@ const emit = defineEmits(['quick-view', 'add-to-cart'])
           {{ props.product.category }}
         </p>
 
-        <RouterLink
-          :to="`/products/${props.product.slug}`"
-          class="mt-2 block text-xl font-semibold transition hover:text-emerald-400"
-        >
+        <h3 class="mt-2 text-xl font-semibold transition group-hover:text-emerald-400">
           {{ props.product.name }}
-        </RouterLink>
+        </h3>
       </div>
 
       <div class="mt-3 flex min-h-[28px] flex-wrap gap-2">
