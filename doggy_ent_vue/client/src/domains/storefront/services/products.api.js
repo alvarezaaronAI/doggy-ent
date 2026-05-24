@@ -1,4 +1,22 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+
+function normalizeApiBaseUrl(value) {
+  const url = String(value || '').trim()
+
+  if (!url) {
+    return ''
+  }
+
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url.replace(/\/$/, '')
+  }
+
+  return `https://${url}`.replace(/\/$/, '')
+}
+
+const API_BASE_URL = normalizeApiBaseUrl(
+  import.meta.env.VITE_API_URL,
+)
+
 const PRODUCTS_API_BASE = `${API_BASE_URL}/api/products`
 
 function normalizeVariant(product, variant) {
