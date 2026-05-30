@@ -7,7 +7,7 @@ import {
   getAvailableQuantity,
   limitQuantity,
   getStockLabel,
-} from '../../../shared/constants/sellingMode'
+} from '@shared/constants/sellingMode'
 
 export function useProductVariants() {
   const selectedCardSizes = ref({})

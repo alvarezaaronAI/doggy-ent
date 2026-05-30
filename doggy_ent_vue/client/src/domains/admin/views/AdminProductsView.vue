@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { fetchProducts } from '../../storefront/services/products.api'
+import { fetchProducts } from '@products/api/products.api'
 
 const products = ref([])
 const isLoading = ref(true)

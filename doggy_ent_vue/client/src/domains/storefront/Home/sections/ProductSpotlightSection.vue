@@ -1,11 +1,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useProductVariants } from '../composables/useProductVariants'
+import { useProductVariants } from '@products/composables/useProductVariants'
 import {
   canIgnoreInventory,
   isInventoryLimited,
-} from '../../../shared/constants/sellingMode'
+} from '@shared/constants/sellingMode'
 
 const props = defineProps({
   featuredProduct: {

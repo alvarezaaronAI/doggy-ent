@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { fetchProducts } from '../services/products.api'
+import { fetchProducts } from '@products/api/products.api'
 
 export function useProducts() {
   const products = ref([])

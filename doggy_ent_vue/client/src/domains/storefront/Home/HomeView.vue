@@ -1,24 +1,24 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import CartDrawer from '../../cart/components/CartDrawer.vue'
-import PromoStrip from '../../../app/layouts/PromoStrip.vue'
-import SiteHeader from '../../../app/layouts/SiteHeader.vue'
-import SiteFooter from '../../../app/layouts/SiteFooter.vue'
-import HeroSection from '../components/HeroSection.vue'
-import ProductSpotlightSection from '../components/ProductSpotlightSection.vue'
-import ProcessSection from '../components/ProcessSection.vue'
-import IngredientsAnalysisSection from '../components/IngredientsAnalysisSection.vue'
-import ReviewsPreviewSection from '../components/ReviewsPreviewSection.vue'
-import AboutBrandSection from '../components/AboutBrandSection.vue'
-import QuickViewModal from '../components/QuickViewModal.vue'
-import ProductCard from '../components/ProductCard.vue'
-import FilterBar from '../components/FilterBar.vue'
-import ComingSoonCard from '../components/ComingSoonCard.vue'
-import { useProducts } from '../composables/useProducts'
-import { useProductFilters } from '../composables/useProductFilters'
-import { useProductVariants } from '../composables/useProductVariants'
-import { useCart } from '../../cart/composables/useCart'
-import { formatCurrency } from '../../../shared/utils/currency'
+import CartDrawer from '@cart/CartDrawer/CartDrawer.vue'
+import PromoStrip from '@app/layouts/PromoStrip.vue'
+import SiteHeader from '@app/layouts/SiteHeader.vue'
+import SiteFooter from '@app/layouts/SiteFooter.vue'
+import HeroSection from '@storefront/Home/sections/HeroSection.vue'
+import ProductSpotlightSection from '@storefront/Home/sections/ProductSpotlightSection.vue'
+import ProcessSection from '@storefront/Home/sections/ProcessSection.vue'
+import IngredientsAnalysisSection from '@storefront/Home/sections/IngredientsAnalysisSection.vue'
+import ReviewsPreviewSection from '@storefront/Home/sections/ReviewsPreviewSection.vue'
+import AboutBrandSection from '@storefront/Home/sections/AboutBrandSection.vue'
+import ProductQuickView from '@products/ProductQuickView/ProductQuickView.vue'
+import ProductCard from '@products/ProductCard/ProductCard.vue'
+import ProductFilters from '@products/ProductFilters/ProductFilters.vue'
+import ComingSoonCard from '@products/ProductCard/ComingSoonCard.vue'
+import { useProducts } from '@products/composables/useProducts'
+import { useProductFilters } from '@products/composables/useProductFilters'
+import { useProductVariants } from '@products/composables/useProductVariants'
+import { useCart } from '@cart/composables/useCart'
+import { formatCurrency } from '@shared/utils/currency'
 
 const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
@@ -127,10 +127,6 @@ function getDisplayTags(product) {
         @add-to-cart="addToCart"
       />
 
-      <ShopCollectionsSection
-        :products="activeProducts"
-      />
-
 
       <section id="shop" class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -142,7 +138,7 @@ function getDisplayTags(product) {
           </div>
         </div>
 
-        <FilterBar
+        <ProductFilters
           :available-categories="availableCategories"
           :available-proteins="availableProteins"
           :selected-category="selectedCategory"
@@ -225,7 +221,7 @@ function getDisplayTags(product) {
 
     <SiteFooter />
 
-    <QuickViewModal
+    <ProductQuickView
       :product="selectedProduct"
       :is-open="isQuickViewOpen"
       @close="closeQuickView"
