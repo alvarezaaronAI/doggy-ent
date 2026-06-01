@@ -17,9 +17,16 @@ export function useCheckoutPreview({
   let checkoutPreviewTimer = null
   let activePreviewRequestId = 0
 
+  function normalizeCountry(country) {
+    if (country === 'US') return 'United States'
+    if (country === 'CA') return 'Canada'
+    return country
+  }
+
   async function refreshCheckoutPreview() {
     if (!cartItems.value.length) {
       checkoutPreviewResult.value = null
+      isRefreshingCheckoutPreview.value = false
       return
     }
 
@@ -37,13 +44,7 @@ export function useCheckoutPreview({
 
           customer: {
             ...customer.value,
-
-            country:
-              customer.value.country === 'US'
-                ? 'United States'
-                : customer.value.country === 'CA'
-                  ? 'Canada'
-                  : customer.value.country,
+            country: normalizeCountry(customer.value.country),
           },
 
           shipping: {
@@ -70,6 +71,9 @@ export function useCheckoutPreview({
         '[checkout-preview] Failed to refresh preview.',
         error,
       )
+      if (requestId === activePreviewRequestId) {
+        checkoutPreviewResult.value = null
+      }
     }
     finally {
       if (requestId === activePreviewRequestId) {
@@ -81,7 +85,7 @@ export function useCheckoutPreview({
   function scheduleCheckoutPreview() {
     window.clearTimeout(checkoutPreviewTimer)
     checkoutPreviewTimer = window.setTimeout(() => {
-      refreshCheckoutPreview()
+      void refreshCheckoutPreview()
     }, 350)
   }
 
@@ -90,5 +94,6 @@ export function useCheckoutPreview({
     isRefreshingCheckoutPreview,
     refreshCheckoutPreview,
     scheduleCheckoutPreview,
+    normalizeCountry,
   }
 }

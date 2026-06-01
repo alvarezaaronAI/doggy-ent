@@ -12,6 +12,7 @@
       "@products/*": ["src/domains/products/*"],
       "@cart/*": ["src/domains/cart/*"],
       "@checkout/*": ["src/domains/checkout/*"],
+      "@payments/*": ["src/domains/payments/*"],
       "@admin/*": ["src/domains/admin/*"],
       "@promos/*": ["src/domains/promos/*"],
       "@campaigns/*": ["src/domains/campaigns/*"]

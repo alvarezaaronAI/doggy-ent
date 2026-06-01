@@ -1,5 +1,3 @@
-
-
 import express from 'express'
 
 import {
@@ -11,7 +9,7 @@ import {
 const router = express.Router()
 
 router.get('/', getAdminOrders)
-router.get('/:orderId', getAdminOrderById)
 router.get('/stats', getAdminOrderStats)
+router.get('/:orderId', getAdminOrderById)
 
 export default router

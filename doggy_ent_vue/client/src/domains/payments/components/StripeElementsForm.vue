@@ -1,8 +1,8 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 
-import { stripePromise } from '../services/stripe.js'
-import { createPaymentIntent } from '../services/payment.service.js'
+import { stripePromise } from '@payments/services/stripe.js'
+import { createPaymentIntent } from '@payments/services/payment.service.js'
 
 const props = defineProps({
   cartItems: {

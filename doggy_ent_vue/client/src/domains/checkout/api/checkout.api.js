@@ -7,7 +7,8 @@ async function parseCheckoutResponse(
 
   try {
     data = await response.json()
-  } catch {
+  }
+  catch {
     data = null
   }
 
@@ -20,6 +21,25 @@ async function parseCheckoutResponse(
   return data.result
 }
 
+async function postCheckoutRequest(
+  endpoint,
+  payload,
+  fallbackMessage,
+) {
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  return parseCheckoutResponse(
+    response,
+    fallbackMessage,
+  )
+}
+
 
 export async function submitCheckout({
   cartItems,
@@ -28,23 +48,16 @@ export async function submitCheckout({
   shipping,
   stripePaymentIntentId,
 }) {
-  const response = await fetch('/api/checkout', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  return postCheckoutRequest(
+    '/api/checkout',
+    {
       cartItems,
       promoCode,
       customerEmail: customer.email,
       customer,
       shipping,
       stripePaymentIntentId,
-    }),
-  })
-
-  return parseCheckoutResponse(
-    response,
+    },
     'Checkout failed.',
   )
 }
@@ -55,22 +68,15 @@ export async function submitCheckoutPreview({
   customer,
   shipping,
 }) {
-  const response = await fetch('/api/checkout/preview', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  return postCheckoutRequest(
+    '/api/checkout/preview',
+    {
       cartItems,
       promoCode,
       customerEmail: customer.email,
       customer,
       shipping,
-    }),
-  })
-
-  return parseCheckoutResponse(
-    response,
+    },
     'Checkout preview failed.',
   )
 }

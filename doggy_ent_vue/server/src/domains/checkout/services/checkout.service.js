@@ -287,8 +287,9 @@ export async function createCheckout(checkoutInput = {}) {
     checkoutPreview,
   )
 
-  const stripePaymentIntentId =
-    checkoutInput.stripePaymentIntentId
+  const stripePaymentIntentId = String(
+    checkoutInput.stripePaymentIntentId || '',
+  ).trim()
 
   const paymentIntentAlreadyUsed =
     await stripePaymentIntentAlreadyUsed(
@@ -330,6 +331,20 @@ export async function createCheckout(checkoutInput = {}) {
     shipping = {},
   } = checkoutInput
 
+  if (
+    promoCode
+    && checkoutPreview.promo
+    && !checkoutPreview.promo.valid
+  ) {
+    const error = new Error(
+      checkoutPreview.promo.message || 'Invalid promo code.',
+    )
+
+    error.statusCode = 400
+
+    throw error
+  }
+
   const order = await createNewOrder({
     items: cartItems,
     customerName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
@@ -349,21 +364,10 @@ export async function createCheckout(checkoutInput = {}) {
     currency: 'usd',
     shippingAmount: checkoutPreview.pricing.shippingAmount,
     discountAmount: checkoutPreview.pricing.discountAmount,
-    taxAmount: checkoutPreview.pricing.tax,
+    taxAmount: checkoutPreview.pricing.taxAmount,
     promoCode: checkoutPreview.promo?.code || null,
-    stripePaymentIntentId:
-      stripePaymentIntentId || null,
+    stripePaymentIntentId,
   })
-
-  if (
-    promoCode
-    && checkoutPreview.promo
-    && !checkoutPreview.promo.valid
-  ) {
-    const error = new Error(checkoutPreview.promo.message || 'Invalid promo code.')
-    error.statusCode = 400
-    throw error
-  }
 
   let recordedPromo = checkoutPreview.promo
 

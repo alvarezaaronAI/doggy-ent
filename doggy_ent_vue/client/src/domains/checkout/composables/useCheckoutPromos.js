@@ -17,6 +17,7 @@ export function useCheckoutPromos({
   )
   const promoStatus = ref('idle')
   const promoValidationMeta = ref(null)
+  const activePromoRequestId = ref(0)
 
   async function applyPromoCode() {
     const normalizedCode = (
@@ -38,6 +39,9 @@ export function useCheckoutPromos({
       return
     }
 
+    const requestId = activePromoRequestId.value + 1
+    activePromoRequestId.value = requestId
+
     promoStatus.value = 'checking'
     promoMessage.value = 'Checking promo code...'
 
@@ -53,6 +57,10 @@ export function useCheckoutPromos({
           subtotal: subtotal.value,
         },
       })
+
+      if (requestId !== activePromoRequestId.value) {
+        return
+      }
 
       appliedPromoCode.value = normalizedCode
 
@@ -77,6 +85,9 @@ export function useCheckoutPromos({
       )
     }
     catch (error) {
+      if (requestId !== activePromoRequestId.value) {
+        return
+      }
       appliedPromoCode.value = ''
       appliedPromoDiscount.value = 0
       promoValidationMeta.value = null
@@ -90,6 +101,7 @@ export function useCheckoutPromos({
   }
 
   function clearPromo() {
+    activePromoRequestId.value += 1
     promoCode.value = ''
     appliedPromoCode.value = ''
     appliedPromoDiscount.value = 0
@@ -108,6 +120,7 @@ export function useCheckoutPromos({
     promoMessage,
     promoStatus,
     promoValidationMeta,
+    activePromoRequestId,
     applyPromoCode,
     clearPromo,
   }

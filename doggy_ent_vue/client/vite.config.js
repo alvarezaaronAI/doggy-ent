@@ -16,6 +16,7 @@ export default defineConfig({
       '@products': fileURLToPath(new URL('./src/domains/products', import.meta.url)),
       '@cart': fileURLToPath(new URL('./src/domains/cart', import.meta.url)),
       '@checkout': fileURLToPath(new URL('./src/domains/checkout', import.meta.url)),
+      '@payments': fileURLToPath(new URL('./src/domains/payments', import.meta.url)),
       '@admin': fileURLToPath(new URL('./src/domains/admin', import.meta.url)),
       '@promos': fileURLToPath(new URL('./src/domains/promos', import.meta.url)),
       '@campaigns': fileURLToPath(new URL('./src/domains/campaigns', import.meta.url)),

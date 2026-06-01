@@ -1,5 +1,13 @@
 import { ref } from 'vue'
 
+function createCheckoutAttemptId() {
+  if (crypto?.randomUUID) {
+    return crypto.randomUUID()
+  }
+
+  return `checkout_${Date.now()}_${Math.random().toString(36).slice(2)}`
+}
+
 export function useCheckout({
   validateCheckout,
   stripePaymentForm,
@@ -26,8 +34,9 @@ export function useCheckout({
     }
 
     isProcessingOrder.value = true
-    hasSubmittedOrder.value = true
-    checkoutAttemptId.value = crypto.randomUUID()
+    if (!checkoutAttemptId.value) {
+      checkoutAttemptId.value = createCheckoutAttemptId()
+    }
 
     try {
       if (!paymentCompleted.value) {
@@ -46,6 +55,8 @@ export function useCheckout({
       )
 
       hasSubmittedOrder.value = false
+      paymentCompleted.value = false
+      completedPaymentIntent.value = null
       checkoutAttemptId.value = null
       isProcessingOrder.value = false
 
@@ -72,6 +83,7 @@ export function useCheckout({
           checkoutAttemptId.value,
       })
 
+      hasSubmittedOrder.value = true
       if (onSuccess) {
         await onSuccess({
           result: checkoutResult.value,
@@ -96,7 +108,6 @@ export function useCheckout({
 
       hasSubmittedOrder.value = false
       checkoutResult.value = null
-      checkoutAttemptId.value = null
 
       if (onError) {
         onError(error)
