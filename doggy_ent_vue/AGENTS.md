@@ -1,5 +1,3 @@
-
-
 # Doggy ENT Agent Instructions
 
 ## Project mission
@@ -165,3 +163,58 @@ If server code is touched, also run the relevant server/dev command used by this
 - Keep names clear and domain-specific.
 - Summarize changed files after each task.
 - Report any lint/build failures honestly and fix them when possible.
+
+## Autonomous Phase Execution
+
+The agent should operate in phases rather than waiting for approval after every small extraction.
+
+### Current active phase
+Admin Domain Cleanup
+
+Scope:
+- AdminProductsView.vue
+- AdminPromosView.vue
+- AdminCampaignsView.vue
+- AdminOrdersView.vue
+- Supporting admin components, composables, APIs, constants, mappers, validators, and utilities.
+
+Objectives:
+- Reduce oversized files.
+- Remove duplication.
+- Create single sources of truth.
+- Improve folder readability.
+- Preserve UI and behavior.
+
+Workflow:
+1. Analyze.
+2. Refactor.
+3. Build.
+4. Fix build issues.
+5. Continue to the next item within the same phase.
+
+The agent does NOT need approval between files inside the same phase.
+
+Stop only when:
+- The entire phase is complete.
+- A major architectural decision is required.
+- A build failure cannot be resolved safely.
+- The requested work would violate the rules in this file.
+
+### Reporting format
+After each completed target, report:
+- Files created.
+- Files modified.
+- Duplicate code removed.
+- Single-source-of-truth improvements.
+- Build result.
+- Remaining work.
+
+### Phase roadmap
+1. Admin Domain Cleanup
+2. Checkout Domain Cleanup
+3. Products Domain Cleanup
+4. Server Structure Cleanup
+5. Observability / Debugging Pass
+6. QA and Launch Readiness Review
+
+Complete the current phase before moving to the next one unless explicitly instructed otherwise.
