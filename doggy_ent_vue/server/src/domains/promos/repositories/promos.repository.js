@@ -1,4 +1,7 @@
 import { prisma } from '../../../db/prisma.js'
+import {
+  PROMO_STATUS,
+} from '../constants/promos.constants.js'
 
 export async function runPromoTransaction(callback) {
   return prisma.$transaction(callback)
@@ -8,7 +11,7 @@ export async function getAllPromos() {
   return prisma.promo.findMany({
     where: {
       status: {
-        not: 'ARCHIVED',
+        not: PROMO_STATUS.ARCHIVED,
       },
     },
     orderBy: {
@@ -30,7 +33,7 @@ export async function getPromoByCode(code) {
     where: {
       code,
       status: {
-        not: 'ARCHIVED',
+        not: PROMO_STATUS.ARCHIVED,
       },
     },
   })
@@ -40,7 +43,7 @@ export async function getActivePromoByCode(code) {
   return prisma.promo.findFirst({
     where: {
       code,
-      status: 'ACTIVE',
+      status: PROMO_STATUS.ACTIVE,
     },
   })
 }
@@ -48,13 +51,13 @@ export async function getActivePromoByCode(code) {
 export async function activateScheduledPromos(currentDate) {
   return prisma.promo.updateMany({
     where: {
-      status: 'DRAFT',
+      status: PROMO_STATUS.DRAFT,
       startsAt: {
         lte: currentDate,
       },
     },
     data: {
-      status: 'ACTIVE',
+      status: PROMO_STATUS.ACTIVE,
     },
   })
 }
@@ -62,13 +65,13 @@ export async function activateScheduledPromos(currentDate) {
 export async function expireEndedPromos(currentDate) {
   return prisma.promo.updateMany({
     where: {
-      status: 'ACTIVE',
+      status: PROMO_STATUS.ACTIVE,
       endsAt: {
         lte: currentDate,
       },
     },
     data: {
-      status: 'EXPIRED',
+      status: PROMO_STATUS.EXPIRED,
     },
   })
 }
@@ -94,7 +97,7 @@ export async function deletePromoById(promoId) {
       id: promoId,
     },
     data: {
-      status: 'ARCHIVED',
+      status: PROMO_STATUS.ARCHIVED,
     },
   })
 }

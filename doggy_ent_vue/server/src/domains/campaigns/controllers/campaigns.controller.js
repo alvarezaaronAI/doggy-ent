@@ -10,80 +10,116 @@ import {
 } from '../services/campaigns.service.js'
 
 export async function getCampaignsController(
-  request,
-  reply,
+  req,
+  res,
+  next,
 ) {
-  const campaigns = await getAllCampaigns()
+  try {
+    const campaigns = await getAllCampaigns()
 
-  return reply.send({
-    campaigns,
-  })
+    return res.json({
+      campaigns,
+    })
+  }
+  catch (error) {
+    return next(error)
+  }
 }
 
 export async function getCampaignByIdController(
-  request,
-  reply,
+  req,
+  res,
+  next,
 ) {
-  const campaign = await getCampaignById(
-    request.params.campaignId,
-  )
+  try {
+    const campaign = await getCampaignById(
+      req.params.campaignId,
+    )
 
-  if (!campaign) {
-    return reply.code(404).send({
-      error: 'Campaign not found.',
+    if (!campaign) {
+      return res.status(404).json({
+        message: 'Campaign not found.',
+      })
+    }
+
+    return res.json({
+      campaign,
     })
   }
-
-  return reply.send({
-    campaign,
-  })
+  catch (error) {
+    return next(error)
+  }
 }
 
 export async function createCampaignController(
-  request,
-  reply,
+  req,
+  res,
+  next,
 ) {
-  const campaign = await createCampaign(request.body)
+  try {
+    const campaign = await createCampaign(req.body)
 
-  return reply.code(201).send({
-    campaign,
-  })
+    return res.status(201).json({
+      campaign,
+    })
+  }
+  catch (error) {
+    return next(error)
+  }
 }
 
 export async function updateCampaignController(
-  request,
-  reply,
+  req,
+  res,
+  next,
 ) {
-  const campaign = await updateCampaignById(
-    request.params.campaignId,
-    request.body,
-  )
+  try {
+    const campaign = await updateCampaignById(
+      req.params.campaignId,
+      req.body,
+    )
 
-  return reply.send({
-    campaign,
-  })
+    return res.json({
+      campaign,
+    })
+  }
+  catch (error) {
+    return next(error)
+  }
 }
 
 export async function deleteCampaignController(
-  request,
-  reply,
+  req,
+  res,
+  next,
 ) {
-  await deleteCampaignById(
-    request.params.campaignId,
-  )
+  try {
+    await deleteCampaignById(
+      req.params.campaignId,
+    )
 
-  return reply.code(204).send()
+    return res.status(204).send()
+  }
+  catch (error) {
+    return next(error)
+  }
 }
 
 export async function previewCampaignsController(
-  request,
-  reply,
+  req,
+  res,
+  next,
 ) {
-  const preview = await previewCampaignDonations(
-    request.body.cartItems || [],
-  )
+  try {
+    const preview = await previewCampaignDonations(
+      req.body.cartItems || [],
+    )
 
-  return reply.send({
-    campaigns: preview,
-  })
+    return res.json({
+      campaigns: preview,
+    })
+  }
+  catch (error) {
+    return next(error)
+  }
 }

@@ -5,28 +5,20 @@ import {
   fetchProductBySlug,
   updateProductById,
 } from '../services/products.service.js'
+import {
+  validateProductPayload,
+} from '../validators/products.validator.js'
 
-function validateProductPayload(req, res) {
-  const {
-    name,
-    shortDescription,
-    category,
-    status,
-    image,
-    variants,
-  } = req.body
+function sendProductValidationError(req, res) {
+  const validationError = validateProductPayload(req.body)
 
-  const hasVariantPrices =
-    Array.isArray(variants) &&
-    variants.length >= 2 &&
-    variants.every((variant) => Number(variant.price) > 0)
-
-  if (!name || !shortDescription || !category || !status || !image || !hasVariantPrices) {
-    res.status(400).json({
-      message: 'Missing required product fields or variant prices.',
-    })
+  if (!validationError) {
     return false
   }
+
+  res.status(validationError.statusCode).json({
+    message: validationError.message,
+  })
 
   return true
 }
@@ -60,7 +52,7 @@ export async function getProductBySlug(req, res, next) {
 
 export async function createNewProduct(req, res, next) {
   try {
-    if (!validateProductPayload(req, res)) return
+    if (sendProductValidationError(req, res)) return
 
     const createdProduct = await createProduct(req.body)
     res.status(201).json(createdProduct)
@@ -71,7 +63,7 @@ export async function createNewProduct(req, res, next) {
 
 export async function updateExistingProduct(req, res, next) {
   try {
-    if (!validateProductPayload(req, res)) return
+    if (sendProductValidationError(req, res)) return
 
     const { id } = req.params
     const updatedProduct = await updateProductById(id, req.body)

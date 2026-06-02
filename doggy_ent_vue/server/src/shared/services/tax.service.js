@@ -1,3 +1,7 @@
+import {
+  normalizeCurrencyAmount,
+} from '../utils/money.js'
+
 const DEFAULT_TAX_RATE = 0.08
 
 const STATE_TAX_RATES = {
@@ -27,12 +31,6 @@ function getTaxProvider() {
   // local = simple state-based estimate
   // stripe = Stripe Tax integration later
   return process.env.TAX_PROVIDER || 'local'
-}
-
-function normalizeCurrencyAmount(value) {
-  return Number(
-    Number(value || 0).toFixed(2),
-  )
 }
 
 async function calculateLocalTax({ taxableAmount, customer }) {

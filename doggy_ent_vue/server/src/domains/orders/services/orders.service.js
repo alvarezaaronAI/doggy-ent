@@ -2,13 +2,15 @@ import {
   createOrder,
   findAllOrders,
   findOrderById,
-  findOrderByStripePaymentIntentId,
   findOrderStats,
 } from '../repositories/orders.repository.js'
 import {
   decrementProductInventory,
 } from '../../products/services/products.service.js'
 import { prisma } from '../../../db/prisma.js'
+import {
+  normalizeCurrencyAmount,
+} from '../../../shared/utils/money.js'
 
 async function rollbackInventoryReservation({
   items = [],
@@ -41,12 +43,6 @@ async function rollbackInventoryReservation({
       },
     })
   }
-}
-
-function normalizeCurrencyAmount(value) {
-  return Number(
-    Number(value || 0).toFixed(2),
-  )
 }
 
 export async function fetchAdminOrders() {

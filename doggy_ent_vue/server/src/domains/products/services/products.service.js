@@ -1,136 +1,12 @@
 import { prisma } from '../../../db/prisma.js'
-
-function normalizeInventoryQuantity(value) {
-  return Math.max(
-    0,
-    Number.parseInt(value || 0, 10),
-  )
-}
-
-function slugify(value) {
-  return String(value)
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-}
-
-function buildVariantSku(productInput, size) {
-  return `CNE-DT-${slugify(
-    productInput.protein || productInput.name
-  ).toUpperCase()}-${size.replace(/\s+/g, '').toUpperCase()}`
-}
-
-function normalizeProductInput(productInput) {
-  const tags = Array.isArray(productInput.tags)
-    ? productInput.tags
-    : String(productInput.tags || '')
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean)
-
-  const notIncluded = Array.isArray(productInput.notIncluded)
-    ? productInput.notIncluded
-    : String(productInput.notIncluded || '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-
-  const variants = Array.isArray(productInput.variants)
-    ? productInput.variants
-    : []
-
-  const normalizedVariants = variants.map((variant) => ({
-    size: variant.size,
-    price: Number(variant.price ?? 0),
-    quantity: normalizeInventoryQuantity(
-      variant.quantity,
-    ),
-    lowStockThreshold: normalizeInventoryQuantity(
-      variant.lowStockThreshold,
-    ),
-    sku:
-      variant.sku ||
-      buildVariantSku(productInput, variant.size || 'variant'),
-  }))
-
-  const sixOzVariant =
-    normalizedVariants.find((variant) => variant.size === '6 oz') || {}
-
-  const eighteenOzVariant =
-    normalizedVariants.find((variant) => variant.size === '18 oz') || {}
-
-  const sixOzPrice = Number(sixOzVariant.price ?? 0)
-  const eighteenOzPrice = Number(eighteenOzVariant.price ?? 0)
-
-  const sixOzQuantity = normalizeInventoryQuantity(
-    sixOzVariant.quantity,
-  )
-  const eighteenOzQuantity = normalizeInventoryQuantity(
-    eighteenOzVariant.quantity,
-  )
-
-  const sixOzLowStockThreshold = normalizeInventoryQuantity(
-    sixOzVariant.lowStockThreshold ?? 5,
-  )
-
-  const eighteenOzLowStockThreshold = normalizeInventoryQuantity(
-    eighteenOzVariant.lowStockThreshold ?? 3,
-  )
-
-  const getStockStatus = (quantity, incomingStatus) => {
-    if (incomingStatus === 'coming-soon') return 'coming-soon'
-    if (quantity <= 0) return 'out-of-stock'
-    return 'in-stock'
-  }
-
-  return {
-    name: productInput.name,
-    protein: productInput.protein || '',
-    cut: productInput.cut || '',
-    shortDescription: productInput.shortDescription,
-    category: productInput.category,
-    status: productInput.status,
-    sellingMode: productInput.sellingMode || 'inventory-limited',
-    featured: Boolean(productInput.featured),
-    tags,
-    image: productInput.image,
-    ingredients: productInput.ingredients || `${productInput.protein || 'Protein'}. No salt, no sugar, no glycerin, no preservatives.`,
-    texture: productInput.texture || 'Firm jerky texture that can be broken into smaller pieces.',
-    bestFor: productInput.bestFor || 'Training rewards, bigger dogs, picky pups, and simple-ingredient routines.',
-    notIncluded,
-    freshness: productInput.freshness || 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.',
-    storageFeeding: productInput.storageFeeding || 'Keep sealed in a cool, dry place. Refrigerate after opening for max freshness. Treats are intended for intermittent or supplemental feeding only. Always supervise and provide fresh water.',
-    showGuaranteedAnalysis: Boolean(productInput.showGuaranteedAnalysis),
-    variants: [
-      {
-        size: '6 oz',
-        price: sixOzPrice,
-        sku: sixOzVariant.sku,
-        quantity: sixOzQuantity,
-        stockStatus: getStockStatus(sixOzQuantity, productInput.sixOzStockStatus || productInput.variants?.[0]?.stockStatus),
-        lowStockThreshold: sixOzLowStockThreshold,
-      },
-      {
-        size: '18 oz',
-        price: eighteenOzPrice,
-        sku: eighteenOzVariant.sku,
-        quantity: eighteenOzQuantity,
-        stockStatus: getStockStatus(eighteenOzQuantity, productInput.eighteenOzStockStatus || productInput.variants?.[1]?.stockStatus),
-        lowStockThreshold: eighteenOzLowStockThreshold,
-      },
-    ],
-    guaranteedAnalysis: productInput.showGuaranteedAnalysis
-      ? productInput.guaranteedAnalysis || {
-          crudeProteinMin: productInput.crudeProteinMin || '',
-          crudeFatMin: productInput.crudeFatMin || '',
-          crudeFiberMax: productInput.crudeFiberMax || '',
-          moistureMax: productInput.moistureMax || '',
-        }
-      : {},
-  }
-}
+import {
+  buildProductMutationData,
+  mapProductWithDisplayPrice,
+  normalizeProductInput,
+} from '../mappers/products.mapper.js'
+import {
+  normalizeInventoryQuantity,
+} from '../utils/products.utils.js'
 
 export async function fetchAllProducts() {
   const products = await prisma.product.findMany({
@@ -142,12 +18,7 @@ export async function fetchAllProducts() {
     },
   })
 
-  return products.map((product) => ({
-    ...product,
-    price: product.variants?.[0]?.price
-      ? product.variants[0].price / 100
-      : 0,
-  }))
+  return products.map(mapProductWithDisplayPrice)
 }
 
 export async function fetchProductBySlug(slug) {
@@ -164,55 +35,20 @@ export async function fetchProductBySlug(slug) {
     return null
   }
 
-  return {
-    ...product,
-    price: product.variants?.[0]?.price
-      ? product.variants[0].price / 100
-      : 0,
-  }
+  return mapProductWithDisplayPrice(product)
 }
 
 export async function createProduct(productInput) {
   const normalizedProduct = normalizeProductInput(productInput)
 
   const createdProduct = await prisma.product.create({
-    data: {
-      name: normalizedProduct.name,
-      slug: slugify(normalizedProduct.name),
-      description: normalizedProduct.shortDescription,
-      protein: normalizedProduct.protein,
-      cut: normalizedProduct.cut,
-      category: normalizedProduct.category,
-      image: normalizedProduct.image,
-      ingredients: normalizedProduct.ingredients,
-      texture: normalizedProduct.texture,
-      bestFor: normalizedProduct.bestFor,
-      freshness: normalizedProduct.freshness,
-      storageFeeding: normalizedProduct.storageFeeding,
-      featured: normalizedProduct.featured,
-      sellingMode: normalizedProduct.sellingMode?.toUpperCase().replace(/-/g, '_'),
-      tags: normalizedProduct.tags,
-      status: normalizedProduct.status?.toUpperCase().replace(/-/g, '_'),
-      variants: {
-        create: normalizedProduct.variants.map((variant) => ({
-          size: variant.size,
-          price: Math.round(Number(variant.price) * 100),
-          inventory: variant.quantity,
-          sku: variant.sku,
-        })),
-      },
-    },
+    data: buildProductMutationData(normalizedProduct),
     include: {
       variants: true,
     },
   })
 
-  return {
-    ...createdProduct,
-    price: createdProduct.variants?.[0]?.price
-      ? createdProduct.variants[0].price / 100
-      : 0,
-  }
+  return mapProductWithDisplayPrice(createdProduct)
 }
 
 export async function updateProductById(productId, productInput) {
@@ -241,43 +77,13 @@ export async function updateProductById(productId, productInput) {
     where: {
       id: productId,
     },
-    data: {
-      name: normalizedProduct.name,
-      slug: slugify(normalizedProduct.name),
-      description: normalizedProduct.shortDescription,
-      protein: normalizedProduct.protein,
-      cut: normalizedProduct.cut,
-      category: normalizedProduct.category,
-      image: normalizedProduct.image,
-      ingredients: normalizedProduct.ingredients,
-      texture: normalizedProduct.texture,
-      bestFor: normalizedProduct.bestFor,
-      freshness: normalizedProduct.freshness,
-      storageFeeding: normalizedProduct.storageFeeding,
-      featured: normalizedProduct.featured,
-      sellingMode: normalizedProduct.sellingMode?.toUpperCase().replace(/-/g, '_'),
-      tags: normalizedProduct.tags,
-      status: normalizedProduct.status?.toUpperCase().replace(/-/g, '_'),
-      variants: {
-        create: normalizedProduct.variants.map((variant) => ({
-          size: variant.size,
-          price: Math.round(Number(variant.price) * 100),
-          inventory: variant.quantity,
-          sku: variant.sku,
-        })),
-      },
-    },
+    data: buildProductMutationData(normalizedProduct),
     include: {
       variants: true,
     },
   })
 
-  return {
-    ...updatedProduct,
-    price: updatedProduct.variants?.[0]?.price
-      ? updatedProduct.variants[0].price / 100
-      : 0,
-  }
+  return mapProductWithDisplayPrice(updatedProduct)
 }
 
 export async function decrementProductInventory({
