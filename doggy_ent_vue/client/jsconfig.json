@@ -1,0 +1,25 @@
+
+
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@app/*": ["src/app/*"],
+      "@shared/*": ["src/shared/*"],
+      "@domains/*": ["src/domains/*"],
+      "@storefront/*": ["src/domains/storefront/*"],
+      "@products/*": ["src/domains/products/*"],
+      "@cart/*": ["src/domains/cart/*"],
+      "@checkout/*": ["src/domains/checkout/*"],
+      "@payments/*": ["src/domains/payments/*"],
+      "@admin/*": ["src/domains/admin/*"],
+      "@promos/*": ["src/domains/promos/*"],
+      "@campaigns/*": ["src/domains/campaigns/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

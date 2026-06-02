@@ -8,27 +8,37 @@ import {
   createPromo as createPromoInRepository,
   updatePromoById as updatePromoInRepository,
   deletePromoById as deletePromoInRepository,
-  createPromoUsage,
   createPromoUsageTx,
-  incrementPromoUsageStats,
   incrementPromoUsageStatsTx,
   getPromoUsageCountByCustomer,
   getPromoUsageCount,
-  getPromoUsageByOrderId,
   getPromoUsageByOrderIdTx,
   runPromoTransaction,
   getPromoUsageHistory,
   getPromoUsageSummary,
-} from '../repository/promos.repository.js'
-
+} from '../repositories/promos.repository.js'
+import {
+  PROMO_DEFAULTS,
+  PROMO_DISCOUNT_TYPE,
+  PROMO_STATUS,
+  PROMO_TYPE,
+} from '../constants/promos.constants.js'
+import {
+  buildPromoMutationData,
+  mapPromoAnalytics,
+} from '../mappers/promos.mapper.js'
+import {
+  validatePromoTypeRules,
+} from '../validators/promos.validator.js'
+import {
+  normalizeCurrencyAmount,
+} from '../../../shared/utils/money.js'
+import {
+  normalizeEmail,
+  normalizeNullableNumber,
+} from '../../../shared/utils/string.js'
 
 const nowISO = () => new Date().toISOString()
-
-function normalizeCurrencyAmount(value) {
-  return Number(
-    Number(value || 0).toFixed(2),
-  )
-}
 
 async function resolvePromoLifecycleStatuses() {
   const currentDate = new Date()
@@ -45,28 +55,6 @@ async function resolvePromoLifecycleStatuses() {
   }
 }
 
-function normalizeNullableNumber(value) {
-  if (
-    value === ''
-    || value === null
-    || value === undefined
-  ) {
-    return null
-  }
-
-  const normalized = Number(value)
-
-  return Number.isNaN(normalized)
-    ? null
-    : normalized
-}
-
-function normalizeEmail(email) {
-  return String(email || '')
-    .trim()
-    .toLowerCase()
-}
-
 function isUnlimitedUsageLimit(value) {
   return value === null || value === undefined
 }
@@ -80,7 +68,7 @@ export function normalizePromoInput(input) {
   const now = nowISO()
 
   const normalizedType = String(
-    input.type || 'GLOBAL',
+    input.type || PROMO_DEFAULTS.TYPE,
   ).toUpperCase()
 
   return {
@@ -89,10 +77,10 @@ export function normalizePromoInput(input) {
     name: input.name || code,
 
     type: normalizedType,
-    status: String(input.status || 'DRAFT').toUpperCase(),
+    status: String(input.status || PROMO_DEFAULTS.STATUS).toUpperCase(),
 
     discountType: String(
-      input.discountType || 'FIXED',
+      input.discountType || PROMO_DEFAULTS.DISCOUNT_TYPE,
     ).toUpperCase(),
     discountValue: Number(input.discountValue ?? 0),
 
@@ -103,9 +91,10 @@ export function normalizePromoInput(input) {
     ),
 
     usageLimitPerCustomer:
-      normalizedType === 'UNIQUE'
+      normalizedType === PROMO_TYPE.UNIQUE
         ? Number(
-          input.usageLimitPerCustomer ?? 1,
+          input.usageLimitPerCustomer
+          ?? PROMO_DEFAULTS.UNIQUE_USAGE_LIMIT_PER_CUSTOMER,
         )
         : normalizeNullableNumber(
           input.usageLimitPerCustomer,
@@ -123,36 +112,6 @@ export function normalizePromoInput(input) {
 
     createdAt: input.createdAt || now,
     updatedAt: now,
-  }
-}
-
-function validatePromoTypeRules(promo) {
-  const promoType = String(promo.type || '').toUpperCase()
-
-  if (
-    promoType === 'UNIQUE'
-    && !promo.assignedCustomerEmail
-  ) {
-    const error = new Error(
-      'Unique promos require assignedCustomerEmail.',
-    )
-
-    error.statusCode = 400
-
-    throw error
-  }
-
-  if (
-    promoType === 'REFERRAL'
-    && !promo.referralOwnerName
-  ) {
-    const error = new Error(
-      'Referral promos require referralOwnerName.',
-    )
-
-    error.statusCode = 400
-
-    throw error
   }
 }
 
@@ -175,13 +134,13 @@ export async function expirePromoIfLimitReached(promo) {
   return updatePromoInRepository(
     promo.id,
     {
-      status: 'EXPIRED',
+      status: PROMO_STATUS.EXPIRED,
     },
   )
 }
 
 export function isPromoActive(promo) {
-  if (!promo || promo.status !== 'ACTIVE') {
+  if (!promo || promo.status !== PROMO_STATUS.ACTIVE) {
     return false
   }
 
@@ -209,7 +168,7 @@ export function calculateDiscountAmount(promo, subtotal) {
     subtotal || 0,
   )
 
-  if (promo.discountType === 'PERCENT') {
+  if (promo.discountType === PROMO_DISCOUNT_TYPE.PERCENT) {
     return normalizeCurrencyAmount(
       Math.min(
         s,
@@ -257,45 +216,11 @@ export async function getPromoAnalytics(promoId) {
     getPromoUsageSummary(promoId),
   ])
 
-  const totalUses = Number(
-    usageSummary?._count?.id || 0,
-  )
-
-  const totalRevenue = Number(
-    usageSummary?._sum?.subtotalAmount || 0,
-  )
-
-  const totalDiscountGiven = Number(
-    usageSummary?._sum?.discountAmount || 0,
-  )
-
-  const averageOrderValue = Number(
-    usageSummary?._avg?.subtotalAmount || 0,
-  )
-
-  return {
+  return mapPromoAnalytics({
     promo,
-
-    summary: {
-      totalUses,
-      totalRevenue,
-      totalDiscountGiven,
-      averageOrderValue,
-    },
-
-    usages: usageHistory.map((usage) => ({
-      id: usage.id,
-      orderId: usage.orderId,
-      customerEmail: usage.customerEmail,
-      subtotalAmount: Number(
-        usage.subtotalAmount || 0,
-      ),
-      discountAmount: Number(
-        usage.discountAmount || 0,
-      ),
-      createdAt: usage.createdAt,
-    })),
-  }
+    usageHistory,
+    usageSummary,
+  })
 }
 
 export async function createPromo(input) {
@@ -310,30 +235,9 @@ export async function createPromo(input) {
     throw error
   }
 
-  return createPromoInRepository({
-    code: promo.code,
-    name: promo.name,
-
-    type: promo.type,
-    status: promo.status,
-
-    discountType: promo.discountType,
-    discountValue: promo.discountValue,
-
-    minimumSubtotal: promo.minimumSubtotal,
-    usageLimitTotal: promo.usageLimitTotal,
-    usageLimitPerCustomer: promo.usageLimitPerCustomer,
-
-    assignedCustomerEmail: promo.assignedCustomerEmail,
-    referralOwnerName: promo.referralOwnerName,
-
-    usedCount: promo.usedCount,
-    revenueGenerated: promo.revenueGenerated,
-    discountGiven: promo.discountGiven,
-
-    startsAt: promo.startsAt,
-    endsAt: promo.endsAt,
-  })
+  return createPromoInRepository(
+    buildPromoMutationData(promo),
+  )
 }
 
 export async function updatePromoById(promoId, input) {
@@ -352,30 +256,10 @@ export async function updatePromoById(promoId, input) {
   })
   validatePromoTypeRules(updatedPromo)
 
-  return updatePromoInRepository(promoId, {
-    code: updatedPromo.code,
-    name: updatedPromo.name,
-
-    type: updatedPromo.type,
-    status: updatedPromo.status,
-
-    discountType: updatedPromo.discountType,
-    discountValue: updatedPromo.discountValue,
-
-    minimumSubtotal: updatedPromo.minimumSubtotal,
-    usageLimitTotal: updatedPromo.usageLimitTotal,
-    usageLimitPerCustomer: updatedPromo.usageLimitPerCustomer,
-
-    assignedCustomerEmail: updatedPromo.assignedCustomerEmail,
-    referralOwnerName: updatedPromo.referralOwnerName,
-
-    usedCount: updatedPromo.usedCount,
-    revenueGenerated: updatedPromo.revenueGenerated,
-    discountGiven: updatedPromo.discountGiven,
-
-    startsAt: updatedPromo.startsAt,
-    endsAt: updatedPromo.endsAt,
-  })
+  return updatePromoInRepository(
+    promoId,
+    buildPromoMutationData(updatedPromo),
+  )
 }
 
 export async function deletePromoById(promoId) {
@@ -577,7 +461,7 @@ export async function recordPromoUsage({ code, cart, customerEmail, orderId }) {
             id: promo.id,
           },
           data: {
-            status: 'EXPIRED',
+          status: PROMO_STATUS.EXPIRED,
           },
         })
       }

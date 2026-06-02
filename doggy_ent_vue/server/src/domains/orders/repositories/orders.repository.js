@@ -1,4 +1,5 @@
 import { prisma } from '../../../db/prisma.js'
+import { mapOrder } from '../mappers/orders.mapper.js'
 
 // Prevent one Stripe payment intent from creating multiple orders.
 export async function stripePaymentIntentAlreadyUsed(
@@ -42,7 +43,7 @@ export async function findOrderById(orderId) {
     },
   })
 
-  return order
+  return mapOrder(order)
 }
 
 export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
@@ -59,7 +60,7 @@ export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
     },
   })
 
-  return order
+  return mapOrder(order)
 }
 
 export async function findOrderStats() {
@@ -135,5 +136,5 @@ export async function createOrder(orderInput) {
     },
   })
 
-  return createdOrder
+  return mapOrder(createdOrder)
 }
