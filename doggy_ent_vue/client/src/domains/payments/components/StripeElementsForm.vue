@@ -13,6 +13,18 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
+  customer: {
+    type: Object,
+    default: () => ({}),
+  },
+  promoCode: {
+    type: String,
+    default: '',
+  },
+  shipping: {
+    type: Object,
+    default: () => ({}),
+  },
 })
 
 const emit = defineEmits(['card-complete'])
@@ -36,8 +48,10 @@ defineExpose({
     }
 
     const paymentIntentResponse = await createPaymentIntent({
-      items: props.cartItems,
-      amount: Math.round(Number(props.checkoutTotal || 0) * 100),
+      cartItems: props.cartItems,
+      promoCode: props.promoCode || null,
+      customer: props.customer,
+      shipping: props.shipping,
     })
 
     const { clientSecret } = paymentIntentResponse

@@ -1,13 +1,25 @@
 import { createStripePaymentIntent } from '../services/stripe.payment.js'
+import {
+  previewCheckout,
+} from '../../checkout/services/checkout.service.js'
 
 export const createPaymentIntent = async (req, res) => {
   try {
-    const { items, amount } = req.body
+    const checkoutPreview = await previewCheckout(req.body)
 
-    console.log('Incoming checkout request:', {
-      items,
-      amount,
-    })
+    if (
+      req.body?.promoCode
+      && checkoutPreview.promo
+      && !checkoutPreview.promo.valid
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          checkoutPreview.promo.message || 'Invalid promo code.',
+      })
+    }
+
+    const amount = checkoutPreview.pricing.total
 
     const paymentIntent = await createStripePaymentIntent({
       amount,
@@ -17,13 +29,15 @@ export const createPaymentIntent = async (req, res) => {
       success: true,
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
+      pricing: checkoutPreview.pricing,
     })
   } catch (error) {
     console.error('Payment controller error:', error)
 
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       success: false,
-      message: 'Failed to create payment intent.',
+      message:
+        error.message || 'Failed to create payment intent.',
     })
   }
 }

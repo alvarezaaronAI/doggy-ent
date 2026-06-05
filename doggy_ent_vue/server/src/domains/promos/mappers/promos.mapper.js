@@ -39,7 +39,8 @@ export function mapPromoAnalytics({
       discountAmount: Number(
         usage.discountAmount || 0,
       ),
-      createdAt: usage.createdAt,
+      redeemedAt: usage.redeemedAt,
+      createdAt: usage.redeemedAt,
     })),
   }
 }

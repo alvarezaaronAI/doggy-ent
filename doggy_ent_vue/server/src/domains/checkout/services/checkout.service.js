@@ -4,6 +4,7 @@ import {
 } from '../../promos/services/promos.service.js'
 import {
   previewCampaignDonations,
+  recordCampaignDonationUsage,
 } from '../../campaigns/services/campaigns.service.js'
 import { calculateTax } from '../../../shared/services/tax.service.js'
 import { createNewOrder } from '../../orders/services/orders.service.js'
@@ -13,7 +14,7 @@ import {
 } from '../../payments/services/stripe.payment.js'
 
 import {
-  stripePaymentIntentAlreadyUsed,
+  findOrderByStripePaymentIntentId,
 } from '../../orders/repositories/orders.repository.js'
 import {
   normalizeCurrencyAmount,
@@ -119,35 +120,39 @@ export async function createCheckout(checkoutInput = {}) {
   ).trim()
 
   const paymentIntentAlreadyUsed =
-    await stripePaymentIntentAlreadyUsed(
+    await findOrderByStripePaymentIntentId(
       stripePaymentIntentId,
     )
 
   if (paymentIntentAlreadyUsed) {
-    const error = new Error(
-      'This Stripe payment has already been used for an order.',
+    const requestEmail = String(
+      checkoutInput.customer?.email ||
+      checkoutInput.customerEmail ||
+      '',
     )
+      .trim()
+      .toLowerCase()
 
-    error.statusCode = 409
-
-    throw error
-  }
-
-  await validateStripePaymentIntent({
-    stripePaymentIntentId,
-    expectedAmount:
-      checkoutPreview.pricing.total,
-    expectedCurrency: 'usd',
-  })
-
-  if (checkoutInput.completedOrderId) {
-    const error = new Error(
-      'This checkout session has already been completed.',
+    const orderEmail = String(
+      paymentIntentAlreadyUsed.customerEmail || '',
     )
+      .trim()
+      .toLowerCase()
 
-    error.statusCode = 409
+    if (!requestEmail || requestEmail !== orderEmail) {
+      const error = new Error(
+        'This Stripe payment has already been used for an order.',
+      )
 
-    throw error
+      error.statusCode = 409
+
+      throw error
+    }
+
+    return {
+      ...checkoutPreview,
+      order: paymentIntentAlreadyUsed,
+    }
   }
 
   const {
@@ -168,6 +173,23 @@ export async function createCheckout(checkoutInput = {}) {
     )
 
     error.statusCode = 400
+
+    throw error
+  }
+
+  await validateStripePaymentIntent({
+    stripePaymentIntentId,
+    expectedAmount:
+      checkoutPreview.pricing.total,
+    expectedCurrency: 'usd',
+  })
+
+  if (checkoutInput.completedOrderId) {
+    const error = new Error(
+      'This checkout session has already been completed.',
+    )
+
+    error.statusCode = 409
 
     throw error
   }
@@ -215,8 +237,23 @@ export async function createCheckout(checkoutInput = {}) {
         '[checkout] Failed promo redemption persistence.',
         error,
       )
+    }
+  }
 
-      throw error
+  if (checkoutPreview.campaigns?.length) {
+    try {
+      for (const campaign of checkoutPreview.campaigns) {
+        await recordCampaignDonationUsage({
+          campaignId: campaign.campaignId,
+          subtotal: campaign.matchedSubtotal,
+        })
+      }
+    }
+    catch (error) {
+      console.error(
+        '[checkout] Failed campaign donation persistence.',
+        error,
+      )
     }
   }
 

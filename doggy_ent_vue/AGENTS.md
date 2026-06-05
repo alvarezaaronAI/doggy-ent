@@ -1,237 +1,193 @@
-# Doggy ENT Agent Instructions
+## Knowledge Handoff Requirement
 
-## Project mission
-Continue the Doggy ENT architecture refactor across both the client and server. The main goal is to clean up folder structure, reduce duplicate code, simplify large files, and create one clear source of truth for repeated logic, constants, formatting, API calls, validation, and business rules.
+The agent must maintain project knowledge transfer documentation.
 
-This is a refactor and simplification mission, not a redesign mission.
-
-## Current priority
-Focus on structure, readability, and single-source-of-truth cleanup across both apps:
+Whenever a major phase is completed (Admin Cleanup, Server Cleanup, Checkout Cleanup, Products Cleanup, Debugging Pass, QA Pass, etc.), generate or update:
 
 ```text
-client/src/
-server/src/
+PROJECT_HANDOFF.md
 ```
 
-Start with the biggest and most duplicated areas first.
+Purpose:
+- Allow ChatGPT or a future Codex session to understand the project without re-auditing the repository.
+- Preserve architectural decisions.
+- Preserve domain knowledge.
+- Preserve refactor history.
+- Document what exists and why.
 
-Client admin cleanup is complete for the main target views. Remaining client cleanup should be based on fresh audits, not assumptions.
+The handoff document should include:
 
-Recently completed admin view reductions:
+1. Business overview
+2. Client architecture
+3. Server architecture
+4. Database overview
+5. Stripe/payment flow
+6. Admin system overview
+7. Completed refactors
+8. Remaining work
+9. Launch readiness assessment
+10. Important file index
+11. End-to-end flow maps
+12. API endpoint inventory
+13. Environment variables and deployment notes
+14. Build/test/verification commands
+15. Known risks and manual QA checklist
+16. Current git state and recent commits
+17. Dependency and integration map
+18. Data ownership / source-of-truth map
 
-```text
-AdminProductsView.vue    1049 lines -> 176 lines
-AdminPromosView.vue       704 lines -> 113 lines
-AdminCampaignsView.vue    673 lines -> 76 lines
-AdminOrdersView.vue       513 lines -> 65 lines
-```
+For major domains and important files, explain:
+- Purpose
+- Responsibilities
+- Inputs and outputs
+- Dependencies
+- How the file participates in the overall application flow
 
-Server priority areas:
+For every major user or admin flow, document the full path from UI to server to database and back:
+- Storefront product browsing
+- Product quick view
+- Add to cart
+- Cart drawer updates
+- Checkout preview
+- Promo validation
+- Stripe/payment intent flow
+- Order creation
+- Order success page
+- Admin product create/edit/delete
+- Admin promo create/edit/test/analytics
+- Admin campaign create/edit/status display
+- Admin order dashboard and order detail
 
-```text
-server/src/
-```
+For API routes, include:
+- HTTP method
+- Route path
+- Controller/handler file
+- Service file
+- Repository/database file if applicable
+- Request payload shape
+- Response shape
+- Error behavior
+- Client files that call the endpoint
 
-## Refactor rules
-- Preserve the existing UI and behavior.
-- Do not redesign layouts, colors, spacing, copy, or user flows unless explicitly asked.
-- Do not change database schema unless explicitly required.
-- Do not restart deployment planning.
-- Do not replace working business logic just for style.
-- Remove duplicate code when a clear shared helper, mapper, constant, validator, or service can replace it safely.
-- Prefer one source of truth for repeated values, business rules, API response shapes, price formatting, status labels, validation rules, and calculations.
-- Keep folder and file names readable enough that their purpose is obvious without opening the file.
-- Do not move files randomly. Keep the folder structure feature/domain based.
-- Prefer small, safe extractions over giant rewrites.
-- Keep Vue views as orchestration layers.
-- Move reusable UI into components.
-- Move business logic into composables.
-- Move API calls into domain API files.
-- Move repeated values/options into constants.
-- Move formatting/calculation helpers into utils.
-- Use shared only when something is reused across multiple domains.
+For source-of-truth documentation, identify where these live:
+- Product statuses
+- Selling modes
+- Variant sizes
+- Price/currency formatting
+- Promo statuses and discount rules
+- Campaign statuses and donation rules
+- Order statuses and timeline rules
+- Checkout pricing rules
+- Tax/shipping calculations
+- Stripe payment intent handling
+- Validation rules
 
-## Preferred folder pattern
-Use folder names that clearly describe what lives inside them. Avoid vague folders when a more specific name makes the structure easier to read.
+For environment and deployment documentation, include:
+- Required environment variables by client/server
+- Which variables are public vs private
+- Stripe-related variables
+- Database/Prisma variables
+- Railway/Vercel/Cloudflare deployment notes if present in the repo
+- Commands used locally versus deployment commands
 
-Preferred client domain structure:
+For verification documentation, include:
+- Build commands that pass
+- Missing lint/test scripts
+- Any `node --check`, import checks, or smoke checks performed
+- Manual QA steps required before launch
+- Known flows that do not have automated tests
 
-```text
-client/src/domains/<domain>/
-  views/              route-level screens only
-  components/         domain UI components
-  composables/        Vue state/business logic
-  api/                client API calls for this domain
-  constants/          repeated domain values/options
-  utils/              pure formatting/calculation helpers
-  mappers/            response-to-view-model transformations
-  validators/         form and payload validation helpers
-```
+For git/context documentation, include:
+- Current branch if available
+- Working tree status at the time of handoff
+- Recent relevant commits if available
+- Files changed in the latest phase
+- Any uncommitted files that must be reviewed before continuing
 
-Preferred server domain structure:
+For file index documentation, include every important created or modified file from the recent Admin Cleanup and Server Cleanup phases, grouped by domain, with one clear sentence explaining what each file does.
 
-```text
-server/src/domains/<domain>/
-  routes/             Express route definitions
-  controllers/        request/response handlers
-  services/           business logic and orchestration
-  repositories/       database reads/writes
-  mappers/            database-to-response transformations
-  validators/         request payload validation
-  constants/          repeated domain values/statuses
-  utils/              pure helpers used only by this domain
-```
+The handoff should call out uncertainty clearly. If the agent cannot verify something from code, it must say so instead of guessing.
 
-Shared code rules:
+Before starting a new major phase, check whether PROJECT_HANDOFF.md should be updated.
 
-```text
-client/src/shared/    only client code reused by multiple client domains
-server/src/shared/    only server code reused by multiple server domains
-```
 
-Do not move something into `shared` unless at least two domains actually use it.
 
-## Completed client refactor milestone
-The first major client milestone is complete: the large admin route views were reduced into orchestration views with supporting admin components, composables, APIs, constants, mappers, validators, and utils.
+## Repair / Launch-Blocker Pass Requirement
 
-Do not redo the admin cleanup unless a specific regression or duplication issue is found.
+When asked to "fix anything broken," "repair the project," "make sure everything works," "audit issues," or perform a launch-readiness cleanup, the agent must treat the task as a verified repair pass, not a cosmetic refactor.
 
-## Checkout status
-Checkout has already been partially broken down into components, composables, and API helpers. Continue cleaning it only after the admin files are reduced.
+Primary goal:
+- Find, fix, verify, and document real issues that could break the application, payment flow, admin tools, database flow, deployment, or launch readiness.
 
-Existing checkout direction:
+Before editing code, the agent must:
+1. Read `AGENTS.md`.
+2. Read `PROJECT_HANDOFF.md` if it exists.
+3. Inspect the current repository state instead of trusting old assumptions.
+4. Create a prioritized launch-blocker list.
+5. Separate confirmed issues from uncertain risks.
 
-```text
-client/src/domains/checkout/views/CheckoutView.vue
-client/src/domains/checkout/components/
-client/src/domains/checkout/composables/
-client/src/domains/checkout/api/
-```
+The agent must prioritize fixes in this order:
+1. Production data safety
+2. Payment and checkout correctness
+3. Order creation correctness
+4. Admin authorization and protected routes
+5. Client/server/API mismatches
+6. Database/schema/repository mismatches
+7. Broken imports or build failures
+8. Environment/deployment mismatches
+9. Dead duplicate checkout/payment code
+10. Documentation accuracy
 
-## Server cleanup direction
-Server cleanup is allowed when it supports the same architecture goal: less duplication, clearer folders, and one source of truth.
+The agent must specifically audit these launch-critical risks:
+- Stripe PaymentIntent amount must be based on trusted server-side pricing, not client-supplied totals.
+- Order creation must be idempotent and must not create duplicate orders for the same successful payment.
+- Inventory must only be reduced after a successful verified payment.
+- Promo usage must not be double-counted or client-spoofed.
+- Campaign donation totals and usage must not be client-spoofed.
+- Admin-only endpoints must require admin authentication.
+- Production startup must never delete, reset, or reseed live data.
+- `.env.example` and deployment notes must match the variables actually used by code.
+- Client API calls must match server routes, payloads, and response shapes.
+- Prisma schema fields must match repository/service code.
+- Checkout, payment, and order success flows must not rely on stale mock data.
 
-Good server cleanup examples:
+Rules for the repair pass:
+- Preserve current storefront and admin UX unless a UI change is required to fix a real bug.
+- Do not rewrite the app from scratch.
+- Do not perform broad speculative refactors.
+- Do not remove working features.
+- Follow existing project architecture and naming conventions.
+- Use the existing server pattern: route → controller → service → repository → Prisma.
+- Use existing client domain patterns: view → composable/service/api → mapper/validator/utils/components.
+- Fix in small, understandable groups.
+- Keep changes focused on verified issues.
+- If something cannot be verified from code, document it clearly as unverified instead of guessing.
 
-```text
-- Move repeated response formatting into mappers.
-- Move repeated validation into validators.
-- Move repeated status values into constants.
-- Keep controllers thin.
-- Keep services responsible for business logic.
-- Keep repositories focused on database access.
-- Normalize money/status/date fields in one place instead of repeatedly inside controllers.
-```
+Required verification after fixes:
+- Run the client build command if available.
+- Run the server build/start/syntax checks that are available.
+- Run `prisma generate` if Prisma is used.
+- Run available lint scripts.
+- Run available test scripts.
+- If lint or test scripts are missing, document that clearly.
+- Check for broken imports.
+- Check for client/server endpoint mismatches.
+- Check checkout flow from cart → pricing preview → promo validation → Stripe payment intent → order creation → order success page.
+- Check admin flows for products, promos, campaigns, orders, and order detail.
+- If a command fails, either fix the cause and rerun it, or document why it could not be fixed.
 
-Avoid server rewrites that are not connected to simplification, duplication removal, or structure cleanup.
+Required final output from the agent:
+1. Issues found, grouped by severity.
+2. Issues fixed.
+3. Files changed.
+4. Commands run and results.
+5. Remaining risks or unverified areas.
+6. Manual QA checklist.
+7. Next safest phase after the repair pass.
 
-## Commands to run
-After meaningful changes, run:
+Required documentation update:
+- Update `PROJECT_HANDOFF.md` after the repair pass.
+- The update must include fixes made, remaining risks, verification results, current git state, changed files, and the next recommended phase.
+- The handoff must clearly say what was verified from code and what remains uncertain.
 
-```bash
-npm run lint
-npm run build
-```
-
-If server code is touched, also run the relevant server/dev command used by this repo.
-
-## Working style
-- Inspect the existing code before editing.
-- Make changes that are easy to review.
-- Keep imports clean.
-- Remove dead code created by extraction.
-- Before creating a new helper or component, search for an existing one that can be reused or improved.
-- If two files solve the same problem differently, consolidate toward one clear pattern.
-- Prefer renaming folders/files when it makes the structure more understandable, but keep moves small and easy to review.
-- Keep names clear and domain-specific.
-- Summarize changed files after each task.
-- Report any lint/build failures honestly and fix them when possible.
-
-## Autonomous Phase Execution
-
-The agent should operate in phases rather than waiting for approval after every small extraction.
-
-### Current active phase
-Server Structure Cleanup
-
-Scope:
-- All of `server/src/`.
-- This includes app setup, middleware, providers, routes, db helpers, seeds, all domains, generated Prisma usage, models, server entry files, and shared server utilities.
-- Clean the entire server structure, not just selected domains.
-- `server/src/shared/` should still be used only when code is reused by multiple server domains or app-level server layers.
-
-Objectives:
-- Make server domains consistent, readable, and maintainable.
-- Reduce oversized service files.
-- Remove duplicated helpers and business rules.
-- Create one source of truth for repeated validation, constants, response mapping, status values, money normalization, and request normalization.
-- Keep controllers thin.
-- Keep services focused on business orchestration.
-- Keep repositories focused on Prisma/database access.
-- Preserve existing endpoints, API behavior, and database schema.
-
-Server structure notes from current tree:
-- Audit all of `server/src/`, not just the commerce domains.
-- `orders/` is closest to the preferred server domain structure and should be used as the reference pattern where appropriate.
-- `products/` currently has controllers, routes, services, and utils, but may need repositories, mappers, validators, and constants if those extractions are justified.
-- `promos/` currently uses singular `repository/`; rename or move to `repositories/` if safe.
-- `campaigns/` currently uses singular `validation/`; rename or move to `validators/` if safe.
-- `checkout/` currently has controllers, routes, and a large service; extract validators, mappers, constants, or utils only when they reduce duplication or clarify business logic.
-- `payments/` must be included because it is part of the checkout/payment flow and may need constants, validators, mappers, or Stripe-specific helpers.
-- `auth/`, `admin/`, app middleware, app routes, shared services, seeds, and models must be audited too. Refactor them only when there is clear duplication, unclear structure, or large-file complexity.
-- Do not put code into `server/src/shared/` unless at least two server domains or app-level server layers actually use it.
-
-Workflow:
-1. Analyze.
-2. Refactor.
-3. Build.
-4. Fix build issues.
-5. Continue to the next item within the same phase.
-
-The agent does NOT need approval between files inside the same phase.
-
-Stop only when:
-- The entire phase is complete.
-- A major architectural decision is required.
-- A build failure cannot be resolved safely.
-- The requested work would violate the rules in this file.
-
-### Reporting format
-After each completed target, report:
-- Files created.
-- Files modified.
-- Duplicate code removed.
-- Single-source-of-truth improvements.
-- Build result.
-- Remaining work.
-
-### Phase roadmap
-1. Admin Domain Cleanup — complete
-2. Server Structure Cleanup — active
-3. Fresh Client Audit
-4. Checkout Domain Cleanup, only if the fresh audit shows it is still needed
-5. Products Domain Cleanup, only if the fresh audit shows it is still needed
-6. Observability / Debugging Pass
-7. QA and Launch Readiness Review
-
-Complete the current phase before moving to the next one unless explicitly instructed otherwise.
-
-## Current server phase work order
-For the active Server Structure Cleanup phase, use this order:
-
-1. Audit all of `server/src` and identify the largest files, duplicated helpers, unclear folders, inconsistent folder names, and missing single-source-of-truth opportunities.
-2. Clean app-level server structure only where useful: `server/src/app/`, middleware, providers, root routes, `app.js`, and `server.js`.
-3. Clean shared repeated server utilities first only when clearly reused by multiple domains or app-level layers.
-4. Clean `products` domain.
-5. Clean `promos` domain.
-6. Clean `campaigns` domain.
-7. Clean `payments` domain.
-8. Clean `checkout` domain.
-9. Clean `orders` domain only for remaining consistency issues.
-10. Audit and clean `auth`, `admin`, `customers`, `models`, `db`, and seeds only when there is clear duplication, unclear structure, large-file complexity, or naming inconsistency.
-11. Run final server verification.
-12. Report the final server cleanup summary.
-
-The active phase is considered incomplete until the agent has audited every folder and top-level file under `server/src/`, even if some folders require no changes.
-
-Do not stop between domains unless blocked by a major architectural decision, unresolved verification failure, or a rule in this file.
+The repair pass is not complete until code changes are verified and `PROJECT_HANDOFF.md` is updated.

@@ -130,6 +130,10 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import {
+  fetchAdminOrderById,
+  updateAdminOrderStatus,
+} from '../api/adminOrders.api'
 
 const route = useRoute()
 const order = ref(null)
@@ -162,21 +166,10 @@ async function updateStatus(type, value) {
   statusMessage.value = 'Updating order...'
 
   try {
-    const res = await fetch(`/api/admin/orders/${order.value.id}/status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status: value }),
-    })
-
-    const data = await res.json()
-
-    if (!res.ok) {
-      throw new Error(data.message || 'Unable to update order.')
-    }
-
-    order.value = data
+    order.value = await updateAdminOrderStatus(
+      order.value.id,
+      value,
+    )
     statusMessage.value = 'Order updated.'
   } catch (error) {
     statusMessage.value = error.message || 'Unable to update order.'
@@ -186,14 +179,11 @@ async function updateStatus(type, value) {
 async function loadOrder() {
   loading.value = true
   try {
-    const res = await fetch(`/api/admin/orders/${route.params.orderId}`)
-    const data = await res.json()
-
-    if (res.ok) {
-      order.value = data
-    }
+    order.value = await fetchAdminOrderById(
+      route.params.orderId,
+    )
   } catch (e) {
-    // ignore for now
+    order.value = null
   } finally {
     loading.value = false
   }

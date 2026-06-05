@@ -15,7 +15,7 @@ export async function getAllPromos() {
       },
     },
     orderBy: {
-      createdAt: 'desc',
+      redeemedAt: 'desc',
     },
   })
 }
@@ -187,7 +187,7 @@ export async function getPromoUsageHistory(promoId) {
       promoId,
     },
     orderBy: {
-      createdAt: 'desc',
+      redeemedAt: 'desc',
     },
   })
 }

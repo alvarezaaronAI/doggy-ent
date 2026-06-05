@@ -12,6 +12,18 @@ defineProps({
     type: Number,
     required: true,
   },
+  customer: {
+    type: Object,
+    required: true,
+  },
+  promoCode: {
+    type: String,
+    default: '',
+  },
+  shipping: {
+    type: Object,
+    required: true,
+  },
 })
 
 const emit = defineEmits([
@@ -21,8 +33,8 @@ const emit = defineEmits([
 const stripeElementsForm = ref(null)
 
 defineExpose({
-  async confirmPayment(...args) {
-    return await stripeElementsForm.value?.confirmPayment(...args)
+  async submitPayment(...args) {
+    return await stripeElementsForm.value?.submitPayment(...args)
   },
 })
 </script>
@@ -101,6 +113,9 @@ defineExpose({
             ref="stripeElementsForm"
             :cart-items="cartItems"
             :checkout-total="checkoutTotal"
+            :customer="customer"
+            :promo-code="promoCode"
+            :shipping="shipping"
             @card-complete="emit('card-complete', $event)"
           />
         </div>

@@ -18,7 +18,6 @@ import {
 
 import {
   previewCampaigns,
-  recordCampaignUsage,
 } from '../../campaigns/api/campaigns.api'
 
 import {
@@ -103,19 +102,6 @@ const {
 
   async onSuccess({ result }) {
     checkoutResult.value = result
-
-    try {
-      if (campaignPreview.value.length) {
-        await recordCampaignUsage(
-          campaignPreview.value,
-        )
-      }
-    } catch (error) {
-      console.error(
-        'Failed to record campaign usage.',
-        error,
-      )
-    }
 
     saveCustomerForNextCheckout()
 
@@ -576,6 +562,20 @@ onMounted(() => {
                 ref="stripePaymentForm"
                 :cart-items="cartItems"
                 :checkout-total="summaryTotal"
+                :customer="{
+                  ...customer,
+                  country:
+                    customer.country === 'US'
+                      ? 'United States'
+                      : customer.country === 'CA'
+                        ? 'Canada'
+                        : customer.country,
+                }"
+                :promo-code="appliedPromoCode || null"
+                :shipping="{
+                  method: selectedShipping,
+                  price: shippingPrice,
+                }"
                 @card-complete="paymentFormComplete = $event"
               />
 

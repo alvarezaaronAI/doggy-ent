@@ -2,11 +2,12 @@ import {
   fetchAdminOrders,
   fetchAdminOrderById,
   fetchAdminOrderStats,
+  updateAdminOrderStatus,
 } from '../services/orders.service.js'
 
-function handleControllerError(res, message) {
-  return res.status(500).json({
-    message,
+function handleControllerError(res, error, message) {
+  return res.status(error.statusCode || 500).json({
+    message: error.message || message,
   })
 }
 
@@ -19,6 +20,7 @@ export async function getAdminOrders(req, res) {
   catch (error) {
     return handleControllerError(
       res,
+      error,
       'Unable to load orders.',
     )
   }
@@ -39,6 +41,7 @@ export async function getAdminOrderById(req, res) {
   catch (error) {
     return handleControllerError(
       res,
+      error,
       'Unable to load order.',
     )
   }
@@ -53,7 +56,26 @@ export async function getAdminOrderStats(req, res) {
   catch (error) {
     return handleControllerError(
       res,
+      error,
       'Unable to load order stats.',
+    )
+  }
+}
+
+export async function patchAdminOrderStatus(req, res) {
+  try {
+    const order = await updateAdminOrderStatus(
+      req.params.orderId,
+      req.body.status,
+    )
+
+    return res.status(200).json(order)
+  }
+  catch (error) {
+    return handleControllerError(
+      res,
+      error,
+      'Unable to update order status.',
     )
   }
 }

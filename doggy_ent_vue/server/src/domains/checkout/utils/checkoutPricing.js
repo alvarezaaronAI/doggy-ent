@@ -1,6 +1,10 @@
 import {
   normalizeCurrencyAmount,
 } from '../../../shared/utils/money.js'
+import {
+  DEFAULT_SHIPPING_METHOD,
+  SHIPPING_OPTIONS,
+} from '../constants/checkout.constants.js'
 
 export function calculateSubtotal(cartItems = []) {
   return normalizeCurrencyAmount(
@@ -14,8 +18,13 @@ export function calculateSubtotal(cartItems = []) {
 }
 
 export function calculateShipping(shipping = {}) {
+  const method = String(
+    shipping.method || DEFAULT_SHIPPING_METHOD,
+  ).trim()
+
   return normalizeCurrencyAmount(
-    shipping.price || 0,
+    SHIPPING_OPTIONS[method]?.price
+    ?? SHIPPING_OPTIONS[DEFAULT_SHIPPING_METHOD].price,
   )
 }
 

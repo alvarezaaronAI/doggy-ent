@@ -33,8 +33,6 @@ export function useAdminOrders() {
 
       const matchesStatus = orderStatusFilter.value === ORDER_FILTER_ALL
         || order.status === orderStatusFilter.value
-        || order.paymentStatus === orderStatusFilter.value
-        || order.fulfillmentStatus === orderStatusFilter.value
 
       return matchesQuery && matchesStatus
     })

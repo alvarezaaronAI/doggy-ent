@@ -9,7 +9,7 @@ function normalizeStripeAmount(amount) {
 export const createStripePaymentIntent = async ({ amount, currency = 'usd' }) => {
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
+      amount: normalizeStripeAmount(amount),
       currency,
       automatic_payment_methods: {
         enabled: true,

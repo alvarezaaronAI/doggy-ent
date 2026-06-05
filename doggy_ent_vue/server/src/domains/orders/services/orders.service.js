@@ -2,7 +2,9 @@ import {
   createOrder,
   findAllOrders,
   findOrderById,
+  findOrderByStripePaymentIntentId,
   findOrderStats,
+  updateOrderStatusById,
 } from '../repositories/orders.repository.js'
 import {
   decrementProductInventory,
@@ -11,6 +13,12 @@ import { prisma } from '../../../db/prisma.js'
 import {
   normalizeCurrencyAmount,
 } from '../../../shared/utils/money.js'
+import {
+  ORDER_STATUS,
+} from '../constants/orders.constants.js'
+import {
+  validateOrderStatus,
+} from '../validators/orders.validator.js'
 
 async function rollbackInventoryReservation({
   items = [],
@@ -57,8 +65,39 @@ export async function fetchAdminOrderStats() {
   return await findOrderStats()
 }
 
+export async function updateAdminOrderStatus(orderId, status) {
+  const normalizedStatus = validateOrderStatus(status)
+
+  try {
+    return await updateOrderStatusById(
+      orderId,
+      normalizedStatus,
+    )
+  }
+  catch (error) {
+    if (error.code === 'P2025') {
+      const notFound = new Error('Order not found.')
+      notFound.statusCode = 404
+      throw notFound
+    }
+
+    throw error
+  }
+}
+
 export async function createNewOrder(orderInput) {
   const orderNumber = `DGE-${Date.now()}`
+  const stripePaymentIntentId =
+    orderInput.stripePaymentIntentId || null
+
+  const existingOrder =
+    await findOrderByStripePaymentIntentId(
+      stripePaymentIntentId,
+    )
+
+  if (existingOrder) {
+    return existingOrder
+  }
 
   const subtotal = normalizeCurrencyAmount(
     orderInput.subtotal || 0,
@@ -124,14 +163,14 @@ export async function createNewOrder(orderInput) {
       country: orderInput.country || null,
       marketingOptIn: Boolean(orderInput.marketingOptIn),
       saveInfo: Boolean(orderInput.saveInfo),
-      status: 'PENDING',
+      status: ORDER_STATUS.PENDING,
       subtotal,
       total,
       currency: orderInput.currency || 'usd',
       shippingAmount,
       discountAmount,
       taxAmount,
-      stripePaymentIntentId: orderInput.stripePaymentIntentId || null,
+      stripePaymentIntentId,
       items: normalizedItems,
     })
   }
@@ -146,6 +185,20 @@ export async function createNewOrder(orderInput) {
         '[orders] Failed inventory rollback.',
         rollbackError,
       )
+    }
+
+    if (
+      error.code === 'P2002'
+      && stripePaymentIntentId
+    ) {
+      const existingOrderAfterConflict =
+        await findOrderByStripePaymentIntentId(
+          stripePaymentIntentId,
+        )
+
+      if (existingOrderAfterConflict) {
+        return existingOrderAfterConflict
+      }
     }
 
     throw error
