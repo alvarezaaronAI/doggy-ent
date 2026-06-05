@@ -6,6 +6,7 @@ export const ORDER_STATUSES = Object.freeze({
   PAID: 'PAID',
   PENDING: 'PENDING',
   PROCESSING: 'PROCESSING',
+  REFUNDED: 'REFUNDED',
   SHIPPED: 'SHIPPED',
 })
 
@@ -15,43 +16,43 @@ export const ORDER_STATUS_FILTER_OPTIONS = Object.freeze([
     label: 'All statuses',
   },
   {
-    value: 'pending',
+    value: ORDER_STATUSES.PENDING,
     label: 'Pending',
   },
   {
-    value: 'confirmed',
+    value: ORDER_STATUSES.PAID,
     label: 'Confirmed',
   },
   {
-    value: 'cancelled',
+    value: ORDER_STATUSES.CANCELLED,
     label: 'Cancelled',
   },
   {
-    value: 'not_paid',
+    value: ORDER_STATUSES.PENDING,
     label: 'Not paid',
   },
   {
-    value: 'paid',
+    value: ORDER_STATUSES.PAID,
     label: 'Paid',
   },
   {
-    value: 'refunded',
+    value: ORDER_STATUSES.REFUNDED,
     label: 'Refunded',
   },
   {
-    value: 'unfulfilled',
+    value: ORDER_STATUSES.PROCESSING,
     label: 'Unfulfilled',
   },
   {
-    value: 'packed',
+    value: ORDER_STATUSES.PROCESSING,
     label: 'Packed',
   },
   {
-    value: 'shipped',
+    value: ORDER_STATUSES.SHIPPED,
     label: 'Shipped',
   },
   {
-    value: 'fulfilled',
+    value: ORDER_STATUSES.DELIVERED,
     label: 'Fulfilled',
   },
 ])

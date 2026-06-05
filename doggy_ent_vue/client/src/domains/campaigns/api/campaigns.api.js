@@ -107,34 +107,6 @@ export async function previewCampaigns(cartItems = []) {
     : []
 }
 
-export async function recordCampaignUsage(
-  campaigns = [],
-) {
-  const response = await fetch(
-    `${PUBLIC_CAMPAIGNS_API_URL}/record-usage`,
-    {
-      method: 'POST',
-
-      headers: {
-        'Content-Type': 'application/json',
-      },
-
-      body: JSON.stringify({
-        campaigns,
-      }),
-    },
-  )
-
-  const data = await parseResponse(
-    response,
-    'Unable to record campaign usage.',
-  )
-
-  return Array.isArray(data.updatedCampaigns)
-    ? data.updatedCampaigns
-    : []
-}
-
 export async function deleteCampaign(campaignId) {
   const response = await fetch(
     `${CAMPAIGNS_API_URL}/${campaignId}`,

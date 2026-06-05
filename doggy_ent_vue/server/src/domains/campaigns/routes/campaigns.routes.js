@@ -62,6 +62,7 @@ router.delete(
 
 router.post(
   '/record-usage',
+  requireAdminAuth,
   async (req, res) => {
     try {
       const { campaigns } = req.body

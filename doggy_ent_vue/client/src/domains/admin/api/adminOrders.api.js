@@ -31,3 +31,25 @@ export async function fetchAdminOrderStats() {
     'Unable to load order stats.',
   )
 }
+
+export async function fetchAdminOrderById(orderId) {
+  return parseOrderResponse(
+    await fetch(`${ADMIN_ORDERS_API_URL}/${orderId}`),
+    'Unable to load order.',
+  )
+}
+
+export async function updateAdminOrderStatus(orderId, status) {
+  return parseOrderResponse(
+    await fetch(`${ADMIN_ORDERS_API_URL}/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        status,
+      }),
+    }),
+    'Unable to update order.',
+  )
+}

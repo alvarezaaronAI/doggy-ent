@@ -1,27 +1,8 @@
 import { prisma } from '../../../db/prisma.js'
 import { mapOrder } from '../mappers/orders.mapper.js'
-
-// Prevent one Stripe payment intent from creating multiple orders.
-export async function stripePaymentIntentAlreadyUsed(
-  stripePaymentIntentId,
-) {
-  if (!stripePaymentIntentId) {
-    return false
-  }
-
-  const existingOrder =
-    await prisma.order.findFirst({
-      where: {
-        stripePaymentIntentId,
-      },
-
-      select: {
-        id: true,
-      },
-    })
-
-  return Boolean(existingOrder)
-}
+import {
+  ORDER_STATUS,
+} from '../constants/orders.constants.js'
 
 export async function findAllOrders() {
   const orders = await prisma.order.findMany({
@@ -69,15 +50,19 @@ export async function findOrderStats() {
   const totalOrders = orders.length
 
   const pendingOrders = orders.filter(
-    (order) => order.status === 'PENDING'
+    (order) => order.status === ORDER_STATUS.PENDING
+  ).length
+
+  const paidOrders = orders.filter(
+    (order) => order.status === ORDER_STATUS.PAID
   ).length
 
   const shippedOrders = orders.filter(
-    (order) => order.status === 'SHIPPED'
+    (order) => order.status === ORDER_STATUS.SHIPPED
   ).length
 
   const deliveredOrders = orders.filter(
-    (order) => order.status === 'DELIVERED'
+    (order) => order.status === ORDER_STATUS.DELIVERED
   ).length
 
   const totalRevenue = orders.reduce((sum, order) => {
@@ -87,9 +72,12 @@ export async function findOrderStats() {
   return {
     totalOrders,
     pendingOrders,
+    paidOrders,
     shippedOrders,
     deliveredOrders,
+    fulfilledOrders: deliveredOrders,
     totalRevenue,
+    totalDonationGenerated: 0,
   }
 }
 
@@ -137,4 +125,20 @@ export async function createOrder(orderInput) {
   })
 
   return mapOrder(createdOrder)
+}
+
+export async function updateOrderStatusById(orderId, status) {
+  const updatedOrder = await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: {
+      status,
+    },
+    include: {
+      items: true,
+    },
+  })
+
+  return mapOrder(updatedOrder)
 }

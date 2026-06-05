@@ -1,0 +1,13 @@
+export const ORDER_STATUS = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  PROCESSING: 'PROCESSING',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+  REFUNDED: 'REFUNDED',
+}
+
+export const ORDER_STATUSES = Object.freeze(
+  Object.values(ORDER_STATUS),
+)

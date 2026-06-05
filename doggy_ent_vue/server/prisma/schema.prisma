@@ -72,7 +72,7 @@ model Order {
   discountAmount Float @default(0)
   taxAmount      Float @default(0)
   currency      String        @default("usd")
-  stripePaymentIntentId String?
+  stripePaymentIntentId String? @unique
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
