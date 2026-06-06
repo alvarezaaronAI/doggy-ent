@@ -14,11 +14,24 @@ import {
 
 const app = express()
 
-const allowedOrigins = [
+function normalizeOrigin(origin) {
+  return String(origin || '')
+    .trim()
+    .replace(/\/$/, '')
+}
+
+function splitOrigins(value) {
+  return String(value || '')
+    .split(',')
+    .map(normalizeOrigin)
+    .filter(Boolean)
+}
+
+const allowedOrigins = new Set([
   'http://localhost:5173',
-  process.env.FRONTEND_URL,
-  process.env.CLIENT_URL,
-].filter(Boolean)
+  ...splitOrigins(process.env.FRONTEND_URL),
+  ...splitOrigins(process.env.CLIENT_URL),
+])
 
 app.use(cors({
   origin(origin, callback) {
@@ -26,7 +39,7 @@ app.use(cors({
       return callback(null, true)
     }
 
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.has(normalizeOrigin(origin))) {
       return callback(null, true)
     }
 

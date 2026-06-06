@@ -240,10 +240,10 @@ Auth behavior:
 - Login endpoint compares submitted email/password to `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH`.
 - Password hash is checked with `bcrypt.compare`.
 - Session ID is generated with `crypto.randomBytes(32)`.
-- Session is stored in an in-memory `Map`.
+- Session is stored as a signed, expiring admin cookie token after the 2026-06-05 stabilization pass. The old in-memory `Map` remains only as a fallback for older local session ids.
 - Cookie name: `doggy_admin_session`.
 - Session TTL: 8 hours.
-- Cookie is `httpOnly`; `secure` and `sameSite: strict` in production; `sameSite: lax` in development.
+- Cookie is `httpOnly`. After the 2026-06-05 admin auth stabilization pass, deployed cross-site admin cookies use `secure: true` and `sameSite: none`; local same-origin/proxy development uses `sameSite: lax`.
 
 Admin auth uncertainty/risk:
 
@@ -1634,3 +1634,227 @@ The local edits from this pass are focused and safe for commit review after huma
 - They do not apply Railway migrations.
 - They do not expose local `.env` secret values.
 - `AGENTS.md` remains modified from before this pass and should be reviewed as a separate instruction-file change.
+
+## 22. Admin Auth Session Stabilization - 2026-06-05
+
+This section documents the follow-up admin auth repair after checkout, Vercel routing, Stripe payments, order creation, and Railway persistence were verified working.
+
+### Verified Deployed Symptom
+
+Reported verified state:
+
+- Vercel storefront loads.
+- Vercel SPA routing works.
+- Checkout works on Vercel.
+- Stripe test payments succeed.
+- Orders are created in Railway and appear in the Railway database.
+- Order success page works.
+- The unique Stripe payment intent migration is applied on Railway.
+- `/admin` loads on Vercel.
+- Admin login accepts the correct credentials.
+- Local admin login works.
+
+Broken deployed behavior:
+
+- Vercel admin login showed a success message but did not reach a usable dashboard session.
+- Browser/network showed `401` from Railway `/api/auth/me`.
+
+### Root Cause
+
+The credentials path was working, but the session validation path was fragile for Vercel to Railway deployment.
+
+From source:
+
+- `POST /api/auth/login` created a session id and stored it in a process-local `Map` in `server/src/domains/auth/services/auth.service.js`.
+- `GET /api/auth/me` only authenticated if the browser sent `doggy_admin_session` and that id still existed in the same process-local `Map`.
+- In Railway/deployed environments, a process restart or a different instance can lose that in-memory session even though login returned success.
+- Cross-site cookie behavior was also tied to `NODE_ENV === 'production'`, so a deployed frontend origin with a mis-set or unexpected `NODE_ENV` could produce local-style cookies that are not usable for Vercel to Railway requests.
+- The login view redirected to `/admin` after login success before proving `/api/auth/me` recognized the new session.
+
+The observable result is exactly the reported pattern: credentials are accepted, then the next `/api/auth/me` request returns `401`.
+
+### Fix
+
+Server session stability:
+
+- `server/src/domains/auth/services/auth.service.js` now issues a signed, expiring admin session token in the existing `doggy_admin_session` cookie.
+- `/api/auth/me` can validate that signed token without relying on the process-local `Map`, so the session survives Railway process restarts and multi-instance routing for the token lifetime.
+- The old in-memory lookup remains as a fallback for older local session ids during the transition.
+- The signing key uses `ADMIN_SESSION_SECRET` when present, otherwise `ADMIN_PASSWORD_HASH`. `ADMIN_SESSION_SECRET` is recommended for Railway but not required for this fix to work.
+
+Cookie attributes:
+
+- Deployed cross-site cookies now use `SameSite=None` and `Secure` when either `NODE_ENV=production` or a non-local `FRONTEND_URL` / `CLIENT_URL` is configured.
+- Local development with localhost frontend origins continues to use `SameSite=Lax` and non-secure cookies.
+- Cookies remain `HttpOnly`, use path `/`, and keep the existing 8-hour TTL.
+
+CORS:
+
+- `server/src/app.js` now normalizes `FRONTEND_URL` and `CLIENT_URL` origins by trimming whitespace and trailing slashes.
+- It also supports comma-separated origins for safer deployment configuration.
+- CORS still uses explicit allowed origins and `credentials: true`; it does not use a wildcard origin.
+
+Client login flow:
+
+- `client/src/domains/admin/views/AdminLoginView.vue` now calls `/api/auth/me` immediately after successful login.
+- The app redirects only after the server confirms the admin session is authenticated.
+- The login page now respects the existing `redirect` query parameter, defaulting to `/admin`.
+
+### Auth Flow Verification From Code
+
+Expected deployed flow after redeploy:
+
+1. Vercel login form posts to Railway `POST /api/auth/login` through the shared API helper.
+2. Request includes credentials mode.
+3. Railway validates `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH`.
+4. Railway returns `Set-Cookie: doggy_admin_session=...; HttpOnly; Secure; SameSite=None; Path=/`.
+5. The login page immediately calls Railway `GET /api/auth/me`.
+6. Browser sends the Railway cookie back to the Railway origin.
+7. Server verifies the signed token and returns `{ authenticated: true }`.
+8. Login page redirects to the query `redirect` path or `/admin`.
+9. Router guard also calls `/api/auth/me`; the signed token validates again.
+10. Admin dashboard loads.
+
+### Required Environment Variables
+
+Vercel:
+
+- `VITE_API_URL`: currently present and supported by `client/src/shared/api/http.js`.
+- `VITE_API_BASE_URL`: preferred long-term name for the Railway backend origin. If both are present, `VITE_API_BASE_URL` wins.
+- `VITE_STRIPE_PUBLISHABLE_KEY`: Stripe publishable key.
+
+Railway:
+
+- `NODE_ENV`: should be `production` for deployed production.
+- `FRONTEND_URL`: currently present; must exactly represent the Vercel frontend origin. Trailing slash is now tolerated.
+- `CLIENT_URL`: optional alias also supported by CORS and cookie deployment detection.
+- `DATABASE_URL`: Railway Postgres connection string.
+- `ADMIN_EMAIL`: admin credential email.
+- `ADMIN_PASSWORD_HASH`: bcrypt hash for admin password and fallback session signing key.
+- `ADMIN_SESSION_SECRET`: optional but recommended dedicated admin session signing secret.
+- `STRIPE_SECRET_KEY`: Stripe secret key.
+- `PORT`: usually provided by Railway.
+
+No secret values should be committed or copied into docs.
+
+### Verification Commands and Results
+
+Passed:
+
+```bash
+cd server
+node --input-type=module <deployed-style auth smoke script>
+```
+
+Result:
+
+```json
+{
+  "loginStatus": 200,
+  "loginSuccess": true,
+  "hasHttpOnly": true,
+  "hasSecure": true,
+  "hasSameSiteNone": true,
+  "hasPathRoot": true,
+  "meStatus": 200,
+  "meAuthenticated": true,
+  "corsOrigin": "https://frontend.example.test",
+  "corsCredentials": "true"
+}
+```
+
+Passed:
+
+```bash
+cd server
+node --input-type=module <local auth service smoke script>
+```
+
+Result:
+
+```json
+{
+  "hasSessionToken": true,
+  "tokenAuthenticates": true,
+  "localSameSite": "lax",
+  "localSecure": false
+}
+```
+
+Passed:
+
+```bash
+cd client
+npm run build
+```
+
+Result: Vite production build completed.
+
+Passed:
+
+```bash
+cd server
+npm run build
+```
+
+Result: Prisma Client generated.
+
+Passed:
+
+```bash
+cd server
+node --check src/app.js
+node --check src/domains/auth/services/auth.service.js
+node --check src/domains/auth/routes/auth.routes.js
+node -e "import('./src/app.js').then(() => console.log('app import ok'))"
+```
+
+Result: syntax checks passed and app import printed `app import ok`.
+
+Passed:
+
+```bash
+cd client
+VITE_API_URL=https://api.example.test npm run build
+rg -o "https://api\\.example\\.test|localhost:3000|localhost:5173|doggy-ent\\.vercel\\.app" dist
+```
+
+Result: build passed and the placeholder API origin was baked in when `VITE_API_URL` was supplied. The final normal build did not contain the placeholder origin, `localhost:3000`, or `doggy-ent.vercel.app`.
+
+Not available:
+
+- No client lint script exists.
+- No server lint script exists.
+- No client or server test script exists.
+
+### Manual Redeploy Steps
+
+1. Redeploy Railway with the updated server auth code.
+2. Ensure Railway has `FRONTEND_URL` set to the Vercel frontend origin. `CLIENT_URL` may also be set but is not required if `FRONTEND_URL` is correct.
+3. Optionally add Railway `ADMIN_SESSION_SECRET` as a dedicated signing secret.
+4. Redeploy Vercel if the admin login client change or API env variables changed.
+5. Confirm Vercel still has either `VITE_API_URL` or `VITE_API_BASE_URL` pointing to the Railway backend origin without a trailing `/api`.
+
+### Manual QA Checklist
+
+- Visit `/admin` directly on Vercel while logged out.
+- Confirm redirect to `/admin/login?redirect=/admin`.
+- Log in with admin credentials.
+- Confirm the login request returns `Set-Cookie` for `doggy_admin_session` with `HttpOnly`, `Secure`, and `SameSite=None`.
+- Confirm the immediate `/api/auth/me` request returns `200` and `{ authenticated: true }`.
+- Confirm the app redirects to `/admin`.
+- Refresh `/admin` and confirm the session remains valid.
+- Open admin products, promos, campaigns, orders, and order detail pages.
+- Log out and confirm `/api/auth/me` returns unauthenticated.
+- Confirm checkout, Stripe payment, order creation, product browsing, promo validation, and campaign preview still work after redeploy.
+
+### Remaining Risks
+
+- This is still the custom admin auth system. Better Auth is the future Accounts + Loyalty phase, not part of this fix.
+- Signed cookie sessions cannot be force-revoked globally without rotating `ADMIN_SESSION_SECRET` or `ADMIN_PASSWORD_HASH`; logout clears the browser cookie.
+- Admin role modeling is still minimal and should be replaced by role/permission-aware auth during the future Better Auth migration.
+- Deployed manual QA is still required because browser cookie policies and Railway/Vercel env values must be verified in the real deployment.
+
+### Recommended Next Phase
+
+After deployed admin auth is stable, run a narrow admin CRUD QA pass across products, promos, campaigns, orders, and order detail. Better Auth should wait until the later customer accounts and loyalty phase.
