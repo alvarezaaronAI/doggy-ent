@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 
 const SESSION_COOKIE_NAME = 'doggy_admin_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8 // 8 hours
+const SESSION_TOKEN_VERSION = 'v1'
 
 const sessions = new Map()
 
@@ -41,15 +42,130 @@ function buildAdminProfile(email) {
   }
 }
 
+function normalizeOrigin(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\/$/, '')
+}
+
+function isLocalOrigin(value) {
+  const origin = normalizeOrigin(value)
+
+  return (
+    !origin
+    || origin.includes('localhost')
+    || origin.includes('127.0.0.1')
+    || origin.includes('::1')
+  )
+}
+
+function hasDeployedFrontendOrigin() {
+  return [
+    process.env.FRONTEND_URL,
+    process.env.CLIENT_URL,
+  ].some((origin) => !isLocalOrigin(origin))
+}
+
 function getCookieOptions() {
   const isProduction = process.env.NODE_ENV === 'production'
+  const useCrossSiteCookie =
+    isProduction || hasDeployedFrontendOrigin()
 
   return {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
+    secure: useCrossSiteCookie,
+    sameSite: useCrossSiteCookie ? 'none' : 'lax',
     maxAge: SESSION_TTL_MS,
     path: '/',
+  }
+}
+
+function getSessionSigningSecret() {
+  const secret =
+    process.env.ADMIN_SESSION_SECRET
+    || process.env.ADMIN_PASSWORD_HASH
+
+  if (!secret) {
+    throw new Error(
+      'Missing ADMIN_PASSWORD_HASH environment variable.',
+    )
+  }
+
+  return secret
+}
+
+function base64UrlEncode(value) {
+  return Buffer
+    .from(JSON.stringify(value))
+    .toString('base64url')
+}
+
+function base64UrlDecode(value) {
+  return JSON.parse(
+    Buffer.from(value, 'base64url').toString('utf8'),
+  )
+}
+
+function signSessionPayload(encodedPayload) {
+  return crypto
+    .createHmac('sha256', getSessionSigningSecret())
+    .update(encodedPayload)
+    .digest('base64url')
+}
+
+function createSessionToken({ admin, expiresAt }) {
+  const encodedPayload = base64UrlEncode({
+    admin,
+    expiresAt,
+  })
+
+  const signature = signSessionPayload(encodedPayload)
+
+  return `${SESSION_TOKEN_VERSION}.${encodedPayload}.${signature}`
+}
+
+function verifySessionToken(sessionToken) {
+  const [version, encodedPayload, signature] =
+    String(sessionToken || '').split('.')
+
+  if (
+    version !== SESSION_TOKEN_VERSION
+    || !encodedPayload
+    || !signature
+  ) {
+    return null
+  }
+
+  const expectedSignature = signSessionPayload(encodedPayload)
+
+  const signatureBuffer = Buffer.from(signature)
+  const expectedSignatureBuffer = Buffer.from(expectedSignature)
+
+  if (
+    signatureBuffer.length !== expectedSignatureBuffer.length
+    || !crypto.timingSafeEqual(
+      signatureBuffer,
+      expectedSignatureBuffer,
+    )
+  ) {
+    return null
+  }
+
+  try {
+    const payload = base64UrlDecode(encodedPayload)
+
+    if (
+      !payload?.admin?.email
+      || !payload?.expiresAt
+      || Number(payload.expiresAt) <= now()
+    ) {
+      return null
+    }
+
+    return payload.admin
+  }
+  catch {
+    return null
   }
 }
 
@@ -83,6 +199,10 @@ export async function loginAdmin({ email, password }) {
   const sessionId = createSessionId()
   const expiresAt = now() + SESSION_TTL_MS
   const admin = buildAdminProfile(normalizedAdminEmail)
+  const sessionToken = createSessionToken({
+    admin,
+    expiresAt,
+  })
 
   sessions.set(sessionId, {
     id: sessionId,
@@ -92,7 +212,7 @@ export async function loginAdmin({ email, password }) {
   })
 
   return {
-    sessionId,
+    sessionId: sessionToken,
     admin,
     expiresAt: new Date(expiresAt).toISOString(),
   }
@@ -100,6 +220,12 @@ export async function loginAdmin({ email, password }) {
 
 export async function getAdminFromSession(sessionId) {
   if (!sessionId) return null
+
+  const tokenAdmin = verifySessionToken(sessionId)
+
+  if (tokenAdmin) {
+    return tokenAdmin
+  }
 
   const session = sessions.get(sessionId)
   if (!session) return null

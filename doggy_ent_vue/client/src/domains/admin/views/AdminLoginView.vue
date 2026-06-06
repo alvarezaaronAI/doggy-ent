@@ -58,13 +58,14 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   fetchApi,
   parseJsonResponse,
 } from '@shared/api/http.js'
 
 const router = useRouter()
+const route = useRoute()
 
 const email = ref('')
 const password = ref('')
@@ -98,10 +99,28 @@ async function login() {
       throw new Error(data.message || 'Unable to sign in.')
     }
 
+    const sessionResponse = await fetchApi('/api/auth/me')
+
+    const sessionData = await parseJsonResponse(
+      sessionResponse,
+      'Unable to verify admin session.',
+    )
+
+    if (!sessionResponse.ok || !sessionData.authenticated) {
+      throw new Error(
+        'Admin session was not established. Please try again.',
+      )
+    }
+
     messageType.value = 'success'
     message.value = 'Signed in successfully.'
 
-    router.push('/admin')
+    const redirectTo =
+      typeof route.query.redirect === 'string'
+        ? route.query.redirect
+        : '/admin'
+
+    await router.push(redirectTo)
   } catch (error) {
     messageType.value = 'error'
     message.value = error.message || 'Unable to sign in.'

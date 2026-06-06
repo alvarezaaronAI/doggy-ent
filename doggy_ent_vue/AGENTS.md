@@ -450,4 +450,108 @@ Important deployment variables to document by name only:
 - Server/Railway: `PORT`, `NODE_ENV`, `CLIENT_URL`, `FRONTEND_URL` if used by code, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `STRIPE_SECRET_KEY`, `DATABASE_URL`.
 - Client/Vercel: `VITE_API_BASE_URL`, Stripe publishable key variable if used by code.
 
-When fixing deployment issues, update `PROJECT_HANDOFF.md` with required variable names and where they must be set, but never include actual secret values.
+
+
+## Admin Auth Session Stabilization / Future Better Auth Requirement
+
+When the deployed admin page loads but admin login does not persist or redirect correctly, the agent must first stabilize the current custom admin auth system before attempting a Better Auth migration.
+
+Known current behavior:
+- Vercel `/admin` and `/admin/login?redirect=/admin` can load after SPA fallback fixes.
+- Login accepts the correct admin credentials.
+- After login, the app does not redirect to the admin dashboard or immediately behaves as unauthenticated.
+- Browser console/network shows `401` for the Railway backend request to `/api/auth/me`.
+- This means credentials may be valid, but the deployed Vercel frontend is not persisting or sending the Railway admin session correctly.
+
+Current auth system:
+- The project currently uses custom admin auth, not Better Auth yet.
+- Admin credentials are based on environment variables such as `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH`.
+- The server creates an admin session cookie.
+- Admin route protection depends on the frontend calling `/api/auth/me` and the backend validating the session.
+- Admin sessions may currently be in-memory and therefore temporary.
+
+Primary goal for this phase:
+- Fix the deployed custom admin login/session flow so the existing admin dashboard works on Vercel + Railway.
+- Preserve the existing admin dashboard, admin routes, admin UX, products, promos, campaigns, and orders pages.
+- Do not migrate to Better Auth in this phase unless the user explicitly asks for a full auth migration.
+
+The agent must audit and fix, if needed:
+1. Login response `Set-Cookie` behavior.
+2. Cookie attributes for cross-site Vercel → Railway usage, including `SameSite=None` and `Secure` in production.
+3. Whether cookies are `HttpOnly` and have the expected session cookie name.
+4. Server CORS config and whether credentials are enabled.
+5. Exact allowed frontend origins from `CLIENT_URL`, `FRONTEND_URL`, or any origin allowlist.
+6. Whether Vercel and Railway origins match exactly, with no incorrect protocol, port, slash, or stale domain.
+7. Whether all admin/auth client requests use the shared API helper and send credentials.
+8. Whether `/api/auth/me` receives the session cookie after login in deployed environments.
+9. Whether router guards correctly wait for auth verification after login before redirecting.
+10. Whether server logs reveal missing cookies, invalid sessions, or CORS rejections.
+
+Rules:
+- Do not rebuild the admin dashboard.
+- Do not replace admin pages.
+- Do not introduce Better Auth yet unless explicitly requested.
+- Do not change admin UX except as required to fix real login/session bugs.
+- Do not weaken auth just to make login work.
+- Do not expose admin secrets or cookie values in logs, docs, or handoffs.
+- Preserve the current admin dashboard and all existing admin feature work.
+- If cross-site cookies remain unreliable, document the options clearly before implementing a larger auth/session migration.
+
+Future auth direction:
+- Better Auth is the preferred future auth direction for the Accounts + Loyalty phase.
+- Future Better Auth work should replace the custom auth/session layer, not rebuild the admin dashboard.
+- The admin dashboard should survive the migration and later use roles/permissions such as `ADMIN` and `CUSTOMER`.
+- Future customer accounts may include order history, saved addresses, loyalty points, referral rewards, and customer profile pages.
+- Do not begin the Better Auth migration until checkout, deployed admin login, and admin CRUD flows are stable.
+
+Required verification:
+- Run client build.
+- Run server build or server syntax/import checks if server files changed.
+- Verify locally that admin login still works.
+- Verify deployed expectation for Vercel → Railway auth session:
+  - login request succeeds,
+  - response sets a usable session cookie,
+  - `/api/auth/me` returns authenticated admin after login,
+  - admin dashboard redirects correctly,
+  - refresh on `/admin` keeps or properly verifies the session.
+- Update `PROJECT_HANDOFF.md` with the admin auth root cause, fix, required env variables, manual QA steps, and remaining limitations.
+
+Manual QA checklist for this phase:
+- Visit `/admin` directly on Vercel.
+- Confirm redirect to `/admin/login?redirect=/admin` if logged out.
+- Log in with admin credentials.
+- Confirm redirect to admin dashboard.
+- Refresh `/admin` and remain authenticated if the session is still valid.
+- Open admin products, promos, campaigns, orders, and order detail pages.
+- Log out if logout exists, then confirm `/api/auth/me` returns unauthenticated.
+
+
+### Known Deployment Environment Context
+
+Before changing auth, cookies, CORS, or API configuration, verify actual environment variable usage from source code.
+
+Vercel:
+- May contain `VITE_API_URL`.
+- May contain `VITE_API_BASE_URL`.
+- The agent must determine which variable is actually consumed by the client.
+- If code expects `VITE_API_BASE_URL`, either support `VITE_API_URL` as a backward-compatible alias or clearly document the required migration.
+- Do not assume both variables exist.
+
+Railway:
+- May contain `FRONTEND_URL`.
+- May not contain `CLIENT_URL`.
+- The agent must determine which variable(s) are actually consumed by CORS, cookie, session, and auth configuration.
+- If code expects `CLIENT_URL` but only `FRONTEND_URL` exists, fix the mismatch or document the required deployment variable.
+- Verify Vercel and Railway origins match exactly, including protocol, host, and trailing slash behavior.
+
+Required deployment auth verification:
+1. Inspect actual environment variable usage in source code.
+2. Verify login response contains the expected Set-Cookie header.
+3. Verify cookie attributes in production.
+4. Verify frontend requests send credentials.
+5. Verify backend CORS allows credentials.
+6. Verify `/api/auth/me` receives the session cookie after login.
+7. Verify router redirects only after auth verification completes.
+8. Do not assume a cookie issue until environment variable mismatches are ruled out.
+
+The correct short-term goal is a stable deployed custom admin auth flow. The correct long-term goal is Better Auth during the customer accounts/loyalty phase.
