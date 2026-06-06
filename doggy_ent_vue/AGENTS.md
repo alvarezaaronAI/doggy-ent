@@ -555,3 +555,94 @@ Required deployment auth verification:
 8. Do not assume a cookie issue until environment variable mismatches are ruled out.
 
 The correct short-term goal is a stable deployed custom admin auth flow. The correct long-term goal is Better Auth during the customer accounts/loyalty phase.
+
+
+## Local Admin Data Target Modes / Temporary Railway Admin Workflow
+
+When cross-site cookies make deployed Vercel admin auth unreliable, the preferred temporary workflow is to run the admin frontend locally and choose the API/database target at startup, not with buttons inside the admin UI.
+
+Primary goal:
+- Allow the user to manage products, promos, campaigns, and orders from the local admin UI while choosing whether changes go to the local database or the Railway database.
+- Avoid weakening auth with token fallbacks unless explicitly requested.
+- Avoid adding risky per-action upload buttons that can accidentally write to the wrong database.
+- Preserve the existing admin dashboard and all current admin pages.
+
+Preferred modes:
+
+1. Fully local mode:
+   - Local client/admin calls local server.
+   - Local server writes to local database.
+   - Intended for safe testing and development.
+   - Flow: `localhost:5173 → localhost server → local DB`.
+
+2. Railway admin mode:
+   - Local client/admin calls Railway backend.
+   - Railway backend writes to Railway database.
+   - Intended for uploading/editing data that the deployed Vercel storefront should see.
+   - Flow: `localhost:5173 → Railway backend → Railway DB → Vercel storefront`.
+
+Implementation rules:
+- Choose the data target through Vite modes / startup scripts, not runtime buttons.
+- Add scripts such as `dev:local` and `dev:railway` in the client package if they do not already exist.
+- Use Vite mode files or existing local env strategy to set the API target per mode.
+- Do not commit files containing real secrets.
+- It is acceptable to create local-only env files if they are gitignored and contain no secrets beyond public client URLs.
+- Prefer documenting variable names and local setup steps in `PROJECT_HANDOFF.md` instead of committing `.env.example` files.
+- The client should continue supporting the existing deployed variable strategy, including `VITE_API_URL` and/or `VITE_API_BASE_URL` as verified from code.
+- Do not hardcode Railway, localhost, Vercel, or production domains in source code outside local-only env/config files or documentation.
+- Do not add admin UI buttons that switch the data target per request unless the user explicitly asks later.
+
+Recommended client mode shape:
+
+```json
+{
+  "scripts": {
+    "dev:local": "vite --mode local",
+    "dev:railway": "vite --mode railway"
+  }
+}
+```
+
+Recommended local-only client variables by mode:
+
+```env
+VITE_API_URL=http://localhost:3000
+VITE_ADMIN_DATA_TARGET=LOCAL
+```
+
+```env
+VITE_API_URL=https://<railway-backend-origin>
+VITE_ADMIN_DATA_TARGET=RAILWAY
+```
+
+Admin UI requirement:
+- Show a clear, visible admin data target badge somewhere in the admin layout/dashboard.
+- The badge should display whether the current admin session is targeting `LOCAL` or `RAILWAY`.
+- If the target is Railway, show a stronger warning style/copy such as `RAILWAY DATA TARGET` or `Editing Railway data`.
+- Preserve the existing admin UX and do not redesign the admin pages.
+
+Server/CORS requirement:
+- Railway must allow local admin origin when using Railway admin mode, such as `http://localhost:5173`.
+- If the backend supports `FRONTEND_URL` or `CLIENT_URL`, document how to include both deployed Vercel origin and local admin origin.
+- Do not expose secret values while documenting this.
+
+Verification required:
+- Run client build.
+- Run server build or syntax checks if server/CORS code changes.
+- Verify `npm run dev:local` points to local API configuration.
+- Verify `npm run dev:railway` points to Railway API configuration.
+- Verify the admin data target badge reflects the chosen mode.
+- Verify local mode does not accidentally target Railway.
+- Verify Railway mode does not accidentally target local server.
+- Update `PROJECT_HANDOFF.md` with exact commands, expected flows, required env variable names, and manual QA steps.
+
+Manual QA checklist:
+- Start local server and client in local mode.
+- Confirm admin badge says local target.
+- Create or edit a test product locally and confirm it affects local DB only.
+- Start client in Railway mode.
+- Confirm admin badge says Railway target.
+- Create or edit a test product/promo/campaign and confirm it appears in Railway/Vercel data.
+- Confirm checkout/storefront still uses the deployed Railway data on Vercel.
+
+This is a temporary workflow until the project uses a proper same-site custom domain setup, such as frontend on the owned domain and backend on an API subdomain, or until Better Auth is introduced during the Accounts + Loyalty phase.
