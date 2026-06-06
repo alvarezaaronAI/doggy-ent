@@ -4,9 +4,13 @@
       <div class="section-panel p-8 md:p-10">
         <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-stone-400">
-              Admin CMS
-            </p>
+            <div class="mb-3 flex flex-wrap items-center gap-3">
+              <p class="text-sm font-semibold uppercase tracking-[0.2em] text-stone-400">
+                Admin CMS
+              </p>
+
+              <AdminDataTargetBadge />
+            </div>
 
             <h1 class="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
 
@@ -76,6 +80,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AdminDataTargetBadge from '../components/AdminDataTargetBadge.vue'
 import {
   fetchApi,
   parseJsonResponse,

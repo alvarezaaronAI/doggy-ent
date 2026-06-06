@@ -16,7 +16,35 @@ const API_BASE_URL = normalizeApiBaseUrl(
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL,
 )
 
+const ADMIN_DATA_TARGET = String(
+  import.meta.env.VITE_ADMIN_DATA_TARGET || '',
+)
+  .trim()
+  .toUpperCase()
+
+export function getApiBaseUrl() {
+  return API_BASE_URL
+}
+
+export function getAdminDataTarget() {
+  if (ADMIN_DATA_TARGET === 'RAILWAY') {
+    return 'RAILWAY'
+  }
+
+  if (ADMIN_DATA_TARGET === 'LOCAL') {
+    return 'LOCAL'
+  }
+
+  return API_BASE_URL ? 'RAILWAY' : 'LOCAL'
+}
+
 export function buildApiUrl(path) {
+  if (getAdminDataTarget() === 'RAILWAY' && !API_BASE_URL) {
+    throw new Error(
+      'RAILWAY DATA TARGET requires VITE_API_BASE_URL or VITE_API_URL to point to the Railway backend origin.',
+    )
+  }
+
   const normalizedPath = String(path || '').startsWith('/')
     ? String(path || '')
     : `/${path || ''}`

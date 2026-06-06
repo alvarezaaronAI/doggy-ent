@@ -1858,3 +1858,284 @@ Not available:
 ### Recommended Next Phase
 
 After deployed admin auth is stable, run a narrow admin CRUD QA pass across products, promos, campaigns, orders, and order detail. Better Auth should wait until the later customer accounts and loyalty phase.
+
+## 23. Temporary Local Admin Data Target Workflow - 2026-06-05
+
+This section documents the temporary workflow for running the admin frontend locally while choosing whether admin writes target the local database or the Railway database.
+
+This is intentionally not a Better Auth migration and does not add runtime upload/sync buttons. The data target is chosen at startup through Vite env mode scripts.
+
+### Scripts Added
+
+Client scripts in `client/package.json`:
+
+```json
+{
+  "dev:local": "VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode admin-local",
+  "dev:railway": "VITE_ADMIN_DATA_TARGET=RAILWAY vite --mode railway"
+}
+```
+
+Vite cannot use `local` as a mode name because it conflicts with `.local` env file suffix handling, so the script name is `dev:local` but the internal Vite mode is `admin-local`.
+
+### Current API Base URL Behavior
+
+Source of truth: `client/src/shared/api/http.js`.
+
+The client supports both:
+
+- `VITE_API_BASE_URL`
+- `VITE_API_URL`
+
+Precedence:
+
+1. `VITE_API_BASE_URL`
+2. `VITE_API_URL`
+3. empty base URL, which means relative `/api/...` paths and local Vite proxy behavior
+
+The helper also reads:
+
+- `VITE_ADMIN_DATA_TARGET`
+
+Accepted admin data target values:
+
+- `LOCAL`
+- `RAILWAY`
+
+If `VITE_ADMIN_DATA_TARGET=RAILWAY` is set but neither `VITE_API_BASE_URL` nor `VITE_API_URL` is available, API calls throw a clear configuration error instead of silently falling back to the local proxy.
+
+### Local Mode
+
+Run:
+
+```bash
+cd client
+npm run dev:local
+```
+
+Behavior:
+
+- Local admin UI runs on Vite.
+- API target is forced to `http://localhost:3000`.
+- Flow: local client/admin -> local server -> local DB.
+- Admin dashboard badge displays `LOCAL DATA TARGET`.
+
+Recommended server command in another terminal:
+
+```bash
+cd server
+npm run dev
+```
+
+### Railway Admin Mode
+
+Run with a local-only backend origin:
+
+```bash
+cd client
+VITE_API_URL=<railway-backend-origin> npm run dev:railway
+```
+
+or create an ignored local-only file:
+
+```text
+client/.env.railway.local
+```
+
+with variable names:
+
+```env
+VITE_API_URL=<railway-backend-origin>
+```
+
+or:
+
+```env
+VITE_API_BASE_URL=<railway-backend-origin>
+```
+
+Behavior:
+
+- Local admin UI runs on Vite.
+- API target is the Railway backend origin supplied locally.
+- Flow: local client/admin -> Railway backend -> Railway DB -> Vercel storefront sees changes.
+- Admin dashboard badge displays `RAILWAY DATA TARGET`.
+
+Do not include `/api` at the end of the backend origin; client calls append `/api/...`.
+
+### Local-Only Env File Safety
+
+`.gitignore` now ignores:
+
+```text
+.env.*.local
+```
+
+This keeps `client/.env.railway.local` out of git. Do not commit `.env`, `.env.local`, `.env.railway.local`, or any file containing actual deployed URLs or secrets unless explicitly intended and reviewed.
+
+No `.env.example` files were created.
+
+### Admin Badge
+
+Added `client/src/domains/admin/components/AdminDataTargetBadge.vue`.
+
+Current placement:
+
+- `client/src/domains/admin/views/AdminDashboardView.vue`
+
+The badge is visible on the admin dashboard and displays either:
+
+- `LOCAL DATA TARGET`
+- `RAILWAY DATA TARGET`
+
+The badge does not switch targets at runtime and does not change admin behavior by itself.
+
+### Railway CORS Requirement
+
+Current server CORS source of truth: `server/src/app.js`.
+
+Allowed origins include:
+
+- hardcoded `http://localhost:5173`
+- entries from `FRONTEND_URL`
+- entries from `CLIENT_URL`
+
+Both `FRONTEND_URL` and `CLIENT_URL` are normalized for trailing slashes and may contain comma-separated origins.
+
+For the default local admin origin `http://localhost:5173`, Railway does not need to include localhost in `FRONTEND_URL` or `CLIENT_URL` because the server already allows it in code.
+
+Railway still needs the deployed Vercel storefront/admin origin configured through `FRONTEND_URL` or `CLIENT_URL`, for example:
+
+```text
+FRONTEND_URL=<vercel-frontend-origin>
+```
+
+If local admin runs on a different port or origin, add both origins to `FRONTEND_URL` or `CLIENT_URL` as comma-separated values:
+
+```text
+FRONTEND_URL=<vercel-frontend-origin>,<local-admin-origin>
+```
+
+No actual Railway or Vercel URL values are documented here.
+
+### Verification Commands and Results
+
+Passed:
+
+```bash
+cd client
+npm run dev:local -- --host 127.0.0.1 --port 5177 --strictPort
+curl -s http://127.0.0.1:5177/src/shared/api/http.js
+```
+
+Result:
+
+- Vite started in `admin-local` mode.
+- Transformed module contained `VITE_ADMIN_DATA_TARGET=LOCAL`.
+- Transformed module contained local API origin `http://localhost:3000`.
+
+Passed:
+
+```bash
+cd client
+VITE_API_URL=https://api.example.test npm run dev:railway -- --host 127.0.0.1 --port 5178 --strictPort
+curl -s http://127.0.0.1:5178/src/shared/api/http.js
+```
+
+Result:
+
+- Vite started in `railway` mode.
+- Transformed module contained `VITE_ADMIN_DATA_TARGET=RAILWAY`.
+- Transformed module contained the placeholder backend origin.
+- Transformed module did not contain `localhost:3000` as the API target.
+
+Passed:
+
+```bash
+cd client
+rm -rf dist
+VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 npm run build
+```
+
+Result:
+
+- Build passed.
+- Built assets contained the local API origin.
+- Built assets did not contain the placeholder Railway test origin.
+
+Passed:
+
+```bash
+cd client
+rm -rf dist
+VITE_ADMIN_DATA_TARGET=RAILWAY VITE_API_URL=https://api.example.test npm run build
+```
+
+Result:
+
+- Build passed.
+- Built assets contained the placeholder backend origin.
+- Built assets did not contain `localhost:3000` as the API target.
+
+Passed:
+
+```bash
+cd client
+rm -rf dist
+npm run build
+```
+
+Result:
+
+- Normal client build passed.
+- Final normal build did not contain the placeholder backend origin, `localhost:3000`, or `doggy-ent.vercel.app`.
+
+Passed:
+
+```bash
+cd server
+npm run build
+```
+
+Result:
+
+- Prisma Client generated successfully.
+
+Not available:
+
+- No client lint script exists.
+- No server lint script exists.
+- No client or server test script exists.
+
+### Manual QA Checklist
+
+Local data mode:
+
+- Start local server with `cd server && npm run dev`.
+- Start local client with `cd client && npm run dev:local`.
+- Log in at local `/admin`.
+- Confirm dashboard badge shows `LOCAL DATA TARGET`.
+- Create or edit a harmless local product/promo/campaign.
+- Confirm the change appears only in the local database and does not affect the Vercel storefront.
+
+Railway data mode:
+
+- Ensure `client/.env.railway.local` or shell env provides `VITE_API_URL` or `VITE_API_BASE_URL`.
+- Start local client with `npm run dev:railway`.
+- Log in at local `/admin`.
+- Confirm dashboard badge shows `RAILWAY DATA TARGET`.
+- Create or edit a small test product/promo/campaign.
+- Confirm the change appears in Railway and is visible to the deployed Vercel storefront where expected.
+- Confirm checkout, Stripe test payment, order creation, promos, campaigns, and admin orders still work after changes.
+
+### Remaining Risks
+
+- This workflow still uses the custom admin auth system.
+- Railway admin mode relies on browser cookie behavior between `localhost:5173` and the Railway backend origin. The server is configured for credentialed CORS and allows `http://localhost:5173`.
+- Running local admin against Railway can modify production-like data. Check the badge before saving changes.
+- Better Auth remains future customer accounts and loyalty work, not part of this temporary data-target workflow.
+- The long-term preferred setup is an owned domain plus API subdomain, then Better Auth when customer accounts and loyalty are built.
+
+### Recommended Next Phase
+
+Use `npm run dev:railway` for temporary Railway data management, then run a narrow admin CRUD QA pass. After the owned domain and API subdomain are connected, revisit deployed admin auth and later plan Better Auth for accounts, loyalty, roles, and permissions.
