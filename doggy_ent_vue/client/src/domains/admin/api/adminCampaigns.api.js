@@ -4,6 +4,10 @@ import {
   getCampaigns,
   updateCampaign,
 } from '@campaigns/api/campaigns.api'
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
 
 const PRODUCTS_API_URL = '/api/products'
 
@@ -15,11 +19,8 @@ export {
 }
 
 export async function fetchCampaignProducts() {
-  const response = await fetch(PRODUCTS_API_URL)
-
-  if (!response.ok) {
-    throw new Error('Unable to load products.')
-  }
-
-  return response.json()
+  return parseJsonResponse(
+    await fetchApi(PRODUCTS_API_URL),
+    'Unable to load products.',
+  )
 }

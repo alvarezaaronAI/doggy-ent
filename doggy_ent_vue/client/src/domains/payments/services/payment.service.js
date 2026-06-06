@@ -1,5 +1,10 @@
 
 
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
+
 export const createPaymentIntent = async ({
   cartItems,
   promoCode,
@@ -7,7 +12,7 @@ export const createPaymentIntent = async ({
   shipping,
 }) => {
   try {
-    const response = await fetch('/api/checkout/create-payment-intent', {
+    const response = await fetchApi('/api/checkout/create-payment-intent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -21,9 +26,12 @@ export const createPaymentIntent = async ({
       }),
     })
 
-    const data = await response.json()
+    const data = await parseJsonResponse(
+      response,
+      'Unable to initialize payment.',
+    )
 
-    if (!response.ok || !data?.success) {
+    if (!data?.success) {
       throw new Error(
         data?.message || 'Unable to initialize payment.',
       )

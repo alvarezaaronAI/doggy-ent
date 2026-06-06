@@ -1,28 +1,19 @@
 
 
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
+
 const CAMPAIGNS_API_URL = '/api/admin/campaigns'
 const PUBLIC_CAMPAIGNS_API_URL = '/api/campaigns'
 
 async function parseResponse(response, fallbackMessage) {
-  let data = null
-
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message || fallbackMessage,
-    )
-  }
-
-  return data
+  return parseJsonResponse(response, fallbackMessage)
 }
 
 export async function getCampaigns() {
-  const response = await fetch(CAMPAIGNS_API_URL)
+  const response = await fetchApi(CAMPAIGNS_API_URL)
 
   const data = await parseResponse(
     response,
@@ -35,7 +26,7 @@ export async function getCampaigns() {
 }
 
 export async function createCampaign(payload) {
-  const response = await fetch(
+  const response = await fetchApi(
     CAMPAIGNS_API_URL,
     {
       method: 'POST',
@@ -60,7 +51,7 @@ export async function updateCampaign(
   campaignId,
   payload,
 ) {
-  const response = await fetch(
+  const response = await fetchApi(
     `${CAMPAIGNS_API_URL}/${campaignId}`,
     {
       method: 'PUT',
@@ -82,7 +73,7 @@ export async function updateCampaign(
 }
 
 export async function previewCampaigns(cartItems = []) {
-  const response = await fetch(
+  const response = await fetchApi(
     `${PUBLIC_CAMPAIGNS_API_URL}/preview`,
     {
       method: 'POST',
@@ -108,27 +99,21 @@ export async function previewCampaigns(cartItems = []) {
 }
 
 export async function deleteCampaign(campaignId) {
-  const response = await fetch(
+  const response = await fetchApi(
     `${CAMPAIGNS_API_URL}/${campaignId}`,
     {
       method: 'DELETE',
     },
   )
 
-  if (!response.ok && response.status !== 204) {
-    let data = null
-
-    try {
-      data = await response.json()
-    } catch {
-      data = null
-    }
-
-    throw new Error(
-      data?.message
-      || 'Unable to delete campaign.',
-    )
+  if (response.status === 204) {
+    return true
   }
+
+  await parseResponse(
+    response,
+    'Unable to delete campaign.',
+  )
 
   return true
 }

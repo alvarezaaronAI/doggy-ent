@@ -1,24 +1,17 @@
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
+
 const ADMIN_ORDERS_API_URL = '/api/admin/orders'
 
 async function parseOrderResponse(response, fallbackMessage) {
-  let data = null
-
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
-
-  if (!response.ok) {
-    throw new Error(data?.message || fallbackMessage)
-  }
-
-  return data
+  return parseJsonResponse(response, fallbackMessage)
 }
 
 export async function fetchAdminOrders() {
   const data = await parseOrderResponse(
-    await fetch(ADMIN_ORDERS_API_URL),
+    await fetchApi(ADMIN_ORDERS_API_URL),
     'Unable to load orders.',
   )
 
@@ -27,21 +20,21 @@ export async function fetchAdminOrders() {
 
 export async function fetchAdminOrderStats() {
   return parseOrderResponse(
-    await fetch(`${ADMIN_ORDERS_API_URL}/stats`),
+    await fetchApi(`${ADMIN_ORDERS_API_URL}/stats`),
     'Unable to load order stats.',
   )
 }
 
 export async function fetchAdminOrderById(orderId) {
   return parseOrderResponse(
-    await fetch(`${ADMIN_ORDERS_API_URL}/${orderId}`),
+    await fetchApi(`${ADMIN_ORDERS_API_URL}/${orderId}`),
     'Unable to load order.',
   )
 }
 
 export async function updateAdminOrderStatus(orderId, status) {
   return parseOrderResponse(
-    await fetch(`${ADMIN_ORDERS_API_URL}/${orderId}/status`, {
+    await fetchApi(`${ADMIN_ORDERS_API_URL}/${orderId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
