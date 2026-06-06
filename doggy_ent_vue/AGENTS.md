@@ -111,7 +111,6 @@ The handoff should call out uncertainty clearly. If the agent cannot verify some
 Before starting a new major phase, check whether PROJECT_HANDOFF.md should be updated.
 
 
-
 ## Repair / Launch-Blocker Pass Requirement
 
 When asked to "fix anything broken," "repair the project," "make sure everything works," "audit issues," or perform a launch-readiness cleanup, the agent must treat the task as a verified repair pass, not a cosmetic refactor.
@@ -146,7 +145,7 @@ The agent must specifically audit these launch-critical risks:
 - Campaign donation totals and usage must not be client-spoofed.
 - Admin-only endpoints must require admin authentication.
 - Production startup must never delete, reset, or reseed live data.
-- `.env.example` and deployment notes must match the variables actually used by code.
+- Local `.env` variable names and deployment notes must match the variables actually used by code, without exposing secret values.
 - Client API calls must match server routes, payloads, and response shapes.
 - Prisma schema fields must match repository/service code.
 - Checkout, payment, and order success flows must not rely on stale mock data.
@@ -191,3 +190,264 @@ Required documentation update:
 - The handoff must clearly say what was verified from code and what remains uncertain.
 
 The repair pass is not complete until code changes are verified and `PROJECT_HANDOFF.md` is updated.
+
+
+## Post-Repair Verification / Interrupted Session Requirement
+
+When a previous Codex run ended because of credits, rate limits, timeout, interruption, or an inconsistent progress checklist, the next agent must not assume the prior summary is fully correct.
+
+If there are existing local edits from a previous repair pass, the agent must treat them as draft repair changes until verified.
+
+Before making new changes, the agent must:
+1. Read `AGENTS.md`.
+2. Read `PROJECT_HANDOFF.md` if it exists.
+3. Run `git status`.
+4. Run `git diff --stat`.
+5. Run `git diff --name-status`.
+6. Identify whether the previous repair pass actually completed every claimed step.
+7. Reconcile any mismatch between the Codex progress checklist, final report, and actual repository state.
+
+The agent must specifically verify the current local edits in these high-risk files before changing anything else:
+- `server/src/domains/checkout/services/checkout.service.js`
+- `server/src/domains/payments/controllers/payment.controller.js`
+- `server/src/domains/payments/services/stripe.payment.js`
+- `server/src/domains/orders/services/orders.service.js`
+- `server/src/domains/orders/repositories/orders.repository.js`
+- `server/src/domains/orders/routes/orders.routes.js`
+- `server/prisma/schema.prisma`
+- `client/src/domains/checkout/views/CheckoutView.vue`
+- `client/src/domains/payments/components/StripeElementsForm.vue`
+- `client/src/domains/admin/api/adminOrders.api.js`
+- `client/src/domains/admin/views/AdminOrderDetailView.vue`
+
+The post-repair verification pass must prove or disprove these claims from the previous repair pass:
+- Stripe PaymentIntent creation no longer trusts client-submitted totals.
+- Checkout preview, PaymentIntent creation, and order creation use consistent server-owned totals.
+- Shipping price cannot be spoofed by the client.
+- Order creation is idempotent for reused Stripe PaymentIntent IDs.
+- Inventory decrements only once for a successful payment.
+- Duplicate order races are handled safely.
+- Promo validation rejects invalid, expired, or over-limit promos before payment work continues.
+- Promo usage recording cannot be double-counted under normal retries.
+- Campaign usage is recorded server-side and cannot be client-spoofed.
+- Admin order routes are protected by admin auth.
+- Admin order status updates have matching client and server endpoints.
+- Production `npm start` does not run destructive seed logic.
+- Local `.env` variable names and `PROJECT_HANDOFF.md` deployment notes match the variables actually read by code, without exposing secret values.
+- Prisma migration for unique `stripePaymentIntentId` is safe to apply only after duplicate preflight checks.
+
+Required verification commands for a post-repair pass:
+- Run the client build command if available.
+- Run the server build command if available.
+- Run `prisma generate` if Prisma is used.
+- Run available lint scripts.
+- Run available test scripts.
+- Run targeted `node --check` or import checks for changed server files when useful.
+- If scripts are missing, document that they are missing instead of inventing them.
+
+Rules:
+- Do not start another broad refactor.
+- Do not redo already-correct repairs.
+- Do not commit or push unless explicitly asked.
+- Only edit files if a verified bug, incomplete repair, broken import, failed build, failed schema check, or unsafe edge case is found.
+- If the previous repair pass is correct, leave the code as-is and document verification.
+- If the previous repair pass is incomplete, finish only the incomplete parts.
+
+Required final output:
+1. What was already completed and verified.
+2. What was incomplete or incorrect.
+3. What was fixed in this run, if anything.
+4. Commands run and exact results.
+5. Remaining risks.
+6. Whether the local edits are safe to commit or still need review.
+7. Next recommended step.
+
+After this pass, update `PROJECT_HANDOFF.md` with the verification results, any additional fixes, remaining risks, and whether the current local working tree is ready for commit review.
+
+
+## Deployed Frontend API 404 / Backend Host Verification Requirement
+
+When a deployed frontend fails with API 404s on Vercel or another static frontend host, the agent must treat it as a deployment/API routing issue before assuming Stripe, checkout, or browser payment code is broken.
+
+Known symptom pattern:
+- Browser console shows requests to the frontend host, for example `https://doggy-ent.vercel.app/api/...`.
+- Requests such as `/api/checkout/preview`, `/api/campaigns/preview`, `/api/promos/validate`, or `/api/checkout/create-payment-intent` return 404.
+- Checkout shows a confusing error such as `The string did not match the expected pattern.`
+- Frontend logs mention JSON parsing or payment service errors after a failed API request.
+
+When this happens, the agent must verify:
+1. Whether the frontend is intentionally supposed to proxy `/api` through Vercel.
+2. Whether the backend actually runs on Railway or another server host.
+3. Whether client API helpers use the correct environment variable for the backend base URL.
+4. Whether Vercel environment variables include the required public client variable, such as `VITE_API_BASE_URL`.
+5. Whether local `.env` variable names and `PROJECT_HANDOFF.md` document the correct deployment setup without exposing secrets.
+6. Whether API error handling safely handles non-JSON responses, such as Vercel 404 HTML pages.
+
+Required audit areas:
+- Client API base URL helper or shared fetch wrapper.
+- Checkout API calls.
+- Payment API calls.
+- Promo API calls.
+- Campaign API calls.
+- Products/storefront API calls.
+- Admin API calls.
+- Local `.env` variable names only, without copying or exposing secret values.
+- Vercel and Railway environment variable requirements documented in `PROJECT_HANDOFF.md`.
+- Any `vercel.json`, Vite proxy config, or deployment docs.
+- `PROJECT_HANDOFF.md` deployment notes.
+
+Rules:
+- Do not change Stripe card logic until API routing is verified.
+- Do not assume `/api` works on Vercel unless there is a valid Vercel rewrite/proxy or backend deployed there.
+- If the backend is on Railway, the deployed frontend should call the Railway backend URL through a public Vite env variable.
+- The agent must explicitly account for the difference between local development and deployed Vercel behavior.
+- Local success is not enough verification if local Vite proxying can hide deployed API routing problems.
+- If local development uses `/api` through Vite proxy, the deployed Vercel app must still either use a full backend base URL from `VITE_API_BASE_URL` or have a valid Vercel rewrite to the backend.
+- Do not hardcode Railway, Vercel, localhost, or any production backend URL directly in client source code.
+- The preferred strategy for this project is: local development may default to `/api`, while deployed builds should use `import.meta.env.VITE_API_BASE_URL` when provided.
+- The final solution must work locally and on Vercel.
+- Codex can update code, examples, and docs, but the user must still set the real `VITE_API_BASE_URL` value inside Vercel project settings and redeploy.
+- If the project intentionally uses a Vercel rewrite, verify the rewrite exists and points to the live backend.
+- Improve fetch/API error handling so HTML 404 responses do not appear as misleading JSON or Stripe pattern errors.
+- Preserve checkout UX.
+- Do not commit or push unless explicitly asked.
+
+Required verification:
+- Run client build.
+- Run server build or syntax/import checks if server code changes.
+- Confirm the final deployed API base URL expectation is documented.
+- Verify the client build does not bake in `localhost` or the Vercel frontend host as the backend API base URL unless intentionally using a documented rewrite.
+- Verify `PROJECT_HANDOFF.md` explains that `VITE_API_BASE_URL` should be set in Vercel to the live backend origin, for example the Railway backend origin, without a trailing `/api` unless the code explicitly expects that shape.
+- Verify `PROJECT_HANDOFF.md` includes both local development behavior and Vercel deployment behavior.
+- Update `PROJECT_HANDOFF.md` with the root cause, fix, required Vercel/Railway env variables, and manual deployment steps.
+
+This deployment API routing check can be combined with the post-repair verification pass when both are relevant. In that case, first reconcile the interrupted repair pass, then fix the deployed API host/404 issue, then run verification and update `PROJECT_HANDOFF.md` once with both sets of results.
+
+
+## Prisma Migration / Railway Deployment Verification Requirement
+
+When a Prisma migration exists locally but may not be applied on Railway or another deployed database, the agent must treat migration deployment as a verified database operation, not a blind force update.
+
+Current known context:
+- Local migration `20260605000000_unique_order_payment_intent` was applied successfully in local development.
+- Local `npx prisma migrate status` reported the database schema was up to date after applying it.
+- Local `npx prisma generate` completed successfully.
+- Railway migration status is still unknown until explicitly checked.
+
+The agent must verify before applying this migration to Railway or any production-like database:
+1. Confirm the migration file exists in `server/prisma/migrations/20260605000000_unique_order_payment_intent/`.
+2. Confirm `server/prisma/schema.prisma` matches the migration intent.
+3. Confirm the target database does not contain duplicate non-null `stripePaymentIntentId` values.
+4. Confirm the target database is the intended Railway/testing database, not the wrong environment.
+5. Confirm the migration has not already been applied in `_prisma_migrations`.
+
+Required duplicate preflight query before applying the unique constraint migration to any deployed database:
+
+```sql
+SELECT "stripePaymentIntentId", COUNT(*)
+FROM "Order"
+WHERE "stripePaymentIntentId" IS NOT NULL
+GROUP BY "stripePaymentIntentId"
+HAVING COUNT(*) > 1;
+```
+
+Rules:
+- Do not use `prisma migrate reset` on Railway, production, staging, or any shared database.
+- Do not use destructive migration commands unless the user explicitly asks and understands data loss.
+- Do not apply production/Railway migrations automatically unless the user explicitly asks.
+- If the user asks to verify Railway only, check status and document the required command instead of applying.
+- For local development, `npx prisma migrate dev` is acceptable.
+- For Railway or production-like deployment, use `npx prisma migrate deploy` only after duplicate preflight passes.
+- Run `npx prisma generate` after migration deployment when appropriate.
+- Update `PROJECT_HANDOFF.md` with whether the migration is applied locally, whether Railway is verified, and any deployment steps still required.
+
+Useful verification commands:
+
+```bash
+cd server
+npx prisma migrate status
+npx prisma generate
+```
+
+Useful deployed migration command after preflight passes:
+
+```bash
+cd server
+npx prisma migrate deploy
+npx prisma generate
+```
+
+
+
+## Vercel SPA Route Fallback / Admin Route Verification Requirement
+
+When a Vue/Vite single-page app works locally but a deployed Vercel URL such as `/admin`, `/admin/login`, `/checkout`, `/orders/:id`, or another client-side route returns `404: NOT_FOUND`, the agent must treat it as a static hosting SPA fallback problem before assuming the Vue router or admin feature is broken.
+
+Known symptom pattern:
+- `http://localhost:5173/admin/login?redirect=/admin` works locally.
+- `https://doggy-ent.vercel.app/admin` or another direct deployed route returns Vercel `404: NOT_FOUND`.
+- Refreshing a nested route on Vercel fails, but navigating to the same route from inside the app may work.
+
+The agent must verify:
+1. Whether the client is a Vue/Vite SPA using client-side routing.
+2. Whether Vercel is configured to rewrite all non-file routes back to `/index.html`.
+3. Whether a `vercel.json` file exists at the correct deployed project root.
+4. Whether the Vercel project root is the repository root or the `client` directory.
+5. Whether the fallback rewrite is placed in the correct location for the actual Vercel root.
+6. Whether API routes are excluded from the SPA fallback so `/api/...` is still handled by the backend strategy or documented rewrite.
+
+Required behavior:
+- Direct browser visits to `/admin` and `/admin/login?redirect=/admin` must load the Vue app instead of Vercel 404.
+- Browser refresh on client-side routes must load the Vue app instead of Vercel 404.
+- Static assets must still load normally.
+- API calls must not be swallowed by the SPA fallback if the app expects them to go to Railway or through a proxy rewrite.
+
+Preferred Vercel SPA fallback example when the frontend is deployed as a static Vite app:
+
+```json
+{
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
+```
+
+If the project uses full backend API URLs through `VITE_API_BASE_URL`, the SPA fallback can safely exclude `/api` and allow API calls to go to the configured backend host from client code.
+
+Rules:
+- Do not change admin authentication logic until SPA routing fallback is verified.
+- Do not assume the admin page is missing just because the deployed direct URL returns Vercel 404.
+- Do not add a rewrite that accidentally sends `/api/...` requests to `index.html`.
+- Verify the actual Vercel root before deciding where `vercel.json` belongs.
+- Preserve existing Vue router behavior and admin UX.
+- Update deployment notes or `PROJECT_HANDOFF.md` if the Vercel routing setup changes; do not create `.env.example` files unless the user explicitly asks.
+
+Required verification:
+- Run client build.
+- Confirm direct deployed routes require a Vercel SPA fallback.
+- Confirm `/admin`, `/admin/login?redirect=/admin`, and at least one storefront route are documented in the manual QA checklist.
+- Update `PROJECT_HANDOFF.md` with the Vercel SPA fallback root cause, fix, and redeploy steps.
+
+This SPA route fallback check can be combined with the deployed API 404 check. In that case, the agent must distinguish between:
+- Page route 404s, such as `/admin`, which need an SPA fallback to `/index.html`.
+- API route 404s, such as `/api/checkout/preview`, which need a backend base URL or API rewrite and must not be masked by the SPA fallback.
+
+
+## Environment File Policy
+
+This project uses local `.env` files for local development and Railway/Vercel dashboard variables for deployed environments.
+
+Rules:
+- Do not create new `.env.example` files unless the user explicitly asks for them.
+- If a previous repair pass created `client/.env.example` or `server/.env.example`, remove those files unless the user explicitly says to keep them.
+- Do not commit `.env`, `.env.local`, `.env.production`, or any file containing real secrets.
+- Do not copy secret values from `.env` into `PROJECT_HANDOFF.md`, `AGENTS.md`, comments, logs, or example files.
+- It is acceptable to document required environment variable names in `PROJECT_HANDOFF.md`, but values must be described as placeholders only.
+- For local development, read variable names from the existing local `.env` files only as needed.
+- For deployment, document that matching values must be configured inside Railway and Vercel dashboards.
+
+Important deployment variables to document by name only:
+- Server/Railway: `PORT`, `NODE_ENV`, `CLIENT_URL`, `FRONTEND_URL` if used by code, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `STRIPE_SECRET_KEY`, `DATABASE_URL`.
+- Client/Vercel: `VITE_API_BASE_URL`, Stripe publishable key variable if used by code.
+
+When fixing deployment issues, update `PROJECT_HANDOFF.md` with required variable names and where they must be set, but never include actual secret values.

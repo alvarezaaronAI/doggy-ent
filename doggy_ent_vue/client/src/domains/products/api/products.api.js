@@ -1,23 +1,10 @@
 
-function normalizeApiBaseUrl(value) {
-  const url = String(value || '').trim()
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
 
-  if (!url) {
-    return ''
-  }
-
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url.replace(/\/$/, '')
-  }
-
-  return `https://${url}`.replace(/\/$/, '')
-}
-
-const API_BASE_URL = normalizeApiBaseUrl(
-  import.meta.env.VITE_API_URL,
-)
-
-const PRODUCTS_API_BASE = `${API_BASE_URL}/api/products`
+const PRODUCTS_API_BASE = '/api/products'
 
 function normalizeVariant(product, variant) {
   return {
@@ -46,13 +33,10 @@ function normalizeProduct(product) {
 }
 
 export async function fetchProducts() {
-  const response = await fetch(PRODUCTS_API_BASE)
-
-  if (!response.ok) {
-    throw new Error(`Products request failed with status ${response.status}`)
-  }
-
-  const data = await response.json()
+  const data = await parseJsonResponse(
+    await fetchApi(PRODUCTS_API_BASE),
+    'Unable to load products.',
+  )
 
   const products = Array.isArray(data)
     ? data
@@ -64,13 +48,10 @@ export async function fetchProducts() {
 }
 
 export async function fetchProductBySlug(slug) {
-  const response = await fetch(`${PRODUCTS_API_BASE}/${slug}`)
-
-  if (!response.ok) {
-    throw new Error(`Product request failed with status ${response.status}`)
-  }
-
-  const product = await response.json()
+  const product = await parseJsonResponse(
+    await fetchApi(`${PRODUCTS_API_BASE}/${slug}`),
+    'Unable to load product.',
+  )
 
   return normalizeProduct(product)
 }

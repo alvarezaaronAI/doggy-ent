@@ -1,18 +1,19 @@
 
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
+
 async function parseCheckoutResponse(
   response,
   fallbackMessage,
 ) {
-  let data = null
+  const data = await parseJsonResponse(
+    response,
+    fallbackMessage,
+  )
 
-  try {
-    data = await response.json()
-  }
-  catch {
-    data = null
-  }
-
-  if (!response.ok || !data?.success) {
+  if (!data?.success) {
     throw new Error(
       data?.message || fallbackMessage,
     )
@@ -26,7 +27,7 @@ async function postCheckoutRequest(
   payload,
   fallbackMessage,
 ) {
-  const response = await fetch(endpoint, {
+  const response = await fetchApi(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

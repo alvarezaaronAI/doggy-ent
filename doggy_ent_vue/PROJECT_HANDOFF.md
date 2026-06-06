@@ -796,7 +796,8 @@ Missing but client attempts:
 Client env variables observed:
 
 - `VITE_STRIPE_PUBLISHABLE_KEY`
-- `VITE_API_URL` is referenced in `client/src/domains/products/api/products.api.js`, but is not present in `client/.env` based on key-only inspection.
+- `VITE_API_BASE_URL` is the preferred deployed backend origin variable after the 2026-06-05 post-repair verification pass. It should be set in Vercel to the live backend origin only, without a trailing `/api`.
+- `VITE_API_URL` is still accepted as a backwards-compatible fallback by `client/src/shared/api/http.js`, but new deployment setup should use `VITE_API_BASE_URL`.
 
 Server env variables referenced in code:
 
@@ -819,21 +820,23 @@ Server `.env` keys observed by name:
 - `STRIPE_SECRET_KEY`
 - `DATABASE_URL`
 
-Important env mismatch:
+Important env notes:
 
-- `server/.env` contains `CLIENT_URL`, but `server/src/app.js` reads `FRONTEND_URL` for CORS. Unless deployment sets `FRONTEND_URL`, only `http://localhost:5173` will be allowed.
+- `server/src/app.js` accepts both `CLIENT_URL` and `FRONTEND_URL` for CORS. Deployment should set at least one of those to the Vercel frontend origin.
+- Local `.env` files are used only for local development. Do not commit `.env`, `.env.local`, `.env.production`, or files containing real secret values.
 
 Public vs private:
 
-- Public client: `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_API_URL`.
+- Public client: `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_API_BASE_URL`.
 - Private server: `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `STRIPE_SECRET_KEY`.
-- Operational/server: `PORT`, `NODE_ENV`, `FRONTEND_URL`, `TAX_PROVIDER`.
+- Operational/server: `PORT`, `NODE_ENV`, `CLIENT_URL`, `FRONTEND_URL`, `TAX_PROVIDER`.
 
 Deployment evidence:
 
-- No Railway, Vercel, Cloudflare, Dockerfile, or Procfile config was found in the audited repo.
-- `server/package.json` start script runs: `prisma migrate deploy && node src/db/seeds/products.seed.js && node src/server.js`.
-- Risk: start script seeds products on every start and `products.seed.js` deletes product variants/products before inserting seed products. This can erase live catalog changes if used in production.
+- `client/vercel.json` now exists for the Vite frontend project root and rewrites non-API paths to `/index.html` for SPA fallback.
+- No Railway config, Cloudflare config, Dockerfile, or Procfile was found in the audited repo.
+- `server/package.json` start script now runs: `prisma migrate deploy && node src/server.js`.
+- Product seeding is explicit through `npm run seed:products`; production startup does not run product seed scripts.
 
 ## 12. Build, Test, and Verification Commands
 
@@ -1223,7 +1226,7 @@ No cosmetic refactors were performed in this pass. Changes were limited to verif
 
 10. Environment documentation and CORS variable names were inconsistent.
     - Previous behavior: server code used `FRONTEND_URL`; existing env usage also referenced `CLIENT_URL`; no `.env.example` files existed.
-    - Fix: CORS accepts both `FRONTEND_URL` and `CLIENT_URL`. Added `client/.env.example` and `server/.env.example`.
+    - Fix: CORS accepts both `FRONTEND_URL` and `CLIENT_URL`. A later post-repair pass removed the temporary `.env.example` files because this project documents deployment variable names in `PROJECT_HANDOFF.md` instead.
 
 11. Admin order stats and filters did not match server data.
     - Previous behavior: client expected `paidOrders`, `fulfilledOrders`, `totalDonationGenerated`, and payment/fulfillment status fields that were not returned on order objects.
@@ -1237,7 +1240,6 @@ No cosmetic refactors were performed in this pass. Changes were limited to verif
 
 Client:
 
-- `client/.env.example`: documents public client environment values.
 - `client/src/domains/admin/api/adminOrders.api.js`: added order detail and order status update API helpers.
 - `client/src/domains/admin/composables/useAdminOrders.js`: removed filtering against nonexistent order fields.
 - `client/src/domains/admin/constants/adminOrders.constants.js`: aligned filter statuses with server order statuses.
@@ -1251,7 +1253,6 @@ Client:
 
 Server:
 
-- `server/.env.example`: documents required private server environment values.
 - `server/package.json`: removed destructive product seeding from production `start`.
 - `server/prisma/schema.prisma`: made `Order.stripePaymentIntentId` unique.
 - `server/prisma/migrations/20260605000000_unique_order_payment_intent/migration.sql`: adds the unique index for Stripe payment intent idempotency.
@@ -1377,3 +1378,259 @@ The next safest phase is a focused QA and production hardening pass:
 2. Add automated tests for checkout pricing, PaymentIntent creation, idempotent order creation, promo validation/usage, campaign usage, and admin auth.
 3. Decide whether to add persistent admin sessions before launch.
 4. Decide whether promo and campaign usage should move into a stronger transactional or per-order usage model.
+
+## 21. Post-Repair Verification and Deployment 404 Fix - 2026-06-05
+
+This section reconciles the interrupted repair run and documents the follow-up deployment fixes.
+
+### Interrupted Run Reconciliation
+
+Observed at the start of this pass:
+
+- `git status` showed only `AGENTS.md` modified.
+- `git diff --stat` showed only `AGENTS.md`.
+- `git diff --name-status` showed only `M doggy_ent_vue/AGENTS.md`.
+- Despite that clean working tree, the high-risk repair code described in the previous report was present in `HEAD` and verified from source.
+
+Conclusion:
+
+- The previous UI checklist was incomplete, but the actual repository already contained the core repair-pass code in the high-risk server/client files.
+- The old final report was partially stale because it described `client/.env.example` and `server/.env.example` as desired outputs. Current project policy says those files should not exist, so they were removed in this pass.
+
+### Verified From Current Code
+
+Already correct in the current repository:
+
+- Stripe PaymentIntent creation no longer trusts a client-submitted amount. `server/src/domains/payments/controllers/payment.controller.js` calls `previewCheckout()` and uses trusted server pricing.
+- Checkout preview, PaymentIntent creation, and order creation use the same server checkout pricing path.
+- Shipping price cannot be spoofed by the client. `server/src/domains/checkout/utils/checkoutPricing.js` derives shipping from server-owned constants.
+- `Order.stripePaymentIntentId` is unique in `server/prisma/schema.prisma`, and the local migration exists at `server/prisma/migrations/20260605000000_unique_order_payment_intent/migration.sql`.
+- Local Prisma status reported the local database schema is up to date.
+- Local `prisma generate` completed through `npm run build` in `server/`.
+- Admin order routes apply `requireAdminAuth`.
+- Admin order status update client and server endpoints match.
+- Production server `npm start` does not run product seed scripts.
+- Promo analytics uses `redeemedAt` rather than nonexistent `createdAt`.
+- Campaign usage recording is server-side and the old public record usage route is auth-protected.
+
+### Incomplete or Broken Before This Pass
+
+Confirmed deployment blockers:
+
+- Deployed checkout failed because the Vercel frontend called relative `/api/...` paths on `doggy-ent.vercel.app`. Locally this worked only because `client/vite.config.js` proxies `/api` to `http://localhost:3000`.
+- Deployed direct `/admin` returned Vercel `404: NOT_FOUND` because the static Vite SPA did not have a Vercel fallback to `/index.html`.
+- Production admin auth cookies used `SameSite=strict`, which blocks cross-site Vercel frontend to Railway backend cookie sessions even when the browser request uses `credentials: include`.
+- API response parsing assumed JSON in several places, so Vercel HTML 404 pages could surface as confusing checkout/payment errors.
+- `client/.env.example` and `server/.env.example` existed, but project policy says this repo should not keep `.env.example` files.
+
+### Fixes Made in This Pass
+
+Client deployment/API routing:
+
+- Added `client/src/shared/api/http.js`.
+  - `buildApiUrl(path)` uses `VITE_API_BASE_URL` when provided, falling back to `VITE_API_URL` for compatibility and then to relative `/api` paths for local Vite proxy development.
+  - `fetchApi(path, options)` sends credentialed requests so admin auth can work across the deployed frontend/backend boundary.
+  - `parseJsonResponse(response, fallbackMessage)` detects non-JSON responses, including Vercel HTML 404 pages, and raises a clear deployment/API routing error.
+
+- Updated these client API/auth callers to use the shared helper:
+  - `client/src/domains/products/api/products.api.js`
+  - `client/src/domains/admin/api/adminProducts.api.js`
+  - `client/src/domains/admin/api/adminCampaigns.api.js`
+  - `client/src/domains/admin/api/adminOrders.api.js`
+  - `client/src/domains/checkout/api/checkout.api.js`
+  - `client/src/domains/payments/services/payment.service.js`
+  - `client/src/domains/promos/api/promos.api.js`
+  - `client/src/domains/campaigns/api/campaigns.api.js`
+  - `client/src/domains/admin/views/AdminLoginView.vue`
+  - `client/src/domains/admin/views/AdminDashboardView.vue`
+  - `client/src/app/router/index.js`
+
+Vercel SPA fallback:
+
+- Added `client/vercel.json` at the Vite frontend project root:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+- The rewrite intentionally excludes `/api/...` so API mistakes are not silently routed to `index.html`.
+- Based on the local repo, `client/` is the actual frontend/Vite project root. No root-level Vercel config or `.vercel/project.json` was found.
+
+Server auth deployment:
+
+- Updated `server/src/domains/auth/services/auth.service.js` so production admin session cookies use `SameSite=None` with `secure: true`. This supports a Vercel frontend calling a Railway backend with `credentials: include`.
+
+Environment files:
+
+- Removed `client/.env.example`.
+- Removed `server/.env.example`.
+- Required variables are documented here by name only; no secret values were copied from local `.env` files.
+
+### Required Deployment Variables
+
+Set in Vercel for the client:
+
+- `VITE_STRIPE_PUBLISHABLE_KEY`: Stripe publishable key for the intended Stripe environment.
+- `VITE_API_BASE_URL`: live backend origin, for example the Railway service origin. Do not include a trailing `/api`; the client code appends `/api/...`.
+
+Set in Railway for the server:
+
+- `PORT`: server port, usually provided by Railway.
+- `NODE_ENV`: use `production` for deployed production.
+- `DATABASE_URL`: Railway Postgres connection string.
+- `CLIENT_URL`: Vercel frontend origin for CORS.
+- `FRONTEND_URL`: also accepted by server CORS; set this to the same frontend origin if using that naming convention.
+- `ADMIN_EMAIL`: admin login email.
+- `ADMIN_PASSWORD_HASH`: bcrypt hash for the admin password.
+- `STRIPE_SECRET_KEY`: Stripe secret key for the intended Stripe environment.
+- `TAX_PROVIDER`: optional; defaults to local tax calculation if unset.
+
+No values should be committed to the repository.
+
+### Railway Migration Status and Required Steps
+
+Verified locally:
+
+- `server/prisma/migrations/20260605000000_unique_order_payment_intent/migration.sql` exists.
+- `server/prisma/schema.prisma` has `stripePaymentIntentId String? @unique`.
+- Local `npx prisma migrate status` reported: `Database schema is up to date!`
+- Local `npm run build` in `server/` completed `prisma generate`.
+
+Not verified:
+
+- Railway migration status is still unknown from this local pass.
+- No Railway migration was applied automatically.
+
+Required Railway preflight before deploying the unique constraint migration:
+
+```sql
+SELECT "stripePaymentIntentId", COUNT(*)
+FROM "Order"
+WHERE "stripePaymentIntentId" IS NOT NULL
+GROUP BY "stripePaymentIntentId"
+HAVING COUNT(*) > 1;
+```
+
+If the preflight returns no rows and the target database is confirmed to be the intended Railway database, deploy migrations from the server project:
+
+```bash
+cd server
+npx prisma migrate status
+npx prisma migrate deploy
+npx prisma generate
+```
+
+Do not run `prisma migrate reset` on Railway or any shared database.
+
+### Manual Redeploy Steps
+
+1. Set Vercel `VITE_API_BASE_URL` to the live backend origin, without `/api`.
+2. Set Vercel `VITE_STRIPE_PUBLISHABLE_KEY`.
+3. Set Railway `CLIENT_URL` or `FRONTEND_URL` to the Vercel frontend origin.
+4. Confirm Railway has `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `STRIPE_SECRET_KEY`, `NODE_ENV`, and `PORT`.
+5. Verify Railway migration status and run the duplicate preflight before `npx prisma migrate deploy`.
+6. Redeploy Railway after any server env or migration changes.
+7. Redeploy Vercel after setting `VITE_API_BASE_URL`, because Vite bakes public env variables at build time.
+8. Manually test:
+   - `/`
+   - `/checkout`
+   - `/admin`
+   - `/admin/login?redirect=/admin`
+   - `/order-success/test-route-check`
+   - checkout preview, promo validation, campaign preview, PaymentIntent creation, and final checkout.
+
+### Verification Commands and Results
+
+Passed:
+
+```bash
+git status
+```
+
+Result at start: only `AGENTS.md` was modified.
+
+```bash
+git diff --stat
+```
+
+Result at start: only `AGENTS.md`.
+
+```bash
+git diff --name-status
+```
+
+Result at start: only `M doggy_ent_vue/AGENTS.md`.
+
+```bash
+cd server
+npx prisma migrate status
+```
+
+Result: `Database schema is up to date!` for the local `localhost:5432` database.
+
+```bash
+cd client
+npm run build
+```
+
+Result: passed.
+
+```bash
+cd server
+npm run build
+```
+
+Result: passed and generated Prisma Client.
+
+```bash
+cd server
+node --check src/app.js
+node --check src/domains/auth/services/auth.service.js
+```
+
+Result: passed.
+
+```bash
+node -e "import('./server/src/app.js').then(() => console.log('app import ok'))"
+```
+
+Result: `app import ok`.
+
+```bash
+cd client
+VITE_API_BASE_URL=https://api.example.test npm run build
+rg -o "https://api\\.example\\.test|localhost:3000|doggy-ent\\.vercel\\.app" dist
+```
+
+Result: build passed and the dist bundle contained the placeholder API origin. No `localhost:3000` or `doggy-ent.vercel.app` API origin was found.
+
+Not available:
+
+- No client lint script exists.
+- No server lint script exists.
+- No client or server test script exists.
+
+### Remaining Risks
+
+- Railway migration status must still be verified against the actual Railway database before production deploy.
+- Cross-site admin cookies now use `SameSite=None; Secure`, but admin sessions are still stored in memory and will reset on server restart or fail across multiple server instances.
+- Promo usage and campaign usage still have the aggregate/idempotency limitations described in section 20.
+- Deployed checkout needs manual QA with real Vercel and Railway env variables after redeploy.
+- The client still supports `VITE_API_URL` as a fallback for compatibility, but deployment docs should prefer `VITE_API_BASE_URL`.
+
+### Current Working Tree Safety
+
+The local edits from this pass are focused and safe for commit review after human inspection:
+
+- They fix verified Vercel API 404 behavior, SPA direct-route 404 behavior, cross-origin admin cookie behavior, and stale env example files.
+- They do not redesign UX.
+- They do not apply Railway migrations.
+- They do not expose local `.env` secret values.
+- `AGENTS.md` remains modified from before this pass and should be reviewed as a separate instruction-file change.

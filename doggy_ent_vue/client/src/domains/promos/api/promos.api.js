@@ -1,26 +1,17 @@
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
+
 const ADMIN_PROMOS_API_BASE_URL = '/api/admin/promos'
 const PUBLIC_PROMOS_API_BASE_URL = '/api/promos'
 
 async function parseApiResponse(response, fallbackMessage) {
-  let data = null
-
-  try {
-    data = await response.json()
-  } catch {
-    data = null
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message || fallbackMessage,
-    )
-  }
-
-  return data
+  return parseJsonResponse(response, fallbackMessage)
 }
 
 export async function fetchPromos() {
-  const response = await fetch(
+  const response = await fetchApi(
     ADMIN_PROMOS_API_BASE_URL,
   )
 
@@ -31,7 +22,7 @@ export async function fetchPromos() {
 }
 
 export async function createPromo(payload) {
-  const response = await fetch(
+  const response = await fetchApi(
     ADMIN_PROMOS_API_BASE_URL,
     {
       method: 'POST',
@@ -52,7 +43,7 @@ export async function updatePromo(
   promoId,
   payload,
 ) {
-  const response = await fetch(
+  const response = await fetchApi(
     `${ADMIN_PROMOS_API_BASE_URL}/${promoId}`,
     {
       method: 'PUT',
@@ -70,7 +61,7 @@ export async function updatePromo(
 }
 
 export async function deletePromo(promoId) {
-  const response = await fetch(
+  const response = await fetchApi(
     `${ADMIN_PROMOS_API_BASE_URL}/${promoId}`,
     {
       method: 'DELETE',
@@ -86,7 +77,7 @@ export async function deletePromo(promoId) {
 export async function fetchPromoAnalytics(
   promoId,
 ) {
-  const response = await fetch(
+  const response = await fetchApi(
     `${ADMIN_PROMOS_API_BASE_URL}/${promoId}/analytics`,
   )
 
@@ -116,7 +107,7 @@ export async function validatePromoCode(payload) {
       ),
     },
   }
-  const response = await fetch(
+  const response = await fetchApi(
     `${PUBLIC_PROMOS_API_BASE_URL}/validate`,
     {
       method: 'POST',

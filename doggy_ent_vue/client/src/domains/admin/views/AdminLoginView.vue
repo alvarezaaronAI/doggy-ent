@@ -59,6 +59,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
 
 const router = useRouter()
 
@@ -74,9 +78,8 @@ async function login() {
   messageType.value = 'error'
 
   try {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetchApi('/api/auth/login', {
       method: 'POST',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -86,7 +89,10 @@ async function login() {
       }),
     })
 
-    const data = await response.json()
+    const data = await parseJsonResponse(
+      response,
+      'Unable to sign in.',
+    )
 
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Unable to sign in.')

@@ -1,4 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
 import HomeView from '../../domains/storefront/Home/HomeView.vue'
 import AdminDashboardView from '../../domains/admin/views/AdminDashboardView.vue'
 import AdminProductsView from '../../domains/admin/views/AdminProductsView.vue'
@@ -78,11 +82,12 @@ router.beforeEach(async (to) => {
   if (!to.meta.requiresAdminAuth) return true
 
   try {
-    const response = await fetch('/api/auth/me', {
-      credentials: 'include',
-    })
+    const response = await fetchApi('/api/auth/me')
 
-    const data = await response.json()
+    const data = await parseJsonResponse(
+      response,
+      'Unable to validate admin session.',
+    )
 
     if (response.ok && data.authenticated) {
       return true

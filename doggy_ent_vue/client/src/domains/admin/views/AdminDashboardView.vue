@@ -76,17 +76,22 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  fetchApi,
+  parseJsonResponse,
+} from '@shared/api/http.js'
 
 const router = useRouter()
 const admin = ref(null)
 
 async function loadAdminSession() {
   try {
-    const response = await fetch('/api/auth/me', {
-      credentials: 'include',
-    })
+    const response = await fetchApi('/api/auth/me')
 
-    const data = await response.json()
+    const data = await parseJsonResponse(
+      response,
+      'Unable to validate admin session.',
+    )
 
     if (response.ok && data.authenticated) {
       admin.value = data.admin
@@ -98,9 +103,8 @@ async function loadAdminSession() {
 
 async function logout() {
   try {
-    await fetch('/api/auth/logout', {
+    await fetchApi('/api/auth/logout', {
       method: 'POST',
-      credentials: 'include',
     })
   } finally {
     admin.value = null
