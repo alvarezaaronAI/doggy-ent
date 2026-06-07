@@ -1281,4 +1281,365 @@ Manual QA checklist:
 - Change order status in admin and confirm it does not save until Save is clicked.
 - Save a status change and confirm last updated/status history is visible.
 - Confirm status history uses placeholder attribution only until Better Auth exists.
-- Confirm relevant files remain organized by domain and no touched file has become an avoidable god file.
+
+
+## Promo Discount Calculation / Automated Test Infrastructure Requirement
+
+When the user reports that a promo code validates but produces a `$0.00` discount, the agent must treat it as a pricing correctness bug and a test coverage gap.
+
+Known symptom pattern:
+- Checkout accepts or registers promo code `CHASE20`.
+- Checkout UI says the promo was applied successfully.
+- Checkout order summary still shows no discount or `-$0.00`.
+- Admin promo analytics shows redemptions but `Discount Given` is `$0.00`.
+- Admin promo test/preview says the promo is valid but returns `$0.00` discount.
+- Promo may be tested alongside active campaign donation logic, so promo and campaign calculations must be checked together.
+
+Primary goals:
+- Find the exact root cause of valid promos returning zero discount.
+- Fix promo discount calculation across admin promo test, checkout preview, final order creation, promo usage analytics, and order detail.
+- Ensure promo discount and campaign donation can coexist correctly.
+- Add automated test infrastructure so pricing, promo, campaign, order, and admin flows can be tested with one command.
+
+The agent must audit before editing:
+1. `server/prisma/schema.prisma` Promo and PromoUsage fields.
+2. Promo seed/admin-created data shape for `CHASE20` or equivalent percent/fixed promos.
+3. Server promo validation route/controller/service/repository.
+4. Promo calculation helpers/rules.
+5. Checkout preview/pricing service.
+6. Checkout final order creation and promo usage recording.
+7. Campaign preview/donation calculation.
+8. Order creation/order detail pricing fields.
+9. Admin promo analytics mapper/service/UI.
+10. Client checkout promo composable/API code.
+11. Any money formatting/cents-to-dollars utilities.
+12. Any mismatches between percent values stored as `20`, `0.2`, or cents.
+13. Any mismatches between subtotal units stored as dollars vs cents.
+
+Promo discount rules:
+- If a percent promo is configured as `20`, it should apply as 20%, not zero and not 2000%.
+- If a percent promo is configured as `0.2`, the code must either support it deliberately or normalize/reject it clearly.
+- Fixed-amount promos must use consistent units across client/server/database.
+- Minimum subtotal checks must use the same units as subtotal calculation.
+- Promo validation, checkout preview, final checkout, order detail, and analytics must all agree on discount amount.
+- Promo usage analytics must record and display the actual discount given, not just the fact that a promo was used.
+- If the promo is valid but discount is zero due to configuration, the admin UI should make that obvious.
+- Do not hide a zero discount behind a success message unless the business rule truly allows zero-discount promos.
+
+Promo + campaign rules:
+- Promo discount and campaign donation should both be tested together.
+- Campaign donation should not erase promo discount.
+- Promo discount should not erase campaign donation.
+- Tax/shipping/total should remain server-owned and consistently calculated.
+- If business rules define whether donation is based on pre-discount or post-discount eligible subtotal, document and enforce the rule consistently.
+
+Automated testing requirement:
+- Add a test setup only if the project does not already have one.
+- Prefer standard maintainable tools:
+  - Client/Vue: Vitest + Vue Test Utils if Vue component/composable testing is needed.
+  - Server: Vitest or Node test runner for service/repository/unit tests.
+  - End-to-end/browser tests may be documented for later unless the user explicitly asks to add Playwright now.
+- Add one root-level or documented single command to run the important tests when possible.
+- If root package scripts do not exist, either add a root script safely or document exact commands in `PROJECT_HANDOFF.md`.
+- Tests should produce useful failure output in the terminal.
+- Do not create a fake test suite that only checks trivial imports.
+- Focus first automated tests on money/pricing logic and promo/campaign interactions.
+
+Recommended tests to add if feasible:
+1. Promo validation requires email when promo usage is email-limited.
+2. Email is normalized before promo usage lookup.
+3. Percent promo `CHASE20` gives expected discount for a known subtotal.
+4. Fixed promo gives expected discount for a known subtotal.
+5. Promo with minimum subtotal rejects below threshold and accepts above threshold.
+6. Promo + campaign together returns correct subtotal, discount, donation, tax, shipping, and total.
+7. Promo usage records actual discount amount.
+8. Changing email after promo application clears or requires revalidation on the client composable if the composable is easy to unit test.
+9. Order status history service records status changes only after explicit save if server-side logic is easy to test.
+
+File organization rules:
+- Test files should live near the domain they test or under a clear test folder following project conventions.
+- Do not dump all tests into one huge file.
+- Suggested server test locations:
+  - `server/src/domains/promos/__tests__/`
+  - `server/src/domains/checkout/__tests__/`
+  - `server/src/domains/campaigns/__tests__/`
+  - `server/src/domains/orders/__tests__/`
+- Suggested client test locations:
+  - `client/src/domains/checkout/__tests__/`
+  - `client/src/domains/admin/__tests__/`
+  - or colocated `*.spec.js` files if that matches the chosen test setup.
+- If shared test fixtures are added, place them in a clear test helper folder and avoid real secrets or real Railway/Vercel URLs.
+
+Rules:
+- Do not start a broad rewrite of checkout or promos.
+- Do not change database schema unless a verified schema mismatch requires it.
+- Do not use real Stripe calls in unit tests.
+- Do not use real Railway DB in automated tests.
+- Do not commit secrets, real database URLs, or real Stripe keys.
+- Do not mark the issue fixed only because the UI message says promo applied; verify numeric discount values.
+- Preserve existing checkout UX except for necessary validation/error messaging.
+- Keep code and tests organized by domain.
+
+Required verification:
+- Run client build.
+- Run server build or syntax/import checks for changed server files.
+- Run Prisma generate if schema/prisma client usage changes.
+- Run the new test command(s) and confirm they pass.
+- Verify admin promo test for `CHASE20` returns a non-zero discount when configured as a non-zero discount promo.
+- Verify checkout with `CHASE20` shows the correct discount in preview/order summary.
+- Verify final order records the promo discount correctly.
+- Verify admin promo analytics shows actual `Discount Given` above `$0.00` for the new discounted test order.
+- Verify promo + campaign donation totals both appear correctly when used together.
+- Verify no `.env.example` files are created.
+- Verify no secrets are documented.
+- Update `PROJECT_HANDOFF.md` and relevant docs/architecture files with the test setup, commands, pricing source of truth, and remaining coverage gaps.
+
+Manual QA checklist:
+- Create or confirm a non-zero discount promo such as `CHASE20`.
+- Test the promo in admin preview with a known subtotal and customer email.
+- Confirm discount is non-zero and mathematically correct.
+- Apply the promo during checkout after entering email.
+- Confirm checkout summary shows discount before payment.
+- Complete an order with promo only.
+- Complete an order with promo + campaign eligible item.
+- Confirm order success page, admin order detail, and promo analytics all show the same discount amount.
+- Confirm campaign donation still appears correctly.
+- Run the one-command automated test suite and confirm it reports useful pass/fail output.
+
+## Tiered Automated Testing Strategy Requirement
+
+When the user asks for automated tests, test infrastructure, one-command testing, or broader QA coverage, the agent must prioritize tests by business risk instead of generating shallow tests for every file.
+
+Primary goal:
+- Build a practical, maintainable test system that catches high-risk business logic failures early.
+- Allow the user and future agents to run the most important tests first, then progressively run broader tests.
+- Make future debugging faster by producing clear pass/fail output and documenting what each tier covers.
+- Use tests to quickly identify core logic failures such as promo calculation bugs, checkout total mismatches, campaign donation issues, duplicate order risks, selected-variant pricing bugs, and status-history regressions.
+
+Testing philosophy:
+- Do not create hundreds of low-value tests that only verify imports, snapshots, or trivial rendering.
+- Prioritize logic that affects money, discounts, donations, orders, inventory, payment amounts, customer-facing totals, and admin operations.
+- Tests should be organized by domain and tier so they are easy to run and understand.
+- The first objective is to reproduce and isolate the current highest-risk bug before expanding coverage.
+
+Recommended folder structure:
+
+```text
+client/
+  tests/
+    tier1/
+      checkout/
+      cart/
+      promos/
+    tier2/
+      admin/
+      campaigns/
+      orders/
+    tier3/
+      ui/
+      components/
+server/
+  tests/
+    tier1/
+      checkout/
+      promos/
+      campaigns/
+      orders/
+      payments/
+    tier2/
+      admin/
+      products/
+      campaigns/
+      orders/
+    tier3/
+      utils/
+      formatting/
+```
+
+The exact structure may differ if the repo already has a test convention, but the tier concept must remain clear.
+
+Required root commands, if feasible:
+
+```json
+{
+  "scripts": {
+    "test": "npm run tiertest1 && npm run tiertest2 && npm run tiertest3",
+    "tiertest1": "npm run tiertest1:server && npm run tiertest1:client",
+    "tiertest2": "npm run tiertest2:server && npm run tiertest2:client",
+    "tiertest3": "npm run tiertest3:server && npm run tiertest3:client",
+    "tiertest1:server": "cd server && npm run tiertest1",
+    "tiertest1:client": "cd client && npm run tiertest1",
+    "tiertest2:server": "cd server && npm run tiertest2",
+    "tiertest2:client": "cd client && npm run tiertest2",
+    "tiertest3:server": "cd server && npm run tiertest3",
+    "tiertest3:client": "cd client && npm run tiertest3"
+  }
+}
+```
+
+If a root `package.json` does not exist, the agent may create one only if it is safe for the repo and does not disrupt client/server package behavior. Otherwise, document exact commands in `PROJECT_HANDOFF.md`.
+
+Tier 1 — Critical launch and money logic:
+- Checkout pricing totals.
+- Promo percent/fixed discount calculations.
+- Promo email validation and usage limits.
+- Promo + campaign donation combined totals.
+- Campaign donation calculations.
+- Stripe PaymentIntent amount is based on trusted server totals.
+- Order creation and duplicate payment/order protection.
+- Inventory decrement rules if testable without real payment calls.
+- Product variant add-to-cart and cart pricing.
+- Order status history server logic if already added.
+
+Tier 2 — Important admin and data workflows:
+- Admin product create/edit/status logic.
+- Admin promo create/edit/test/analytics logic.
+- Admin campaign create/edit/status/reporting logic.
+- Admin order list/detail/status workflow.
+- Order campaign attribution reporting.
+- Similar-customer order lookup.
+- Customer-safe order success lookup.
+
+Tier 3 — Lower-risk UI and utilities:
+- Non-critical components.
+- Formatting helpers.
+- Filters/search/sorting.
+- Loading/error states.
+- Modal/drawer behavior.
+- Pure visual or convenience interactions.
+
+Testing tool guidance:
+- Prefer Vitest for server unit tests unless the project already uses another test runner.
+- Prefer Vitest + Vue Test Utils for Vue composables/components if client tests are needed.
+- Do not add Playwright/E2E unless explicitly requested or clearly justified; document it as a future option if not added.
+- Avoid real Stripe calls, real Railway DB calls, real Vercel calls, and real secret-dependent tests.
+- Use fixtures, mocks, pure helpers, and service-level tests for business logic.
+- Tests must produce useful terminal output when failures occur.
+
+Required first test targets when a promo discount bug exists:
+1. `CHASE20` or equivalent percent promo returns a non-zero expected discount for a known subtotal.
+2. Fixed promo returns expected discount for a known subtotal.
+3. Promo minimum subtotal rules work.
+4. Promo requires normalized email when usage is email-limited.
+5. Promo usage records actual discount amount.
+6. Promo + campaign donation totals coexist correctly.
+7. Checkout total equals subtotal - discount + shipping + tax, with donation displayed separately according to current business rules.
+8. Product variant add-to-cart uses selected variant price/size.
+9. Order status history records saved status changes only when status actually changes.
+
+Reporting requirement:
+- Add clear test scripts and document them in `PROJECT_HANDOFF.md`.
+- If possible, include coverage scripts such as `test:coverage`, but do not block the pass on coverage if setup becomes too large.
+- Test failures should identify the domain and business rule that failed.
+- Update `docs/architecture/file-map.md` or relevant architecture docs with the test folder/command structure.
+
+Rules:
+- Do not overbuild test infrastructure before fixing the verified bug.
+- Reproduce or isolate the current bug with a focused test before or during the fix when feasible.
+- Do not create fake tests that always pass without testing meaningful behavior.
+- Do not make tests dependent on local `.env`, Railway, Vercel, real Stripe keys, or real database URLs.
+- Keep tests organized by tier and domain.
+- Keep code and tests aligned with the existing architecture.
+- Update `PROJECT_HANDOFF.md` with which tiers exist, what each covers, commands to run, and what still lacks coverage.
+
+Required verification:
+- Run `npm run tiertest1` if created.
+- Run full `npm run test` if feasible after Tier 1 passes.
+- Run client build and server build after code changes.
+- Run Prisma generate if schema/prisma usage changes.
+- Document any tests that are intentionally deferred.
+## Campaign Analytics / Campaign Order Attribution UI Requirement
+
+When the user asks to see which orders applied or contributed to campaigns, the agent must treat this as a focused admin campaign analytics feature, similar to promo analytics, not a broad campaign redesign.
+
+Known user need:
+- Admin campaigns currently show campaign performance and recent orders in the table.
+- The user wants a dedicated analytics view/modal like promo analytics where they can see all orders associated with a campaign.
+- Campaign analytics should show which orders contributed donations, eligible subtotal, donation amount, customer, order reference, created/redeemed time, and related products when available.
+- The feature should be test-covered alongside campaign attribution and checkout donation logic.
+
+Primary goals:
+- Add or improve campaign analytics UI so admin can inspect campaign-attributed orders clearly.
+- Reuse existing `OrderCampaignUsage` or equivalent attribution source of truth if available.
+- Keep campaign list/table readable; detailed order attribution should live in a focused modal, panel, route, or component similar to promo analytics.
+- Ensure analytics numbers match order detail, campaign table totals, and checkout-generated donation attribution.
+- Add meaningful tests for campaign attribution analytics and promo + campaign coexistence.
+
+The agent must audit before editing:
+1. Prisma `Campaign`, `Order`, `OrderItem`, and `OrderCampaignUsage` models.
+2. Campaign repository/service/controller response shape.
+3. Campaign admin API client files.
+4. Campaign admin table/component files.
+5. Existing promo analytics UI and data shape for reference.
+6. Order creation flow that records campaign attribution.
+7. Checkout/campaign donation calculation logic.
+8. Existing tests or new tiered test structure.
+
+Campaign analytics should consider showing:
+- Campaign name and status.
+- Total attributed orders.
+- Total donation generated.
+- Total eligible subtotal or campaign revenue.
+- Average donation per attributed order.
+- Recent or full attribution history.
+- For each attributed order:
+  - customer email/name if available and safe for admin
+  - friendly order reference
+  - internal order id only if useful to admin
+  - eligible subtotal
+  - donation amount
+  - matched product ids/names if available
+  - order total if available
+  - created/attributed timestamp
+  - link/button to admin order detail if route exists
+
+Rules:
+- Do not redesign the full campaigns page.
+- Do not overload the campaign table with too much detail; use a dedicated analytics action/panel/modal when appropriate.
+- Do not duplicate campaign attribution calculations in the UI if server can provide the source-of-truth analytics.
+- Do not infer historical attribution from mutable campaign product lists if `OrderCampaignUsage` exists; use persisted attribution rows.
+- If old orders have no attribution rows, show them as missing/unattributed rather than inventing data.
+- Do not expose secrets or customer-sensitive data outside admin-only views.
+- Keep files organized by domain; use admin campaign components/API helpers rather than growing one large view file.
+
+Suggested client placement:
+- `client/src/domains/admin/components/AdminCampaignAnalyticsModal.vue` or equivalent focused component.
+- Campaign admin API updates in `client/src/domains/admin/api/`.
+- Reuse existing formatting helpers where possible.
+
+Suggested server placement:
+- Campaign analytics route/controller/service/repository updates under `server/src/domains/campaigns/`.
+- Use route → controller → service → repository → Prisma pattern.
+
+Testing requirements:
+- Add Tier 1 or Tier 2 tests, depending on what is being tested:
+  - Tier 1: campaign donation calculation and promo + campaign totals.
+  - Tier 2: admin campaign analytics response shape and attributed order reporting.
+- Do not use real Railway DB, Vercel, Stripe, or secrets in tests.
+- Use fixtures/mocks or isolated service tests.
+- Verify campaign analytics totals match attribution rows.
+- Verify an attributed order appears in campaign analytics with correct donation amount.
+- Verify old orders without attribution are not falsely counted.
+- Verify promo discount and campaign donation can coexist in pricing tests if that area is touched.
+
+Required verification:
+- Run client build.
+- Run server build or syntax/import checks for changed server files.
+- Run Prisma generate if schema/prisma usage changes.
+- Run `npm run tiertest1` if tiered tests exist or were added.
+- Run campaign analytics tests added in this pass.
+- Verify campaign analytics UI opens from admin campaigns and lists attributed orders.
+- Verify clicking or referencing an attributed order can help admin reach order detail if implemented.
+- Verify campaign table totals still match analytics modal totals.
+- Verify no `.env.example` files are created.
+- Verify no secrets are documented.
+- Update `PROJECT_HANDOFF.md` and `docs/architecture/file-map.md` with new files, endpoints, test commands, and remaining gaps.
+
+Manual QA checklist:
+- Open admin campaigns.
+- Click campaign analytics/action for an active campaign.
+- Confirm modal/panel shows total orders, donation, revenue/eligible subtotal, and average donation.
+- Confirm attributed orders list includes friendly order references and donation amounts.
+- Open an attributed order detail and confirm donation/campaign attribution matches.
+- Complete a new checkout with campaign-eligible products and confirm the analytics view updates.
+- Run relevant tiered tests and confirm campaign analytics tests pass.

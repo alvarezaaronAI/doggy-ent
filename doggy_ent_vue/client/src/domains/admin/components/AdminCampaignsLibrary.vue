@@ -38,6 +38,7 @@ const campaignStatusFilter = defineModel('campaignStatusFilter', {
 })
 
 const emit = defineEmits([
+  'analytics',
   'clear-filters',
   'delete',
   'edit',
@@ -114,6 +115,7 @@ const emit = defineEmits([
         :empty-message="group.emptyMessage"
         :get-campaign-product-names="getCampaignProductNames"
         :title="group.title"
+        @analytics="emit('analytics', $event)"
         @delete="emit('delete', $event)"
         @edit="emit('edit', $event)"
       />

@@ -1,1 +1,14 @@
-{}
+{
+  "scripts": {
+    "test": "npm run tiertest1 && npm run tiertest2 && npm run tiertest3",
+    "tiertest1": "npm run tiertest1:server && npm run tiertest1:client",
+    "tiertest2": "npm run tiertest2:server && npm run tiertest2:client",
+    "tiertest3": "npm run tiertest3:server && npm run tiertest3:client",
+    "tiertest1:server": "npm --prefix server run tiertest1",
+    "tiertest1:client": "npm --prefix client run tiertest1",
+    "tiertest2:server": "npm --prefix server run tiertest2",
+    "tiertest2:client": "npm --prefix client run tiertest2",
+    "tiertest3:server": "npm --prefix server run tiertest3",
+    "tiertest3:client": "npm --prefix client run tiertest3"
+  }
+}

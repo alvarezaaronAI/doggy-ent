@@ -33,6 +33,7 @@ defineProps({
 })
 
 const emit = defineEmits([
+  'analytics',
   'delete',
   'edit',
 ])
@@ -102,6 +103,9 @@ const emit = defineEmits([
             </td>
             <td class="px-5 py-4">
               <div class="flex flex-wrap gap-2">
+                <button class="rounded-lg border border-stone-300 px-3 py-2 text-xs font-bold text-stone-600 hover:border-emerald-400 hover:bg-emerald-50" @click="emit('analytics', campaign)">
+                  Analytics
+                </button>
                 <button class="rounded-lg border border-emerald-400 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-stone-900" @click="emit('edit', campaign)">
                   Edit
                 </button>
