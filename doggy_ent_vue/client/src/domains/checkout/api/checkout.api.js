@@ -81,3 +81,14 @@ export async function submitCheckoutPreview({
     'Checkout preview failed.',
   )
 }
+
+export async function fetchCheckoutOrder(reference) {
+  const response = await fetchApi(
+    `/api/checkout/orders/${encodeURIComponent(reference)}`,
+  )
+
+  return parseCheckoutResponse(
+    response,
+    'Unable to load order confirmation.',
+  )
+}

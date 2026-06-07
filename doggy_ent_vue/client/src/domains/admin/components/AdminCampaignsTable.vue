@@ -87,6 +87,18 @@ const emit = defineEmits([
               <p class="font-bold text-[var(--success-1)]">{{ formatAdminCampaignPrice(campaign.donationGenerated) }}</p>
               <p class="mt-2 text-xs text-stone-400">Revenue</p>
               <p class="font-bold">{{ formatAdminCampaignPrice(campaign.revenueGenerated) }}</p>
+              <div v-if="campaign.orderAttributions?.length" class="mt-3 border-t border-stone-200 pt-3">
+                <p class="text-xs font-bold uppercase tracking-[0.12em] text-stone-400">Recent orders</p>
+                <div class="mt-2 space-y-1">
+                  <p
+                    v-for="usage in campaign.orderAttributions.slice(0, 3)"
+                    :key="usage.id"
+                    class="text-xs text-stone-500"
+                  >
+                    {{ usage.orderNumber || 'Order' }} · {{ formatAdminCampaignPrice(usage.donationAmount) }}
+                  </p>
+                </div>
+              </div>
             </td>
             <td class="px-5 py-4">
               <div class="flex flex-wrap gap-2">

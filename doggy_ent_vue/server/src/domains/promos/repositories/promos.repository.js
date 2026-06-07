@@ -15,7 +15,7 @@ export async function getAllPromos() {
       },
     },
     orderBy: {
-      redeemedAt: 'desc',
+      updatedAt: 'desc',
     },
   })
 }

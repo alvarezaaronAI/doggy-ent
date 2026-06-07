@@ -129,3 +129,44 @@ export function mapCampaignDonationPreview({
     ),
   }
 }
+
+export function mapCampaignOrderUsage(usage) {
+  if (!usage) {
+    return null
+  }
+
+  return {
+    id: usage.id,
+    orderId: usage.orderId,
+    orderNumber: usage.order?.orderNumber || null,
+    customerName: usage.order?.customerName || null,
+    customerEmail: usage.order?.customerEmail || null,
+    orderStatus: usage.order?.status || null,
+    orderTotal: Number(usage.order?.total || 0),
+    donationAmount: Number(usage.donationAmount || 0),
+    eligibleSubtotal: Number(usage.eligibleSubtotal || 0),
+    matchedProductIds: Array.isArray(usage.matchedProductIds)
+      ? usage.matchedProductIds
+      : [],
+    createdAt: usage.createdAt,
+  }
+}
+
+export function mapCampaign(campaign) {
+  if (!campaign) {
+    return null
+  }
+
+  return {
+    ...campaign,
+    donationGenerated: Number(campaign.donationGenerated || 0),
+    revenueGenerated: Number(campaign.revenueGenerated || 0),
+    orderCount: Number(campaign.orderCount || 0),
+    orderAttributions: Array.isArray(campaign.orderUsages)
+      ? campaign.orderUsages
+          .map(mapCampaignOrderUsage)
+          .filter(Boolean)
+      : [],
+    orderUsages: undefined,
+  }
+}

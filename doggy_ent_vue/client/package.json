@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:local": "VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode admin-local",
-    "dev:railway": "VITE_ADMIN_DATA_TARGET=RAILWAY vite --mode railway",
+    "dev:railway": "VITE_ADMIN_DATA_TARGET=RAILWAY_DB VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode railway",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -1,9 +1,11 @@
 import {
   createOrder,
   findAllOrders,
+  findCustomerOrderByReference,
   findOrderById,
   findOrderByStripePaymentIntentId,
   findOrderStats,
+  findOrdersByCustomerEmail,
   updateOrderStatusById,
 } from '../repositories/orders.repository.js'
 import {
@@ -58,11 +60,29 @@ export async function fetchAdminOrders() {
 }
 
 export async function fetchAdminOrderById(orderId) {
-  return await findOrderById(orderId)
+  const order = await findOrderById(orderId)
+
+  if (!order?.customerEmail) {
+    return order
+  }
+
+  const sameCustomerOrders = await findOrdersByCustomerEmail(
+    order.customerEmail,
+    order.id,
+  )
+
+  return {
+    ...order,
+    sameCustomerOrders,
+  }
 }
 
 export async function fetchAdminOrderStats() {
   return await findOrderStats()
+}
+
+export async function fetchCustomerOrderByReference(reference) {
+  return await findCustomerOrderByReference(reference)
 }
 
 export async function updateAdminOrderStatus(orderId, status) {

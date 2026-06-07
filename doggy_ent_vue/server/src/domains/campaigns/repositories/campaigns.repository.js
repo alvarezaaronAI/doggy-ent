@@ -8,6 +8,17 @@ export async function findAllCampaigns() {
     orderBy: {
       createdAt: 'desc',
     },
+    include: {
+      orderUsages: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 5,
+        include: {
+          order: true,
+        },
+      },
+    },
   })
 }
 
@@ -82,5 +93,67 @@ export async function incrementCampaignUsageStats({
         increment: donationAmount,
       },
     },
+  })
+}
+
+export async function recordOrderCampaignUsage({
+  campaignId,
+  orderId,
+  eligibleSubtotal,
+  donationAmount,
+  matchedProductIds = [],
+}) {
+  return prisma.$transaction(async (tx) => {
+    const existingUsage =
+      await tx.orderCampaignUsage.findUnique({
+        where: {
+          orderId_campaignId: {
+            orderId,
+            campaignId,
+          },
+        },
+        include: {
+          campaign: true,
+        },
+      })
+
+    if (existingUsage) {
+      return existingUsage
+    }
+
+    const usage = await tx.orderCampaignUsage.create({
+      data: {
+        orderId,
+        campaignId,
+        eligibleSubtotal,
+        donationAmount,
+        matchedProductIds,
+      },
+      include: {
+        campaign: true,
+      },
+    })
+
+    await tx.campaign.update({
+      where: {
+        id: campaignId,
+      },
+
+      data: {
+        orderCount: {
+          increment: 1,
+        },
+
+        revenueGenerated: {
+          increment: eligibleSubtotal,
+        },
+
+        donationGenerated: {
+          increment: donationAmount,
+        },
+      },
+    })
+
+    return usage
   })
 }

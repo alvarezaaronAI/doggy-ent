@@ -1,5 +1,6 @@
 import {
   buildCampaignMutationData,
+  mapCampaign,
   mapCampaignDonationPreview,
   normalizeCampaignInput,
 } from '../mappers/campaigns.mapper.js'
@@ -11,6 +12,7 @@ import {
   findCampaignById,
   findCampaignBySlug,
   incrementCampaignUsageStats,
+  recordOrderCampaignUsage,
   updateCampaignRecord,
 } from '../repositories/campaigns.repository.js'
 import {
@@ -25,7 +27,9 @@ import {
 } from '../validators/campaigns.validator.js'
 
 export async function getAllCampaigns() {
-  return findAllCampaigns()
+  const campaigns = await findAllCampaigns()
+
+  return campaigns.map(mapCampaign)
 }
 
 export async function getCampaignById(campaignId) {
@@ -142,6 +146,9 @@ export async function previewCampaignDonations(
 export async function recordCampaignDonationUsage({
   campaignId,
   subtotal,
+  orderId = null,
+  donationAmount = null,
+  matchedProductIds = [],
 }) {
   const campaign = await findCampaignById(campaignId)
 
@@ -153,14 +160,26 @@ export async function recordCampaignDonationUsage({
     subtotal || 0,
   )
 
-  const donationAmount = calculateDonationAmount(
-    campaign,
-    normalizedSubtotal,
+  const normalizedDonationAmount = normalizeCurrencyAmount(
+    donationAmount ?? calculateDonationAmount(
+      campaign,
+      normalizedSubtotal,
+    ),
   )
+
+  if (orderId) {
+    return recordOrderCampaignUsage({
+      campaignId,
+      orderId,
+      eligibleSubtotal: normalizedSubtotal,
+      donationAmount: normalizedDonationAmount,
+      matchedProductIds,
+    })
+  }
 
   return incrementCampaignUsageStats({
     campaignId,
     subtotal: normalizedSubtotal,
-    donationAmount,
+    donationAmount: normalizedDonationAmount,
   })
 }

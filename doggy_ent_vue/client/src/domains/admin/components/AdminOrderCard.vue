@@ -31,7 +31,9 @@ defineProps({
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div class="min-w-0 flex-1">
         <div class="flex flex-wrap items-center gap-2">
-          <p class="font-extrabold text-[var(--brand-4)]">{{ order.id }}</p>
+          <p class="font-extrabold text-[var(--brand-4)]">
+            {{ order.customerReference || order.orderNumber || order.id }}
+          </p>
 
           <span
             class="rounded-full px-2.5 py-1 text-xs font-bold"
@@ -71,7 +73,7 @@ defineProps({
           <div>
             <p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">Donation</p>
             <p class="mt-1 text-sm font-bold text-[var(--success-1)]">
-              {{ formatAdminOrderPrice(0) }}
+              {{ formatAdminOrderPrice(order.donationAmount) }}
             </p>
           </div>
         </div>

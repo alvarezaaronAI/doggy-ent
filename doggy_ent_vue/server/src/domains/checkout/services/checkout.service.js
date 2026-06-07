@@ -246,6 +246,9 @@ export async function createCheckout(checkoutInput = {}) {
         await recordCampaignDonationUsage({
           campaignId: campaign.campaignId,
           subtotal: campaign.matchedSubtotal,
+          orderId: order.id,
+          donationAmount: campaign.donationAmount,
+          matchedProductIds: campaign.matchedProductIds,
         })
       }
     }
