@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import AdminCampaignForm from '../components/AdminCampaignForm.vue'
+import AdminCampaignAnalyticsModal from '../components/AdminCampaignAnalyticsModal.vue'
 import AdminCampaignsHeader from '../components/AdminCampaignsHeader.vue'
 import AdminCampaignsLibrary from '../components/AdminCampaignsLibrary.vue'
 import AdminCampaignsStats from '../components/AdminCampaignsStats.vue'
@@ -13,6 +14,7 @@ const {
   campaignStatusFilter,
   campaigns,
   clearCampaignFilters,
+  closeCampaignAnalytics,
   deleteCampaign,
   editCampaign,
   editingCampaignId,
@@ -23,9 +25,11 @@ const {
   isLoading,
   isSaving,
   loadPageData,
+  openCampaignAnalytics,
   products,
   resetForm,
   saveCampaign,
+  selectedCampaignAnalytics,
   successMessage,
   totalDonationGenerated,
   totalOrders,
@@ -66,11 +70,19 @@ onMounted(loadPageData)
         :filtered-campaigns="filteredCampaigns"
         :get-campaign-product-names="getCampaignProductNames"
         :is-loading="isLoading"
+        @analytics="openCampaignAnalytics"
         @clear-filters="clearCampaignFilters"
         @delete="deleteCampaign"
         @edit="editCampaign"
         @refresh="loadPageData"
       />
     </div>
+
+    <AdminCampaignAnalyticsModal
+      v-if="selectedCampaignAnalytics"
+      :campaign="selectedCampaignAnalytics"
+      :get-campaign-product-names="getCampaignProductNames"
+      @close="closeCampaignAnalytics"
+    />
   </section>
 </template>

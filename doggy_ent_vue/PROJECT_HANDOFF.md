@@ -2776,3 +2776,268 @@ Changed files from this focused pass include client checkout/promo/admin-order f
 ### Next Recommended Phase
 
 After manual QA and Railway migration review, add focused automated tests for checkout pricing, promo validation/usage limits, promo + campaign coexistence, order status history, and idempotent Stripe order creation. Better Auth remains future customer accounts/loyalty/admin-user work and was intentionally not started here.
+
+## 2026-06-07 Promo Discount Repair, Campaign Analytics, And Tiered Tests
+
+This pass followed the tiered automated testing requirement already present in `AGENTS.md`. No commit or push was performed. The pass did not redesign checkout or admin, did not call real Stripe/Railway/Vercel from tests, and did not expose secret values.
+
+### Starting Git State
+
+Commands run before application-code edits:
+
+```bash
+git status
+git diff --stat
+git diff --name-status
+```
+
+Observed state: only `AGENTS.md` was modified at the start of this pass. Earlier handoff sections described prior local edits, but the actual working tree at the start of this pass did not contain those app-code edits.
+
+### Root Cause Investigation
+
+Local database check for `CHASE20` showed:
+
+- `code`: `CHASE20`
+- `status`: `ACTIVE`
+- `discountType`: `FIXED`
+- `discountValue`: `20`
+- `minimumSubtotal`: `30`
+
+Local validation smoke for `CHASE20` with a `$100` subtotal returned a `$20` discount, so the current local DB row did not reproduce the reported `$0.00` bug.
+
+The verified code-level failure class was percent promo value interpretation:
+
+- Server promo math treated percent promos as `discountValue / 100`.
+- That is correct when the stored value is `20`.
+- If an existing/deployed promo stores `0.20` to mean 20%, the old calculation became `0.20 / 100 = 0.002`, or 0.2%.
+- On small subtotals, that tiny discount can round/display as `$0.00` across checkout, promo tester, promo analytics, order detail, order success, and usage history because every downstream flow uses the calculated `discountAmount`.
+
+### Fixes Made
+
+Promo discount repair:
+
+- `server/src/domains/promos/services/promos.service.js`
+  - Added `normalizePromoDiscountValue`.
+  - Percent promos now accept both canonical values such as `20` and legacy fractional values such as `0.20`.
+  - Fixed-dollar promos still use dollar amounts and still cap at subtotal.
+
+Shared money safety:
+
+- `server/src/shared/utils/money.js`
+  - `normalizeCurrencyAmount` now returns `0` for non-finite values instead of `NaN`.
+
+Campaign analytics:
+
+- No new schema was needed because `OrderCampaignUsage` already supports attribution and campaign responses already expose `orderAttributions`.
+- Added `client/src/domains/admin/components/AdminCampaignAnalyticsModal.vue`.
+- Wired an Analytics action through:
+  - `client/src/domains/admin/components/AdminCampaignsTable.vue`
+  - `client/src/domains/admin/components/AdminCampaignsLibrary.vue`
+  - `client/src/domains/admin/composables/useAdminCampaigns.js`
+  - `client/src/domains/admin/views/AdminCampaignsView.vue`
+
+Campaign Analytics Modal displays:
+
+- Campaign name.
+- Orders count.
+- Revenue generated.
+- Donation generated.
+- Average order value.
+- Products included.
+- Donation rule.
+- Date range.
+- Recent campaign orders / attribution table with order reference, customer email, subtotal, donation amount, order total, and created date.
+
+### Tiered Test Infrastructure Added
+
+Vitest was added to both client and server.
+
+Root commands:
+
+```bash
+npm run test
+npm run tiertest1
+npm run tiertest2
+npm run tiertest3
+```
+
+Client commands:
+
+```bash
+cd client
+npm run test
+npm run tiertest1
+npm run tiertest2
+npm run tiertest3
+```
+
+Server commands:
+
+```bash
+cd server
+npm run test
+npm run tiertest1
+npm run tiertest2
+npm run tiertest3
+```
+
+New test folders:
+
+- `server/tests/tier1/promos`
+- `server/tests/tier1/checkout`
+- `server/tests/tier1/campaigns`
+- `server/tests/tier1/payments`
+- `server/tests/tier1/orders`
+- `server/tests/tier2/admin`
+- `server/tests/tier2/orders`
+- `server/tests/tier3/utils`
+- `client/tests/tier1/cart`
+- `client/tests/tier1/checkout`
+- `client/tests/tier1/promos`
+- `client/tests/tier2/admin`
+- `client/tests/tier3/utils`
+
+Tier 1 coverage added:
+
+- Promo percent discounts, including `20` and legacy `0.20`.
+- Fixed promo discounts and subtotal caps.
+- Minimum subtotal validation.
+- Email-required promo validation.
+- Normalized email usage limit checks.
+- Promo + campaign coexistence at checkout pricing helper level.
+- Campaign donation calculations and campaign-linked product matching.
+- Stripe PaymentIntent amount uses server preview total.
+- Selected variant cart pricing for 6 oz and 18 oz.
+- Order status history creation/no-op behavior.
+
+Tier 2 coverage added:
+
+- Campaign analytics attribution mapping.
+- Promo analytics discount total mapping.
+- Customer-safe order lookup mapping.
+- Admin promo payload mapping.
+- Admin campaign payload mapping.
+
+Tier 3 coverage added:
+
+- Shared money/string helpers.
+- Client campaign/promo formatting helpers.
+- Client promo rule normalization.
+
+### Verification Results
+
+Tier 1:
+
+```bash
+npm run tiertest1
+```
+
+Result: passed.
+
+- Server: 6 files, 20 tests.
+- Client: 3 files, 7 tests.
+
+Tier 2:
+
+```bash
+npm run tiertest2
+```
+
+Result: passed.
+
+- Server: 2 files, 3 tests.
+- Client: 1 file, 4 tests.
+
+Tier 3:
+
+```bash
+npm run tiertest3
+```
+
+Initial result: failed because `normalizeCurrencyAmount('bad')` returned `NaN`. This was fixed in `server/src/shared/utils/money.js`.
+
+Final result: passed.
+
+- Server: 1 file, 3 tests.
+- Client: 1 file, 3 tests.
+
+Full suite:
+
+```bash
+npm run test
+```
+
+Result: passed. Total coverage from this pass: 12 test files and 33 tests.
+
+Builds:
+
+```bash
+cd client
+npm run build
+```
+
+Result: passed. Vite built 154 modules.
+
+```bash
+cd server
+npm run build
+```
+
+Result: passed. Prisma Client v6.16.2 generated.
+
+Syntax checks:
+
+```bash
+cd server
+node --check src/domains/promos/services/promos.service.js
+node --check src/domains/payments/controllers/payment.controller.js
+node --check src/shared/utils/money.js
+node --check tests/tier1/promos/promo-discounts.test.js
+node --check tests/tier1/payments/payment-intent-total.test.js
+```
+
+Result: passed.
+
+Promo smoke:
+
+```bash
+node --input-type=module <validate CHASE20 and legacy percent smoke>
+```
+
+Result:
+
+- Local `CHASE20` with `$100` subtotal: valid, `$20` discount.
+- Legacy percent value `0.20` with `$100` subtotal: `$20` discount after fix.
+
+Environment/secrets check:
+
+```bash
+find . -name '.env.example' -print
+rg -n 'sk_live|rk_live|whsec_|postgres://|postgresql://|DATABASE_URL=|STRIPE_SECRET_KEY=|ADMIN_PASSWORD_HASH=' --glob '!node_modules/**' --glob '!client/dist/**' .
+```
+
+Result:
+
+- No `.env.example` files found.
+- Matches were placeholder variable-name examples in `AGENTS.md` and this handoff command text, not real secret values.
+
+### Remaining Risks And Coverage Gaps
+
+- The exact deployed/Railway `CHASE20` row was not queried in this pass. The local row is fixed-dollar `$20`; the repaired code protects the likely deployed percent/fraction failure class.
+- Automated tests do not perform real Stripe calls, real Railway DB calls, or real browser checkout.
+- Promo usage recording still occurs after order creation in the current architecture; tests cover calculation and validation but not concurrent production race conditions.
+- Campaign analytics uses the existing `orderAttributions` returned with campaign list data. It does not yet have pagination or a separate detail endpoint.
+- No Playwright/browser tests were added.
+
+### Manual QA Checklist
+
+- In admin promos, verify `CHASE20` configuration on the target DB and confirm whether it is `FIXED 20`, `PERCENT 20`, or legacy `PERCENT 0.20`.
+- Run the admin promo tester for `CHASE20` with subtotal above minimum and confirm non-zero discount.
+- Apply `CHASE20` in checkout after entering email and confirm the checkout summary discount is non-zero.
+- Complete Stripe test checkout with promo only and confirm order success, admin order detail, promo usage history, and promo analytics all show the same discount amount.
+- Complete Stripe test checkout with LAIKA SHELTER campaign products plus promo and confirm discount and donation both remain visible.
+- Open admin campaigns, click Analytics, and confirm attribution table displays recent campaign orders.
+
+### Next Recommended Phase
+
+Run manual browser QA against the actual Railway DB admin workflow and Vercel storefront. Then add narrower integration tests around repository/service transactions using a local test database or an explicit Prisma test database, still avoiding Railway and real Stripe.

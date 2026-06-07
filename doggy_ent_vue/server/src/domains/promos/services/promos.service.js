@@ -63,6 +63,20 @@ export function normalizePromoCode(code) {
   return String(code || '').trim().toUpperCase()
 }
 
+export function normalizePromoDiscountValue(promo) {
+  const value = Number(promo?.discountValue || 0)
+
+  if (promo?.discountType !== PROMO_DISCOUNT_TYPE.PERCENT) {
+    return value
+  }
+
+  if (value > 0 && value < 1) {
+    return value * 100
+  }
+
+  return value
+}
+
 function normalizeOptionalDateTime(value, fieldName) {
   if (value === null || value === undefined || value === '') {
     return null
@@ -187,10 +201,12 @@ export function calculateDiscountAmount(promo, subtotal) {
   )
 
   if (promo.discountType === PROMO_DISCOUNT_TYPE.PERCENT) {
+    const discountPercent = normalizePromoDiscountValue(promo)
+
     return normalizeCurrencyAmount(
       Math.min(
         s,
-        s * (Number(promo.discountValue || 0) / 100),
+        s * (discountPercent / 100),
       ),
     )
   }

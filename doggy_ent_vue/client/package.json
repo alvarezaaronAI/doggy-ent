@@ -8,7 +8,11 @@
     "dev:local": "VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode admin-local",
     "dev:railway": "VITE_ADMIN_DATA_TARGET=RAILWAY_DB VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode railway",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npm run tiertest1 && npm run tiertest2 && npm run tiertest3",
+    "tiertest1": "vitest run tests/tier1",
+    "tiertest2": "vitest run tests/tier2",
+    "tiertest3": "vitest run tests/tier3"
   },
   "dependencies": {
     "@stripe/stripe-js": "^9.5.0",
@@ -19,6 +23,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.6",
-    "vite": "^8.0.9"
+    "vite": "^8.0.9",
+    "vitest": "^4.1.8"
   }
 }

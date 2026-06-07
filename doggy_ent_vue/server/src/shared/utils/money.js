@@ -1,5 +1,11 @@
 export function normalizeCurrencyAmount(value) {
+  const amount = Number(value || 0)
+
+  if (!Number.isFinite(amount)) {
+    return 0
+  }
+
   return Number(
-    Number(value || 0).toFixed(2),
+    amount.toFixed(2),
   )
 }

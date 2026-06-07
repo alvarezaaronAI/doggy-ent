@@ -28,6 +28,7 @@ export function useAdminCampaigns() {
   const errorMessage = ref('')
   const successMessage = ref('')
   const editingCampaignId = ref(null)
+  const selectedCampaignAnalytics = ref(null)
   const form = ref(createEmptyAdminCampaignForm())
 
   const campaignSearchQuery = ref('')
@@ -112,6 +113,14 @@ export function useAdminCampaigns() {
   function clearCampaignFilters() {
     campaignSearchQuery.value = ''
     campaignStatusFilter.value = CAMPAIGN_FILTER_ALL
+  }
+
+  function openCampaignAnalytics(campaign) {
+    selectedCampaignAnalytics.value = campaign
+  }
+
+  function closeCampaignAnalytics() {
+    selectedCampaignAnalytics.value = null
   }
 
   function getProductName(productId) {
@@ -214,6 +223,7 @@ export function useAdminCampaigns() {
     campaignStatusFilter,
     campaigns,
     clearCampaignFilters,
+    closeCampaignAnalytics,
     deleteCampaign,
     editCampaign,
     editingCampaignId,
@@ -227,9 +237,11 @@ export function useAdminCampaigns() {
     loadCampaigns,
     loadPageData,
     loadProducts,
+    openCampaignAnalytics,
     products,
     resetForm,
     saveCampaign,
+    selectedCampaignAnalytics,
     successMessage,
     totalDonationGenerated,
     totalOrders,
