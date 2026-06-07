@@ -1,6 +1,6 @@
 # Database Architecture
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 ## Source Of Truth
 
@@ -51,6 +51,7 @@ Customer/order record with pricing fields, currency, Stripe PaymentIntent ID, an
 Key relationships:
 
 - `Order.items` to `OrderItem[]`
+- `Order.statusHistory` to `OrderStatusHistory[]`
 
 Primary flow participation:
 
@@ -58,6 +59,7 @@ Primary flow participation:
 - Order success page.
 - Admin orders dashboard/detail.
 - Promo/campaign usage ownership by order ID.
+- Status history ownership by order ID.
 
 ### OrderItem
 
@@ -68,6 +70,22 @@ Primary flow participation:
 - Admin order detail.
 - Order success display.
 - Historical order accuracy even if product data later changes.
+
+### OrderStatusHistory
+
+Future-proof audit record for admin order status transitions. Each row stores the order ID, previous status, next status, optional note, actor type, actor value, and creation timestamp.
+
+Current actor behavior:
+
+- Admin status changes use `changedByType = ADMIN_ENV`.
+- `changedBy` is currently the non-secret label `ADMIN_ENV`.
+- Future Better Auth work should replace this with a real admin user ID or email owned by an accounts/users table.
+
+Primary flow participation:
+
+- Admin order detail status history.
+- Last status change display.
+- Future fulfillment and admin audit trail.
 
 ### Promo
 
@@ -139,6 +157,7 @@ Important migrations:
 - `20260520192114_add_campaigns`: Campaigns.
 - `20260605000000_unique_order_payment_intent`: Unique Stripe PaymentIntent ID for order idempotency.
 - `20260606000000_add_order_campaign_usage`: Order-level campaign attribution for donation traceability.
+- `20260607000000_add_order_status_history`: Order status transition history for admin fulfillment auditability.
 
 Deployment rule:
 
@@ -153,11 +172,12 @@ Deployment rule:
 | Checkout totals | Server checkout pricing utility and service |
 | Payment status | Stripe, verified by server before order creation |
 | Order records | Server checkout/orders domains |
+| Order status history | Server orders domain and `OrderStatusHistory` |
 | Promo rules and usage | Server promos domain |
 | Campaign rules and usage | Server campaigns domain and `OrderCampaignUsage` |
 | Admin sessions | Server auth domain, custom temporary implementation |
 
 Railway deployment note:
 
-- The order campaign attribution migration must be applied on Railway with `cd server && npx prisma migrate deploy` after confirming the target database is correct.
+- The order campaign attribution and order status history migrations must be applied on Railway with `cd server && npx prisma migrate deploy` after confirming the target database is correct.
 - Do not run destructive reset commands on Railway.

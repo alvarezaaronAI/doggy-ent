@@ -10,6 +10,10 @@ async function parseApiResponse(response, fallbackMessage) {
   return parseJsonResponse(response, fallbackMessage)
 }
 
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
 export async function fetchPromos() {
   const response = await fetchApi(
     ADMIN_PROMOS_API_BASE_URL,
@@ -93,9 +97,7 @@ export async function validatePromoCode(payload) {
       .trim()
       .toUpperCase(),
 
-    customerEmail: String(
-      payload?.customerEmail || '',
-    ).trim(),
+    customerEmail: normalizeEmail(payload?.customerEmail),
 
     cart: {
       items: Array.isArray(payload?.cart?.items)

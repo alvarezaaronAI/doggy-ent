@@ -50,6 +50,23 @@ export function mapOrderPromoUsage(usage) {
   }
 }
 
+export function mapOrderStatusHistoryEntry(entry) {
+  if (!entry) {
+    return null
+  }
+
+  return {
+    id: entry.id,
+    orderId: entry.orderId,
+    fromStatus: entry.fromStatus,
+    toStatus: entry.toStatus,
+    note: entry.note,
+    changedByType: entry.changedByType,
+    changedBy: entry.changedBy,
+    createdAt: entry.createdAt,
+  }
+}
+
 export function getOrderDonationAmount(order) {
   return Array.isArray(order?.campaignUsages)
     ? order.campaignUsages.reduce(
@@ -86,6 +103,14 @@ export function mapOrder(order) {
     donationAmount: getOrderDonationAmount(order),
     customerReference: getCustomerOrderReference(order),
     promoUsage: mapOrderPromoUsage(order.promoUsage),
+    statusHistory: Array.isArray(order.statusHistory)
+      ? order.statusHistory
+          .map(mapOrderStatusHistoryEntry)
+          .filter(Boolean)
+      : [],
+    lastStatusChange: Array.isArray(order.statusHistory)
+      ? mapOrderStatusHistoryEntry(order.statusHistory[0])
+      : null,
     campaignAttributions: Array.isArray(order.campaignUsages)
       ? order.campaignUsages
           .map(mapOrderCampaignUsage)

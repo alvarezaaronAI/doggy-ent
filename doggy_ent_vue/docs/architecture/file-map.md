@@ -1,6 +1,6 @@
 # File Map
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 This file maps important files and folders. It is not a complete line-by-line inventory of every Vue component, but it accounts for the source files that own major behavior and data flow.
 
@@ -53,7 +53,7 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `client/src/domains/checkout/views/CheckoutView.vue` | Checkout route orchestration. | Checkout composables, order summary, Stripe element. | Coordinates form state, preview, payment, and order creation. |
 | `client/src/domains/checkout/composables/useCheckout.js` | Checkout form state and submission orchestration. | Checkout API, promo/preview composables. | Owns customer/shipping/payment submit flow. |
 | `client/src/domains/checkout/composables/useCheckoutPreview.js` | Server preview state. | Checkout API. | Keeps checkout totals in sync with server pricing. |
-| `client/src/domains/checkout/composables/useCheckoutPromos.js` | Promo entry/validation state. | Promo API and checkout preview. | Applies/clears promo during checkout. |
+| `client/src/domains/checkout/composables/useCheckoutPromos.js` | Promo entry/validation state. | Promo API and checkout preview. | Requires normalized customer email before promo validation and clears applied promos if email changes. |
 | `client/src/domains/checkout/api/checkout.api.js` | Checkout API calls. | `fetchApi`. | Calls preview/order endpoints. |
 | `client/src/domains/payments/components/StripeElementsForm.vue` | Stripe card element and confirmation. | Stripe.js, payment service. | Creates PaymentIntent, confirms card payment, returns PaymentIntent ID to checkout. |
 | `client/src/domains/payments/services/payment.service.js` | Client payment API wrapper. | `fetchApi`. | Calls `/api/checkout/create-payment-intent`. |
@@ -76,6 +76,7 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `client/src/domains/admin/views/AdminCampaignsView.vue` | Campaign admin route orchestration. | Campaign composable/components. | Campaign CRUD. |
 | `client/src/domains/admin/views/AdminOrdersView.vue` | Admin orders route orchestration. | `useAdminOrders`, order components. | Order list by status. |
 | `client/src/domains/admin/views/AdminOrderDetailView.vue` | Admin order detail route. | Admin orders API/utils. | Order detail, status update flow. |
+| `client/src/domains/admin/components/AdminOrderStatusPanel.vue` | Staged order status update panel. | Admin order constants and order detail state. | Displays current status, stages next status, saves/cancels, and renders status history. |
 | `client/src/domains/admin/api/adminOrders.api.js` | Admin order API calls. | `fetchApi`. | Calls `/api/admin/orders`. |
 
 ## Server App And Shared
@@ -108,10 +109,10 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `server/src/domains/payments/routes/payment.routes.js` | PaymentIntent route mounted under checkout. | Payment controller. | `POST /api/checkout/create-payment-intent`. |
 | `server/src/domains/payments/services/stripe.payment.js` | Stripe SDK wrapper. | Stripe secret key. | Creates/retrieves PaymentIntents. |
 | `server/src/domains/orders/routes/orders.routes.js` | Admin order routes. | Orders controller, admin auth. | Lists/details/status updates for admin orders. |
-| `server/src/domains/orders/services/orders.service.js` | Order business logic. | Repository/mapper/constants. | Admin order reads and updates. |
-| `server/src/domains/orders/repositories/orders.repository.js` | Order Prisma access. | Prisma. | Order queries, unique Stripe PaymentIntent lookup, status updates. |
+| `server/src/domains/orders/services/orders.service.js` | Order business logic. | Repository/mapper/constants. | Admin order reads, status validation, and status history actor metadata. |
+| `server/src/domains/orders/repositories/orders.repository.js` | Order Prisma access. | Prisma. | Order queries, unique Stripe PaymentIntent lookup, transactional status updates, and status history creation. |
 | `server/src/domains/promos/routes/promos.routes.js` | Promo routes. | Promo service, admin auth. | Admin promo CRUD and public validation. |
-| `server/src/domains/promos/services/promos.service.js` | Promo business logic. | Repository, mapper, validator, money/string utils. | Promo normalization, lifecycle, validation, usage. |
+| `server/src/domains/promos/services/promos.service.js` | Promo business logic. | Repository, mapper, validator, money/string utils. | Promo normalization, lifecycle, email-required validation, discount calculation, usage recording. |
 | `server/src/domains/promos/repositories/promos.repository.js` | Promo Prisma access. | Prisma. | Promo list/read/write and usage queries. |
 | `server/src/domains/campaigns/routes/campaigns.routes.js` | Campaign routes. | Campaign controller/admin auth. | Public campaign reads and admin CRUD. |
 | `server/src/domains/campaigns/services/campaigns.service.js` | Campaign business logic. | Repository/mapper/validator. | Donation rules, lifecycle, aggregate stats, order attribution usage. |
@@ -121,14 +122,15 @@ This file maps important files and folders. It is not a complete line-by-line in
 
 | File | Purpose | Dependencies | Flow Participation |
 | --- | --- | --- | --- |
-| `server/prisma/schema.prisma` | Database schema and enums. | Prisma/PostgreSQL. | Source of truth for Product, ProductVariant, Order, OrderItem, Promo, PromoUsage, Campaign. |
+| `server/prisma/schema.prisma` | Database schema and enums. | Prisma/PostgreSQL. | Source of truth for Product, ProductVariant, Order, OrderItem, OrderStatusHistory, Promo, PromoUsage, Campaign. |
 | `server/prisma/migrations/20260605000000_unique_order_payment_intent/migration.sql` | Adds unique PaymentIntent constraint. | Prisma migrate. | Supports order idempotency. |
 | `server/prisma/migrations/20260606000000_add_order_campaign_usage/migration.sql` | Adds order/campaign attribution table. | Prisma migrate. | Supports admin donation traceability and campaign order attribution. |
+| `server/prisma/migrations/20260607000000_add_order_status_history/migration.sql` | Adds order status history table. | Prisma migrate. | Supports admin fulfillment status audit trail and future admin-user attribution. |
 | `server/prisma/migrations/*/migration.sql` | Historical schema changes. | Prisma migrate. | Defines production DB migration history. |
 | `server/src/db/seeds/products.seed.js` | Product seed script. | Prisma. | Local/manual seed only; production startup should not seed destructively. |
 
 ## Coverage Still Worth Deepening
 
 - Some smaller presentational Vue components are documented at folder level rather than file-by-file because they do not own business rules.
-- Older docs `docs/architecture/diagram.md` and `docs/architecture/mockdiagram.md` were not audited deeply during this pass.
+- Mermaid diagrams in this directory rendered successfully to SVG during the 2026-06-07 verification pass. Older `diagram.md` and `mockdiagram.md` are kept as architecture references, but the primary source docs are `README.md`, `data-flow.md`, `database.md`, `admin.md`, `file-map.md`, and `auth-roadmap.md`.
 - Generated Prisma files under `server/src/generated/prisma/` are generated output and are not individually documented.

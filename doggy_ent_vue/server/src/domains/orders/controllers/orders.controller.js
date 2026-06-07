@@ -66,7 +66,10 @@ export async function patchAdminOrderStatus(req, res) {
   try {
     const order = await updateAdminOrderStatus(
       req.params.orderId,
-      req.body.status,
+      {
+        status: req.body.status,
+        note: req.body.note,
+      },
     )
 
     return res.status(200).json(order)

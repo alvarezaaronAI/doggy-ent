@@ -1,6 +1,6 @@
 # Doggy Ent Architecture
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 This directory documents how the Doggy Ent Vue storefront, admin dashboard, Express API, Prisma database, Stripe integration, and temporary local admin workflows fit together. It is evidence-based from the repository; future plans are labeled as future work.
 
@@ -39,7 +39,7 @@ flowchart LR
 - Promo statuses and rules: `server/src/domains/promos/constants/promos.constants.js`, `client/src/domains/promos/constants/promo.constants.js`
 - Promo server normalization and validation: `server/src/domains/promos/services/promos.service.js`, `server/src/domains/promos/validators/promos.validator.js`
 - Campaign statuses and donation rules: `server/src/domains/campaigns/constants/campaigns.constants.js`, `server/src/domains/campaigns/services/campaigns.service.js`
-- Order statuses and timeline labels: `client/src/domains/admin/constants/adminOrders.constants.js`, `server/src/domains/orders/constants/orders.constants.js`
+- Order statuses, admin labels, and persisted status history: `client/src/domains/admin/constants/adminOrders.constants.js`, `server/src/domains/orders/constants/orders.constants.js`, `server/prisma/schema.prisma`
 - Admin auth/session: `server/src/domains/auth/services/auth.service.js`, `server/src/domains/auth/routes/auth.routes.js`
 - API base URL and JSON error handling: `client/src/shared/api/http.js`
 - Environment loading and local/Railway DB admin mode: `server/src/config/env.js`
@@ -53,3 +53,7 @@ flowchart LR
 | Vercel storefront | Vercel build/deploy | Deployed API origin from `VITE_API_BASE_URL` or `VITE_API_URL` | Railway DB | Production storefront/checkout |
 
 No real environment values should be committed or documented. See [admin.md](./admin.md) and [auth-roadmap.md](./auth-roadmap.md) for variable names only.
+
+## Mermaid Verification
+
+All Mermaid blocks in this directory were rendered to SVG with `npx -y @mermaid-js/mermaid-cli` on 2026-06-07. The verified root cause of the reported docs issue was not invalid Mermaid syntax in the checked files; every block rendered successfully. The stale issue found during the audit was documentation drift in older diagram files, especially references to temporary in-memory product data that no longer matches the Prisma-backed application.

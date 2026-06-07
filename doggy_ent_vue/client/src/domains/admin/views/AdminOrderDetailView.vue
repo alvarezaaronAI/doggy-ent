@@ -8,21 +8,12 @@ import {
 import {
   ORDER_STATUSES,
 } from '../constants/adminOrders.constants'
+import AdminOrderStatusPanel from '../components/AdminOrderStatusPanel.vue'
 
 const route = useRoute()
 const order = ref(null)
 const loading = ref(false)
 const statusMessage = ref('')
-
-const statusOptions = [
-  ORDER_STATUSES.PENDING,
-  ORDER_STATUSES.PAID,
-  ORDER_STATUSES.PROCESSING,
-  ORDER_STATUSES.SHIPPED,
-  ORDER_STATUSES.DELIVERED,
-  ORDER_STATUSES.CANCELLED,
-  ORDER_STATUSES.REFUNDED,
-]
 
 const orderReference = computed(() =>
   order.value?.customerReference
@@ -80,7 +71,10 @@ function statusClass(status) {
   return 'bg-stone-200 text-stone-700'
 }
 
-async function updateStatus(value) {
+async function updateStatus({
+  status,
+  note,
+}) {
   if (!order.value?.id) return
 
   statusMessage.value = 'Updating order...'
@@ -88,7 +82,10 @@ async function updateStatus(value) {
   try {
     order.value = await updateAdminOrderStatus(
       order.value.id,
-      value,
+      {
+        status,
+        note,
+      },
     )
     statusMessage.value = 'Order updated.'
   } catch (error) {
@@ -150,24 +147,7 @@ onMounted(loadOrder)
               </div>
             </div>
 
-            <div class="mt-5 grid gap-4 border-t border-stone-100 pt-5 md:grid-cols-3">
-              <label class="block">
-                <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Order status</span>
-                <select
-                  :value="order.status"
-                  class="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-emerald-400"
-                  @change="updateStatus($event.target.value)"
-                >
-                  <option
-                    v-for="status in statusOptions"
-                    :key="status"
-                    :value="status"
-                  >
-                    {{ status }}
-                  </option>
-                </select>
-              </label>
-
+            <div class="mt-5 grid gap-4 border-t border-stone-100 pt-5 md:grid-cols-2">
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Payment status</p>
                 <p class="mt-2 text-sm font-bold text-[var(--brand-4)]">
@@ -187,6 +167,12 @@ onMounted(loadOrder)
               {{ statusMessage }}
             </p>
           </section>
+
+          <AdminOrderStatusPanel
+            :order="order"
+            :status-class="statusClass"
+            @save="updateStatus"
+          />
 
           <div class="grid gap-6 lg:grid-cols-[1.35fr_0.9fr]">
             <section class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm">

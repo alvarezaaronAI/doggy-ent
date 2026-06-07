@@ -1008,4 +1008,277 @@ Manual QA checklist:
 - Verify payment/order status is understandable.
 - Verify other orders from the same customer email if implemented.
 - Open admin campaigns and verify donation/order attribution or documented limitation.
-- Confirm no raw secret values or sensitive payment data are exposed to customers.
+
+
+## Promo Email Validation / Order Status Timeline / File Organization Requirement
+
+
+## Documentation Rendering / Mermaid Verification Requirement
+
+When creating, modifying, or documenting architecture under:
+
+- docs/
+- docs/architecture/
+
+The agent must verify that documentation actually renders correctly.
+
+Known failure pattern:
+- VS Code Markdown Preview shows:
+  "No diagram type detected matching given configuration"
+- Mermaid diagrams fail to render.
+- Architecture docs appear completed but visual diagrams are unusable.
+
+Before declaring architecture documentation complete, the agent must:
+
+1. Audit every Mermaid diagram.
+2. Verify opening and closing Mermaid fences.
+3. Verify every diagram starts with:
+
+```mermaid
+```
+
+4. Verify diagrams do not contain invalid Markdown inside Mermaid blocks.
+5. Verify Mermaid syntax is valid.
+6. Verify Mermaid Preview renders successfully.
+7. Verify diagrams are compatible with standard Mermaid implementations.
+8. Fix any broken diagrams discovered during the audit.
+
+Required audit files:
+
+- docs/architecture/README.md
+- docs/architecture/data-flow.md
+- docs/architecture/file-map.md
+- docs/architecture/database.md
+- docs/architecture/admin.md
+- docs/architecture/auth-roadmap.md
+- Any architecture document created by previous Codex runs
+
+Required final report:
+
+- Diagrams audited
+- Rendering failures found
+- Root cause
+- Files fixed
+- Verification performed
+
+Do not mark architecture documentation complete if Mermaid rendering remains broken.
+
+
+## Existing File Organization Verification Requirement
+
+When working inside a domain that was previously refactored by Codex, the agent must audit files already created by earlier phases.
+
+The goal is not a broad rewrite.
+
+The goal is to verify:
+
+- No oversized god files were introduced.
+- No duplicated logic exists.
+- Views remain thin.
+- Components remain focused.
+- APIs remain separated from UI.
+- Composables remain separated from components.
+- Mappers remain separated from validators.
+- Shared utilities remain in shared folders.
+- Route → Controller → Service → Repository → Prisma architecture is preserved.
+
+When touching a domain, the agent must review files previously created in that same domain and make small corrective extractions if necessary.
+
+Do not create micro-components for trivial logic.
+
+Favor maintainability, discoverability, and future debugging.
+
+
+## Promo + Campaign Pricing Verification Requirement
+
+Known risk:
+
+Promo codes and campaign donations may both be active on the same order.
+
+The agent must verify:
+
+- Promo validation uses normalized email.
+- Promo usage limits are enforced server-side.
+- Promo application cannot occur before email entry.
+- Promo state is cleared or revalidated when email changes.
+- Promo discount calculation is correct.
+- Campaign donation calculation remains correct.
+- Promo discounts and campaign donations can coexist.
+- Order totals remain server-owned.
+
+Required QA:
+
+- Checkout with promo only
+- Checkout with campaign only
+- Checkout with promo + campaign together
+- Verify subtotal
+- Verify discount
+- Verify donation
+- Verify tax
+- Verify shipping
+- Verify final total
+
+
+## Order Status History Requirement
+
+The next order-management phase must implement a future-proof status history system.
+
+Requirements:
+
+- Status changes should not save immediately from a dropdown.
+- Status updates should use a staged workflow.
+- Admin selects a new status.
+- Admin explicitly clicks Save.
+- Admin can cancel before saving.
+- Show last status update timestamp.
+- Show last status change summary.
+- Prepare attribution for future Better Auth users.
+
+Preferred future schema:
+
+- OrderStatusHistory
+  - id
+  - orderId
+  - fromStatus
+  - toStatus
+  - note
+  - changedByType
+  - changedBy
+  - createdAt
+
+Until Better Auth exists:
+
+- changedByType may use SYSTEM or ADMIN_ENV.
+- Do not pretend real user attribution exists.
+
+UI goals:
+
+- Cleaner fulfillment timeline UX.
+- Explicit Save action.
+- Visible history.
+- Better operational visibility for fulfillment management.
+
+When the user reports checkout promo validation problems, promo usage limit bypasses, or admin order status/timeline UX issues, the agent must treat the work as a focused checkout/admin-orders repair pass with proportional file organization.
+
+Known symptom patterns:
+- Promo code can appear to apply before the customer enters an email.
+- Promo usage limits such as `1 per email` can be bypassed because there is no email available to check against.
+- Promo validation may register a promo code but fail to apply the discount when the order also has campaign donation logic.
+- If a customer changes the checkout email after a promo is applied, promo eligibility may no longer be valid.
+- Admin order status currently uses a basic dropdown and may update too immediately without a deliberate save action.
+- Admin needs a record of who changed order status, when it changed, and what it changed from/to.
+- Future Better Auth should be able to connect order status changes to real admin users later.
+
+Primary goals:
+- Require a customer email before validating/applying a promo code.
+- Normalize customer email before promo validation and usage checks using lowercase + trim.
+- Ensure promo usage limits are enforced server-side using the normalized email.
+- Ensure promo discounts and campaign donations can coexist correctly when both apply.
+- Recalculate or clear promo state when the customer email changes and the existing promo may no longer be valid.
+- Replace immediate/basic admin status dropdown behavior with a clearer staged status update workflow and explicit Save action.
+- Add or prepare order status history/audit trail with future Better Auth compatibility.
+- Keep files organized according to existing Vue/domain architecture, avoiding new large god files.
+
+The agent must audit before editing:
+1. Checkout promo input UI and apply button behavior.
+2. Checkout customer email state and validation timing.
+3. Client checkout API payloads for promo validation and checkout preview.
+4. Server promo validation route/controller/service/repository.
+5. Promo usage storage and lookup logic.
+6. Checkout pricing/preview logic where promo discounts and campaign donations are calculated together.
+7. Order creation logic that records promo usage and campaign attribution.
+8. Admin order detail view and components.
+9. Admin order status update API/client/server path.
+10. Prisma `Order`, `OrderItem`, `Promo`, `PromoUsage`, and any order status/history models.
+11. Existing docs/architecture and PROJECT_HANDOFF sections that describe checkout, promos, and orders.
+
+Promo rules:
+- Do not allow promo validation without an email when the promo has per-email or usage tracking behavior.
+- If email is missing, show a clear customer message such as `Enter your email first so we can check this promo.`
+- Normalize email with trim + lowercase on both client payload construction and server validation.
+- Server remains the source of truth; client checks are UX only.
+- If email changes after promo application, require revalidation or clear the applied promo with a clear message.
+- Do not rely only on client email checks for promo usage limits.
+- Confirm promo discount does not block campaign donation unless business rules intentionally say so.
+- Confirm campaign donation is calculated from eligible product subtotal according to current campaign rules, even when a promo is applied, unless code/business rules say otherwise.
+
+Order status timeline rules:
+- Do not use an instant-save dropdown as the only admin status control if the user requested an explicit save workflow.
+- Prefer a staged status editor with selected next status, optional note, and Save/Cancel behavior.
+- Show current status clearly.
+- Show last known status update information when available.
+- Add a status history/audit trail if schema/code proves it is needed.
+- If adding schema, prefer a narrow model such as `OrderStatusHistory` or equivalent with:
+  - `id`
+  - `orderId`
+  - `fromStatus`
+  - `toStatus`
+  - `note`
+  - `changedByType`
+  - `changedBy`
+  - `createdAt`
+- For now, `changedByType` may be `SYSTEM`, `ADMIN_ENV`, or another clearly documented placeholder until Better Auth exists.
+- Do not claim real admin-user attribution until Better Auth/admin user accounts exist.
+- Preserve existing order status values and fulfillment timeline behavior unless a verified bug requires a change.
+
+File organization rules:
+- Follow existing project architecture and domain boundaries.
+- Do not dump new UI/logic into one large view file.
+- Do not perform a broad repo-wide refactor.
+- Only reorganize files directly touched by this phase if they are becoming oversized or mixed-responsibility.
+- Keep changes proportional: avoid micro-components for trivial code, but avoid god files.
+- If a touched Vue view is becoming hard to navigate or combines multiple responsibilities, extract logical pieces into the proper domain component/composable/API files.
+- Suggested client placement:
+  - Admin order status UI: `client/src/domains/admin/components/`
+  - Admin order status composables/helpers if needed: `client/src/domains/admin/composables/` or existing admin utilities pattern.
+  - Checkout promo UI/helpers: `client/src/domains/checkout/` under the existing checkout component/composable/API pattern.
+  - Shared reusable helpers: `client/src/shared/` only when reused across domains.
+  - Admin/order API client updates: `client/src/domains/admin/api/`.
+  - Checkout API client updates: `client/src/domains/checkout/api/`.
+- Suggested server placement:
+  - Order status history routes/services/repositories: `server/src/domains/orders/` using route → controller → service → repository → Prisma pattern.
+  - Promo validation logic: `server/src/domains/promos/`.
+  - Checkout orchestration: `server/src/domains/checkout/`.
+  - Prisma schema/migrations: `server/prisma/`.
+- Update `docs/architecture/file-map.md` and `PROJECT_HANDOFF.md` whenever new files are introduced or responsibilities move.
+
+Expected fixes to consider if verified:
+- Require email before promo validation in checkout UI.
+- Send normalized email to promo validation and checkout preview endpoints.
+- Server-side promo validation should reject missing email for email-limited promo rules.
+- Revalidate or clear applied promo when email changes.
+- Repair promo + campaign combined calculations if discounts or donations are missing after promo application.
+- Add order status history persistence if current schema cannot track status changes.
+- Replace order detail dropdown-only status control with a cleaner staged status component and Save button.
+- Add last status update display on admin order detail.
+- Add optional status-change note if it fits the existing UX without overbuilding.
+
+Required verification:
+- Run client build.
+- Run server build or syntax/import checks for changed server files.
+- Run Prisma generate if schema changes.
+- If a Prisma migration is added, run local migration checks and document Railway `prisma migrate deploy` steps; never use destructive commands on Railway.
+- Verify promo cannot be applied before email is entered.
+- Verify promo can apply after email is entered.
+- Verify email is normalized for promo usage checks.
+- Verify changing email after applying promo forces revalidation or clears the promo.
+- Verify promo discount and campaign donation both display correctly when applicable.
+- Verify checkout/order creation still succeeds.
+- Verify admin order status does not persist until Save is clicked.
+- Verify order status history/last update displays correctly if implemented.
+- Verify products, promos, campaigns, and orders still load in Railway DB admin mode if touched.
+- Verify no `.env.example` files are created.
+- Verify no secrets are documented.
+- Update `PROJECT_HANDOFF.md` and relevant docs/architecture files.
+
+Manual QA checklist:
+- Try applying promo before entering email and confirm the app asks for email first.
+- Enter email and apply promo successfully.
+- Change email after promo is applied and confirm promo is cleared or requires revalidation.
+- Complete checkout with promo + campaign donation eligible items.
+- Confirm order success totals include correct discount, shipping, tax, donation, and total.
+- Confirm admin order detail shows promo, campaign donation, and correct totals.
+- Change order status in admin and confirm it does not save until Save is clicked.
+- Save a status change and confirm last updated/status history is visible.
+- Confirm status history uses placeholder attribution only until Better Auth exists.
+- Confirm relevant files remain organized by domain and no touched file has become an avoidable god file.

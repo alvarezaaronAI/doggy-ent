@@ -2555,3 +2555,224 @@ Final result: local database schema is up to date.
 ### Safe For Commit Review
 
 The local changes are build-verified and locally migration-verified, but the working tree contains multiple accepted uncommitted phases. Review should consider all existing local edits together before committing.
+
+## 2026-06-07 Focused Checkout, Orders, And Documentation Verification Pass
+
+This pass focused only on promo validation, promo/campaign calculation edge cases, admin order status workflow, future-proof order status history, touched-domain maintainability, and architecture documentation rendering. It did not redesign the storefront or admin UI, did not migrate to Better Auth, did not commit, and did not push.
+
+### Starting Repository State
+
+The pass began by reading `AGENTS.md` and this handoff, then running:
+
+```bash
+git status --short
+git diff --stat
+git diff --name-status
+```
+
+Observed state: the working tree already contained local edits from the active repair/refactor work, including `AGENTS.md` changes and drafted checkout/orders/promo/status-history edits. The `AGENTS.md` changes were pre-existing in this pass and were not reverted.
+
+### Promo Validation Fixes
+
+Root causes:
+
+- The checkout promo composable allowed promo validation before a customer email existed.
+- Client promo validation and checkout submission did not consistently lowercase email before sending it to the server.
+- Server promo validation skipped per-customer usage enforcement when `customerEmail` was absent, which could bypass one-per-email style rules during validation.
+- Changing the checkout email after applying a promo could leave the promo attached to a different email than the one that was validated.
+
+Fixes:
+
+- `client/src/domains/checkout/composables/useCheckoutPromos.js` now requires email before promo validation, normalizes customer email with trim/lowercase, sends the normalized email to `/api/promos/validate`, and clears the applied promo if email changes after validation.
+- `client/src/domains/promos/api/promos.api.js` normalizes validation emails before sending API payloads.
+- `client/src/domains/checkout/api/checkout.api.js` normalizes checkout customer email before checkout preview/final submission.
+- `server/src/domains/promos/services/promos.service.js` now requires normalized email for promo validation, uses normalized email for assigned-email and per-customer usage checks, stores normalized email for usage records, and rechecks per-customer limits inside the promo usage transaction.
+- `server/src/domains/checkout/services/checkout.service.js` passes normalized email into preview/final promo validation and promo usage recording.
+
+Verified from code:
+
+- Promo discounts and campaign donations remain separate server-owned checkout calculations.
+- Checkout totals remain server-owned in `server/src/domains/checkout/services/checkout.service.js` and `server/src/domains/checkout/utils/checkoutPricing.js`.
+- Promo usage is still recorded after the order is created, so customer-facing checkout does not fail after payment/order creation if promo usage persistence fails. This is intentional existing behavior but remains a future robustness risk.
+
+### Admin Order Status Workflow And History
+
+Root causes:
+
+- Admin order detail previously used an instant-persist dropdown, so selecting a status immediately saved.
+- There was no status history table or API response shape for future admin auditability.
+
+Fixes:
+
+- `client/src/domains/admin/components/AdminOrderStatusPanel.vue` was added. It shows current status, last updated timestamp, last status change, a staged next-status select, optional note, Save, Cancel, and status history.
+- `client/src/domains/admin/views/AdminOrderDetailView.vue` now delegates status editing to `AdminOrderStatusPanel.vue`.
+- `client/src/domains/admin/api/adminOrders.api.js` now sends `{ status, note }` for status updates.
+- `server/prisma/schema.prisma` adds `OrderStatusHistory`.
+- `server/prisma/migrations/20260607000000_add_order_status_history/migration.sql` adds the status history table and indexes.
+- `server/src/domains/orders/repositories/orders.repository.js` includes status history on order reads and creates a history row transactionally when status changes.
+- `server/src/domains/orders/services/orders.service.js` validates status, normalizes notes, and records temporary actor metadata as `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
+- `server/src/domains/orders/controllers/orders.controller.js` accepts the note field.
+- `server/src/domains/orders/mappers/orders.mapper.js` maps `statusHistory` and `lastStatusChange`.
+
+Migration status:
+
+- Local migration `20260607000000_add_order_status_history` was applied with `npx prisma migrate dev`.
+- Local `npx prisma migrate status` reports the schema is up to date.
+- Railway was not migrated automatically. Required Railway step after review: `cd server && npx prisma migrate deploy`.
+
+### Documentation Fixes
+
+Docs updated:
+
+- `docs/architecture/README.md`
+- `docs/architecture/data-flow.md`
+- `docs/architecture/database.md`
+- `docs/architecture/admin.md`
+- `docs/architecture/file-map.md`
+- `docs/architecture/diagram.md`
+
+Rendering root cause:
+
+- Mermaid CLI rendering did not find syntax-invalid Mermaid in the architecture docs. All blocks rendered successfully.
+- The verified documentation problem was stale architecture content, especially `docs/architecture/diagram.md` referring to temporary in-memory product data. That file now reflects the current Prisma-backed architecture.
+
+Mermaid verification command shape:
+
+```bash
+rm -rf /tmp/doggy-mermaid-check
+mkdir -p /tmp/doggy-mermaid-check
+node --input-type=module <extract mermaid blocks from docs/architecture/*.md>
+npx -y @mermaid-js/mermaid-cli -i <each extracted .mmd> -o <svg> -b transparent
+```
+
+Result: passed. Fourteen Mermaid blocks rendered to non-empty SVG files in `/tmp/doggy-mermaid-check`.
+
+### File Organization Audit
+
+Domains audited in this pass:
+
+- Products
+- Promos
+- Campaigns
+- Checkout
+- Orders
+
+Findings:
+
+- Client APIs remain separated from UI.
+- Checkout promo behavior lives in a composable and API wrapper, not the view.
+- Admin order status UI is now a component, while `AdminOrderDetailView.vue` remains the route orchestration layer.
+- Server orders code still follows route -> controller -> service -> repository -> mapper.
+- Server promos code remains the largest touched file at roughly 532 lines. It is still a domain service with cohesive promo lifecycle/validation/usage responsibilities, so no broad refactor was done in this focused pass.
+- `server/src/domains/orders/repositories/orders.repository.js` is roughly 337 lines and now owns status-history database access in addition to order reads/writes. It remains repository-specific but should get automated tests before further extraction.
+
+### Verification Commands And Results
+
+Client build:
+
+```bash
+cd client
+npm run build
+```
+
+Result: passed. Vite built 153 modules and generated production assets.
+
+Server build / Prisma generate:
+
+```bash
+cd server
+npm run build
+```
+
+Result: passed. Prisma Client v6.16.2 generated successfully.
+
+Server syntax/import checks:
+
+```bash
+cd server
+node --check src/domains/orders/repositories/orders.repository.js
+node --check src/domains/orders/services/orders.service.js
+node --check src/domains/orders/controllers/orders.controller.js
+node --check src/domains/orders/mappers/orders.mapper.js
+node --check src/domains/promos/services/promos.service.js
+node --check src/domains/checkout/services/checkout.service.js
+```
+
+Result: passed.
+
+Prisma migration status:
+
+```bash
+cd server
+npx prisma migrate status
+```
+
+Result after local migration: database schema is up to date.
+
+Whitespace/diff check:
+
+```bash
+git diff --check
+```
+
+Result: passed.
+
+Environment/secrets policy checks:
+
+```bash
+find . -name '.env.example' -print
+rg -n 'sk_live|rk_live|whsec_|postgres://|postgresql://|DATABASE_URL=|STRIPE_SECRET_KEY=|ADMIN_PASSWORD_HASH=' --glob '!node_modules/**' --glob '!client/dist/**' .
+```
+
+Result: no `.env.example` files found. Secret scan found only placeholder variable-name examples in `AGENTS.md`, not real secret values.
+
+Lint/test script status:
+
+- Client package has no `lint` or `test` scripts.
+- Server package has no `lint` or `test` scripts.
+- No scripts were invented.
+
+### Remaining Risks
+
+- Railway still needs `npx prisma migrate deploy` for `20260607000000_add_order_status_history` before deployed admin order status history can persist.
+- Promo usage recording still happens after order creation; if usage persistence fails after a paid order, counters can underreport. A stronger future design would reserve/record promo usage within a more explicit checkout transaction model.
+- Per-customer promo usage checks are now normalized and rechecked during usage recording, but high-concurrency max-usage edge cases still need automated tests.
+- No automated tests exist for promo validation, promo + campaign coexistence, Stripe checkout, inventory decrement, or status history.
+- Browser/manual QA is still required to confirm the visible admin Save/Cancel workflow and checkout promo behavior.
+
+### Manual QA Checklist
+
+Promo/checkout:
+
+- Start local client/server.
+- Enter a promo code before email and confirm validation refuses with an email-required message.
+- Enter an email with uppercase/extra spaces, apply a one-per-email promo, and confirm validation succeeds/fails according to normalized email usage.
+- Change the email after a promo is applied and confirm the promo clears and totals update.
+- Apply a valid promo with a campaign-eligible cart item and confirm discount and donation both display.
+- Complete Stripe test checkout and confirm server-owned totals, promo usage, campaign attribution, inventory, and order success page.
+
+Admin orders:
+
+- Open admin order detail.
+- Select a different status and click Cancel; confirm no status change persists.
+- Select a different status and click Save; confirm current status updates and status history gains a row.
+- Add a note and confirm it appears in history only after a status change.
+- Confirm last updated and last status change timestamps are visible.
+
+Docs:
+
+- Open `docs/architecture/README.md`, `data-flow.md`, `database.md`, `admin.md`, `file-map.md`, and `auth-roadmap.md` in a Markdown renderer that supports Mermaid.
+
+Deployment:
+
+- Apply Railway migrations with `cd server && npx prisma migrate deploy` after confirming target DB.
+- Redeploy Railway and Vercel if needed.
+- Confirm Vercel checkout, Stripe test payment, order creation, and admin order detail after migration.
+
+### Current Git State Notes
+
+Changed files from this focused pass include client checkout/promo/admin-order files, server checkout/promo/order files, Prisma schema/migration, and architecture docs. `AGENTS.md` is also modified in the working tree from prior accepted edits and should be reviewed with the full local diff.
+
+### Next Recommended Phase
+
+After manual QA and Railway migration review, add focused automated tests for checkout pricing, promo validation/usage limits, promo + campaign coexistence, order status history, and idempotent Stripe order creation. Better Auth remains future customer accounts/loyalty/admin-user work and was intentionally not started here.

@@ -41,6 +41,16 @@ async function postCheckoutRequest(
   )
 }
 
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function normalizeCustomer(customer = {}) {
+  return {
+    ...customer,
+    email: normalizeEmail(customer.email),
+  }
+}
 
 export async function submitCheckout({
   cartItems,
@@ -49,13 +59,15 @@ export async function submitCheckout({
   shipping,
   stripePaymentIntentId,
 }) {
+  const normalizedCustomer = normalizeCustomer(customer)
+
   return postCheckoutRequest(
     '/api/checkout',
     {
       cartItems,
       promoCode,
-      customerEmail: customer.email,
-      customer,
+      customerEmail: normalizedCustomer.email,
+      customer: normalizedCustomer,
       shipping,
       stripePaymentIntentId,
     },
@@ -69,13 +81,15 @@ export async function submitCheckoutPreview({
   customer,
   shipping,
 }) {
+  const normalizedCustomer = normalizeCustomer(customer)
+
   return postCheckoutRequest(
     '/api/checkout/preview',
     {
       cartItems,
       promoCode,
-      customerEmail: customer.email,
-      customer,
+      customerEmail: normalizedCustomer.email,
+      customer: normalizedCustomer,
       shipping,
     },
     'Checkout preview failed.',

@@ -85,13 +85,25 @@ export async function fetchCustomerOrderByReference(reference) {
   return await findCustomerOrderByReference(reference)
 }
 
-export async function updateAdminOrderStatus(orderId, status) {
+export async function updateAdminOrderStatus(
+  orderId,
+  {
+    status,
+    note = null,
+  },
+) {
   const normalizedStatus = validateOrderStatus(status)
+  const normalizedNote = String(note || '').trim() || null
 
   try {
     return await updateOrderStatusById(
       orderId,
       normalizedStatus,
+      {
+        note: normalizedNote,
+        changedByType: 'ADMIN_ENV',
+        changedBy: 'ADMIN_ENV',
+      },
     )
   }
   catch (error) {

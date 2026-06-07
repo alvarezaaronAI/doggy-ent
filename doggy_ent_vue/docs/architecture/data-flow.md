@@ -1,6 +1,6 @@
 # Data Flow Maps
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 ## Overall Request Flow
 
@@ -96,12 +96,16 @@ Key files:
 
 ## Promo Flow
 
-1. Storefront checkout promo inputs call client promo validation helpers and `POST /api/promos/validate`.
-2. `server/src/domains/promos/services/promos.service.js` normalizes promo codes, resolves scheduled/expired status, reads usage counts, validates customer-specific usage, and calculates discounts.
-3. During order creation, promo usage is recorded in a transaction through `createPromoUsageTx` and `incrementPromoUsageStatsTx`.
-4. Admin promo CRUD calls `/api/admin/promos`, which is the same promo router mounted behind `requireAdminAuth`.
-5. Promo list ordering uses real `Promo.updatedAt`. Promo analytics usage history uses `PromoUsage.redeemedAt`.
-6. Promo start/end datetime fields are normalized to ISO DateTime strings before Prisma create/update.
+1. Storefront checkout promo inputs call `useCheckoutPromos().applyPromoCode()`.
+2. The client requires a customer email before validation, normalizes it with trim and lowercase, and calls `POST /api/promos/validate`.
+3. If the customer email changes after a promo is applied, the client clears the applied promo so the new email must be validated.
+4. `server/src/domains/promos/services/promos.service.js` normalizes promo codes and customer email, requires a valid email for validation, resolves scheduled/expired status, reads total and per-customer usage counts, validates customer-specific usage, and calculates discounts.
+5. Checkout preview and final checkout remain server-owned: `checkout.service.js` recomputes totals and passes the normalized email into promo validation.
+6. During order creation, promo usage is recorded through `recordPromoUsage`; the service stores normalized customer email and rechecks per-customer usage limits inside the transaction.
+7. Campaign donation preview and promo discounts can coexist because promo discount calculation and campaign donation calculation are separate server-owned checkout pricing steps.
+8. Admin promo CRUD calls `/api/admin/promos`, which is the same promo router mounted behind `requireAdminAuth`.
+9. Promo list ordering uses real `Promo.updatedAt`. Promo analytics usage history uses `PromoUsage.redeemedAt`.
+10. Promo start/end datetime fields are normalized to ISO DateTime strings before Prisma create/update.
 
 ## Campaign Flow
 
@@ -119,7 +123,35 @@ Key files:
 3. Admin order list/detail clients call `client/src/domains/admin/api/adminOrders.api.js`.
 4. Server admin orders are mounted at `/api/admin/orders` and guarded by admin auth in the orders route layer.
 5. Admin order timeline labels are centralized in `client/src/domains/admin/constants/adminOrders.constants.js`.
-6. Admin order responses include `donationAmount`, campaign attribution rows, promo usage when recorded, and same-customer order summaries.
+6. Admin order detail shows the current status separately from the staged next status selector. Status changes persist only after Save; Cancel resets the staged selection.
+7. Status updates create `OrderStatusHistory` rows when the status changes. Until Better Auth/admin users exist, entries use `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
+8. Admin order responses include `donationAmount`, campaign attribution rows, promo usage when recorded, same-customer order summaries, `lastStatusChange`, and `statusHistory`.
+
+## Order Status History Flow
+
+```mermaid
+sequenceDiagram
+  participant Admin as Admin order detail
+  participant Client as AdminOrderStatusPanel.vue
+  participant API as Express orders API
+  participant Service as orders.service.js
+  participant Repo as orders.repository.js
+  participant DB as PostgreSQL
+
+  Admin->>Client: Select next status
+  Client-->>Admin: Show staged status, Save, Cancel
+  Admin->>Client: Save status
+  Client->>API: PATCH /api/admin/orders/:orderId/status
+  API->>Service: updateAdminOrderStatus(orderId, status, note)
+  Service->>Repo: updateOrderStatusById with ADMIN_ENV actor
+  Repo->>DB: Read current order
+  Repo->>DB: Create OrderStatusHistory if status changed
+  Repo->>DB: Update Order.status
+  DB-->>Repo: Order with statusHistory
+  Repo-->>Service: Mapped order
+  Service-->>API: Updated order
+  API-->>Client: Updated status and history
+```
 
 ## Campaign Attribution Flow
 
