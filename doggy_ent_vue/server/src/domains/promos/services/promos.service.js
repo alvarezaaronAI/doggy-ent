@@ -63,6 +63,24 @@ export function normalizePromoCode(code) {
   return String(code || '').trim().toUpperCase()
 }
 
+function normalizeOptionalDateTime(value, fieldName) {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  const parsedDate = new Date(value)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    const error = new Error(`${fieldName} must be a valid date and time.`)
+
+    error.statusCode = 400
+
+    throw error
+  }
+
+  return parsedDate.toISOString()
+}
+
 export function normalizePromoInput(input) {
   const code = normalizePromoCode(input.code)
   const now = nowISO()
@@ -107,8 +125,8 @@ export function normalizePromoInput(input) {
     revenueGenerated: Number(input.revenueGenerated ?? 0),
     discountGiven: Number(input.discountGiven ?? 0),
 
-    startsAt: input.startsAt || null,
-    endsAt: input.endsAt || null,
+    startsAt: normalizeOptionalDateTime(input.startsAt, 'startsAt'),
+    endsAt: normalizeOptionalDateTime(input.endsAt, 'endsAt'),
 
     createdAt: input.createdAt || now,
     updatedAt: now,

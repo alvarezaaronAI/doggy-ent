@@ -1,5 +1,8 @@
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
+import {
+  getAdminDataTarget as getConfiguredAdminDataTarget,
+} from '../../../config/env.js'
 
 const SESSION_COOKIE_NAME = 'doggy_admin_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8 // 8 hours
@@ -175,6 +178,10 @@ export function getSessionCookieName() {
 
 export function getSessionCookieOptions() {
   return getCookieOptions()
+}
+
+export function getAdminDataTarget() {
+  return getConfiguredAdminDataTarget()
 }
 
 export async function loginAdmin({ email, password }) {

@@ -77,6 +77,7 @@ model Order {
   updatedAt     DateTime      @updatedAt
 
   items OrderItem[]
+  campaignUsages OrderCampaignUsage[]
 }
 
 model OrderItem {
@@ -178,7 +179,30 @@ model Campaign {
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
 
+  orderUsages         OrderCampaignUsage[]
+
   @@index([status])
+}
+
+model OrderCampaignUsage {
+  id               String   @id @default(cuid())
+
+  orderId          String
+  campaignId       String
+
+  donationAmount   Float
+  eligibleSubtotal Float
+  matchedProductIds Json?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, campaignId])
+  @@index([orderId])
+  @@index([campaignId])
 }
 
 enum OrderStatus {

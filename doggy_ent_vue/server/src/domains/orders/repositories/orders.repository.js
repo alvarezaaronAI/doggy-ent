@@ -1,5 +1,9 @@
 import { prisma } from '../../../db/prisma.js'
-import { mapOrder } from '../mappers/orders.mapper.js'
+import {
+  getOrderDonationAmount,
+  mapCustomerOrder,
+  mapOrder,
+} from '../mappers/orders.mapper.js'
 import {
   ORDER_STATUS,
 } from '../constants/orders.constants.js'
@@ -9,22 +13,44 @@ export async function findAllOrders() {
     orderBy: {
       createdAt: 'desc',
     },
+    include: {
+      campaignUsages: {
+        include: {
+          campaign: true,
+        },
+      },
+    },
   })
 
-  return orders
+  return orders.map(mapOrder)
 }
 
 export async function findOrderById(orderId) {
-  const order = await prisma.order.findUnique({
-    where: {
-      id: orderId,
-    },
-    include: {
-      items: true,
-    },
-  })
+  const [order, promoUsage] = await Promise.all([
+    prisma.order.findUnique({
+      where: {
+        id: orderId,
+      },
+      include: {
+        items: true,
+        campaignUsages: {
+          include: {
+            campaign: true,
+          },
+        },
+      },
+    }),
+    prisma.promoUsage.findFirst({
+      where: {
+        orderId,
+      },
+      include: {
+        promo: true,
+      },
+    }),
+  ])
 
-  return mapOrder(order)
+  return mapOrder(order ? { ...order, promoUsage } : null)
 }
 
 export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
@@ -38,14 +64,102 @@ export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
     },
     include: {
       items: true,
+      campaignUsages: {
+        include: {
+          campaign: true,
+        },
+      },
     },
   })
 
   return mapOrder(order)
 }
 
+export async function findCustomerOrderByReference(reference) {
+  const normalizedReference = String(reference || '').trim()
+
+  if (!normalizedReference) {
+    return null
+  }
+
+  const order = await prisma.order.findFirst({
+    where: {
+      OR: [
+        {
+          orderNumber: normalizedReference,
+        },
+        {
+          id: normalizedReference,
+        },
+      ],
+    },
+    include: {
+      items: true,
+      campaignUsages: {
+        include: {
+          campaign: true,
+        },
+      },
+    },
+  })
+
+  const promoUsage = order
+    ? await prisma.promoUsage.findFirst({
+        where: {
+          orderId: order.id,
+        },
+        include: {
+          promo: true,
+        },
+      })
+    : null
+
+  return mapCustomerOrder(order ? { ...order, promoUsage } : null)
+}
+
+export async function findOrdersByCustomerEmail(
+  customerEmail,
+  excludeOrderId = null,
+) {
+  const normalizedEmail = String(customerEmail || '').trim()
+
+  if (!normalizedEmail) {
+    return []
+  }
+
+  const orders = await prisma.order.findMany({
+    where: {
+      customerEmail: normalizedEmail,
+      ...(excludeOrderId
+        ? {
+            id: {
+              not: excludeOrderId,
+            },
+          }
+        : {}),
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: 5,
+    include: {
+      campaignUsages: {
+        include: {
+          campaign: true,
+        },
+      },
+    },
+  })
+
+  return orders.map(mapOrder)
+}
+
 export async function findOrderStats() {
-  const orders = await prisma.order.findMany()
+  const orders = await prisma.order.findMany({
+    include: {
+      campaignUsages: true,
+    },
+  })
 
   const totalOrders = orders.length
 
@@ -69,6 +183,10 @@ export async function findOrderStats() {
     return sum + Number(order.total || 0)
   }, 0)
 
+  const totalDonationGenerated = orders.reduce((sum, order) => {
+    return sum + getOrderDonationAmount(order)
+  }, 0)
+
   return {
     totalOrders,
     pendingOrders,
@@ -77,7 +195,7 @@ export async function findOrderStats() {
     deliveredOrders,
     fulfilledOrders: deliveredOrders,
     totalRevenue,
-    totalDonationGenerated: 0,
+    totalDonationGenerated,
   }
 }
 
@@ -121,6 +239,11 @@ export async function createOrder(orderInput) {
     },
     include: {
       items: true,
+      campaignUsages: {
+        include: {
+          campaign: true,
+        },
+      },
     },
   })
 
@@ -137,6 +260,11 @@ export async function updateOrderStatusById(orderId, status) {
     },
     include: {
       items: true,
+      campaignUsages: {
+        include: {
+          campaign: true,
+        },
+      },
     },
   })
 

@@ -1,12 +1,14 @@
-import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import path from 'path'
+import {
+  loadServerEnv,
+} from './config/env.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-dotenv.config({
-  path: path.resolve(__dirname, '../.env'),
+loadServerEnv({
+  rootDir: path.resolve(__dirname, '..'),
 })
 
 const { default: app } = await import('./app.js')

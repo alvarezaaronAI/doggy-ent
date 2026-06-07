@@ -559,10 +559,10 @@ The correct short-term goal is a stable deployed custom admin auth flow. The cor
 
 ## Local Admin Data Target Modes / Temporary Railway Admin Workflow
 
-When cross-site cookies make deployed Vercel admin auth unreliable, the preferred temporary workflow is to run the admin frontend locally and choose the API/database target at startup, not with buttons inside the admin UI.
+When cross-site cookies make deployed Vercel admin auth unreliable, the preferred temporary workflow is to run both the admin frontend and backend locally, then choose which database the local backend uses at startup. Do not use local frontend → Railway backend as the preferred Railway admin workflow because that can still trigger cross-site cookie problems.
 
 Primary goal:
-- Allow the user to manage products, promos, campaigns, and orders from the local admin UI while choosing whether changes go to the local database or the Railway database.
+- Allow the user to manage products, promos, campaigns, and orders from the local admin UI while choosing whether the local backend writes to the local database or the Railway database.
 - Avoid weakening auth with token fallbacks unless explicitly requested.
 - Avoid adding risky per-action upload buttons that can accidentally write to the wrong database.
 - Preserve the existing admin dashboard and all current admin pages.
@@ -575,16 +575,19 @@ Preferred modes:
    - Intended for safe testing and development.
    - Flow: `localhost:5173 → localhost server → local DB`.
 
-2. Railway admin mode:
-   - Local client/admin calls Railway backend.
-   - Railway backend writes to Railway database.
+2. Railway-data local admin mode:
+   - Local client/admin calls local backend.
+   - Local backend connects to Railway database using a local-only server env file.
    - Intended for uploading/editing data that the deployed Vercel storefront should see.
-   - Flow: `localhost:5173 → Railway backend → Railway DB → Vercel storefront`.
+   - Flow: `localhost:5173 → localhost server → Railway DB → Vercel storefront`.
+   - This avoids deployed Vercel/Railway cross-site cookie problems because admin auth is local-to-local during the temporary workflow.
 
 Implementation rules:
 - Choose the data target through Vite modes / startup scripts, not runtime buttons.
-- Add scripts such as `dev:local` and `dev:railway` in the client package if they do not already exist.
+- Add or verify client scripts such as `dev:local` for local admin frontend.
+- Add or verify server scripts such as `dev:local` and `dev:railway` so the local backend can choose local DB or Railway DB at startup.
 - Use Vite mode files or existing local env strategy to set the API target per mode.
+- For Railway-data local admin mode, the client should still call the local backend, while the server chooses Railway database through a local-only server env file.
 - Do not commit files containing real secrets.
 - It is acceptable to create local-only env files if they are gitignored and contain no secrets beyond public client URLs.
 - Prefer documenting variable names and local setup steps in `PROJECT_HANDOFF.md` instead of committing `.env.example` files.
@@ -592,57 +595,417 @@ Implementation rules:
 - Do not hardcode Railway, localhost, Vercel, or production domains in source code outside local-only env/config files or documentation.
 - Do not add admin UI buttons that switch the data target per request unless the user explicitly asks later.
 
-Recommended client mode shape:
+Recommended script shape:
 
 ```json
 {
-  "scripts": {
-    "dev:local": "vite --mode local",
-    "dev:railway": "vite --mode railway"
+  "client scripts": {
+    "dev:local": "vite --mode admin-local"
+  },
+  "server scripts": {
+    "dev:local": "node ... using local DB env",
+    "dev:railway": "node ... using Railway DB env"
   }
 }
 ```
 
-Recommended local-only client variables by mode:
+Recommended local-only client variables:
 
 ```env
 VITE_API_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3000
 VITE_ADMIN_DATA_TARGET=LOCAL
 ```
 
+Recommended local-only server variables for Railway-data mode:
+
 ```env
-VITE_API_URL=https://<railway-backend-origin>
-VITE_ADMIN_DATA_TARGET=RAILWAY
+DATABASE_URL=<Railway database URL>
+FRONTEND_URL=http://localhost:5173
+ADMIN_EMAIL=<same admin email as Railway or local admin>
+ADMIN_PASSWORD_HASH=<same admin password hash as Railway or local admin>
+STRIPE_SECRET_KEY=<Stripe secret if payment/admin flows need it>
+ADMIN_SESSION_SECRET=<optional but recommended>
 ```
+
+No real values should be committed or documented.
 
 Admin UI requirement:
 - Show a clear, visible admin data target badge somewhere in the admin layout/dashboard.
 - The badge should display whether the current admin session is targeting `LOCAL` or `RAILWAY`.
-- If the target is Railway, show a stronger warning style/copy such as `RAILWAY DATA TARGET` or `Editing Railway data`.
+- If the local backend is connected to Railway DB, show a stronger warning style/copy such as `RAILWAY DB TARGET`, `Editing Railway data`, or `LOCAL SERVER → RAILWAY DB`.
 - Preserve the existing admin UX and do not redesign the admin pages.
 
-Server/CORS requirement:
-- Railway must allow local admin origin when using Railway admin mode, such as `http://localhost:5173`.
-- If the backend supports `FRONTEND_URL` or `CLIENT_URL`, document how to include both deployed Vercel origin and local admin origin.
-- Do not expose secret values while documenting this.
+Server/database requirement:
+- Railway-data local admin mode should not require browser calls to the Railway backend.
+- The local backend should load a local-only Railway database env file and connect directly to Railway Postgres.
+- The local backend should allow `http://localhost:5173` as the frontend origin for admin cookies.
+- Do not expose Railway `DATABASE_URL`, Stripe secrets, admin hashes, or session secrets in docs, logs, committed files, or examples with real values.
 
 Verification required:
 - Run client build.
 - Run server build or syntax checks if server/CORS code changes.
-- Verify `npm run dev:local` points to local API configuration.
-- Verify `npm run dev:railway` points to Railway API configuration.
-- Verify the admin data target badge reflects the chosen mode.
-- Verify local mode does not accidentally target Railway.
-- Verify Railway mode does not accidentally target local server.
+- Verify client `npm run dev:local` points to the local backend.
+- Verify server local mode points to the local database.
+- Verify server Railway-data mode points to Railway database.
+- Verify the admin data target badge reflects whether the local backend targets local DB or Railway DB.
+- Verify local DB mode does not accidentally target Railway DB.
+- Verify Railway DB mode does not accidentally target local DB.
+- Verify admin auth works through local client → local backend in both database modes.
 - Update `PROJECT_HANDOFF.md` with exact commands, expected flows, required env variable names, and manual QA steps.
 
 Manual QA checklist:
-- Start local server and client in local mode.
+- Start local server in local DB mode and start local client.
 - Confirm admin badge says local target.
 - Create or edit a test product locally and confirm it affects local DB only.
-- Start client in Railway mode.
-- Confirm admin badge says Railway target.
+- Start local server in Railway DB mode and start local client.
+- Confirm admin badge says Railway DB target.
 - Create or edit a test product/promo/campaign and confirm it appears in Railway/Vercel data.
 - Confirm checkout/storefront still uses the deployed Railway data on Vercel.
+- Confirm no browser request from the local admin frontend is required to hit the Railway backend directly for admin CRUD.
 
-This is a temporary workflow until the project uses a proper same-site custom domain setup, such as frontend on the owned domain and backend on an API subdomain, or until Better Auth is introduced during the Accounts + Loyalty phase.
+This is a temporary workflow until the project uses a proper same-site custom domain setup, such as frontend on the owned domain and backend on an API subdomain, or until Better Auth is introduced during the Accounts + Loyalty phase. The temporary Railway-data workflow should be local client → local server → Railway DB, not local client → Railway backend.
+
+
+## Railway DB Admin QA / Promo Repair Requirement
+
+When the user is testing Railway DB admin mode with `local client → local server → Railway DB` and reports Prisma/API failures, the agent must treat the task as a focused Railway-data QA repair pass.
+
+Current known good state:
+- Local client can call the local server.
+- Local server can connect to Railway DB when `server/.env.railway.local` is correctly configured with a public Railway database URL.
+- Railway orders can be read through the local admin workflow.
+- Railway products can be populated/read through the local client and local server.
+
+Known failure patterns to audit:
+- Promo admin endpoints may fail against Railway DB.
+- Prisma may throw `Unknown argument redeemedAt` when code orders `Promo` records by a field that does not exist on the `Promo` model.
+- Promo create/update may fail when datetime-local strings such as `2026-06-05T11:00` are sent directly to Prisma instead of normalized ISO-8601 DateTime values.
+- Promo form mappers, validators, API payloads, repositories, and Prisma schema may disagree on date fields, sorting fields, or model ownership.
+- Railway DB mode may expose schema/data mismatches that local mock/local DB paths did not reveal.
+
+Primary goal:
+- Make admin promos work correctly in Railway DB admin mode without broad refactoring.
+- Preserve the existing admin promo UX unless a small input/validation change is required to fix a verified bug.
+- Keep the local client → local server → Railway DB workflow intact.
+
+The agent must audit these promo areas before editing:
+1. `server/prisma/schema.prisma` Promo and PromoUsage models.
+2. Server promo routes/controllers/services/repositories.
+3. Client admin promo API files.
+4. Client admin promo view/composables/components.
+5. Promo form mapper and validator files.
+6. Any promo analytics or usage sorting logic.
+7. Date/time serialization from client form fields to server payloads.
+8. Date/time normalization before Prisma create/update calls.
+9. Sort fields used in Prisma `orderBy` calls.
+10. Railway DB admin mode behavior using the local server.
+
+Rules:
+- Do not start a broad admin refactor.
+- Do not redesign the promo UI.
+- Do not change unrelated checkout, product, campaign, or order code unless a verified shared utility bug requires it.
+- Do not edit database schema unless the code/schema mismatch truly requires a migration; prefer fixing code that references nonexistent fields.
+- Do not invent fields such as `redeemedAt` on `Promo` if the intended field is `createdAt`, `updatedAt`, `startsAt`, `endsAt`, or a related `PromoUsage` field.
+- Do not commit or push unless explicitly asked.
+- Do not expose real Railway database URLs or secret values in logs, docs, or final reports.
+
+Expected fixes to consider if verified:
+- Replace invalid `orderBy: { redeemedAt: ... }` on `Promo` with a real Promo field or sort through related PromoUsage data where appropriate.
+- Normalize datetime-local form values into valid JavaScript Date/ISO-8601 values before Prisma create/update.
+- Ensure nullable date fields are sent as `null`, not empty strings.
+- Ensure promo create/edit payloads match server validators and Prisma schema.
+- Improve server validation errors so admin sees useful promo errors instead of raw Prisma errors.
+- Add targeted helpers for promo date parsing/normalization if that matches existing architecture.
+
+Required verification:
+- Run client build.
+- Run server build or targeted server syntax/import checks for changed promo files.
+- Run Prisma generate if schema or Prisma client usage requires it.
+- In Railway DB admin mode, verify promo list/read does not throw Prisma errors.
+- In Railway DB admin mode, verify creating a promo with start/end datetime-local values succeeds or fails with a clear validation error.
+- Verify editing an existing promo succeeds.
+- Verify fixed/percent promo validation still works for checkout preview if touched.
+- Verify products and orders still read from Railway DB after the promo fix.
+- Update `PROJECT_HANDOFF.md` with root cause, fixes, commands run, manual QA, and remaining promo risks.
+
+Manual QA checklist:
+- Start `cd server && npm run dev:railway`.
+- Start `cd client && npm run dev:local`.
+- Confirm admin badge indicates Railway DB target.
+- Open admin promos page.
+- Create a fixed promo with minimum subtotal and start/end dates.
+- Create or test a percent promo if supported.
+- Edit an existing promo.
+- Validate a promo through checkout preview if applicable.
+- Confirm no Prisma `redeemedAt` or invalid DateTime errors appear in the server logs.
+
+
+## Storefront Product Card Variant / Add-to-Cart Source-of-Truth Requirement
+
+When the user reports that a storefront product card adds the wrong variant/size to cart, the agent must treat it as a cart source-of-truth bug, not a cosmetic UI issue.
+
+Known symptom pattern:
+- On the storefront product card, selecting `6 oz` and clicking `Add to Cart` adds the `18 oz` variant instead.
+- In the quick-view modal for the same product, selecting `6 oz` and clicking add to cart adds the correct `6 oz` variant.
+- This suggests the product card add-to-cart path and quick-view add-to-cart path may use different state, default variant logic, mapper logic, or payload construction.
+
+Primary goal:
+- Make product card add-to-cart and quick-view add-to-cart use the same variant selection source of truth.
+- Preserve existing storefront UX and visual design.
+- Fix the actual variant payload/selection mismatch, not only the displayed label.
+
+The agent must audit before editing:
+1. Product card component(s) that render size/variant buttons and the direct `Add to Cart` button.
+2. Quick-view component(s) that render size/variant buttons and add to cart.
+3. Cart store/composable/service where add-to-cart payloads are accepted.
+4. Product/variant mappers used by storefront components.
+5. Any helpers that choose default variants, selected variants, or selling mode labels.
+6. Product API response shape for variants from local DB and Railway DB.
+7. Whether variant ids, variant sizes, selected size labels, inventory ids, prices, and cart item ids stay consistent.
+
+Rules:
+- Do not start a broad storefront refactor.
+- Do not redesign product cards or quick-view UI.
+- Do not change product schema unless a verified schema mismatch requires it.
+- Do not hardcode variant order such as always first or always 18 oz.
+- Do not rely on display text alone if variant ids exist.
+- Prefer using variant id as the cart source of truth, with label/size/price derived from the selected variant.
+- Ensure direct product-card add-to-cart and quick-view add-to-cart build the cart payload through the same helper or equivalent verified logic.
+- Preserve existing cart drawer behavior and checkout behavior.
+
+Expected fixes to consider if verified:
+- Store selected variant per product card instead of using a product-level default during direct add-to-cart.
+- Pass the selected variant object/id into the add-to-cart handler.
+- Use a shared cart payload builder for product card and quick view.
+- Ensure variant selection updates price, inventory status, selling mode, and cart payload consistently.
+- Ensure variant ids and sizes from Railway DB are respected even if variant ordering differs from local/mock data.
+
+Required verification:
+- Run client build.
+- Run server build or syntax checks only if server/product mapping files change.
+- In local mode or Railway DB mode, verify selecting `6 oz` on the product card adds `6 oz` to cart.
+- Verify selecting `18 oz` on the product card adds `18 oz` to cart.
+- Verify quick-view still adds the selected variant correctly.
+- Verify price in cart matches the selected variant.
+- Verify checkout preview receives the selected variant/price correctly.
+- Verify both Beef Jerky and Chicken Breast Jerky variant flows if available.
+- Update `PROJECT_HANDOFF.md` with root cause, files changed, verification, and remaining cart risks.
+
+Manual QA checklist:
+- Open storefront product grid.
+- Select `6 oz` on a product card and click `Add to Cart`.
+- Confirm cart drawer shows `6 oz`, not `18 oz`.
+- Remove item.
+- Select `18 oz` on product card and click `Add to Cart`.
+- Confirm cart drawer shows `18 oz`.
+- Repeat the same two checks from quick view.
+- Confirm checkout preview uses the selected variant total.
+
+
+## Storefront Featured Product Click Target Requirement
+
+When the user reports that the featured product image or title is clickable when it should not be, the agent must treat it as a focused storefront interaction bug.
+
+Known symptom pattern:
+- The featured product section still has a clickable image.
+- The featured product section still has a clickable title.
+- The user wants to preserve the existing featured product layout and add-to-cart behavior, but remove unintended click/navigation behavior from the image and title.
+
+Primary goal:
+- Remove unintended clickable behavior from featured product image and title.
+- Preserve the existing visual design, selected variant behavior, price display, and add-to-cart behavior.
+- Keep valid interactive controls such as size buttons and Add to Cart working.
+
+The agent must audit before editing:
+1. Featured product component(s).
+2. Storefront product card component(s), only to compare intended behavior if needed.
+3. Quick-view/modal trigger logic if featured product reuses product-card patterns.
+4. Router links, click handlers, and accessibility attributes attached to the featured image/title.
+5. Any shared product tile/card component used by the featured section.
+
+Rules:
+- Do not redesign the featured product section.
+- Do not remove size selection or Add to Cart behavior.
+- Do not break product card or quick-view behavior while fixing featured product click targets.
+- If the featured section uses a shared component, make the smallest safe change so normal product cards are not unintentionally affected.
+- Preserve keyboard accessibility for controls that should remain interactive.
+
+Required verification:
+- Run client build.
+- Verify featured product image is no longer clickable.
+- Verify featured product title is no longer clickable.
+- Verify featured product size buttons still work.
+- Verify featured product Add to Cart still adds the selected variant.
+- Verify normal product cards and quick view still behave as intended.
+- Update `PROJECT_HANDOFF.md` if the featured product behavior or file ownership changes.
+
+
+## Full Architecture Documentation / Data Flow Maps Requirement
+
+When the user asks for a detailed architecture overview, visual data-flow map, file behavior map, or documentation that explains how the whole application works, the agent must create or update documentation under `docs/` and keep `PROJECT_HANDOFF.md` aligned.
+
+Primary goal:
+- Produce a detailed architecture reference that explains how data flows through the project from client UI to API to service/repository to Prisma/database and back.
+- Account for important files and folders, not just high-level concepts.
+- Include current architecture and planned future architecture such as Better Auth/customer accounts where relevant.
+- Make the docs useful for ChatGPT, Codex, and a human developer continuing the project later.
+
+Preferred docs location:
+- `docs/architecture/`
+
+Recommended files to create or update:
+- `docs/architecture/README.md` — high-level system overview and how to read the docs.
+- `docs/architecture/data-flow.md` — detailed request/data flow examples for storefront, checkout, admin, promos, campaigns, orders, Stripe, and Prisma.
+- `docs/architecture/file-map.md` — important file/folder inventory with purpose and responsibilities.
+- `docs/architecture/database.md` — Prisma models, relationships, ownership, migration notes, and data source rules.
+- `docs/architecture/admin.md` — admin dashboard, products, promos, campaigns, orders, auth, and local/Railway DB admin modes.
+- `docs/architecture/auth-roadmap.md` — current custom admin auth, temporary local admin workflow, same-site domain plan, and future Better Auth/customer accounts/loyalty flow.
+
+Documentation must include:
+1. Client architecture: app/router/layouts/providers, storefront, checkout, admin, shared utilities, API wrapper.
+2. Server architecture: app/server boot path, route → controller → service → repository → Prisma pattern, domains, env loading, local/Railway DB modes.
+3. Database architecture: Prisma model inventory, relationships, ownership, migrations, local/Railway DB differences.
+4. End-to-end flow maps: product load, product card add to cart, quick view, featured product, cart, checkout preview, promo validation, campaign usage, Stripe PaymentIntent, order creation, inventory, admin CRUD, Railway DB admin mode, future Better Auth/customer accounts.
+5. Visual diagrams: use Mermaid diagrams for overall system, checkout/payment sequence, admin Railway DB mode, and future Better Auth/customer account flow.
+6. File accounting: document important files in `client/src`, `server/src`, `server/prisma`, and relevant root config/docs files with purpose, responsibilities, dependencies, and flows.
+7. Source-of-truth notes: variants, cart payloads, checkout totals, promos, campaigns, orders, admin auth/session, env variables.
+
+Rules:
+- Do not use generated docs as an excuse for broad refactoring.
+- Do not expose secret values from `.env`, Railway, Vercel, Stripe, or database URLs.
+- Do not invent architecture that is not supported by code; mark future plans clearly as future/planned.
+- Do not claim a flow is verified unless it was verified from code or commands.
+- Keep diagrams text-based and committed as Markdown/Mermaid, not image files, unless the user explicitly asks for rendered images.
+- Preserve existing docs unless they are outdated; update or mark superseded sections clearly.
+
+Required verification:
+- Run client build if code changed.
+- Run server build/syntax checks if server code changed.
+- If docs only changed, no build is required unless the prompt also includes code fixes.
+- Verify Mermaid code fences are reasonable Markdown.
+- Update `PROJECT_HANDOFF.md` with links/summaries of the new architecture docs and note any docs that still need deeper coverage.
+
+Final report must include:
+- Docs created or updated.
+- Code files changed, if any.
+- Commands run and results.
+- Main architecture findings.
+- Any uncertainty or areas not fully documented.
+
+
+## Orders / Donation Traceability / Post-Checkout UX Requirement
+
+When the user reports issues around admin orders, donation totals, campaign attribution, or the post-checkout order success page, the agent must treat it as a focused orders and traceability repair/design pass, not a broad refactor.
+
+Known symptom patterns:
+- Admin orders list may show donation totals as `$0.00` even when checkout/order summary generated a donation.
+- Admin order detail looks too basic and does not show the complete order breakdown.
+- Admin order detail should expose more actionable information: items, variants, quantities, subtotal, discount, promo, shipping, tax, donation, total, payment/Stripe status, customer details, fulfillment/order status, and timestamps.
+- Admin order detail should help find other orders from the same customer email without excessive clicks.
+- Admin campaigns should eventually show which orders contributed to each campaign, not only aggregate campaign totals.
+- Post-checkout success page uses a large raw order id/reference that is not customer-friendly.
+- Post-checkout `View Cart` may be broken or inappropriate after checkout because the cart should usually be cleared.
+- Customer order success page should be closer to ecommerce industry standards and ready to align with future confirmation emails.
+
+Primary goals:
+- Make admin order data trustworthy and complete.
+- Ensure donation totals shown in admin reflect the actual order/campaign donation generated at checkout.
+- Improve admin order detail usefulness without redesigning the whole admin system.
+- Decide whether campaign/order attribution requires a new join/usage table, but audit schema first before adding migrations.
+- Improve the customer-facing post-checkout success page so it shows clean, useful order information without exposing awkward raw internal ids.
+- Preserve existing checkout and admin UX unless a focused UI change is required to fix the verified issue.
+
+The agent must audit before editing:
+1. Prisma `Order`, `OrderItem`, `Campaign`, and any campaign/order/promo usage models.
+2. Order creation service/repository.
+3. Checkout service and order payload creation.
+4. Campaign usage/donation recording logic.
+5. Admin orders list API, mapper, service, repository, and UI.
+6. Admin order detail API, mapper, service, repository, and UI.
+7. Customer order success route/view and any order lookup API.
+8. Cart clearing behavior after successful checkout.
+9. Existing order number/reference generation.
+10. Whether Stripe payment id/status is stored and exposed safely for admin only.
+11. Whether similar-customer lookup can use existing order fields such as customer email without adding schema.
+12. Whether campaign-to-order attribution already exists or requires a new table.
+
+Rules:
+- Do not start a broad admin redesign.
+- Do not rebuild checkout.
+- Do not change Stripe payment logic unless a verified data mapping bug requires it.
+- Do not add a new Prisma model/table until code and schema prove that order-to-campaign attribution cannot be represented with existing data.
+- If a new campaign/order attribution model is required, propose and implement a safe Prisma migration only after documenting why existing schema is insufficient.
+- Do not expose full internal database ids to customers if a shorter customer reference can be derived or stored safely.
+- Do not expose Stripe secret data or sensitive payment details to customers.
+- Admin may see payment intent id/status if useful, but customer-facing pages should show friendly payment/order status only.
+- Preserve server-owned checkout totals; do not trust client totals.
+- Update docs/architecture if schema/flow changes materially.
+- Update `PROJECT_HANDOFF.md` after the pass.
+
+Admin order detail should consider showing:
+- Short customer-friendly order reference.
+- Full internal order id for admin only if needed.
+- Customer name, email, phone, shipping address if stored.
+- Item list with product, variant size, quantity, unit price, line total, and fulfillment-relevant labels.
+- Pricing breakdown: subtotal, promo/discount, shipping, tax, donation generated, total.
+- Promo code and discount details if applied.
+- Campaign/donation attribution: campaign name, donation amount, eligible subtotal/products, and whether it was recorded.
+- Payment summary: payment status, Stripe PaymentIntent id for admin only, created/paid timestamps if available.
+- Fulfillment/order status and timeline controls.
+- Other orders from the same customer email, ideally with links or compact summary.
+
+Admin campaign detail/list should consider:
+- Campaign totals by revenue, donation generated, orders count, and products included.
+- A way to see orders associated with the campaign.
+- If no order-level campaign attribution table exists, document the limitation clearly.
+- If adding attribution, prefer a table such as `OrderCampaignUsage` or equivalent with `orderId`, `campaignId`, `donationAmount`, `eligibleSubtotal`, and timestamps, plus idempotency/unique constraints where appropriate.
+
+Post-checkout success page should consider showing:
+- Clear `Order confirmed` message.
+- Short customer-friendly order reference, not a giant raw internal id.
+- Confirmation email status/copy.
+- Item summary with selected variants and quantities.
+- Pricing breakdown: subtotal, discount, shipping, tax, donation, total.
+- Shipping/fulfillment expectation.
+- Support/contact guidance.
+- Continue shopping link.
+- Remove or fix `View Cart` after checkout; if cart is cleared, do not send the customer to an empty or stale cart without clear purpose.
+- Data structure should align with future order confirmation email content.
+
+Expected fixes to consider if verified:
+- Ensure donation totals from checkout are persisted on the order or can be derived reliably.
+- Add or repair order response mappers to include donation, promo, tax, shipping, discount, and payment fields.
+- Add similar-customer order lookup by email in the admin order detail response or a focused endpoint.
+- Improve order detail UI sections without redesigning the whole admin dashboard.
+- Add short order reference formatting helper if raw ids are currently exposed to customers.
+- Fix post-checkout `View Cart` behavior if the cart is cleared after order success.
+- Add campaign/order attribution persistence only if the current schema cannot answer which orders generated campaign donations.
+
+Required verification:
+- Run client build.
+- Run server build or syntax/import checks for changed server files.
+- Run Prisma generate if schema changes.
+- If a Prisma migration is added, run local migration checks and document Railway deployment steps; never use destructive commands on Railway.
+- Verify admin orders list donation totals match order data.
+- Verify admin order detail shows complete pricing breakdown.
+- Verify admin order detail shows donation/campaign data when present.
+- Verify admin order detail can show or link other orders from the same customer email if implemented.
+- Verify campaign admin can show associated order data or clearly document the remaining schema limitation.
+- Verify post-checkout success page uses a short/friendly order reference.
+- Verify post-checkout page no longer has broken `View Cart` behavior.
+- Verify checkout/order creation still succeeds.
+- Verify existing products, promos, campaigns, and orders still load in Railway DB admin mode if touched.
+- Update `PROJECT_HANDOFF.md` and relevant docs/architecture files if data flow or schema changes.
+
+Manual QA checklist:
+- Place a checkout order with campaign donation eligible items.
+- Apply a promo if available.
+- Confirm order success page shows friendly reference and correct totals.
+- Confirm View Cart behavior is fixed or removed.
+- Open admin orders list and verify donation total/revenue/order count.
+- Open the new order detail and verify subtotal, discount, shipping, tax, donation, total, item variant, and customer details.
+- Verify payment/order status is understandable.
+- Verify other orders from the same customer email if implemented.
+- Open admin campaigns and verify donation/order attribution or documented limitation.
+- Confirm no raw secret values or sensitive payment data are exposed to customers.

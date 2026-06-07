@@ -7,6 +7,7 @@ import {
   loginAdmin,
   logoutAdmin,
   getAdminFromSession,
+  getAdminDataTarget,
   getSessionCookieName,
   getSessionCookieOptions,
 } from '../services/auth.service.js'
@@ -90,6 +91,31 @@ router.get('/me', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Unable to validate session.',
+    })
+  }
+})
+
+router.get('/data-target', async (req, res) => {
+  try {
+    const sessionId = req.cookies?.[getSessionCookieName()]
+
+    const admin = await getAdminFromSession(sessionId)
+
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        authenticated: false,
+      })
+    }
+
+    return res.json({
+      success: true,
+      target: getAdminDataTarget(),
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to load admin data target.',
     })
   }
 })

@@ -27,21 +27,24 @@ export function getApiBaseUrl() {
 }
 
 export function getAdminDataTarget() {
-  if (ADMIN_DATA_TARGET === 'RAILWAY') {
-    return 'RAILWAY'
+  if (
+    ADMIN_DATA_TARGET === 'RAILWAY'
+    || ADMIN_DATA_TARGET === 'RAILWAY_DB'
+  ) {
+    return 'RAILWAY_DB'
   }
 
   if (ADMIN_DATA_TARGET === 'LOCAL') {
     return 'LOCAL'
   }
 
-  return API_BASE_URL ? 'RAILWAY' : 'LOCAL'
+  return 'LOCAL'
 }
 
 export function buildApiUrl(path) {
-  if (getAdminDataTarget() === 'RAILWAY' && !API_BASE_URL) {
+  if (getAdminDataTarget() === 'RAILWAY_DB' && !API_BASE_URL) {
     throw new Error(
-      'RAILWAY DATA TARGET requires VITE_API_BASE_URL or VITE_API_URL to point to the Railway backend origin.',
+      'RAILWAY DB TARGET requires VITE_API_BASE_URL or VITE_API_URL to point to the local backend origin.',
     )
   }
 

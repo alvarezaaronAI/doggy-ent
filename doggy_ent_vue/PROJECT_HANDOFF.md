@@ -1859,283 +1859,699 @@ Not available:
 
 After deployed admin auth is stable, run a narrow admin CRUD QA pass across products, promos, campaigns, orders, and order detail. Better Auth should wait until the later customer accounts and loyalty phase.
 
-## 23. Temporary Local Admin Data Target Workflow - 2026-06-05
+## 23. Superseded Temporary Local Admin Data Target Workflow - 2026-06-05
 
-This section documents the temporary workflow for running the admin frontend locally while choosing whether admin writes target the local database or the Railway database.
+This section was intentionally replaced. It previously described a local frontend calling the Railway backend directly, which still causes cross-site admin cookie problems in Safari. Use section 24 instead: local client -> local backend -> selected database.
 
-This is intentionally not a Better Auth migration and does not add runtime upload/sync buttons. The data target is chosen at startup through Vite env mode scripts.
+## 24. Corrected Temporary Local Backend Data Target Workflow - 2026-06-06
 
-### Scripts Added
+This section replaces the superseded section 23 workflow.
 
-Client scripts in `client/package.json`:
+### Root Cause
+
+The prior temporary Railway admin workflow used:
+
+```text
+local client/admin -> Railway backend -> Railway DB
+```
+
+That still makes the browser send admin auth cookies across sites from localhost to the Railway backend, which can fail in Safari. The corrected workflow keeps browser admin auth same-site/local by always sending admin CRUD requests to the local backend.
+
+Correct temporary Railway DB workflow:
+
+```text
+local client/admin -> local backend -> Railway DB -> Vercel storefront sees changes
+```
+
+### Corrected Mode Table
+
+| Mode | Client command | Server command | Browser API target | Server DB target | Badge |
+| --- | --- | --- | --- | --- | --- |
+| Fully local | `cd client && npm run dev:local` | `cd server && npm run dev:local` | local backend | local DB from `server/.env` | `LOCAL DATA TARGET` |
+| Railway DB admin | `cd client && npm run dev:local` | `cd server && npm run dev:railway` | local backend | Railway DB from `server/.env.railway.local` | `RAILWAY DB TARGET` |
+
+`client npm run dev:railway` remains a safe local-backend alias for compatibility, but the expected Railway DB admin workflow uses `client npm run dev:local` plus `server npm run dev:railway`.
+
+### Scripts
+
+Client scripts:
 
 ```json
 {
   "dev:local": "VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode admin-local",
-  "dev:railway": "VITE_ADMIN_DATA_TARGET=RAILWAY vite --mode railway"
+  "dev:railway": "VITE_ADMIN_DATA_TARGET=RAILWAY_DB VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode railway"
 }
 ```
 
-Vite cannot use `local` as a mode name because it conflicts with `.local` env file suffix handling, so the script name is `dev:local` but the internal Vite mode is `admin-local`.
+Both client scripts point browser requests to the local backend at `http://localhost:3000`.
 
-### Current API Base URL Behavior
+Server scripts:
 
-Source of truth: `client/src/shared/api/http.js`.
+```json
+{
+  "dev:local": "DOGGY_SERVER_ENV_TARGET=LOCAL node --watch src/server.js",
+  "dev:railway": "DOGGY_SERVER_ENV_TARGET=RAILWAY_DB DOGGY_SERVER_ENV_FILE=.env.railway.local node --watch src/server.js"
+}
+```
 
-The client supports both:
+### Env Loading
 
-- `VITE_API_BASE_URL`
-- `VITE_API_URL`
+Server env loading source of truth:
 
-Precedence:
+- `server/src/config/env.js`
+- `server/src/server.js`
 
-1. `VITE_API_BASE_URL`
-2. `VITE_API_URL`
-3. empty base URL, which means relative `/api/...` paths and local Vite proxy behavior
+Behavior:
 
-The helper also reads:
+- Base env always loads from `server/.env`.
+- Railway DB mode then loads `server/.env.railway.local` with override enabled.
+- `server/.env` remains the normal local server -> local DB env and should not be overwritten or repurposed for Railway mode.
+- `server/.env.railway.local` must contain `DATABASE_URL`; otherwise `npm run dev:railway` fails closed so it cannot accidentally use the local DB.
 
-- `VITE_ADMIN_DATA_TARGET`
+Required local-only server variable names for `server/.env.railway.local`:
 
-Accepted admin data target values:
+```text
+DATABASE_URL
+FRONTEND_URL
+ADMIN_EMAIL
+ADMIN_PASSWORD_HASH
+STRIPE_SECRET_KEY
+ADMIN_SESSION_SECRET
+```
 
-- `LOCAL`
-- `RAILWAY`
+`ADMIN_SESSION_SECRET` is optional but recommended.
 
-If `VITE_ADMIN_DATA_TARGET=RAILWAY` is set but neither `VITE_API_BASE_URL` nor `VITE_API_URL` is available, API calls throw a clear configuration error instead of silently falling back to the local proxy.
+Required client variable names are set by `npm run dev:local`; no Railway URL is needed in the browser for this corrected workflow.
 
-### Local Mode
+### Gitignore / Secret Safety
 
-Run:
+`.gitignore` covers local-only env files:
+
+```text
+.env.local
+.env.*.local
+client/.env.railway.local
+server/.env.railway.local
+```
+
+No `.env.example` files were created.
+
+No real `DATABASE_URL`, admin hash, Stripe secret, Railway URL, or session secret should be documented or committed.
+
+### Admin Badge
+
+The dashboard badge is now server-informed:
+
+- `client/src/domains/admin/components/AdminDataTargetBadge.vue` starts from the client startup fallback.
+- It then calls local backend `GET /api/auth/data-target`.
+- `server/src/domains/auth/routes/auth.routes.js` returns the authenticated server data target.
+- `server/src/config/env.js` reports either `LOCAL DATA TARGET` or `RAILWAY DB TARGET`.
+
+This means the badge reflects the local backend database target, not a browser-to-Railway API target.
+
+### Verification Results
+
+Initial required commands were run:
+
+```bash
+git status
+git diff --stat
+git diff --name-status
+```
+
+At the start of this pass, only `AGENTS.md` was modified.
+
+Client script verification:
+
+```bash
+cd client
+npm run dev:local -- --host 127.0.0.1 --port 5177 --strictPort
+```
+
+Result:
+
+- Vite started in `admin-local` mode.
+- Transformed client helper contained `VITE_ADMIN_DATA_TARGET=LOCAL`.
+- Transformed client helper contained `http://localhost:3000`.
+- It did not contain a placeholder Railway/backend origin.
+
+```bash
+cd client
+npm run dev:railway -- --host 127.0.0.1 --port 5178 --strictPort
+```
+
+Result:
+
+- Vite started in `railway` mode.
+- Transformed client helper contained `VITE_ADMIN_DATA_TARGET=RAILWAY_DB`.
+- Transformed client helper contained `http://localhost:3000`.
+- It did not contain a placeholder Railway/backend origin.
+
+Server env verification:
+
+```bash
+cd server
+node --input-type=module <local env loader check>
+```
+
+Result:
+
+```json
+{
+  "loadedTarget": "LOCAL",
+  "reportedTarget": "LOCAL",
+  "hasDatabaseUrl": true
+}
+```
+
+```bash
+cd server
+node --input-type=module <railway env loader check>
+```
+
+Current result:
+
+```json
+{
+  "railwayModeAccepted": false,
+  "reason": "Railway DB mode requires DATABASE_URL in .env.railway.local so it cannot accidentally use the local database."
+}
+```
+
+This is expected until `server/.env.railway.local` is populated with a Railway `DATABASE_URL`.
+
+Placeholder override verification:
+
+```bash
+cd server
+DOGGY_SERVER_ENV_TARGET=RAILWAY_DB DOGGY_SERVER_ENV_FILE=<temporary-placeholder-env> node --input-type=module <env loader check>
+```
+
+Result:
+
+```json
+{
+  "loadedTarget": "RAILWAY_DB",
+  "reportedTarget": "RAILWAY_DB",
+  "hasDatabaseUrl": true,
+  "isPlaceholderDatabase": true
+}
+```
+
+Protected badge endpoint verification:
+
+```bash
+cd server
+node --input-type=module <auth data-target smoke script>
+```
+
+Result:
+
+```json
+{
+  "loginStatus": 200,
+  "dataTargetStatus": 200,
+  "dataTargetCode": "RAILWAY_DB",
+  "dataTargetLabel": "RAILWAY DB TARGET"
+}
+```
+
+Server script verification:
+
+```bash
+cd server
+npm run dev:local
+```
+
+Result:
+
+- Server started on port `3000`.
+
+```bash
+cd server
+npm run dev:railway
+```
+
+Current result:
+
+- Failed closed because `server/.env.railway.local` does not currently provide `DATABASE_URL`.
+- This prevents accidental local DB writes while the server is labeled as Railway DB mode.
+
+Build and syntax verification:
+
+```bash
+cd client
+npm run build
+```
+
+Result: passed.
+
+```bash
+cd server
+npm run build
+```
+
+Result: passed and generated Prisma Client.
+
+```bash
+cd server
+node --check src/config/env.js
+node --check src/server.js
+node --check src/domains/auth/routes/auth.routes.js
+node --check src/domains/auth/services/auth.service.js
+node -e "import('./src/app.js').then(() => console.log('app import ok'))"
+```
+
+Result: passed.
+
+### Manual Setup
+
+Fully local:
+
+```bash
+cd server
+npm run dev:local
+```
 
 ```bash
 cd client
 npm run dev:local
 ```
 
-Behavior:
+Railway DB admin:
 
-- Local admin UI runs on Vite.
-- API target is forced to `http://localhost:3000`.
-- Flow: local client/admin -> local server -> local DB.
-- Admin dashboard badge displays `LOCAL DATA TARGET`.
-
-Recommended server command in another terminal:
+1. Populate local-only `server/.env.railway.local` with the required variable names listed above.
+2. Start local backend in Railway DB mode:
 
 ```bash
 cd server
-npm run dev
+npm run dev:railway
 ```
 
-### Railway Admin Mode
-
-Run with a local-only backend origin:
+3. Start local client in local-backend mode:
 
 ```bash
 cd client
-VITE_API_URL=<railway-backend-origin> npm run dev:railway
+npm run dev:local
 ```
-
-or create an ignored local-only file:
-
-```text
-client/.env.railway.local
-```
-
-with variable names:
-
-```env
-VITE_API_URL=<railway-backend-origin>
-```
-
-or:
-
-```env
-VITE_API_BASE_URL=<railway-backend-origin>
-```
-
-Behavior:
-
-- Local admin UI runs on Vite.
-- API target is the Railway backend origin supplied locally.
-- Flow: local client/admin -> Railway backend -> Railway DB -> Vercel storefront sees changes.
-- Admin dashboard badge displays `RAILWAY DATA TARGET`.
-
-Do not include `/api` at the end of the backend origin; client calls append `/api/...`.
-
-### Local-Only Env File Safety
-
-`.gitignore` now ignores:
-
-```text
-.env.*.local
-```
-
-This keeps `client/.env.railway.local` out of git. Do not commit `.env`, `.env.local`, `.env.railway.local`, or any file containing actual deployed URLs or secrets unless explicitly intended and reviewed.
-
-No `.env.example` files were created.
-
-### Admin Badge
-
-Added `client/src/domains/admin/components/AdminDataTargetBadge.vue`.
-
-Current placement:
-
-- `client/src/domains/admin/views/AdminDashboardView.vue`
-
-The badge is visible on the admin dashboard and displays either:
-
-- `LOCAL DATA TARGET`
-- `RAILWAY DATA TARGET`
-
-The badge does not switch targets at runtime and does not change admin behavior by itself.
-
-### Railway CORS Requirement
-
-Current server CORS source of truth: `server/src/app.js`.
-
-Allowed origins include:
-
-- hardcoded `http://localhost:5173`
-- entries from `FRONTEND_URL`
-- entries from `CLIENT_URL`
-
-Both `FRONTEND_URL` and `CLIENT_URL` are normalized for trailing slashes and may contain comma-separated origins.
-
-For the default local admin origin `http://localhost:5173`, Railway does not need to include localhost in `FRONTEND_URL` or `CLIENT_URL` because the server already allows it in code.
-
-Railway still needs the deployed Vercel storefront/admin origin configured through `FRONTEND_URL` or `CLIENT_URL`, for example:
-
-```text
-FRONTEND_URL=<vercel-frontend-origin>
-```
-
-If local admin runs on a different port or origin, add both origins to `FRONTEND_URL` or `CLIENT_URL` as comma-separated values:
-
-```text
-FRONTEND_URL=<vercel-frontend-origin>,<local-admin-origin>
-```
-
-No actual Railway or Vercel URL values are documented here.
-
-### Verification Commands and Results
-
-Passed:
-
-```bash
-cd client
-npm run dev:local -- --host 127.0.0.1 --port 5177 --strictPort
-curl -s http://127.0.0.1:5177/src/shared/api/http.js
-```
-
-Result:
-
-- Vite started in `admin-local` mode.
-- Transformed module contained `VITE_ADMIN_DATA_TARGET=LOCAL`.
-- Transformed module contained local API origin `http://localhost:3000`.
-
-Passed:
-
-```bash
-cd client
-VITE_API_URL=https://api.example.test npm run dev:railway -- --host 127.0.0.1 --port 5178 --strictPort
-curl -s http://127.0.0.1:5178/src/shared/api/http.js
-```
-
-Result:
-
-- Vite started in `railway` mode.
-- Transformed module contained `VITE_ADMIN_DATA_TARGET=RAILWAY`.
-- Transformed module contained the placeholder backend origin.
-- Transformed module did not contain `localhost:3000` as the API target.
-
-Passed:
-
-```bash
-cd client
-rm -rf dist
-VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 npm run build
-```
-
-Result:
-
-- Build passed.
-- Built assets contained the local API origin.
-- Built assets did not contain the placeholder Railway test origin.
-
-Passed:
-
-```bash
-cd client
-rm -rf dist
-VITE_ADMIN_DATA_TARGET=RAILWAY VITE_API_URL=https://api.example.test npm run build
-```
-
-Result:
-
-- Build passed.
-- Built assets contained the placeholder backend origin.
-- Built assets did not contain `localhost:3000` as the API target.
-
-Passed:
-
-```bash
-cd client
-rm -rf dist
-npm run build
-```
-
-Result:
-
-- Normal client build passed.
-- Final normal build did not contain the placeholder backend origin, `localhost:3000`, or `doggy-ent.vercel.app`.
-
-Passed:
-
-```bash
-cd server
-npm run build
-```
-
-Result:
-
-- Prisma Client generated successfully.
-
-Not available:
-
-- No client lint script exists.
-- No server lint script exists.
-- No client or server test script exists.
 
 ### Manual QA Checklist
 
-Local data mode:
+Fully local:
 
-- Start local server with `cd server && npm run dev`.
-- Start local client with `cd client && npm run dev:local`.
 - Log in at local `/admin`.
-- Confirm dashboard badge shows `LOCAL DATA TARGET`.
-- Create or edit a harmless local product/promo/campaign.
-- Confirm the change appears only in the local database and does not affect the Vercel storefront.
+- Confirm badge shows `LOCAL DATA TARGET`.
+- Create or edit a harmless product/promo/campaign.
+- Confirm it affects local DB only.
 
-Railway data mode:
+Railway DB admin:
 
-- Ensure `client/.env.railway.local` or shell env provides `VITE_API_URL` or `VITE_API_BASE_URL`.
-- Start local client with `npm run dev:railway`.
 - Log in at local `/admin`.
-- Confirm dashboard badge shows `RAILWAY DATA TARGET`.
+- Confirm browser network requests go to `http://localhost:3000/api/...`, not Railway backend.
+- Confirm badge shows `RAILWAY DB TARGET`.
 - Create or edit a small test product/promo/campaign.
-- Confirm the change appears in Railway and is visible to the deployed Vercel storefront where expected.
-- Confirm checkout, Stripe test payment, order creation, promos, campaigns, and admin orders still work after changes.
+- Confirm Railway DB changes are visible to the Vercel storefront.
+- Confirm admin products, promos, campaigns, orders, and order detail still load.
 
 ### Remaining Risks
 
-- This workflow still uses the custom admin auth system.
-- Railway admin mode relies on browser cookie behavior between `localhost:5173` and the Railway backend origin. The server is configured for credentialed CORS and allows `http://localhost:5173`.
-- Running local admin against Railway can modify production-like data. Check the badge before saving changes.
-- Better Auth remains future customer accounts and loyalty work, not part of this temporary data-target workflow.
-- The long-term preferred setup is an owned domain plus API subdomain, then Better Auth when customer accounts and loyalty are built.
+- `server/.env.railway.local` currently must be populated before Railway DB mode can start.
+- This temporary workflow can modify Railway data from local admin; verify the badge before saving.
+- This is still custom admin auth. Better Auth remains future Accounts + Loyalty work.
+- Long-term preferred setup remains an owned domain plus API subdomain, then Better Auth for accounts, loyalty, roles, and permissions.
 
-### Recommended Next Phase
+## 22. Storefront Interaction Repair And Architecture Docs Pass - 2026-06-06
 
-Use `npm run dev:railway` for temporary Railway data management, then run a narrow admin CRUD QA pass. After the owned domain and API subdomain are connected, revisit deployed admin auth and later plan Better Auth for accounts, loyalty, roles, and permissions.
+### Scope
+
+This pass focused on verified storefront interaction bugs, a narrow promo Railway DB admin repair, and full architecture/data-flow documentation. It did not redesign the storefront or admin UI, did not migrate auth to Better Auth, and did not commit or push.
+
+### Initial Repository State Commands
+
+Required commands were run before editing:
+
+```bash
+git status
+git diff --stat
+git diff --name-status
+```
+
+Observed state:
+
+- Branch: `dev-main`.
+- Existing uncommitted edits from prior local admin workflow work were present in `AGENTS.md`, `PROJECT_HANDOFF.md`, `client/package.json`, admin badge/API helper files, server auth/env files, and `server/src/config/`.
+- This pass preserved those existing edits and added only focused storefront, promo, docs, and handoff changes.
+
+### Bugs Fixed
+
+Product card variant add-to-cart:
+
+- Root cause: `client/src/domains/cart/composables/useCart.js` preferred `product.size` over the explicit `selectedSize` argument. Product card add-to-cart passes the selected card size separately, so a product object with a default/root size such as `18 oz` could override the user's selected `6 oz`.
+- Fix: `useCart.addToCart(product, selectedSize)` now treats `selectedSize` as the source of truth before falling back to `product.size`.
+- Fix: cart item price resolution now prefers the matched selected variant price before falling back to product-level price.
+- Expected result: product-card `6 oz` adds `6 oz`; product-card `18 oz` adds `18 oz`; quick view remains correct because it already emits selected size.
+
+Featured product click targets:
+
+- Root cause: `client/src/domains/storefront/Home/sections/ProductSpotlightSection.vue` imported `useRouter`, defined `navigateToProduct()`, and attached click handlers/cursor styling to the featured image container and title.
+- Fix: removed the router dependency, navigation function, click handlers, and clickable cursor/hover affordances from the featured image and title.
+- Expected result: featured image/title are no longer clickable; size buttons and Add to Cart still work.
+
+Promo Railway DB admin repair:
+
+- Root cause: `server/src/domains/promos/repositories/promos.repository.js` sorted `Promo` rows by `redeemedAt`, but `redeemedAt` exists on `PromoUsage`, not `Promo`.
+- Fix: promo list sorting now uses `Promo.updatedAt`.
+- Root cause: promo admin date/time values could arrive as datetime-local strings such as `2026-06-05T11:00`; Prisma DateTime writes are safer when normalized.
+- Fix: `server/src/domains/promos/services/promos.service.js` now normalizes optional `startsAt` and `endsAt` values to ISO strings and throws a `400` error for invalid date/time values.
+
+### Architecture Docs Created
+
+Created:
+
+- `docs/architecture/README.md`: high-level system overview, mode table, source-of-truth locations, and doc index.
+- `docs/architecture/data-flow.md`: end-to-end flows for product load, product card add-to-cart, quick view, featured product, checkout/payment, promos, campaigns, orders, Railway DB admin mode, and future Better Auth.
+- `docs/architecture/file-map.md`: important file and folder inventory covering `client/src`, `server/src`, `server/prisma`, and root config/docs.
+- `docs/architecture/database.md`: Prisma model ownership, relationships, migration notes, and data source modes.
+- `docs/architecture/admin.md`: admin route architecture, auth, badge, temporary local/Railway DB workflow, env variable names, and QA checklist.
+- `docs/architecture/auth-roadmap.md`: current custom admin auth, temporary local admin modes, same-site domain direction, and future Better Auth/customer accounts plan.
+
+Mermaid diagrams included:
+
+- Overall system architecture.
+- Checkout/payment sequence.
+- Local admin to local server to Railway DB.
+- Future Better Auth/customer/admin account flow.
+
+Existing older docs under `docs/architecture/diagram.md` and `docs/architecture/mockdiagram.md` were not removed or deeply audited during this pass.
+
+### Verification Results
+
+Client build:
+
+```bash
+cd client
+npm run build
+```
+
+Result: passed. Vite built 152 modules and produced `dist/` assets.
+
+Server build / Prisma generate:
+
+```bash
+cd server
+npm run build
+```
+
+Result: passed. Prisma Client v6.16.2 generated successfully.
+
+Server syntax checks:
+
+```bash
+cd server
+node --check src/domains/promos/services/promos.service.js
+node --check src/domains/promos/repositories/promos.repository.js
+```
+
+Result: passed.
+
+Cart variant source-of-truth smoke:
+
+```bash
+cd client
+node --input-type=module <cart variant source-of-truth smoke script>
+```
+
+Result: passed. The script verified:
+
+- A product object with root `size: "18 oz"` plus selected card size `6 oz` adds `6 oz`.
+- Product-card selected `18 oz` adds `18 oz`.
+- Quick-view-style selected `6 oz` payload still adds `6 oz`.
+- Cart price comes from the selected variant.
+
+Docs Markdown/Mermaid checks:
+
+```bash
+node --input-type=module <architecture markdown fence check>
+rg -n mermaid docs/architecture/README.md docs/architecture/data-flow.md docs/architecture/admin.md docs/architecture/auth-roadmap.md
+```
+
+Result: passed. All new architecture doc code fences are balanced, and Mermaid fences are present in the required docs.
+
+Environment/secret hygiene:
+
+```bash
+find . -name '.env.example' -print
+rg -n <secret-value-patterns> docs PROJECT_HANDOFF.md client/src server/src --glob '!server/src/generated/**'
+```
+
+Result:
+
+- No `.env.example` files found.
+- No secret-looking values found in deliverable docs/source. Only variable names and placeholder descriptions are documented.
+
+Featured product source check:
+
+```bash
+rg -n "useRouter|navigateToProduct|@click=\"navigateToProduct\"|cursor-pointer.*featuredProduct|featuredProduct.*cursor-pointer" client/src/domains/storefront/Home/sections/ProductSpotlightSection.vue
+```
+
+Result: no matches, confirming the image/title navigation hook was removed.
+
+Whitespace diff check:
+
+```bash
+git diff --check
+```
+
+Result: passed.
+
+Lint scripts:
+
+- No `lint` script is present in `client/package.json` or `server/package.json`; no lint command was invented.
+
+### Remaining Risks And Unverified Areas
+
+- Full browser manual QA is still required for product card `6 oz` and `18 oz`, quick view, featured Add to Cart, cart drawer display, and checkout preview because this pass used build plus a targeted source-of-truth smoke test rather than a live browser session.
+- Promo create/edit against an actual Railway DB in local server Railway DB mode still needs manual QA with `server/.env.railway.local` populated; the repository fix addresses the verified schema/code mismatch and DateTime normalization.
+- Checkout/payment flows built successfully but were not re-run end-to-end in Stripe during this pass.
+- Better Auth remains future work. Current admin auth is still the custom session system.
+
+### Manual QA Checklist
+
+Storefront:
+
+- Open storefront product grid.
+- Select `6 oz` on a product card and click Add to Cart; confirm cart drawer shows `6 oz` and selected-variant price.
+- Remove item.
+- Select `18 oz` on the same product card and click Add to Cart; confirm cart drawer shows `18 oz` and selected-variant price.
+- Repeat both checks from quick view.
+- Confirm featured product image and title do not navigate or behave as clickable elements.
+- Confirm featured size buttons still update price/stock label.
+- Confirm featured Add to Cart still adds the selected variant.
+- Continue to checkout and confirm preview totals match selected variants.
+
+Railway DB admin promos:
+
+- Start `cd server && npm run dev:railway` after configuring local-only `server/.env.railway.local`.
+- Start `cd client && npm run dev:local`.
+- Confirm admin badge says `RAILWAY DB TARGET`.
+- Open admin promos.
+- Create a promo with start/end date/time values.
+- Edit the promo.
+- Confirm no Prisma `redeemedAt` or invalid DateTime errors appear.
+- Test promo validation through checkout preview if applicable.
+
+### Next Recommended Step
+
+Run the manual storefront and Railway DB admin QA checklist, then perform a final launch-readiness pass on checkout/payment in a real browser with Stripe test mode.
+
+## 23. Order Completeness, Donation Traceability, Campaign Attribution, Success UX - 2026-06-06
+
+### Scope
+
+This pass fixed verified order/donation data gaps and improved the post-checkout success page. It did not rebuild checkout, redesign admin, migrate auth to Better Auth, commit, push, or expose secrets.
+
+### Initial Commands
+
+Required state checks were run before editing:
+
+```bash
+git status
+git diff --stat
+git diff --name-status
+```
+
+The working tree already contained uncommitted accepted work from prior admin/local workflow/storefront/docs passes. This pass preserved those edits.
+
+### Root Causes Found
+
+Admin order list donation showed `$0.00` because `AdminOrderCard.vue` hardcoded the donation display to `0`, and the server order response did not include an order-level donation amount.
+
+Campaign/order attribution could not be answered from the old schema. `Campaign` only stored aggregate counters: `donationGenerated`, `revenueGenerated`, and `orderCount`. `Order` had no donation field, and there was no join/usage table between orders and campaigns. Existing aggregate counters were insufficient for “which orders contributed to which campaign,” especially after campaign product links change.
+
+Admin order detail was too thin because it only rendered a small subset of the order response: raw id, status, items, subtotal, total, and basic customer fields.
+
+The success page used the route parameter directly as the displayed reference and did not fetch order details. Checkout cleared the cart after success, so the `View Cart` button led to an empty or inappropriate post-checkout path.
+
+### Schema Decision
+
+A schema change was needed. The current schema could not safely persist order-to-campaign attribution.
+
+Added model:
+
+- `OrderCampaignUsage`
+
+Fields:
+
+- `orderId`
+- `campaignId`
+- `donationAmount`
+- `eligibleSubtotal`
+- `matchedProductIds`
+- timestamps
+
+Safety:
+
+- `@@unique([orderId, campaignId])` prevents normal checkout retries from recording the same order/campaign contribution twice.
+- Foreign keys cascade when an order or campaign is deleted.
+
+Migration:
+
+- `server/prisma/migrations/20260606000000_add_order_campaign_usage/migration.sql`
+
+Local status:
+
+- Applied locally with `npx prisma migrate dev`.
+- `npx prisma migrate status` reported the local schema is up to date.
+
+Railway status:
+
+- Not applied automatically.
+- Required Railway step: `cd server && npx prisma migrate deploy` after confirming the intended Railway database target.
+
+Historical limitation:
+
+- Existing orders created before this migration do not automatically gain attribution rows. They may have aggregate campaign stats without order-level traceability.
+
+### Fixes Made
+
+Server:
+
+- `server/prisma/schema.prisma` now includes `OrderCampaignUsage` and relations from `Order` and `Campaign`.
+- `server/src/domains/checkout/services/checkout.service.js` records campaign attribution after order creation using trusted checkout preview campaign rows.
+- `server/src/domains/campaigns/repositories/campaigns.repository.js` records attribution and aggregate campaign stat increments in one transaction.
+- `server/src/domains/campaigns/services/campaigns.service.js` supports order-aware campaign usage while preserving old aggregate-only fallback behavior.
+- `server/src/domains/campaigns/mappers/campaigns.mapper.js` maps recent attributed orders for admin campaign responses.
+- `server/src/domains/orders/repositories/orders.repository.js` includes campaign usages in order reads, computes order donation stats, reads promo usage for order detail/customer confirmation, and supports customer-safe lookup by reference.
+- `server/src/domains/orders/mappers/orders.mapper.js` maps `donationAmount`, campaign attributions, promo usage, friendly customer reference, and customer-safe order responses.
+- `server/src/domains/orders/services/orders.service.js` adds same-customer order summaries and customer-safe order lookup.
+- `server/src/domains/checkout/controllers/checkout.controller.js` and `routes/checkout.routes.js` add `GET /api/checkout/orders/:reference`.
+
+Client:
+
+- `client/src/domains/admin/components/AdminOrderCard.vue` now shows friendly order reference and server-provided donation amount.
+- `client/src/domains/admin/views/AdminOrderDetailView.vue` now shows full order detail: reference, internal id, items/variants/SKUs, customer, shipping, pricing, promo usage, donation/campaign attribution, Stripe PaymentIntent id for admin, status controls, timestamps, and same-customer orders.
+- `client/src/domains/admin/components/AdminCampaignsTable.vue` shows recent attributed orders when campaign attribution data exists.
+- `client/src/domains/checkout/api/checkout.api.js` adds `fetchCheckoutOrder(reference)`.
+- `client/src/domains/checkout/views/CheckoutView.vue` redirects to the friendly order number when available.
+- `client/src/domains/checkout/views/OrderSuccessView.vue` fetches customer-safe order details, shows items/pricing/donation/fulfillment/confirmation copy, and removes the stale `View Cart` button.
+
+Docs:
+
+- `docs/architecture/database.md` documents `OrderCampaignUsage`.
+- `docs/architecture/data-flow.md` documents campaign attribution and order success flows.
+- `docs/architecture/file-map.md` includes the new migration and repository responsibility.
+- `docs/architecture/admin.md` documents enhanced order detail and campaign attribution behavior.
+
+### Verification
+
+Server build / Prisma generate:
+
+```bash
+cd server
+npm run build
+```
+
+Result: passed. Prisma Client v6.16.2 generated successfully.
+
+Server syntax checks:
+
+```bash
+cd server
+node --check src/domains/campaigns/services/campaigns.service.js
+node --check src/domains/campaigns/repositories/campaigns.repository.js
+node --check src/domains/campaigns/mappers/campaigns.mapper.js
+node --check src/domains/orders/repositories/orders.repository.js
+node --check src/domains/orders/services/orders.service.js
+node --check src/domains/orders/mappers/orders.mapper.js
+node --check src/domains/checkout/controllers/checkout.controller.js
+node --check src/domains/checkout/routes/checkout.routes.js
+node --check src/domains/checkout/services/checkout.service.js
+```
+
+Result: passed.
+
+Client build:
+
+```bash
+cd client
+npm run build
+```
+
+Result: passed.
+
+Order mapper smoke:
+
+```bash
+cd server
+node --input-type=module <order mapper smoke script>
+```
+
+Result: passed. Verified admin mapping includes donation/campaign attribution and customer-safe mapping omits internal id and Stripe PaymentIntent id.
+
+Migration verification:
+
+```bash
+cd server
+npx prisma migrate status
+```
+
+Initial result: new migration pending locally.
+
+```bash
+cd server
+npx prisma migrate dev
+```
+
+Result: applied `20260606000000_add_order_campaign_usage` locally and regenerated Prisma Client.
+
+```bash
+cd server
+npx prisma migrate status
+```
+
+Final result: local database schema is up to date.
+
+### Manual QA Still Required
+
+- In Railway DB admin mode, run `npx prisma migrate deploy` on Railway after confirming the intended DB target.
+- Complete a checkout that has a campaign donation.
+- Confirm the new order redirects to `/order-success/<friendly order number>`.
+- Confirm success page shows items, selected variants, subtotal, discount, shipping, tax, donation, and total.
+- Confirm success page does not show raw internal order id or Stripe PaymentIntent id.
+- Confirm `View Cart` is gone and Continue Shopping works.
+- Confirm admin orders list shows the donation amount for the new order.
+- Confirm admin order detail shows pricing, promo usage if applicable, campaign attribution, customer/shipping/payment/admin details, and similar customer orders.
+- Confirm admin campaigns show recent attributed orders for the campaign.
+- Confirm products, promos, campaigns, and orders still load in local client to local server to Railway DB mode after Railway migration deploy.
+
+### Remaining Risks
+
+- Historical orders before `OrderCampaignUsage` will not have order-level campaign attribution unless backfilled manually.
+- Campaign aggregate counters may include old donations that cannot be tied to specific historical orders.
+- Stripe end-to-end checkout was not rerun during this pass; builds and mapper checks passed, but browser payment QA remains required.
+- Railway migration was intentionally not applied automatically.
+
+### Safe For Commit Review
+
+The local changes are build-verified and locally migration-verified, but the working tree contains multiple accepted uncommitted phases. Review should consider all existing local edits together before committing.

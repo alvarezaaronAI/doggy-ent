@@ -42,7 +42,7 @@ export function useCart({
 
   function addToCart(product, selectedSize) {
     const defaultSize = product.category === 'Bundle' ? 'Bundle' : '6 oz'
-    const size = product.size || selectedSize || defaultSize
+    const size = selectedSize || product.size || defaultSize
     const quantityToAdd = product.quantity || 1
 
     const selectedVariant = product.variants?.find(
@@ -55,8 +55,8 @@ export function useCart({
     if (!isPurchasable(product, selectedVariant)) return
 
     const price = Number(
-      product.price ||
       selectedVariant?.price ||
+      product.price ||
       product.variants?.[0]?.price ||
       0
     )

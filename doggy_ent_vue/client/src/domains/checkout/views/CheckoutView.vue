@@ -117,7 +117,7 @@ const {
     clearPromo()
 
     await router.push(
-      `/order-success/${result.order?.id || 'pending'}`,
+      `/order-success/${result.order?.orderNumber || result.order?.customerReference || 'pending'}`,
     )
   },
 })
