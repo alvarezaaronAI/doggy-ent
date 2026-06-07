@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 import {
   validatePromoCode,
@@ -18,6 +18,11 @@ export function useCheckoutPromos({
   const promoStatus = ref('idle')
   const promoValidationMeta = ref(null)
   const activePromoRequestId = ref(0)
+  const appliedPromoEmail = ref('')
+
+  function normalizeCustomerEmail(value) {
+    return String(value || '').trim().toLowerCase()
+  }
 
   async function applyPromoCode() {
     const normalizedCode = (
@@ -39,6 +44,20 @@ export function useCheckoutPromos({
       return
     }
 
+    const normalizedEmail = normalizeCustomerEmail(
+      customer.value.email,
+    )
+
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      appliedPromoCode.value = ''
+      appliedPromoDiscount.value = 0
+      promoValidationMeta.value = null
+      appliedPromoEmail.value = ''
+      promoStatus.value = 'error'
+      promoMessage.value = 'Enter your email first so we can check this promo.'
+      return
+    }
+
     const requestId = activePromoRequestId.value + 1
     activePromoRequestId.value = requestId
 
@@ -49,8 +68,7 @@ export function useCheckoutPromos({
       const data = await validatePromoCode({
         code: normalizedCode,
 
-        customerEmail:
-          customer.value.email,
+        customerEmail: normalizedEmail,
 
         cart: {
           items: cartItems.value,
@@ -70,6 +88,7 @@ export function useCheckoutPromos({
       promoValidationMeta.value = {
         promoId: data.promoId || null,
         promoCode: normalizedCode,
+        customerEmail: normalizedEmail,
         discountType: data.discountType || null,
         discountAmount: Number(
           data.discountAmount || 0,
@@ -77,6 +96,7 @@ export function useCheckoutPromos({
       }
 
       promoCode.value = normalizedCode
+      appliedPromoEmail.value = normalizedEmail
       promoStatus.value = 'success'
 
       promoMessage.value = (
@@ -91,6 +111,7 @@ export function useCheckoutPromos({
       appliedPromoCode.value = ''
       appliedPromoDiscount.value = 0
       promoValidationMeta.value = null
+      appliedPromoEmail.value = ''
       promoStatus.value = 'error'
 
       promoMessage.value = (
@@ -100,18 +121,37 @@ export function useCheckoutPromos({
     }
   }
 
-  function clearPromo() {
+  function clearPromo({
+    message = 'Enter a promo code if you have one.',
+    status = 'idle',
+  } = {}) {
     activePromoRequestId.value += 1
     promoCode.value = ''
     appliedPromoCode.value = ''
     appliedPromoDiscount.value = 0
     promoValidationMeta.value = null
-    promoStatus.value = 'idle'
-
-    promoMessage.value = (
-      'Enter a promo code if you have one.'
-    )
+    appliedPromoEmail.value = ''
+    promoStatus.value = status
+    promoMessage.value = message
   }
+
+  watch(
+    () => customer.value.email,
+    (email) => {
+      const normalizedEmail = normalizeCustomerEmail(email)
+
+      if (
+        appliedPromoCode.value
+        && appliedPromoEmail.value
+        && normalizedEmail !== appliedPromoEmail.value
+      ) {
+        clearPromo({
+          status: 'idle',
+          message: 'Promo cleared because the email changed. Re-enter the code to check eligibility.',
+        })
+      }
+    },
+  )
 
   return {
     promoCode,
@@ -120,6 +160,7 @@ export function useCheckoutPromos({
     promoMessage,
     promoStatus,
     promoValidationMeta,
+    appliedPromoEmail,
     activePromoRequestId,
     applyPromoCode,
     clearPromo,

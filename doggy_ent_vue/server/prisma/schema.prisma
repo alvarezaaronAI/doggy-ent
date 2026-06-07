@@ -78,6 +78,7 @@ model Order {
 
   items OrderItem[]
   campaignUsages OrderCampaignUsage[]
+  statusHistory OrderStatusHistory[]
 }
 
 model OrderItem {
@@ -203,6 +204,24 @@ model OrderCampaignUsage {
   @@unique([orderId, campaignId])
   @@index([orderId])
   @@index([campaignId])
+}
+
+model OrderStatusHistory {
+  id            String      @id @default(cuid())
+  orderId       String
+
+  fromStatus    OrderStatus
+  toStatus      OrderStatus
+  note          String?
+
+  changedByType String
+  changedBy     String?
+  createdAt     DateTime    @default(now())
+
+  order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([createdAt])
 }
 
 enum OrderStatus {

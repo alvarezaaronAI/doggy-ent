@@ -19,6 +19,11 @@ export async function findAllOrders() {
           campaign: true,
         },
       },
+      statusHistory: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
     },
   })
 
@@ -36,6 +41,11 @@ export async function findOrderById(orderId) {
         campaignUsages: {
           include: {
             campaign: true,
+          },
+        },
+        statusHistory: {
+          orderBy: {
+            createdAt: 'desc',
           },
         },
       },
@@ -69,6 +79,11 @@ export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
           campaign: true,
         },
       },
+      statusHistory: {
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
     },
   })
 
@@ -98,6 +113,11 @@ export async function findCustomerOrderByReference(reference) {
       campaignUsages: {
         include: {
           campaign: true,
+        },
+      },
+      statusHistory: {
+        orderBy: {
+          createdAt: 'desc',
         },
       },
     },
@@ -146,6 +166,11 @@ export async function findOrdersByCustomerEmail(
       campaignUsages: {
         include: {
           campaign: true,
+        },
+      },
+      statusHistory: {
+        orderBy: {
+          createdAt: 'desc',
         },
       },
     },
@@ -250,22 +275,62 @@ export async function createOrder(orderInput) {
   return mapOrder(createdOrder)
 }
 
-export async function updateOrderStatusById(orderId, status) {
-  const updatedOrder = await prisma.order.update({
-    where: {
-      id: orderId,
-    },
-    data: {
-      status,
-    },
-    include: {
-      items: true,
-      campaignUsages: {
-        include: {
-          campaign: true,
+export async function updateOrderStatusById(
+  orderId,
+  status,
+  {
+    note = null,
+    changedByType = 'ADMIN_ENV',
+    changedBy = 'ADMIN_ENV',
+  } = {},
+) {
+  const updatedOrder = await prisma.$transaction(async (tx) => {
+    const existingOrder = await tx.order.findUnique({
+      where: {
+        id: orderId,
+      },
+    })
+
+    if (!existingOrder) {
+      const error = new Error('Order not found.')
+      error.code = 'P2025'
+      throw error
+    }
+
+    if (existingOrder.status !== status) {
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId,
+          fromStatus: existingOrder.status,
+          toStatus: status,
+          note,
+          changedByType,
+          changedBy,
+        },
+      })
+    }
+
+    return tx.order.update({
+      where: {
+        id: orderId,
+      },
+      data: {
+        status,
+      },
+      include: {
+        items: true,
+        campaignUsages: {
+          include: {
+            campaign: true,
+          },
+        },
+        statusHistory: {
+          orderBy: {
+            createdAt: 'desc',
+          },
         },
       },
-    },
+    })
   })
 
   return mapOrder(updatedOrder)

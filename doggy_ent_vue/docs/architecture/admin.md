@@ -1,6 +1,6 @@
 # Admin Architecture
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 ## Overview
 
@@ -138,15 +138,24 @@ Campaign admin responses include recent attributed orders when `OrderCampaignUsa
 
 ### Orders
 
-Admin orders read checkout-created records, update order status, and show donation/campaign attribution when persisted.
+Admin orders read checkout-created records, stage order status changes, and show donation/campaign attribution when persisted.
 
 Primary files:
 
 - `client/src/domains/admin/views/AdminOrdersView.vue`
 - `client/src/domains/admin/views/AdminOrderDetailView.vue`
+- `client/src/domains/admin/components/AdminOrderStatusPanel.vue`
 - `client/src/domains/admin/composables/useAdminOrders.js`
 - `client/src/domains/admin/api/adminOrders.api.js`
 - `server/src/domains/orders/*`
+
+Status update behavior:
+
+- Current status is displayed as read-only context.
+- The admin selects the next status separately.
+- Save persists the status change; Cancel discards the staged selection.
+- Status changes create `OrderStatusHistory` rows.
+- Until Better Auth/admin users exist, history rows use `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
 
 Admin order detail shows:
 
@@ -159,6 +168,9 @@ Admin order detail shows:
 - Campaign attribution when `OrderCampaignUsage` rows exist.
 - Stripe PaymentIntent id for admin only.
 - Other recent orders from the same customer email.
+- Last order update timestamp.
+- Last status change.
+- Full status history.
 
 ## Manual QA Checklist
 
@@ -167,5 +179,7 @@ Admin order detail shows:
 - Start Railway DB admin mode and confirm badge says Railway DB target.
 - Create/edit a promo with start/end dates and confirm no DateTime Prisma error.
 - Open admin products, promos, campaigns, orders, and order detail.
+- On order detail, change status, click Cancel, and confirm no persistence.
+- On order detail, change status, click Save, and confirm status history gets a new row.
 - Confirm browser admin CRUD calls hit the local backend in temporary Railway DB admin mode.
 - Confirm Vercel storefront sees Railway DB data after the local backend writes to Railway DB.

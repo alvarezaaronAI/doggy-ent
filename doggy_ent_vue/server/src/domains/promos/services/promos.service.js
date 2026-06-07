@@ -286,8 +286,17 @@ export async function deletePromoById(promoId) {
 
 export async function validatePromoCode({ code, cart, customerEmail }) {
   const normalizedCode = normalizePromoCode(code)
+  const normalizedCustomerEmail = normalizeEmail(customerEmail)
   const subtotal = Number(cart?.subtotal || 0)
   await resolvePromoLifecycleStatuses()
+
+  if (!normalizedCustomerEmail || !normalizedCustomerEmail.includes('@')) {
+    return {
+      valid: false,
+      message: 'Enter your email first so we can check this promo.',
+      discountAmount: 0,
+    }
+  }
 
   let promo = null
 
@@ -301,7 +310,7 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
   catch (error) {
     console.error('[promos] Failed DB promo validation lookup.', {
       promoCode: normalizedCode,
-      customerEmail,
+      customerEmail: normalizedCustomerEmail,
       error,
     })
 
@@ -322,18 +331,16 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
   try {
     totalUsageCount = await getPromoUsageCount(promo.id)
 
-    if (customerEmail) {
-      customerUsageCount = await getPromoUsageCountByCustomer(
-        promo.id,
-        customerEmail,
-      )
-    }
+    customerUsageCount = await getPromoUsageCountByCustomer(
+      promo.id,
+      normalizedCustomerEmail,
+    )
   }
   catch (error) {
     console.error('[promos] Failed promo usage validation lookup.', {
       promoId: promo?.id,
       promoCode: normalizedCode,
-      customerEmail,
+      customerEmail: normalizedCustomerEmail,
       error,
     })
 
@@ -361,7 +368,7 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
 
   if (
     promo.assignedCustomerEmail
-    && normalizeEmail(customerEmail)
+    && normalizedCustomerEmail
       !== normalizeEmail(promo.assignedCustomerEmail)
   ) {
     return {
@@ -404,10 +411,17 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
 
 export async function recordPromoUsage({ code, cart, customerEmail, orderId }) {
   const normalizedCode = normalizePromoCode(code)
+  const normalizedCustomerEmail = normalizeEmail(customerEmail)
   const subtotal = normalizeCurrencyAmount(
     cart?.subtotal || 0,
   )
   await resolvePromoLifecycleStatuses()
+
+  if (!normalizedCustomerEmail || !normalizedCustomerEmail.includes('@')) {
+    const error = new Error('A customer email is required to record promo usage.')
+    error.statusCode = 400
+    throw error
+  }
 
   let promo = null
 
@@ -417,7 +431,7 @@ export async function recordPromoUsage({ code, cart, customerEmail, orderId }) {
   catch (error) {
     console.error('[promos] Failed DB promo lookup during redemption.', {
       promoCode: normalizedCode,
-      customerEmail,
+      customerEmail: normalizedCustomerEmail,
       orderId,
       error,
     })
@@ -444,10 +458,25 @@ export async function recordPromoUsage({ code, cart, customerEmail, orderId }) {
         }
       }
 
+      if (!isUnlimitedUsageLimit(promo.usageLimitPerCustomer)) {
+        const customerUsageCount = await tx.promoUsage.count({
+          where: {
+            promoId: promo.id,
+            customerEmail: normalizedCustomerEmail,
+          },
+        })
+
+        if (customerUsageCount >= Number(promo.usageLimitPerCustomer)) {
+          throw new Error(
+            'Customer usage limit reached for this promo.',
+          )
+        }
+      }
+
       await createPromoUsageTx(tx, {
         promoId: promo.id,
         orderId: orderId || null,
-        customerEmail: customerEmail || 'guest@example.com',
+        customerEmail: normalizedCustomerEmail,
         discountAmount,
         subtotalAmount: subtotal,
       })
@@ -491,7 +520,7 @@ export async function recordPromoUsage({ code, cart, customerEmail, orderId }) {
     console.error('[promos] Failed persistent promo usage tracking.', {
       promoId: promo?.id,
       promoCode: normalizedCode,
-      customerEmail,
+      customerEmail: normalizedCustomerEmail,
       orderId,
       subtotal,
       discountAmount,

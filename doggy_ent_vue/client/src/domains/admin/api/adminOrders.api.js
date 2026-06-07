@@ -32,7 +32,13 @@ export async function fetchAdminOrderById(orderId) {
   )
 }
 
-export async function updateAdminOrderStatus(orderId, status) {
+export async function updateAdminOrderStatus(
+  orderId,
+  {
+    status,
+    note = '',
+  },
+) {
   return parseOrderResponse(
     await fetchApi(`${ADMIN_ORDERS_API_URL}/${orderId}/status`, {
       method: 'PATCH',
@@ -41,6 +47,7 @@ export async function updateAdminOrderStatus(orderId, status) {
       },
       body: JSON.stringify({
         status,
+        note,
       }),
     }),
     'Unable to update order.',

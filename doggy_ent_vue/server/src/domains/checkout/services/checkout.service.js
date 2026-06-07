@@ -20,6 +20,9 @@ import {
   normalizeCurrencyAmount,
 } from '../../../shared/utils/money.js'
 import {
+  normalizeEmail,
+} from '../../../shared/utils/string.js'
+import {
   buildCheckoutResponse,
 } from '../mappers/checkout.mapper.js'
 import {
@@ -42,6 +45,9 @@ export async function previewCheckout(checkoutInput = {}) {
     customer = {},
     shipping = {},
   } = checkoutInput
+  const normalizedCustomerEmail = normalizeEmail(
+    customer.email || customerEmail,
+  )
 
   if (!Array.isArray(cartItems) || !cartItems.length) {
     const error = new Error('Cart items are required.')
@@ -56,7 +62,7 @@ export async function previewCheckout(checkoutInput = {}) {
   if (promoCode) {
     promoResult = await validatePromoCode({
       code: promoCode,
-      customerEmail,
+      customerEmail: normalizedCustomerEmail,
       cart: {
         subtotal,
         items: cartItems,
@@ -125,19 +131,15 @@ export async function createCheckout(checkoutInput = {}) {
     )
 
   if (paymentIntentAlreadyUsed) {
-    const requestEmail = String(
+    const requestEmail = normalizeEmail(
       checkoutInput.customer?.email ||
       checkoutInput.customerEmail ||
       '',
     )
-      .trim()
-      .toLowerCase()
 
-    const orderEmail = String(
+    const orderEmail = normalizeEmail(
       paymentIntentAlreadyUsed.customerEmail || '',
     )
-      .trim()
-      .toLowerCase()
 
     if (!requestEmail || requestEmail !== orderEmail) {
       const error = new Error(
@@ -162,6 +164,9 @@ export async function createCheckout(checkoutInput = {}) {
     customer = {},
     shipping = {},
   } = checkoutInput
+  const normalizedCustomerEmail = normalizeEmail(
+    customer.email || customerEmail,
+  )
 
   if (
     promoCode
@@ -197,7 +202,7 @@ export async function createCheckout(checkoutInput = {}) {
   const order = await createNewOrder({
     items: cartItems,
     customerName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
-    customerEmail: customer.email || customerEmail || null,
+    customerEmail: normalizedCustomerEmail || null,
     customerPhone: customer.phone || null,
     deliveryNotes: customer.deliveryNotes || null,
     address1: customer.address1 || null,
@@ -224,7 +229,7 @@ export async function createCheckout(checkoutInput = {}) {
     try {
       recordedPromo = await recordPromoUsage({
         code: promoCode,
-        customerEmail,
+        customerEmail: normalizedCustomerEmail,
         orderId: order.id,
         cart: {
           subtotal: checkoutPreview.pricing.subtotal,

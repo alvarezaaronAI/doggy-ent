@@ -1,42 +1,31 @@
-# Doggy Ent Architecture
+# Doggy Ent Current Architecture Diagram
+
+Last updated: 2026-06-07
+
+This compact diagram reflects the current Prisma-backed application. The older version of this file referred to temporary in-memory product data, which no longer matches the codebase.
 
 ```mermaid
 flowchart LR
-  User([User / Admin])
+  Customer["Customer browser"] --> Storefront["Vue storefront"]
+  Admin["Admin browser"] --> AdminApp["Vue admin routes"]
 
-  subgraph Frontend["Vue Frontend : localhost:5173"]
-    Home["HomeView.vue\nStorefront"]
-    Admin["AdminProductsView.vue\nCMS"]
-  end
+  Storefront --> SharedHttp["client shared api helper"]
+  AdminApp --> SharedHttp
+  SharedHttp --> Api["Express API"]
 
-  Proxy["Vite Proxy\n/api → localhost:3000"]
+  Api --> ProductDomain["products domain"]
+  Api --> CheckoutDomain["checkout and payments domains"]
+  Api --> PromoDomain["promos domain"]
+  Api --> CampaignDomain["campaigns domain"]
+  Api --> OrderDomain["orders domain"]
+  Api --> AuthDomain["auth domain"]
 
-  subgraph Backend["Express Backend : localhost:3000"]
-    App["app.js\nMounts /api/products"]
-    Routes["products.routes.js\nGET / POST / PUT / DELETE"]
-    Controller["products.controller.js\nValidates request + sends response"]
-    Service["products.service.js\nBusiness logic"]
-    Data[("mockProducts[]\nTemporary in-memory data")]
-  end
-
-  User --> Home
-  User --> Admin
-
-  Home -->|"GET /api/products"| Proxy
-  Admin -->|"GET /api/products"| Proxy
-  Admin -->|"POST /api/products"| Proxy
-  Admin -->|"PUT /api/products/:id"| Proxy
-  Admin -->|"DELETE /api/products/:id"| Proxy
-
-  Proxy --> App
-  App --> Routes
-  Routes --> Controller
-  Controller --> Service
-  Service --> Data
-  Data --> Service
-  Service --> Controller
-  Controller --> Routes
-  Routes --> App
-  App --> Proxy
-  Proxy --> Frontend
+  CheckoutDomain --> Stripe["Stripe API"]
+  ProductDomain --> Prisma["Prisma client"]
+  CheckoutDomain --> Prisma
+  PromoDomain --> Prisma
+  CampaignDomain --> Prisma
+  OrderDomain --> Prisma
+  AuthDomain --> SessionCookie["admin session cookie"]
+  Prisma --> Postgres["PostgreSQL"]
 ```
