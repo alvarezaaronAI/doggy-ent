@@ -1,6 +1,6 @@
 # Data Flow Maps
 
-Last updated: 2026-06-07
+Last updated: 2026-06-13
 
 ## Overall Request Flow
 
@@ -120,12 +120,66 @@ Key files:
 
 1. Checkout creates an order through `POST /api/checkout` after Stripe succeeds.
 2. `checkout.service.js` recomputes trusted totals, verifies Stripe status/amount/currency, prevents duplicate order creation for a reused PaymentIntent, creates order records, decrements inventory, and records promo/campaign usage.
-3. Admin order list/detail clients call `client/src/domains/admin/api/adminOrders.api.js`.
-4. Server admin orders are mounted at `/api/admin/orders` and guarded by admin auth in the orders route layer.
-5. Admin order timeline labels are centralized in `client/src/domains/admin/constants/adminOrders.constants.js`.
-6. Admin order detail shows the current status separately from the staged next status selector. Status changes persist only after Save; Cancel resets the staged selection.
-7. Status updates create `OrderStatusHistory` rows when the status changes. Until Better Auth/admin users exist, entries use `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
-8. Admin order responses include `donationAmount`, campaign attribution rows, promo usage when recorded, same-customer order summaries, `lastStatusChange`, and `statusHistory`.
+3. If a valid Better Auth customer session cookie is present, checkout links the order with `Order.userId`. Guest checkout remains available with `Order.userId = null`.
+4. Admin order list/detail clients call `client/src/domains/admin/api/adminOrders.api.js`.
+5. Server admin orders are mounted at `/api/admin/orders` and guarded by admin auth in the orders route layer.
+6. Admin order timeline labels are centralized in `client/src/domains/admin/constants/adminOrders.constants.js`.
+7. Admin order detail shows the current status separately from the staged next status selector. Status changes persist only after Save; Cancel resets the staged selection.
+8. Status updates create `OrderStatusHistory` rows when the status changes. Until Better Auth/admin users replace the custom admin auth system, entries use `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
+9. Admin order responses include `donationAmount`, campaign attribution rows, promo usage when recorded, same-customer order summaries, `lastStatusChange`, and `statusHistory`.
+
+## Customer Account Flow
+
+```mermaid
+sequenceDiagram
+  participant Customer as Customer browser
+  participant Client as Vue account pages
+  participant Auth as Better Auth API
+  participant AccountAPI as Express account API
+  participant CheckoutAPI as Express checkout API
+  participant DB as PostgreSQL
+
+  Customer->>Client: Sign up or sign in
+  Client->>Auth: POST /api/customer-auth/sign-up/email or sign-in/email
+  Auth->>DB: Store User, Account, Session
+  Auth->>Auth: dash plugin records Infrastructure dashboard events when configured
+  Auth-->>Client: HttpOnly session cookie
+  Client->>AccountAPI: GET /api/account/profile
+  AccountAPI->>Auth: Validate cookie/session
+  AccountAPI->>DB: Read CustomerProfile and orders
+  AccountAPI-->>Client: Customer-safe account data
+  Customer->>Client: Checkout while signed in
+  Client->>CheckoutAPI: POST /api/checkout
+  CheckoutAPI->>Auth: Optional customer session lookup
+  CheckoutAPI->>DB: Create Order with userId if authenticated
+```
+
+Customer account routes:
+
+- `/account/sign-in`
+- `/account/create`
+- `/account`
+- `/account/profile`
+- `/account/orders`
+- `/account/orders/:reference`
+- `/account/forgot-password`
+- `/account/reset-password`
+
+Important constraints:
+
+- Guest checkout remains valid.
+- The client never submits `userId` for checkout.
+- Server-side checkout owns order linking by reading the Better Auth session.
+- Verified-email guest matching is restricted to users with `emailVerified = true`.
+
+## Admin Customer Management Flow
+
+1. Admin visits `/admin/customers` or `/admin/customers/:id`.
+2. The existing admin router guard validates `/api/auth/me`.
+3. Admin customer API calls use `/api/admin/customers`, protected by `requireAdminAuth`.
+4. Server customer services read `User`, linked `Order` rows, verified-email guest matches, account events, support placeholders, review placeholders, notification preferences, and loyalty placeholders.
+5. Deactivate/reactivate actions update `User.status` and create `CustomerAccountEvent` rows with `changedByType: ADMIN_ENV`.
+6. Resend verification and password reset actions queue payloads through the email provider abstraction. They do not send real email unless a provider is configured.
 
 ## Order Status History Flow
 

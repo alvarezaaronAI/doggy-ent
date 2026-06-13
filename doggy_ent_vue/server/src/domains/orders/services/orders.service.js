@@ -183,6 +183,7 @@ export async function createNewOrder(orderInput) {
   try {
     return await createOrder({
       orderNumber,
+      userId: orderInput.userId || null,
       customerName: orderInput.customerName || 'Guest Customer',
       customerEmail: orderInput.customerEmail || 'guest@example.com',
       customerPhone: orderInput.customerPhone || null,

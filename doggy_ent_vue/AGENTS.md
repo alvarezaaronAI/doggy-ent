@@ -1643,3 +1643,1432 @@ Manual QA checklist:
 - Open an attributed order detail and confirm donation/campaign attribution matches.
 - Complete a new checkout with campaign-eligible products and confirm the analytics view updates.
 - Run relevant tiered tests and confirm campaign analytics tests pass.
+
+
+## Phase 6 / Customer Accounts, Better Auth, and Loyalty Requirement
+
+When the user says Phase 5 checkout, promo, campaign, orders, and tiered tests have passed, the project may move into Phase 6 planning and implementation.
+
+Current phase transition context:
+- Phase 1 Foundation is complete.
+- Phase 2 Storefront MVP is complete.
+- Phase 3 Admin CMS is complete.
+- Phase 4 Checkout, Stripe, orders, promos, campaigns, and deployment foundation is complete.
+- Phase 5 Stabilization, Railway DB admin workflow, analytics, campaign attribution, promo repair, and tiered tests are passing by automated and manual QA.
+- Phase 6 is customer accounts, auth modernization, loyalty, customer order history, and account-based promo limits.
+
+Primary Phase 6 goal:
+- Introduce a proper account/auth foundation without breaking the existing storefront, checkout, admin dashboard, custom admin workflow, orders, promos, campaigns, or tests.
+
+Preferred auth direction:
+- Better Auth is the preferred future auth direction for customer accounts and long-term admin roles.
+- The first Phase 6 pass should be an audit and architecture plan before a full migration.
+- Do not rip out the existing custom admin auth until a safe migration plan exists and tests cover the current behavior.
+- Preserve the existing admin dashboard UI and admin feature pages.
+
+Phase 6 work should be staged:
+
+1. Phase 6A — Auth/account architecture audit and migration plan:
+   - Audit current custom admin auth.
+   - Audit current customer checkout data and order ownership fields.
+   - Audit Prisma schema for user/customer/account/session needs.
+   - Audit Better Auth integration requirements.
+   - Decide how customers, admins, roles, sessions, and orders should relate.
+   - Decide whether admin auth migrates immediately or later.
+   - Update docs/architecture/auth-roadmap.md and PROJECT_HANDOFF.md.
+   - No risky auth migration unless explicitly requested after the plan.
+
+2. Phase 6B — Customer account data model foundation:
+   - Add Customer/User/account schema only after the audit proves the shape.
+   - Link new customer accounts to existing orders by normalized email when safe.
+   - Preserve guest checkout.
+   - Prepare account-based promo usage limits, but do not break email-based promo limits.
+   - Add migrations safely and document Railway `prisma migrate deploy` steps.
+
+3. Phase 6C — Customer account UI foundation:
+   - Add customer sign up / login / account routes only after the server model is clear.
+   - Add customer order history page.
+   - Add customer profile basics if needed.
+   - Keep checkout guest-friendly.
+   - Do not require accounts for checkout unless the user explicitly asks later.
+
+4. Phase 6D — Loyalty foundation:
+   - Design points/rewards/referrals after account identity is stable.
+   - Do not add loyalty math before account/order ownership is reliable.
+   - Add tests for points accrual and redemption before production use.
+
+5. Phase 6E — Admin role migration:
+   - Move admin attribution/status history from placeholder `ADMIN_ENV`/`SYSTEM` to real admin users only after auth roles are implemented.
+   - Preserve status history and audit trail compatibility.
+   - Preserve admin dashboard UX.
+
+Rules:
+- Do not start Phase 6 by deleting or replacing the current admin auth system.
+- Do not rebuild the admin dashboard.
+- Do not break guest checkout.
+- Do not require customer login for normal checkout unless explicitly requested.
+- Do not expose secrets or auth tokens in docs/logs.
+- Do not add Better Auth blindly; first verify dependencies, schema needs, server integration, client routes, session/cookie strategy, and deployment environment variables.
+- Do not create a broad auth refactor without tests and a rollback-friendly plan.
+- Preserve existing tiered test commands and add/update tests as auth/account logic is introduced.
+
+Required Phase 6A verification:
+- Run `npm run tiertest1`.
+- Run `npm run test` if feasible.
+- Run client build.
+- Run server build.
+- Document the current auth state before changing it.
+- Update `PROJECT_HANDOFF.md` with the Phase 6 plan, decisions, files audited, and risks.
+- Update `docs/architecture/auth-roadmap.md` with the recommended Better Auth/customer account migration path.
+
+Phase 6A final report must include:
+- Current auth/account state.
+- Recommended Better Auth integration approach.
+- Whether admin auth should migrate now or later.
+- Proposed Prisma models and relationships.
+- Proposed routes and client pages.
+- Guest checkout preservation plan.
+- Account-based promo/loyalty roadmap.
+- Tests needed before implementation.
+- Next safe implementation step.
+## Better Auth / Customer Accounts Infrastructure Requirement
+
+When the user asks to start Better Auth, accounts, customer login, order history, saved customer profiles, email verification, password reset, or future email-service readiness, the agent must treat the task as a full auth/account infrastructure phase, not a small UI-only feature.
+
+Primary goal:
+- Implement Better Auth as the foundation for customer accounts and future admin accounts while preserving the current storefront, checkout, admin dashboard, guest checkout, and existing order flows.
+- Create the client UI, server auth infrastructure, database tables, route guards, order-account linking, and email-service-ready data contracts needed for a real ecommerce account system.
+- Keep files organized into small, readable modules that follow the existing Vue/server architecture.
+
+The agent must read before editing:
+1. `AGENTS.md`.
+2. `PROJECT_HANDOFF.md` if it exists.
+3. Existing auth, checkout, orders, admin, Prisma, API helper, CORS, cookie, and deployment configuration.
+4. Existing docs under `docs/architecture/` if they exist.
+
+Required audit before implementation:
+1. Current custom admin auth system.
+2. Current admin route guards and admin dashboard protection.
+3. Current checkout customer email, name, phone, and address flow.
+4. Current order creation service/repository flow.
+5. Current order success page and admin order detail flow.
+6. Current Prisma schema and migrations.
+7. Current client API base URL strategy, including `VITE_API_BASE_URL` and/or `VITE_API_URL`.
+8. Current server CORS, cookie, session, and frontend origin env variable usage.
+9. Current Vercel frontend and Railway backend deployment expectations.
+
+Better Auth requirements:
+- Use official Better Auth patterns.
+- Add Better Auth server setup.
+- Add the Better Auth Prisma adapter for PostgreSQL.
+- Mount Better Auth under `/api/auth/*` or the official configured base path.
+- Add the Better Auth client setup for Vue.
+- Enable email/password authentication.
+- Add session support so users remain logged in during an active session and across page refresh while the session is valid.
+- Add sign out behavior that clears the session.
+- Configure trusted origins for the deployed frontend/backend setup.
+- Configure production cookie behavior safely for Vercel frontend + Railway backend.
+- Do not expose secrets in source code, docs, logs, examples, or final reports.
+
+Database/account requirements:
+- Add Better Auth required tables/models safely through Prisma migration.
+- Add a user role field or equivalent role model that supports at least:
+  - `CUSTOMER`
+  - `ADMIN`
+- Public signup must only create customer accounts.
+- Public signup must never create admin accounts.
+- Admin accounts must be created later through a safe admin-only workflow, manual DB seed, protected script, or migration from the existing custom admin auth.
+- Add `Order.userId` as nullable if needed so logged-in orders can be linked without breaking old guest orders.
+- Existing guest orders must remain valid.
+- If profile data is not stored directly on the Better Auth user model, add a focused customer profile model or document why it is deferred.
+- Prepare future models or documented extension points for:
+  - saved addresses
+  - order reviews
+  - loyalty ledger/points
+  - referrals
+  - email notification preferences
+- Do not run destructive Prisma commands.
+- Do not use `prisma migrate reset` against any shared, Railway, staging, or production-like database.
+
+Client account UI requirements:
+- Create focused Vue pages/components under the existing client structure, not one large account god file.
+- Add routes for:
+  - `/account/sign-in`
+  - `/account/create`
+  - `/account`
+  - `/account/profile`
+  - `/account/orders`
+  - `/account/orders/:id`
+  - `/account/forgot-password` if supported or safely stubbed
+  - `/account/reset-password` if supported or safely stubbed
+- Add a protected account route guard.
+- Logged-out users should be redirected to sign in only for account pages.
+- Checkout must never require sign in.
+- Add account header/nav state:
+  - logged out: show sign in/create account entry point
+  - logged in: show account/sign out entry point
+- Add session check on app load or route entry using a reusable auth composable/service.
+- Add account dashboard foundation with:
+  - profile summary
+  - order history entry point
+  - recent orders if available
+  - tracking/status placeholder
+  - reviews placeholder for future delivered orders
+  - saved address placeholder if not fully implemented
+- Preserve existing storefront UX.
+- Preserve existing checkout UX except for safe prefill/account prompts.
+
+Server account/order API requirements:
+- Add server-side helpers/middleware for reading the current Better Auth session safely.
+- Add customer-protected API endpoints for account data and order history if Better Auth does not provide them directly.
+- Account order endpoints must only return orders owned by the authenticated customer.
+- Never expose arbitrary orders by raw id to a logged-in customer without ownership verification.
+- Add order history support using:
+  1. `Order.userId` for logged-in orders.
+  2. Verified-email matching for older guest orders only when safe.
+- Do not allow unverified email ownership to claim or view old guest orders.
+- Normalize customer email using trim + lowercase on client payload construction and server processing.
+- Keep admin order endpoints separate from customer account endpoints.
+- Preserve admin-only order visibility.
+
+Checkout/account linking requirements:
+- Guest checkout must remain fully available.
+- Logged-out checkout must still create a guest order using normalized customer email.
+- Logged-in checkout should prefill customer name/email when safely available.
+- Logged-in checkout should link the created order to `userId` server-side.
+- The server must not trust a client-submitted `userId`.
+- If the client sends user/account context, the server must verify it from the active session.
+- If a logged-in user changes checkout email, document and handle whether the order is linked by account session, email, or both.
+- Account order history should include logged-in orders by `userId` and may include older guest orders by verified email only.
+- Future order tracking/review data should be structured so customer account pages can consume it later.
+
+Email-service readiness requirements:
+- Prepare the account and order flows so a future email service can be added without reworking core data flow.
+- Do not send real emails unless an email provider is already configured and the user explicitly wants it enabled.
+- Add clean server-side email event/data builders or documented placeholders for:
+  - account verification email
+  - resend verification email
+  - password reset email
+  - welcome email
+  - order confirmation email
+  - order status update email
+  - future shipping/tracking email
+  - future review request email
+- Email payload builders must return safe structured data such as recipient email, customer name, order reference, order totals, items, status, tracking placeholder, and action URLs.
+- Email builders must not include secrets, raw session tokens in logs, or private Stripe data.
+- If Better Auth email verification/password reset requires an email sender, create a provider abstraction/stub that is clearly disabled until real provider env variables are configured.
+- Document required future email env variable names only, not values.
+- Email-related files should be small and organized, for example:
+  - server auth email adapter/sender placeholder
+  - server email event constants
+  - server email payload builders
+  - server order confirmation payload mapper
+  - server account verification/reset payload mapper if needed
+- Do not create a fake email implementation that silently pretends to send real messages.
+- If emails are not enabled, the app should fail safely with clear development/admin messaging.
+
+Future email data that should be ready from account/order flows:
+- Customer email and normalized email.
+- Customer name.
+- Customer account id when logged in.
+- Customer-friendly order reference.
+- Order items with product name, variant size, quantity, unit price, and line total.
+- Pricing breakdown: subtotal, discount, shipping, tax, donation, and total.
+- Promo code and discount amount if used.
+- Campaign/donation data if used.
+- Order status and last status update timestamp if available.
+- Tracking placeholder or tracking fields if already present.
+- Account/action URLs generated from configured frontend origin.
+
+Security requirements:
+- Configure Better Auth secret and base URL using env variables.
+- Configure trusted origins using env variables, not hardcoded production URLs.
+- Configure cookies for production safely.
+- Configure CORS credentials/origins correctly for Vercel frontend and Railway backend.
+- Rate-limit or clearly document missing rate limits for sign in, create account, password reset, and resend verification endpoints.
+- Do not reveal whether an email exists during password reset or account lookup flows unless the auth provider handles it safely.
+- Do not expose raw Better Auth internals, password hashes, session ids, verification tokens, or Stripe secret data.
+- Do not allow public role escalation.
+- Do not weaken existing admin auth to make customer auth work.
+
+Admin auth rule:
+- The current custom admin auth may remain in place during this phase unless Better Auth admin migration is fully implemented and verified.
+- If custom admin auth remains, clearly document that admin auth is still custom and customer auth uses Better Auth.
+- If admin auth is migrated to Better Auth, verify the existing admin dashboard, admin route guards, admin products, promos, campaigns, orders, and order detail pages still work.
+- Do not rebuild the admin dashboard.
+- Do not remove admin routes.
+
+File organization requirements:
+- Follow existing client domain patterns:
+  - view/page files stay thin
+  - composables own stateful behavior
+  - API files own HTTP calls
+  - mappers own shape conversion
+  - validators own validation
+  - components stay focused
+  - shared utilities only go into shared folders when reused across domains
+- Follow existing server architecture:
+  - route → controller → service → repository → Prisma where applicable
+  - Better Auth handler can use the official pattern, but account/order wrappers should stay organized by domain
+- Do not create oversized god files.
+- Do not create micro-components for trivial markup.
+- Prefer Lego-like, readable modules that are easy to test and debug.
+- Suggested client organization:
+  - `client/src/domains/account/views/`
+  - `client/src/domains/account/components/`
+  - `client/src/domains/account/composables/`
+  - `client/src/domains/account/api/`
+  - `client/src/domains/account/mappers/`
+  - `client/src/domains/account/validators/`
+  - `client/src/domains/auth/` only if the project already separates auth from account UI
+- Suggested server organization:
+  - `server/src/domains/auth/` for Better Auth config, auth helpers, and session utilities
+  - `server/src/domains/account/` for customer account APIs
+  - `server/src/domains/emails/` for future email event builders/provider abstractions
+  - `server/src/domains/orders/` for order linking/history updates
+- Update `docs/architecture/file-map.md` and `PROJECT_HANDOFF.md` when new account/auth/email files are added.
+
+UI/UX requirements:
+- Keep account pages clean and simple.
+- Use existing visual language/components when possible.
+- Do not redesign the entire storefront/header.
+- Account creation should make it clear checkout can still be done as guest.
+- Checkout may offer a soft prompt such as creating an account after order completion, but it must not block purchase.
+- Customer-facing pages should use customer-friendly order references, not giant raw internal ids when avoidable.
+
+Testing and verification requirements:
+- Run client build.
+- Run server build or targeted server syntax/import checks.
+- Run `npx prisma generate` if Prisma changes.
+- Run available tests.
+- Run new auth/account tests if added.
+- Verify customer account creation locally.
+- Verify sign in locally.
+- Verify session persists after refresh while valid.
+- Verify sign out clears the session.
+- Verify protected account routes redirect when logged out.
+- Verify account dashboard loads when logged in.
+- Verify account order history only shows the authenticated user’s orders or safely verified-email-matched guest orders.
+- Verify guest checkout still works.
+- Verify logged-in checkout still works.
+- Verify logged-in checkout links the order to the authenticated user server-side.
+- Verify admin login/admin dashboard still works if custom admin auth remains.
+- Verify no `.env.example` files are created unless explicitly requested.
+- Verify no secrets are documented or committed.
+- Verify deployment notes include Vercel/Railway origin and cookie expectations.
+
+Required docs updates:
+- Update `PROJECT_HANDOFF.md` with:
+  - Better Auth files added
+  - account pages added
+  - database migrations added
+  - order linking behavior
+  - email-service readiness files/placeholders
+  - env variable names only
+  - verification results
+  - remaining risks
+  - next recommended phase
+- Update architecture docs if they exist:
+  - `docs/architecture/auth-roadmap.md`
+  - `docs/architecture/database.md`
+  - `docs/architecture/data-flow.md`
+  - `docs/architecture/file-map.md`
+  - `docs/architecture/admin.md` if admin auth behavior changes
+- If docs contain Mermaid diagrams, verify Mermaid syntax/rendering according to the Documentation Rendering / Mermaid Verification Requirement.
+
+Required final report from the agent:
+1. Better Auth infrastructure added.
+2. Client account UI pages/components added.
+3. Server auth/account/email files added.
+4. Database models/migrations added.
+5. Checkout/order linking behavior implemented.
+6. Email-service readiness work completed.
+7. Whether admin auth is still custom or migrated.
+8. Commands run and results.
+9. Manual QA completed and remaining manual QA.
+10. Remaining risks.
+11. Next safest phase.
+
+Do not commit or push unless explicitly asked.
+## Better Auth Addendum: Account Lifecycle, Support, Reviews, Loyalty, and Notifications
+
+When the user asks to start or continue Better Auth/customer accounts work, the agent must include these additional requirements along with the main Better Auth / Customer Accounts Infrastructure Requirement.
+
+Account lifecycle requirements:
+- Add logged-in password change support if Better Auth supports it cleanly.
+- Keep logged-in password change separate from forgot/reset password.
+- Prepare a safe account deactivation/deletion flow.
+- Do not hard-delete customer order history.
+- If deletion is requested later, preserve required order records and remove/anonymize only customer profile data where appropriate.
+- Account deactivation should prevent login or mark the customer inactive without destroying order records.
+- Document what is implemented now versus what is future/planned.
+
+Admin role safety requirements:
+- Public signup must never create admin accounts.
+- Admin role assignment must occur through seed data, manual DB assignment, protected scripts, or future admin-only tooling.
+- Do not add any public UI, route, payload field, query param, or hidden form value that lets a customer choose `ADMIN`.
+- If a seed/protected script is added, document required env variable names only and do not include real secrets.
+
+Customer support/order-help requirements:
+- Add customer support/order-help readiness from account order detail pages.
+- Add a `Need help with this order?` entry point or placeholder on customer order detail.
+- Support-ready data should include customer email, customer name if available, customer-friendly order reference, internal order id for server/admin use, order status, and customer message.
+- Do not expose private order data to another customer through support/order-help routes.
+- Prepare future email/ticket payload builders without sending real support emails unless a real provider is configured and explicitly enabled.
+
+Review readiness requirements:
+- Prepare review eligibility rules for future order reviews.
+- Reviews should only be allowed for delivered orders.
+- Reviews should only be allowed for purchased items/order items.
+- Prepare or document one-review-per-order-item enforcement for a future phase.
+- Review buttons/placeholders must not appear as functional unless the backend eligibility and persistence exist.
+- If shown now, review UI must be clearly marked as future/planned or disabled until implemented.
+
+Customer address-book requirements:
+- Prepare customer address-book readiness.
+- Support a default shipping address if implemented now.
+- Prepare for multiple saved addresses in future phases.
+- Checkout may prefill address data for logged-in users only when safely available.
+- Guest checkout must remain available and must not depend on saved addresses.
+
+Failure-state requirements:
+- Add clear customer-facing states for invalid credentials, duplicate account email, expired session, unverified email, empty order history, order not found, unauthorized order access, account deactivated if implemented, and email service not configured when verification/reset email is requested in development.
+- Avoid leaking whether an email exists during reset/lookup flows unless Better Auth handles this safely.
+
+Mobile account UX requirements:
+- Verify account nav/header behavior works on mobile and desktop.
+- Mobile header/account menu must correctly show logged-out and logged-in states.
+- Mobile sign out must clear the same session as desktop sign out.
+
+Loyalty/rewards foundation requirements:
+- Do not fully build loyalty unless the user explicitly asks.
+- Prepare schema/docs/extension points so the customer account system can support future loyalty without a major rewrite.
+- Future-ready concepts may include loyalty ledger, points balance, rewards history, referral codes, referral rewards, and customer reward balance.
+- If no loyalty models are added now, document the recommended future models and where they should live.
+- Do not award real points or expose loyalty balances unless the rules are implemented and verified.
+
+Notification-center foundation requirements:
+- Do not fully build a notification center unless the user explicitly asks.
+- Prepare docs/extension points for future account notifications.
+- Future notification types may include order status updates, tracking updates, review reminders, loyalty/reward notices, referral notices, and marketing preference updates.
+- If notification files are added, keep them small and domain-organized.
+- If notification files are not added, document the planned architecture clearly.
+
+Additional rate-limit/security requirements:
+- Rate-limit or explicitly document missing rate limits for sign in, create account, password reset, resend verification, support/order-help requests, and account deletion/deactivation requests.
+- Verify unauthorized users cannot access another customer's order detail by manipulating URLs.
+- Verify unverified users cannot claim old guest orders through email matching alone.
+- Verify support/review placeholders do not expose private order information.
+
+Required verification additions:
+- Verify account empty states render correctly.
+- Verify session-expired behavior recovers or redirects cleanly.
+- Verify mobile account nav/header behavior works.
+- Verify deactivated/deleted account behavior is safe if implemented, or clearly documented as a placeholder if deferred.
+- Verify customer support/order-help routes or placeholders do not expose another customer's order data.
+- Verify review placeholders do not expose another customer's order items.
+
+Required final report additions:
+- Account lifecycle readiness status.
+- Password change readiness status.
+- Account deactivation/deletion readiness status.
+- Customer support/order-help readiness status.
+- Review eligibility readiness status.
+- Address-book readiness status.
+- Loyalty/rewards foundation status.
+- Notification-center foundation status.
+## Better Auth Addendum: Admin Customer Account Management Dashboard
+
+When Better Auth/customer accounts are introduced, the agent must also prepare admin-side customer account management inside the existing admin dashboard. Customer accounts should not be managed through a separate disconnected tool unless the user explicitly asks for that later.
+
+Primary goal:
+- Add a new admin customer/accounts area to the existing admin dashboard so the business can view and manage customer accounts, linked orders, account status, and future loyalty/support/review data.
+- Preserve the current admin dashboard UX, route protection, products, promos, campaigns, and orders pages.
+- Do not rebuild the admin dashboard from scratch.
+- Do not weaken admin auth to make customer management work.
+
+Admin account management routes/pages:
+- Add or prepare admin routes such as:
+  - `/admin/customers`
+  - `/admin/customers/:id`
+  - `/admin/customers/:id/orders`
+  - `/admin/customers/:id/support` if support tooling is implemented or stubbed
+  - `/admin/customers/:id/reviews` if review tooling is implemented or stubbed
+  - `/admin/customers/:id/rewards` if loyalty tooling is implemented or stubbed
+- Add these routes to the existing admin navigation/sidebar/header in a way that matches current admin UX.
+- Do not expose customer management routes to non-admin users.
+
+Admin customer list requirements:
+- Show customer/account list with useful columns such as:
+  - customer name
+  - email
+  - email verified status
+  - role
+  - account status
+  - created date
+  - last session or last login if available
+  - total orders
+  - lifetime spend if safely derivable
+  - latest order date if safely derivable
+- Add search/filter by name, email, role, verification status, and account status where practical.
+- Add empty/loading/error states.
+- Keep the list performant and paginated or limit-ready if the dataset can grow.
+
+Admin customer detail requirements:
+- Show customer profile/account summary.
+- Show verified email status.
+- Show account status such as active, inactive, deactivated, or banned/suspended if implemented.
+- Show linked order history.
+- Show older guest orders matched by verified email only when safe.
+- Show lifetime spend/order count if safely calculated server-side.
+- Show saved addresses if implemented.
+- Show marketing/email preference status if implemented.
+- Show support/order-help history or placeholder.
+- Show review history/eligibility or placeholder.
+- Show loyalty/rewards summary or placeholder.
+- Show referral summary or placeholder.
+- Show account audit/activity notes if implemented.
+
+Admin customer tools/actions:
+- Allow safe admin actions only when supported by backend authorization and audit logic.
+- Potential actions may include:
+  - view customer orders
+  - open an order detail
+  - deactivate/reactivate account
+  - resend verification email if email service is configured
+  - trigger password reset email if email service is configured
+  - update customer notes/internal notes if implemented
+  - adjust role only through a protected admin-only flow, never public signup
+  - view support/order-help requests
+- Do not add destructive customer delete actions by default.
+- Do not allow admins to see passwords, password hashes, raw sessions, verification tokens, or Better Auth internals.
+- Do not allow public users to self-promote or request admin role through customer UI.
+
+Admin customer server/API requirements:
+- Add admin-only customer/account APIs under the existing server route/controller/service/repository pattern where applicable.
+- Customer admin APIs must require admin auth.
+- Server must enforce role checks; client route guards alone are not enough.
+- Do not return password hashes, session ids, verification tokens, raw auth provider secrets, or private payment details.
+- Return safe customer summaries and detail DTOs/mappers.
+- Add pagination/search/filter support where practical.
+- Use server-side calculations for lifetime spend/order counts when included.
+- Keep admin customer endpoints separate from customer self-service account endpoints.
+
+Customer/account ownership rules:
+- Customer self-service account pages can only access the current authenticated customer.
+- Admin customer pages can access all customers only through admin-protected routes.
+- Guest orders should only be associated with accounts through verified-email matching rules.
+- Admin views may show potential email matches, but must clearly distinguish confirmed linked orders from possible guest matches if email is not verified.
+
+Audit and safety requirements:
+- Prepare or document customer account audit logging for sensitive actions such as role change, account deactivation, account reactivation, email resend, password reset trigger, and admin notes.
+- Until Better Auth admin-user attribution exists, use a clear placeholder attribution such as `ADMIN_ENV` or document why attribution is deferred.
+- Do not pretend real admin-user attribution exists before admin users are migrated to Better Auth.
+- Sensitive actions should require explicit button clicks, not instant changes from dropdowns.
+- Add confirmation prompts for deactivate/reactivate or any destructive-looking action.
+
+File organization suggestions:
+- Client admin customer files should follow existing admin domain patterns, for example:
+  - `client/src/domains/admin/views/AdminCustomersView.vue`
+  - `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+  - `client/src/domains/admin/components/AdminCustomersTable.vue`
+  - `client/src/domains/admin/components/AdminCustomerSummaryCard.vue`
+  - `client/src/domains/admin/components/AdminCustomerOrdersPanel.vue`
+  - `client/src/domains/admin/components/AdminCustomerStatusBadge.vue`
+  - `client/src/domains/admin/api/adminCustomers.api.js`
+  - `client/src/domains/admin/composables/useAdminCustomers.js`
+  - `client/src/domains/admin/composables/useAdminCustomerDetail.js`
+  - `client/src/domains/admin/mappers/adminCustomers.mapper.js`
+  - `client/src/domains/admin/validators/adminCustomers.validator.js` if needed
+- Server admin customer files should follow existing domain patterns, for example:
+  - `server/src/domains/customers/routes/adminCustomers.routes.js`
+  - `server/src/domains/customers/controllers/adminCustomers.controller.js`
+  - `server/src/domains/customers/services/adminCustomers.service.js`
+  - `server/src/domains/customers/repositories/adminCustomers.repository.js`
+  - `server/src/domains/customers/mappers/adminCustomers.mapper.js`
+  - `server/src/domains/customers/validators/adminCustomers.validator.js` if needed
+- Use existing admin shared components and admin UI patterns where possible.
+- Keep pages thin and move business logic into composables/services/mappers.
+- Do not create one giant customer dashboard file.
+
+Recommended implementation order:
+1. Implement Better Auth customer account foundation.
+2. Add customer self-service account pages and order linking.
+3. Add admin customer list and detail read-only dashboard.
+4. Add safe customer actions such as deactivate/reactivate only after backend authorization and audit behavior are clear.
+5. Add email-trigger actions only after the email provider abstraction is ready and disabled/enabled safely by configuration.
+6. Add loyalty/reviews/support tooling as future extensions unless the user explicitly asks to fully implement them now.
+
+Required verification:
+- Run client build.
+- Run server build or syntax/import checks for changed server files.
+- Run Prisma generate if schema changes.
+- Verify admin customer routes are protected.
+- Verify non-admin/customer users cannot access admin customer APIs.
+- Verify admin customer list loads.
+- Verify admin customer detail loads.
+- Verify customer detail does not expose password hashes, sessions, verification tokens, or private Stripe data.
+- Verify linked orders display correctly.
+- Verify verified-email guest order matching rules are respected.
+- Verify existing admin products, promos, campaigns, orders, and order detail still work.
+- Verify customer self-service account pages still only show the logged-in customer's own data.
+- Update `PROJECT_HANDOFF.md` and architecture docs with admin customer management flows.
+
+Required final report additions:
+- Admin customer management pages/routes added.
+- Admin customer APIs added.
+- Customer management actions implemented or deferred.
+- Sensitive data excluded from admin responses.
+- Account/order linking behavior visible in admin.
+- Verification results for admin route/API protection.
+- Remaining customer management risks and next safest phase.
+## Better Auth Addendum: Future Admin Permissions and Operations
+
+When implementing Better Auth, customer accounts, or admin customer management, the architecture must be prepared for future role-based permissions even if only CUSTOMER and ADMIN are implemented initially.
+
+Phase 1 roles:
+- CUSTOMER
+- ADMIN
+
+Future-ready roles:
+- OWNER
+- ADMIN
+- STAFF
+- SUPPORT
+- MARKETING
+
+Requirements:
+- Implement only CUSTOMER and ADMIN unless explicitly asked otherwise.
+- Design the role architecture so additional roles can be added later without a major refactor.
+- Public signup must always create CUSTOMER only.
+- Only privileged admin workflows may assign elevated roles.
+- Future OWNER role should be able to manage roles and permissions.
+- Future STAFF role should focus on fulfillment and order operations.
+- Future SUPPORT role should focus on customer accounts, orders, and support requests.
+- Future MARKETING role should focus on promos, campaigns, rewards, and notifications.
+- Do not expose payment secrets, auth secrets, password hashes, verification tokens, sessions, or infrastructure settings to non-OWNER roles.
+
+Future admin operations dashboard readiness:
+- Prepare the admin customer management area to support future:
+  - customer notes
+  - internal account flags
+  - support tickets
+  - review moderation
+  - loyalty adjustments
+  - referral management
+  - notification history
+  - account activity history
+- Do not fully implement these systems unless explicitly requested.
+- Document extension points and recommended future architecture.
+
+Verification:
+- Verify CUSTOMER cannot access admin routes.
+- Verify ADMIN-only routes require server-side authorization.
+- Verify future role expansion can be added without redesigning auth architecture.
+## Customer Experience Architecture Standards
+
+When implementing storefront, checkout, customer accounts, Better Auth, loyalty, referrals, reviews, tracking, notifications, email automation, subscriptions, or any other customer-facing feature, the agent must treat the work as part of one connected customer experience platform.
+
+Primary goal:
+- Make customer accounts and customer tools feel like a natural extension of the Chase & Evie Co. storefront, not a separate portal or disconnected SaaS dashboard.
+- Improve clarity, trust, retention, repeat purchases, and ease of navigation.
+- Preserve the existing storefront brand, layout language, and shopping-first experience.
+
+Customer accounts are store features:
+- Reuse the storefront shell when practical.
+- Reuse the storefront header.
+- Reuse the storefront footer.
+- Reuse storefront navigation patterns.
+- Reuse storefront typography, spacing, cards, button styles, and visual language.
+- Account pages should feel connected to browsing products, cart, checkout, and order history.
+- Avoid generic SaaS-style dashboards, blank portal screens, or account pages that make the customer feel they left the store.
+
+Customer identity visibility standards:
+- Customers should always understand whether they are signed in, signed out, or checking out as a guest.
+- The main site header should include a clear account entry point.
+- Guest state should make Sign In and Create Account available without blocking shopping.
+- Authenticated state should show the customer first name, initials, or another friendly account cue when available.
+- Authenticated state should make Account, Orders, and Sign Out easy to find.
+- Mobile and desktop account navigation must have parity.
+- Account state must never be ambiguous.
+
+Ecommerce account standards:
+- Account creation should be presented as a shopping convenience, not a technical auth workflow.
+- Customer-facing copy should emphasize useful benefits such as faster checkout, order history, future tracking, future rewards, future loyalty, and future referrals.
+- Avoid technical auth jargon on customer-facing pages when plain ecommerce language is clearer.
+- Public signup must always create CUSTOMER accounts only.
+- Never expose role, status, admin, session, token, or Better Auth internal fields in customer-facing forms.
+
+Checkout identity standards:
+- Checkout must clearly communicate whether the customer is signed in or checking out as a guest.
+- Guest checkout must remain available and obvious.
+- If signed in, checkout should show a small signed-in indicator such as `Signed in as ...`.
+- If signed in, checkout should explain when profile details were prefilled from the account.
+- If signed in, checkout may hide or adjust redundant `save my information` or marketing opt-in prompts when those preferences are already managed in the account.
+- If guest, checkout should offer a helpful sign-in/create-account card without blocking purchase.
+- Sign-in prompts should be reusable, simple, and conversion-friendly.
+
+Customer account UX standards:
+- Account overview should provide a helpful summary, not a blank dashboard.
+- Account dashboard should consider showing greeting, profile status, verified email status, recent order, order count, lifetime spend, and quick links.
+- Profile pages should support useful customer details such as first name, last name, phone, marketing preferences, and future address readiness.
+- Email changes should not be exposed unless verification and security flows are implemented safely.
+- Account pages must include loading, empty, error, success, expired-session, unverified-email, and unauthorized states where relevant.
+- Future cards such as loyalty, tracking, reviews, referrals, and notifications should look intentional and polished, not broken or unfinished.
+
+Order history and order detail standards:
+- Order lists should be easy to scan.
+- Order cards should consider showing order reference, status badge, placed date, total, item count, product preview if available, and a clear detail link.
+- Order detail pages should include customer-useful information:
+  - order reference
+  - order status
+  - payment status if available
+  - placed date
+  - customer contact info
+  - shipping details if available
+  - item list with product, variant, quantity, unit price, and line total
+  - pricing breakdown: subtotal, discount, shipping, tax, donation/campaign, and total
+  - promo code if used
+  - tracking/status timeline readiness
+  - `Need help with this order?` support entry point
+  - future review eligibility/readiness
+- Customer order pages must never expose another customer’s order data.
+- Customer-facing pages should use friendly order references when possible instead of raw internal ids.
+
+Admin customer management UX standards:
+- Admin customer management should live inside the existing admin dashboard unless the user explicitly asks for a separate tool.
+- Admin customer views should remain consistent with existing admin products, promos, campaigns, and orders UX.
+- Admin customer list/detail should be useful operationally, not just decorative.
+- Admin customer tools should prepare for viewing customer profile, linked orders, verified-email status, account status, order count, lifetime spend, support readiness, review readiness, loyalty readiness, referral readiness, and internal notes readiness.
+- Do not expose password hashes, sessions, verification tokens, Better Auth internals, Stripe secrets, private payment data, or infrastructure settings through admin customer views.
+- Sensitive admin actions should use server-side authorization and should not rely on client route guards alone.
+
+Customer journey review requirement:
+- Before closing any major customer-facing phase, the agent must review the customer journey:
+  - guest browse
+  - add to cart
+  - checkout
+  - sign in or continue as guest
+  - order confirmation
+  - account creation/sign in
+  - order history
+  - repeat purchase
+- Identify friction, confusing navigation, duplicate data entry, dead ends, retention opportunities, and places where account state is unclear.
+- Fix small verified UX issues within scope or document them clearly as next-phase work.
+
+Customer retention readiness:
+- Customer-facing features should be evaluated for future retention and repeat-purchase value.
+- Consider future support for loyalty, rewards, referrals, email automation, review requests, reorder flows, customer segmentation, and notifications.
+- Do not fully build these future systems unless explicitly requested.
+- Create or document clean extension points so future features do not require major rewrites.
+
+Better Auth Infrastructure readiness:
+- When Better Auth Infrastructure is introduced, document exactly where the server plugin is installed, where the client plugin is installed if used, which package was added, which environment variable names are required, and which values belong in Railway versus Vercel.
+- Never expose real API keys, auth secrets, tokens, sessions, database URLs, Stripe secrets, or password hashes.
+- Do not create `.env.example` files unless explicitly requested.
+- Local `.env` placeholders may be added only if consistent with existing project policy and must not contain real secrets.
+
+Customer UX review pass requirement:
+- After any major customer-account, checkout, order, tracking, review, loyalty, notification, or email-related phase, the agent must perform and document:
+  - UX review
+  - navigation review
+  - mobile review
+  - retention review
+  - checkout-to-account review
+  - account-to-checkout review
+  - customer trust/security review
+- Update `PROJECT_HANDOFF.md` with what was improved, what was verified, what remains rough, and the next safest customer-experience phase.
+
+Verification requirements for customer experience work:
+- Run client build.
+- Run server build/syntax checks if server files changed.
+- Run tests if available.
+- Verify guest checkout still works.
+- Verify signed-in checkout still works if auth/account files are touched.
+- Verify mobile account/header behavior if navigation/header files are touched.
+- Verify account pages feel connected to the storefront through header/footer/navigation where practical.
+- Verify admin customer pages remain protected if touched.
+- Verify no secrets are added to source, docs, logs, or sample files.
+
+Required final report additions:
+- Customer experience changes made.
+- Account/storefront continuity improvements.
+- Checkout identity improvements.
+- Order detail/order history improvements.
+- Admin customer management UX changes, if any.
+- Better Auth Infrastructure connection/documentation changes, if any.
+- Commands run and results.
+- Remaining UX risks.
+- Next recommended customer-experience phase.
+## Customer Account UX Repair Requirement
+
+When the user reports customer account UX issues after Better Auth/customer accounts are implemented, the agent must treat the task as a focused customer-experience repair pass, not a broad auth rewrite or redesign.
+
+Primary goal:
+- Fix verified account, header, checkout identity, account menu, profile, and customer order UX issues while preserving the existing Better Auth infrastructure, guest checkout, checkout order creation, admin dashboard, and storefront design.
+
+Known UX issues to audit and fix:
+- Account pages may not fully reuse the same live storefront header state as the main page.
+- Cart count/items in the main header may not carry over correctly when visiting account pages.
+- Account menu/dropdown may close when the pointer moves between the account button and dropdown because of a hover gap.
+- Account overview menu may include redundant actions such as Checkout when the cart button already exists elsewhere.
+- Account profile may mention marketing preferences or faster checkout without providing clear editable controls.
+- Checkout guest sign-in may navigate away to the sign-in page and fail to return customers to checkout after login.
+- Checkout should allow a quick sign-in/create-account option without forcing customers to leave checkout when practical.
+- Customer account overview may show too many recent orders and stretch the profile card/layout.
+- Full order history should live under the Orders tab/page, while overview should show only recent orders.
+
+Header/storefront continuity requirements:
+- Account pages must reuse the same main site header component/state as the storefront whenever practical.
+- Cart count must remain accurate on account pages, checkout pages, and storefront pages.
+- Header account state must remain accurate on account pages, checkout pages, and storefront pages.
+- Do not create a fake account-page-only header that drifts from the real storefront header.
+- Preserve mobile and desktop header behavior.
+
+Account menu/dropdown requirements:
+- Fix hover/click usability so the account dropdown does not disappear when moving the pointer from the account trigger to the menu.
+- Prefer click-to-toggle with outside-click close, or a hover-safe bridge/padding area, over fragile hover-only behavior.
+- Account menu must be keyboard-accessible where practical.
+- Account menu should not include redundant Checkout if the cart/checkout control already exists in the header.
+- Suggested menu items for signed-in users:
+  - Account overview
+  - Orders
+  - Profile
+  - Sign out
+- Suggested menu items for guests:
+  - Sign in
+  - Create account
+- Avoid overcrowding the menu with actions duplicated elsewhere.
+
+Profile and preference requirements:
+- If the UI says marketing preferences are managed in the account profile, the profile page must actually expose the marketing preference control.
+- If the UI says faster checkout is supported, the profile/account page should expose the relevant saved customer details or clearly state what is saved now versus future.
+- Profile page should support clear controls for:
+  - first name
+  - last name
+  - phone
+  - marketing opt-in/out
+  - email display and verification status
+  - saved checkout information readiness
+  - future address readiness if full addresses are not implemented yet
+- Do not allow unsafe email changes unless verification flow is implemented.
+
+Checkout quick-auth requirements:
+- Guest checkout must remain available.
+- If a guest clicks sign in during checkout, returning to checkout after successful sign-in must work.
+- Preserve redirect query/state such as `redirect=/checkout` when using a full sign-in page.
+- Prefer adding a reusable checkout quick-auth card/modal/drawer so guests can sign in or create an account without leaving checkout when practical.
+- Quick-auth must use the existing Better Auth APIs and must not create a separate auth system.
+- Quick-auth must support loading, error, success, and close/cancel states.
+- After quick sign-in/create-account, checkout should refresh session/profile state and safely prefill blank fields.
+- Do not force account creation before purchase.
+
+Customer order overview/list requirements:
+- Account overview should show only a small number of recent orders, such as the latest 2 or 3.
+- Full order history belongs under `/account/orders`.
+- If many orders exist, the overview layout must not stretch the profile card into a large empty column.
+- Orders page should support a scalable layout for long histories, such as pagination, load more, or a scrollable list if appropriate.
+- Order cards should remain easy to scan and should not break the page height/layout.
+
+Layout requirements:
+- Fix uneven account overview card heights if recent orders make the profile card look awkward or overly tall.
+- Keep account dashboard responsive and balanced.
+- Preserve the Chase & Evie Co. visual language.
+- Do not redesign the whole storefront or checkout.
+
+Audit before editing:
+1. Main header/layout component used by storefront.
+2. Account shell/layout component.
+3. Cart state/store/composable used by header.
+4. Account auth composable/session state.
+5. Account dropdown/menu behavior on desktop and mobile.
+6. Account profile view and profile API payloads.
+7. Checkout guest sign-in/create-account prompt.
+8. Sign-in/create-account redirect handling.
+9. Recent orders account overview rendering.
+10. Full account orders page rendering.
+
+Rules:
+- Do not rebuild Better Auth.
+- Do not rebuild checkout.
+- Do not rebuild admin.
+- Do not change order ownership/security rules unless a verified bug requires it.
+- Do not add new database schema unless absolutely required for saved profile/preference controls.
+- Do not remove guest checkout.
+- Do not commit or push unless explicitly asked.
+
+Required verification:
+- Run client build.
+- Run client tests if available.
+- Run server checks/tests only if server files change.
+- Verify storefront header cart count and account state work on the homepage.
+- Verify account pages show the same cart count/account state as the main storefront.
+- Verify account dropdown can be opened and menu items clicked without disappearing from a hover gap.
+- Verify Checkout is removed from account menu if redundant.
+- Verify profile page exposes marketing opt-in/out and saved-checkout readiness controls/copy.
+- Verify guest checkout still works.
+- Verify checkout sign-in returns to checkout or quick-auth works without leaving checkout.
+- Verify signed-in checkout prefill still works.
+- Verify account overview shows only recent orders and full order history remains under Orders.
+- Verify mobile account/header behavior.
+- Update PROJECT_HANDOFF.md with fixes, verification, remaining UX risks, and next recommended customer-experience step.
+
+Required final report additions:
+- Account/header continuity fixes.
+- Account dropdown/menu usability fixes.
+- Profile/preference fixes.
+- Checkout quick-auth or redirect fixes.
+- Order overview/list scalability fixes.
+- Commands run and results.
+- Remaining risks.
+## Customer Account UX, Retention, and Conversion Requirements
+
+When working on customer accounts, checkout, customer authentication, loyalty, order history, or profile management, the agent must prioritize customer retention, repeat purchases, checkout completion rate, and long-term account usability.
+
+The goal is not simply to make accounts functional.
+
+The goal is to create an account experience that feels like a modern ecommerce platform and encourages repeat purchases.
+
+### Verified UX Issues To Fix
+
+- Account pages must use the same live storefront shell as the homepage.
+- Cart count and cart state must remain synchronized between storefront, account pages, and checkout.
+- Account dropdown must not disappear because of hover gaps.
+- Remove redundant Checkout from the account dropdown.
+- Profile must expose editable marketing preferences.
+- Profile must expose saved-checkout readiness.
+- Guest checkout sign-in must preserve checkout progress.
+- Prefer inline quick-auth modal/drawer instead of redirecting away from checkout.
+- Account overview should show only recent orders.
+- Full order history belongs in Orders.
+- Prevent order lists from stretching dashboard/profile cards.
+
+### Storefront Shell Consistency
+
+Requirements:
+
+- Same SiteHeader.
+- Same SiteFooter.
+- Same cart state.
+- Same search state.
+- Same customer session state.
+- Same account dropdown behavior.
+
+Customers should never feel like they left the storefront.
+
+### Account Dropdown Stability
+
+Requirements:
+
+- No hover gaps.
+- No dead zones.
+- Cursor can travel from trigger to menu without closing.
+- Mobile uses click behavior.
+- Desktop uses hover-safe or click-safe behavior.
+- Close only on outside click, escape key, or menu selection.
+
+### Checkout Authentication UX
+
+Requirements:
+
+- Inline sign in.
+- Inline create account.
+- Modal or drawer authentication preferred.
+- Preserve cart state.
+- Preserve checkout progress.
+- Preserve entered fields.
+- Preserve promo state.
+- Preserve campaign state.
+
+If redirects are used:
+
+- Return customer to exact checkout location.
+- Restore checkout state.
+
+### Customer Dashboard Improvements
+
+The account dashboard should evolve toward a modern ecommerce customer portal.
+
+Future-ready requirements:
+
+1. Welcome Back Experience
+- Show customer first name when available.
+- Example: Welcome back, Aaron.
+
+2. Dashboard Quick Actions
+- Continue Shopping.
+- View Orders.
+- Edit Profile.
+- Buy Again (future-ready).
+
+3. Dashboard Metrics
+- Orders count.
+- Lifetime spend.
+- Loyalty status placeholder.
+- Last order date (future-ready).
+
+4. Better Empty States
+- If customer has no orders, provide a storefront call-to-action.
+- Example: Shop Treats.
+
+### Order Experience Requirements
+
+Requirements:
+
+- Account overview shows only latest 2–3 orders.
+- Full history remains under Orders.
+- Orders page must scale through pagination, load-more, or equivalent.
+- Order cards should remain easy to scan.
+- Prevent dashboard layout stretching.
+
+Future-ready improvements:
+
+- Order search.
+- Order filtering.
+- Buy Again actions.
+- Order timeline.
+
+### Customer-Friendly Order References
+
+Avoid exposing large raw references when possible.
+
+Preferred customer-facing formats:
+
+- #1024
+- DGE-1024
+
+Admin may continue using internal identifiers when required.
+
+### Profile Requirements
+
+Current editable fields:
+
+- First name.
+- Last name.
+- Phone.
+- Marketing preferences.
+
+Display:
+
+- Email.
+- Verification status.
+
+Future-ready:
+
+- Saved addresses.
+- Default shipping address.
+- Default billing address.
+- Delivery instructions.
+
+### Saved Address Foundation
+
+Future account architecture should support:
+
+- Multiple saved addresses.
+- Default shipping address.
+- Default billing address.
+
+Checkout should eventually prefill from saved addresses.
+
+### Reorder Foundation
+
+Future support:
+
+- Buy Again.
+- Rebuild Cart.
+- Repeat Previous Order.
+
+### Loyalty Foundation
+
+Reserve dashboard space and architecture for:
+
+- Loyalty points.
+- Rewards.
+- Referrals.
+- VIP tiers.
+
+### Wishlist Foundation
+
+Future support:
+
+- Favorites.
+- Saved products.
+- Wishlist-to-cart flow.
+
+### Customer Retention Audit Requirement
+
+Before closing any account-related phase, evaluate:
+
+- Checkout friction.
+- Authentication friction.
+- Saved address readiness.
+- Reorder opportunities.
+- Loyalty readiness.
+- Wishlist readiness.
+- Repeat purchase opportunities.
+
+Document recommendations in PROJECT_HANDOFF.md.
+
+### Required Verification
+
+- Verify storefront header matches account pages.
+- Verify cart count remains synchronized.
+- Verify account dropdown does not disappear.
+- Verify profile marketing preferences are editable.
+- Verify checkout quick-auth works.
+- Verify checkout progress survives authentication.
+- Verify account overview remains compact.
+- Verify Orders page remains the source of full history.
+- Verify mobile account UX.
+- Update PROJECT_HANDOFF.md with fixes, risks, and next recommendations.
+## Customer Accounts / Retention / Conversion Optimization Requirement
+
+When working on Better Auth, customer accounts, profile management, checkout identity, order history, loyalty, referrals, or saved customer information, the goal is not simply account functionality.
+
+The goal is to improve:
+
+- Repeat purchases
+- Checkout conversion
+- Customer retention
+- Order visibility
+- Account usability
+- Future loyalty readiness
+
+### Storefront Consistency
+
+Customer account pages must feel like part of the storefront.
+
+Requirements:
+
+- Same SiteHeader.
+- Same SiteFooter.
+- Same cart state.
+- Same search state.
+- Same account state.
+- Same navigation patterns.
+
+Customers should never feel like they left the store.
+
+### Account Dropdown Requirements
+
+Requirements:
+
+- No hover gaps.
+- No accidental dismissal.
+- Desktop and mobile friendly.
+- Close only on outside click, escape, or menu selection.
+
+Preferred menu:
+
+- Account Overview
+- Orders
+- Profile
+- Sign Out
+
+Do not duplicate Checkout navigation.
+
+### Welcome Back Experience
+
+Dashboard should feel personalized.
+
+Requirements:
+
+- Welcome back, {firstName}
+- Friendly account summary
+- Personalized experience when possible
+
+### Dashboard Quick Actions
+
+Dashboard should include:
+
+- Continue Shopping
+- View Orders
+- Edit Profile
+- Future Buy Again action
+
+Reduce navigation friction.
+
+### Dashboard Metrics
+
+Preferred customer metrics:
+
+- Orders count
+- Lifetime spend
+- Loyalty placeholder
+- Future last order date
+
+Avoid low-value metrics.
+
+### Better Empty States
+
+When no orders exist:
+
+- Provide storefront CTA.
+- Encourage browsing.
+- Keep dashboard visually balanced.
+
+Example:
+
+No orders yet
+
+Shop Treats →
+
+### Orders Experience
+
+Requirements:
+
+- Dashboard shows recent orders only.
+- Full history belongs under Orders.
+- Orders page must scale.
+
+Future-ready support:
+
+- Search
+- Filtering
+- Pagination
+- Infinite scroll
+- Buy Again
+
+### Customer-Friendly Order References
+
+Avoid exposing large raw internal identifiers.
+
+Preferred formats:
+
+- #1024
+- DGE-1024
+
+Admin may continue using internal identifiers.
+
+### Order Timeline Foundation
+
+Future-ready support:
+
+- Order Placed
+- Preparing
+- Shipped
+- Delivered
+
+### Saved Address Foundation
+
+Prepare architecture for:
+
+- Multiple saved addresses
+- Default shipping address
+- Default billing address
+- Checkout auto-prefill
+
+### Reorder Foundation
+
+Future support:
+
+- Buy Again
+- Rebuild Cart
+- Repeat Previous Order
+
+Architecture should preserve order-to-cart reconstruction.
+
+### Checkout Authentication UX
+
+Preferred behavior:
+
+- Inline sign in
+- Inline account creation
+- Modal or drawer authentication
+- Preserve checkout progress
+- Preserve cart state
+- Preserve promo state
+- Preserve entered fields
+
+Avoid redirecting users away from checkout when possible.
+
+### Checkout Benefits Messaging
+
+Guest customers should understand account benefits.
+
+Examples:
+
+- Track orders
+- Faster checkout
+- Saved addresses
+- Future rewards
+
+### Loyalty Foundation
+
+Reserve future support for:
+
+- Points
+- Rewards
+- Referrals
+- VIP tiers
+
+### Wishlist Foundation
+
+Reserve future support for:
+
+- Favorites
+- Saved products
+- Wishlist-to-cart flows
+
+### Customer Retention Audit
+
+For every customer account phase, evaluate:
+
+- Checkout friction
+- Authentication friction
+- Saved address readiness
+- Reorder opportunities
+- Loyalty readiness
+- Wishlist readiness
+- Repeat purchase opportunities
+
+Document recommendations in PROJECT_HANDOFF.md.
+
+### Required Verification
+
+- Verify storefront header matches account pages.
+- Verify cart state remains synchronized.
+- Verify dropdown hover/click behavior.
+- Verify profile editing works.
+- Verify marketing preferences persist.
+- Verify checkout authentication flow.
+- Verify checkout state survives authentication.
+- Verify dashboard remains compact.
+- Verify Orders page scales correctly.
+- Verify mobile account UX.
+- Update PROJECT_HANDOFF.md with findings and recommendations.
+## Saved Address / Autofill / Repeat Purchase Requirement
+
+When working on customer accounts, checkout identity, profile management, order history, or customer retention, the agent must treat saved addresses and checkout autofill as high-value account features, not distant placeholders.
+
+Primary goal:
+- Reduce repeat-customer checkout friction.
+- Make customer accounts more useful after sign-up.
+- Prepare the app for repeat purchases, Buy Again, future subscriptions, and future loyalty flows.
+
+### Saved Address Implementation Requirement
+
+Do not leave saved addresses as a placeholder indefinitely.
+
+When customer account UX reaches stabilization, implement the foundation for:
+
+- Multiple saved addresses.
+- Default shipping address.
+- Default billing address.
+- Address nickname support.
+- Checkout address auto-fill.
+- Account address management.
+
+Architecture requirements:
+
+- CustomerProfile remains customer-owned source of truth for profile-level identity data.
+- Saved addresses should be stored separately from orders.
+- Orders must continue storing a historical snapshot of the address used at purchase time.
+- Editing a saved address must not mutate historical order records.
+- Guest checkout must remain available and must not require saved addresses.
+- Do not expose another customer’s saved address data.
+
+Future support:
+
+- Buy Again.
+- Subscription orders.
+- Gift addresses.
+- Multi-address households.
+- Faster checkout for repeat customers.
+
+### Checkout Autofill Requirement
+
+When a signed-in customer has saved profile or address data, checkout should reduce repeated typing.
+
+Checkout should eventually:
+
+- Auto-populate safe contact fields.
+- Auto-populate default shipping fields.
+- Auto-populate default billing fields when supported.
+- Allow selecting another saved address.
+- Allow creating a new address during checkout.
+- Preserve guest checkout behavior.
+- Preserve manually entered checkout fields unless the customer chooses to overwrite them.
+
+The experience should reduce checkout friction and improve conversion.
+
+### Address Book UI Requirement
+
+Customer account navigation should reserve future space for:
+
+- Overview.
+- Orders.
+- Profile.
+- Addresses.
+
+Addresses should eventually become a first-class account area.
+
+Address UI should support or prepare for:
+
+- Address list.
+- Add address.
+- Edit address.
+- Delete/deactivate address.
+- Set default shipping.
+- Set default billing.
+- Clear empty states.
+- Mobile-friendly forms.
+
+### Repeat Purchase Optimization Requirement
+
+Customer accounts should actively support repeat purchases.
+
+Future-ready requirements:
+
+- Buy Again actions.
+- Rebuild Cart from previous order.
+- Quick reorder flow.
+- Recommended products placeholder.
+- Order-to-cart reconstruction compatibility.
+
+Architecture must preserve enough order item data to rebuild a cart safely from historical orders while respecting current product availability, price changes, variants, and inventory.
+
+### Future Subscription Readiness
+
+Do not implement subscriptions unless explicitly requested.
+
+However, customer account, address, order, and reorder architecture should avoid blocking future subscription support.
+
+Future subscription readiness should consider:
+
+- Default shipping address.
+- Default billing address.
+- Customer profile ownership.
+- Repeat order cadence.
+- Subscription-safe order snapshots.
+- Product/variant availability checks.
+
+### Conversion Optimization Review Requirement
+
+Whenever customer account or checkout-account work is performed, evaluate:
+
+- Steps required to checkout.
+- Login friction.
+- Account creation friction.
+- Address entry friction.
+- Repeat purchase friction.
+- Mobile usability.
+- Whether signed-in customers are rewarded with a faster checkout experience.
+
+Document findings and recommendations in `PROJECT_HANDOFF.md`.
+
+### Required Verification
+
+When saved address, autofill, or repeat-purchase code is touched:
+
+- Verify guest checkout still works.
+- Verify signed-in checkout still works.
+- Verify saved profile/address data never overwrites manually entered checkout fields without customer intent.
+- Verify account address pages/routes are protected.
+- Verify customer cannot access another customer’s addresses.
+- Verify historical order address snapshots remain unchanged after editing saved addresses.
+- Verify mobile address/account forms remain usable.
+- Run client build.
+- Run server checks/tests if server files change.
+- Run Prisma generate and migration checks if schema changes.
+- Update `PROJECT_HANDOFF.md` with files changed, data flow, verification, and remaining risks.

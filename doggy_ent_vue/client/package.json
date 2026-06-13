@@ -15,8 +15,10 @@
     "tiertest3": "vitest run tests/tier3"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.2.14",
     "@stripe/stripe-js": "^9.5.0",
     "@tailwindcss/vite": "^4.2.4",
+    "better-auth": "^1.6.18",
     "tailwindcss": "^4.2.4",
     "vue": "^3.5.32",
     "vue-router": "^5.0.6"

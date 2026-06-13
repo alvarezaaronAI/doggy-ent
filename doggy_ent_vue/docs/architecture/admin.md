@@ -1,10 +1,10 @@
 # Admin Architecture
 
-Last updated: 2026-06-07
+Last updated: 2026-06-12
 
 ## Overview
 
-The admin dashboard is a Vue route group protected by a router guard and protected server API routes. It manages products, promos, campaigns, and orders. The current auth system is custom admin auth; Better Auth is future work.
+The admin dashboard is a Vue route group protected by a router guard and protected server API routes. It manages products, promos, campaigns, orders, and customer accounts. The current admin auth system remains custom admin auth; Better Auth currently powers customer accounts and is prepared to replace admin auth in a later permissions phase.
 
 ## Admin Routes
 
@@ -19,6 +19,8 @@ Client routes live in `client/src/app/router/index.js`.
 | `/admin/campaigns` | `AdminCampaignsView.vue` | Protected campaign CRUD. |
 | `/admin/orders` | `AdminOrdersView.vue` | Protected order list. |
 | `/admin/orders/:orderId` | `AdminOrderDetailView.vue` | Protected order detail/status. |
+| `/admin/customers` | `AdminCustomersView.vue` | Protected customer list. |
+| `/admin/customers/:customerId` | `AdminCustomerDetailView.vue` | Protected customer detail, linked orders, readiness actions. |
 
 The router guard calls `/api/auth/me` through `fetchApi`. Server admin API routes must also use `requireAdminAuth`; the client guard is not a security boundary.
 
@@ -171,6 +173,35 @@ Admin order detail shows:
 - Last order update timestamp.
 - Last status change.
 - Full status history.
+
+### Customers
+
+Admin customers use the existing admin auth guard and read Better Auth customer tables through a separate server customers domain.
+
+Primary files:
+
+- `client/src/domains/admin/views/AdminCustomersView.vue`
+- `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+- `client/src/domains/admin/api/adminCustomers.api.js`
+- `client/src/domains/admin/composables/useAdminCustomers.js`
+- `client/src/domains/admin/components/AdminCustomersTable.vue`
+- `client/src/domains/admin/components/AdminCustomerOrdersPanel.vue`
+- `server/src/domains/customers/routes/adminCustomers.routes.js`
+- `server/src/domains/customers/services/adminCustomers.service.js`
+- `server/src/domains/customers/repositories/adminCustomers.repository.js`
+
+Implemented customer admin capabilities:
+
+- Customer list with name, email, verification state, role, account status, created date, order count, lifetime spend, and latest order date.
+- Customer detail with profile summary, linked orders, verified-email guest order matches, activity/events, support/review/loyalty/referral readiness copy, and notification preference visibility through the API.
+- Deactivate/reactivate readiness by updating `User.status` and recording `CustomerAccountEvent`.
+- Resend verification and password reset readiness through the email provider abstraction.
+
+Security constraints:
+
+- Admin customer routes are protected by `requireAdminAuth`.
+- Password hashes, session tokens, and verification token values are not included in admin customer responses.
+- Public customer signup cannot create admin accounts.
 
 ## Manual QA Checklist
 

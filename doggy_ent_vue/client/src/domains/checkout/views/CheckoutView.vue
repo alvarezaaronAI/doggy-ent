@@ -11,6 +11,9 @@ import CheckoutPaymentSection from '@checkout/Checkout/CheckoutPaymentSection.vu
 import CheckoutSubmitSection from '@checkout/Checkout/CheckoutSubmitSection.vue'
 import CheckoutMobileSummaryBar from '@checkout/Checkout/CheckoutMobileSummaryBar.vue'
 import CheckoutOrderSummary from '@checkout/OrderSummary/CheckoutOrderSummary.vue'
+import {
+  fetchAccountProfile,
+} from '@domains/account/api/account.api.js'
 
 import {
   submitCheckout,
@@ -50,6 +53,9 @@ const selectedShipping = ref('standard')
 const campaignPreview = ref([])
 const isLoadingCampaignPreview = ref(false)
 const paymentFormComplete = ref(false)
+const accountProfile = ref(null)
+const accountProfileLoaded = ref(false)
+const profilePrefilled = ref(false)
 
 const mobileSummaryOpen = ref(false)
 
@@ -148,6 +154,10 @@ const checkoutRequirementsComplete = computed(() => {
   )
 })
 
+const isSignedInCheckout = computed(() =>
+  Boolean(accountProfile.value?.id),
+)
+
 const checkoutChecklist = computed(() => [
   {
     id: 'contact',
@@ -209,6 +219,11 @@ function loadSavedCustomer() {
 }
 
 function saveCustomerForNextCheckout() {
+  if (isSignedInCheckout.value) {
+    localStorage.removeItem(CUSTOMER_STORAGE_KEY)
+    return
+  }
+
   if (!customer.value.saveInfo) {
     localStorage.removeItem(CUSTOMER_STORAGE_KEY)
     return
@@ -228,6 +243,49 @@ function saveCustomerForNextCheckout() {
     saveInfo: true,
     marketingOptIn: customer.value.marketingOptIn,
   }))
+}
+
+function applyAccountProfileToCheckout(profile) {
+  if (!profile) {
+    return
+  }
+
+  const accountFields = {
+    email: profile.email || '',
+    firstName: profile.profile?.firstName || '',
+    lastName: profile.profile?.lastName || '',
+    phone: profile.profile?.phone || '',
+    marketingOptIn: Boolean(profile.profile?.marketingOptIn),
+  }
+
+  let changed = false
+
+  for (const [key, value] of Object.entries(accountFields)) {
+    if (
+      value !== ''
+      && !String(customer.value[key] || '').trim()
+    ) {
+      customer.value[key] = value
+      changed = true
+    }
+  }
+
+  customer.value.saveInfo = false
+  profilePrefilled.value = changed
+}
+
+async function loadCheckoutAccountProfile() {
+  try {
+    const profile = await fetchAccountProfile()
+    accountProfile.value = profile
+    applyAccountProfileToCheckout(profile)
+  }
+  catch {
+    accountProfile.value = null
+  }
+  finally {
+    accountProfileLoaded.value = true
+  }
 }
 
 
@@ -480,6 +538,7 @@ watch(
 )
 
 onMounted(() => {
+  loadCheckoutAccountProfile()
   loadCampaignPreview()
   refreshCheckoutPreview()
 })
@@ -547,6 +606,9 @@ onMounted(() => {
             <form class="mt-6 space-y-6" @submit.prevent="placeOrder">
               <CheckoutContactSection
                 :customer="customer"
+                :account-profile="accountProfile"
+                :is-signed-in="isSignedInCheckout"
+                :profile-prefilled="profilePrefilled"
               />
 
               <CheckoutShippingSection
@@ -662,9 +724,12 @@ onMounted(() => {
 
       <CheckoutMobileSummaryBar
         :summary-total="summaryTotal"
+        :item-count="itemCount"
+        :mobile-summary-open="mobileSummaryOpen"
         :is-processing-order="isProcessingOrder"
         :checkout-requirements-complete="checkoutRequirementsComplete"
         :format-price="formatPrice"
+        @toggle-summary="mobileSummaryOpen = !mobileSummaryOpen"
         @place-order="placeOrder"
       />
 

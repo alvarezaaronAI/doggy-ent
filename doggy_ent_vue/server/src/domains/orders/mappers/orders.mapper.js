@@ -134,7 +134,23 @@ export function mapCustomerOrder(order) {
     customerReference: mappedOrder.customerReference,
     customerName: mappedOrder.customerName,
     customerEmail: mappedOrder.customerEmail,
+    customerPhone: mappedOrder.customerPhone,
+    deliveryNotes: mappedOrder.deliveryNotes,
+    address1: mappedOrder.address1,
+    address2: mappedOrder.address2,
+    city: mappedOrder.city,
+    state: mappedOrder.state,
+    zip: mappedOrder.zip,
+    country: mappedOrder.country,
     status: mappedOrder.status,
+    paymentStatus: [
+      'PAID',
+      'PROCESSING',
+      'SHIPPED',
+      'DELIVERED',
+    ].includes(mappedOrder.status)
+      ? 'PAID'
+      : 'PENDING',
     total: mappedOrder.total,
     subtotal: mappedOrder.subtotal,
     shippingAmount: mappedOrder.shippingAmount,
@@ -145,6 +161,8 @@ export function mapCustomerOrder(order) {
     createdAt: mappedOrder.createdAt,
     updatedAt: mappedOrder.updatedAt,
     items: mappedOrder.items,
+    promoUsage: mappedOrder.promoUsage,
+    statusHistory: mappedOrder.statusHistory,
     campaignAttributions: mappedOrder.campaignAttributions,
   }
 }

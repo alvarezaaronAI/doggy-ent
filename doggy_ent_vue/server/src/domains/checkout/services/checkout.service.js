@@ -105,7 +105,12 @@ export async function previewCheckout(checkoutInput = {}) {
   })
 }
 
-export async function createCheckout(checkoutInput = {}) {
+export async function createCheckout(
+  checkoutInput = {},
+  {
+    customerUser = null,
+  } = {},
+) {
   const checkoutPreview = await previewCheckout(checkoutInput)
 
   validateRequiredCheckoutFields({
@@ -221,6 +226,7 @@ export async function createCheckout(checkoutInput = {}) {
     taxAmount: checkoutPreview.pricing.taxAmount,
     promoCode: checkoutPreview.promo?.code || null,
     stripePaymentIntentId,
+    userId: customerUser?.id || null,
   })
 
   let recordedPromo = checkoutPreview.promo

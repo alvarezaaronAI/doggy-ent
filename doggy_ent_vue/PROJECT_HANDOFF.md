@@ -3041,3 +3041,709 @@ Result:
 ### Next Recommended Phase
 
 Run manual browser QA against the actual Railway DB admin workflow and Vercel storefront. Then add narrower integration tests around repository/service transactions using a local test database or an explicit Prisma test database, still avoiding Railway and real Stripe.
+
+---
+
+## 2026-06-12 Better Auth And Customer Accounts Infrastructure Phase
+
+### Objective
+
+Implemented the first Better Auth customer account foundation while preserving:
+
+- Guest checkout.
+- Existing storefront UX.
+- Existing custom admin dashboard auth and admin pages.
+- Existing checkout, Stripe, order, promo, campaign, and admin CRUD behavior.
+
+This phase intentionally did not migrate the admin dashboard from custom admin auth to Better Auth. Customer accounts now use Better Auth on `/api/customer-auth`; admin auth remains on `/api/auth`.
+
+### Dependencies Added
+
+- `better-auth` in `server/package.json`
+- `better-auth` in `client/package.json`
+
+No `.env.example` files were created. No secret values were documented.
+
+### Database Models Added
+
+Migration: `server/prisma/migrations/20260612000000_better_auth_customer_accounts/migration.sql`
+
+Schema source of truth: `server/prisma/schema.prisma`
+
+Added:
+
+- `User`
+- `Session`
+- `Account`
+- `Verification`
+- `CustomerProfile`
+- `CustomerAccountEvent`
+- `CustomerSupportRequest`
+- `ProductReview`
+- `LoyaltyLedger`
+- `CustomerNotificationPreference`
+- `UserRole`
+- `AccountStatus`
+
+Modified:
+
+- `Order.userId String?`
+- `Order.user User?`
+- indexes for `Order.userId` and `Order.customerEmail`
+
+Local database status:
+
+- `npx prisma migrate dev` applied `20260612000000_better_auth_customer_accounts` locally.
+- `npx prisma generate` completed successfully.
+
+Deployment status:
+
+- Railway migration deployment was not performed in this phase.
+- Before deploying the app with accounts enabled, run `cd server && npx prisma migrate deploy` against the intended Railway database after confirming the target environment.
+
+### Better Auth Server Configuration
+
+Important files:
+
+- `server/src/domains/auth/services/customerAuth.service.js`
+- `server/src/app/middleware/auth/requireCustomerAuth.js`
+- `server/src/domains/auth/constants/authRoles.constants.js`
+- `server/src/app.js`
+
+Behavior:
+
+- Better Auth is mounted at `/api/customer-auth/*splat` before `express.json()`, matching Better Auth Express requirements.
+- Prisma adapter uses the shared Prisma client.
+- Email/password auth is enabled.
+- Customer sessions persist in the Better Auth `Session` table.
+- Public signup role/status fields are configured with `input: false`; public signup should create `CUSTOMER` users only.
+- Better Auth creates customer profile, notification preference, and account-created event records after signup.
+- Email verification and password reset hooks build payloads through the email abstraction, but no real email provider is active by default.
+
+Environment variable names introduced or used:
+
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `API_BASE_URL`
+- `EMAIL_PROVIDER`
+- Existing origin allowlist variables: `FRONTEND_URL`, `CLIENT_URL`
+
+### Customer Account API
+
+Protected server routes:
+
+- `GET /api/account`
+- `GET /api/account/profile`
+- `PUT /api/account/profile`
+- `GET /api/account/orders`
+- `GET /api/account/orders/:reference`
+
+Important files:
+
+- `server/src/domains/account/routes/account.routes.js`
+- `server/src/domains/account/controllers/account.controller.js`
+- `server/src/domains/account/services/account.service.js`
+- `server/src/domains/account/repositories/account.repository.js`
+- `server/src/domains/account/mappers/account.mapper.js`
+
+Behavior:
+
+- Routes require a valid Better Auth customer session.
+- Profile updates write `CustomerProfile`.
+- Account orders include direct `Order.userId` links.
+- Verified-email guest-order matching is prepared and only enabled when `User.emailVerified` is true.
+- Customer order detail returns customer-safe order information and placeholders for tracking, support, and reviews.
+
+### Customer Account Client
+
+Routes added:
+
+- `/account/sign-in`
+- `/account/create`
+- `/account`
+- `/account/profile`
+- `/account/orders`
+- `/account/orders/:reference`
+- `/account/forgot-password`
+- `/account/reset-password`
+
+Important files:
+
+- `client/src/domains/account/api/authClient.js`
+- `client/src/domains/account/api/accountAuth.api.js`
+- `client/src/domains/account/api/account.api.js`
+- `client/src/domains/account/composables/useAccountAuth.js`
+- `client/src/domains/account/composables/useAccountProfile.js`
+- `client/src/domains/account/composables/useAccountOrders.js`
+- `client/src/domains/account/validators/account.validators.js`
+- `client/src/domains/account/components/AccountShell.vue`
+- `client/src/domains/account/components/AccountNav.vue`
+- `client/src/domains/account/components/AccountOrderCard.vue`
+- `client/src/domains/account/components/AccountPlaceholderPanel.vue`
+- `client/src/domains/account/views/AccountSignInView.vue`
+- `client/src/domains/account/views/AccountCreateView.vue`
+- `client/src/domains/account/views/AccountDashboardView.vue`
+- `client/src/domains/account/views/AccountProfileView.vue`
+- `client/src/domains/account/views/AccountOrdersView.vue`
+- `client/src/domains/account/views/AccountOrderDetailView.vue`
+- `client/src/domains/account/views/AccountForgotPasswordView.vue`
+- `client/src/domains/account/views/AccountResetPasswordView.vue`
+
+Other client changes:
+
+- `client/src/app/router/index.js` now protects customer routes through `/api/account/profile`.
+- `client/src/app/layouts/SiteHeader.vue` now links the account icon to `/account` or `/account/sign-in`.
+
+### Order Linking
+
+Important files:
+
+- `server/src/domains/checkout/controllers/checkout.controller.js`
+- `server/src/domains/checkout/services/checkout.service.js`
+- `server/src/domains/orders/services/orders.service.js`
+- `server/src/domains/orders/repositories/orders.repository.js`
+
+Behavior:
+
+- Guest checkout remains available and creates orders with `userId = null`.
+- Logged-in checkout looks up the Better Auth customer session on the server and passes `customerUser.id` into order creation.
+- The client never submits `userId`; checkout order linking remains server-owned.
+- Existing guest orders remain valid.
+
+### Admin Customer Dashboard
+
+Routes added:
+
+- `/admin/customers`
+- `/admin/customers/:customerId`
+
+Server API added:
+
+- `GET /api/admin/customers`
+- `GET /api/admin/customers/:customerId`
+- `POST /api/admin/customers/:customerId/deactivate`
+- `POST /api/admin/customers/:customerId/reactivate`
+- `POST /api/admin/customers/:customerId/resend-verification`
+- `POST /api/admin/customers/:customerId/password-reset`
+
+Important files:
+
+- `server/src/domains/customers/routes/adminCustomers.routes.js`
+- `server/src/domains/customers/controllers/adminCustomers.controller.js`
+- `server/src/domains/customers/services/adminCustomers.service.js`
+- `server/src/domains/customers/repositories/adminCustomers.repository.js`
+- `server/src/domains/customers/mappers/adminCustomers.mapper.js`
+- `client/src/domains/admin/api/adminCustomers.api.js`
+- `client/src/domains/admin/composables/useAdminCustomers.js`
+- `client/src/domains/admin/components/AdminCustomerStatusBadge.vue`
+- `client/src/domains/admin/components/AdminCustomersTable.vue`
+- `client/src/domains/admin/components/AdminCustomerOrdersPanel.vue`
+- `client/src/domains/admin/views/AdminCustomersView.vue`
+- `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+
+Behavior:
+
+- Customer list shows name, email, verified status, role, status, created date, order count, lifetime spend, and latest order date.
+- Customer detail shows profile summary, linked orders, verified-email guest matches, and readiness sections for support, reviews, loyalty, referrals, and internal notes.
+- Deactivate/reactivate updates `User.status` and records a `CustomerAccountEvent`.
+- Verification/password reset actions call email readiness payload flow. They do not send real email unless a provider is configured.
+- Admin customer routes are protected by existing `requireAdminAuth`.
+- Password hashes, session tokens, and verification token values are not exposed in admin customer responses.
+
+### Email, Lifecycle, Loyalty, Support, Review, Notification Readiness
+
+Important files:
+
+- `server/src/domains/emails/constants/emailEvents.constants.js`
+- `server/src/domains/emails/mappers/emailPayloads.mapper.js`
+- `server/src/domains/emails/services/emailProvider.service.js`
+- `server/prisma/schema.prisma`
+
+Prepared:
+
+- Verification email payloads.
+- Resend verification payloads.
+- Password reset payloads.
+- Welcome email payloads.
+- Order confirmation/update/tracking/review request payload foundations.
+- Account lifecycle event table.
+- Account deactivation/reactivation readiness.
+- Support request model.
+- Product review model.
+- Loyalty ledger model.
+- Notification preference model.
+
+Not implemented yet:
+
+- Real email provider delivery.
+- Customer-facing support tickets.
+- Review submission/moderation UI.
+- Loyalty earning/redemption rules.
+- Referrals.
+- Full account deletion workflow.
+- Better Auth migration for admin users/permissions.
+
+### Documentation Updated
+
+Updated architecture docs:
+
+- `docs/architecture/README.md`
+- `docs/architecture/data-flow.md`
+- `docs/architecture/file-map.md`
+- `docs/architecture/database.md`
+- `docs/architecture/admin.md`
+- `docs/architecture/auth-roadmap.md`
+
+Key documentation changes:
+
+- Customer Better Auth is now documented as implemented, not merely future work.
+- Custom admin auth remains documented as current.
+- Customer account flow, admin customer management flow, and order linking flow are documented.
+- New account/customer/email files and DB models are indexed.
+- Railway migration requirements are documented without secret values.
+
+### Verification Results
+
+Commands run:
+
+```bash
+cd server
+npx prisma generate
+```
+
+Result: passed.
+
+```bash
+cd server
+find src/domains/account src/domains/customers src/domains/auth src/domains/emails src/app/middleware/auth -name '*.js' -print | xargs -n1 node --check
+```
+
+Result: passed.
+
+```bash
+cd client
+npm run build
+```
+
+Result: passed. Vite built 221 modules.
+
+```bash
+cd server
+npm run build
+```
+
+Result: passed. Prisma Client v6.16.2 generated.
+
+```bash
+cd server
+npx prisma migrate status
+```
+
+Result before local migration: one pending migration, `20260612000000_better_auth_customer_accounts`.
+
+```bash
+cd server
+npx prisma migrate dev
+```
+
+Result: applied `20260612000000_better_auth_customer_accounts` locally and regenerated Prisma Client.
+
+```bash
+cd server
+node -e "import('./src/app.js').then(() => console.log('server app import ok'))"
+```
+
+Result: passed.
+
+```bash
+cd server
+npm test
+```
+
+Result: passed. 9 test files, 26 tests.
+
+```bash
+cd client
+npm test
+```
+
+Result: passed. 5 test files, 14 tests.
+
+Local Better Auth smoke:
+
+- Started local server on port `3099`.
+- Created a temporary customer account through `/api/customer-auth/sign-up/email`.
+- Verified `/api/customer-auth/get-session` returned an authenticated customer session.
+- Verified `/api/account/profile` accepted the session cookie and returned a protected account profile.
+- Added and verified a Better Auth after-hook sanitizer so sign-up, sign-in, and get-session JSON responses do not expose `token` fields while cookie sessions still work.
+- Verified sign-in response sanitization and protected account profile access after sign-in.
+- Removed the temporary smoke-test customer from the local database.
+- Stopped the local smoke-test server.
+
+Important note: an earlier local smoke command printed Better Auth response bodies before the sanitizer was added. Do not copy session token values from terminal history into documentation, commits, or issue trackers.
+
+### Security Verification
+
+Verified from code:
+
+- Admin routes still use existing custom admin auth guard.
+- Customer account routes use `requireCustomerAuth`.
+- Public signup cannot provide `role` or `status` because Better Auth additional fields use `input: false`.
+- Admin customer API responses are mapped and do not intentionally include `Account.password`, `Session.token`, or `Verification.value`.
+- Better Auth customer sign-up, sign-in, and get-session JSON responses are sanitized by an after hook to remove `token` fields.
+- Checkout does not trust a client-submitted `userId`; logged-in order linking uses server session lookup.
+
+Unverified without deployed/browser QA:
+
+- Same-site cookie behavior after deploying Better Auth customer auth to Railway/Vercel/custom domain.
+- Email delivery provider behavior because no provider is configured.
+- Full browser sign-up/sign-in/sign-out flows in Safari/Chrome.
+- Logged-in real Stripe checkout on Vercel after Railway migration.
+
+### Required Deployment Steps
+
+Before deploying this phase:
+
+1. Confirm Railway target database.
+2. Deploy/apply migration:
+
+```bash
+cd server
+npx prisma migrate deploy
+npx prisma generate
+```
+
+3. Configure server/Railway variable names with real values in the dashboard:
+
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `FRONTEND_URL`
+- `CLIENT_URL` if used for origin allowlist
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD_HASH`
+- `ADMIN_SESSION_SECRET`
+- `STRIPE_SECRET_KEY`
+- `EMAIL_PROVIDER` only when a real email provider is implemented/configured
+
+4. Configure client/Vercel variable names:
+
+- `VITE_API_BASE_URL`
+- `VITE_API_URL` if keeping the backwards-compatible alias
+- `VITE_STRIPE_PUBLISHABLE_KEY`
+
+5. Redeploy server, then redeploy client.
+
+### Manual QA Checklist
+
+Customer accounts:
+
+- Visit `/account/sign-in`.
+- Create a test customer account at `/account/create`.
+- Confirm redirect to `/account`.
+- Refresh `/account` and remain authenticated.
+- Edit `/account/profile`.
+- Sign out and confirm protected `/account` redirects to `/account/sign-in`.
+- Request password reset and verify user-facing readiness messaging.
+
+Checkout/order linking:
+
+- Complete guest checkout and confirm order has no `userId`.
+- Complete logged-in checkout and confirm order has `userId`.
+- Confirm order success still loads.
+- Confirm admin order list/detail still loads linked orders.
+
+Admin customers:
+
+- Log into existing admin.
+- Open `/admin/customers`.
+- Open a customer detail page.
+- Confirm linked orders appear.
+- Confirm verified-email guest matches appear only for verified customer emails.
+- Test deactivate/reactivate on a safe local customer.
+- Test verification/password reset readiness buttons without expecting real email delivery.
+
+Regression checks:
+
+- Product create/edit/delete.
+- Promo create/edit/test/analytics.
+- Campaign create/edit/status display.
+- Admin order status save/cancel/history.
+- Guest checkout with promo and campaign donation.
+- Vercel storefront product browsing and add-to-cart.
+
+### Remaining Risks
+
+- Railway migration for Better Auth/customer tables is not applied by this handoff.
+- Custom admin auth is still separate from Better Auth. Future Better Auth admin migration must preserve the current admin dashboard and add roles/permissions carefully.
+- No automated browser/E2E tests exist for account flows.
+- No real email provider is wired.
+- Account deletion/export/audit workflows are foundation-only.
+- Loyalty, referrals, support requests, review submission, and notification delivery are foundation-only.
+- `AGENTS.md` had pre-existing local edits in the working tree before this phase; review separately before committing.
+
+### Current Git State At Handoff
+
+Current branch observed earlier in this handoff: `dev-main`.
+
+Working tree includes modified and untracked files from this Better Auth phase plus the existing `AGENTS.md` local edit. Review before commit.
+
+Latest `git diff --name-status` at documentation update time included:
+
+- `M client/package.json`
+- `M client/package-lock.json`
+- `M client/src/app/layouts/SiteHeader.vue`
+- `M client/src/app/router/index.js`
+- `M client/src/domains/admin/views/AdminDashboardView.vue`
+- `M docs/architecture/README.md`
+- `M docs/architecture/admin.md`
+- `M docs/architecture/auth-roadmap.md`
+- `M docs/architecture/data-flow.md`
+- `M docs/architecture/database.md`
+- `M docs/architecture/file-map.md`
+- `M server/package.json`
+- `M server/package-lock.json`
+- `M server/prisma/schema.prisma`
+- `M server/src/app.js`
+- `M server/src/domains/checkout/controllers/checkout.controller.js`
+- `M server/src/domains/checkout/services/checkout.service.js`
+- `M server/src/domains/orders/repositories/orders.repository.js`
+- `M server/src/domains/orders/services/orders.service.js`
+- new `client/src/domains/account/`
+- new admin customer client files
+- new `server/prisma/migrations/20260612000000_better_auth_customer_accounts/`
+- new `server/src/domains/account/`
+- new `server/src/domains/customers/`
+- new `server/src/domains/emails/`
+- new `server/src/domains/auth/services/customerAuth.service.js`
+- new `server/src/app/middleware/auth/requireCustomerAuth.js`
+
+### Next Recommended Phase
+
+Deploy the migration to the intended Railway environment, redeploy server/client, and perform browser manual QA for customer accounts plus one guest checkout and one logged-in checkout. After that, add focused integration/E2E coverage for sign-up/sign-in/session persistence and logged-in order linking before starting the larger Better Auth admin-permissions migration.
+
+---
+
+## 2026-06-13 Customer Experience Refinement And Better Auth Infrastructure Pass
+
+### Objective
+
+Refined the customer account, header, checkout identity, order history/detail, and admin customer UX without rebuilding auth, checkout, or admin. Existing custom admin auth remains intact. Better Auth customer auth remains on `/api/customer-auth`.
+
+### Better Auth Infrastructure Changes
+
+Official docs used:
+
+- Better Auth Infrastructure Getting Started.
+- Better Auth Infrastructure Dashboard/dash plugin docs.
+
+Packages added:
+
+- `@better-auth/infra` in `server/package.json`
+- `@better-auth/infra` in `client/package.json`
+
+Server plugin:
+
+- File: `server/src/domains/auth/services/customerAuth.service.js`
+- Import: `dash` from `@better-auth/infra`
+- Plugin: `dash({ apiKey: process.env.BETTER_AUTH_API_KEY })`
+
+Client plugin:
+
+- File: `client/src/domains/account/api/authClient.js`
+- Import: `dashClient` from `@better-auth/infra/client`
+- Plugin: `dashClient()`
+
+Not enabled:
+
+- Sentinel/security challenge plugins.
+- Activity tracking schema field/migration.
+- Any client-side API key exposure.
+
+Required env variable names:
+
+- Railway/server: `BETTER_AUTH_API_KEY`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `DATABASE_URL`, `FRONTEND_URL`, `CLIENT_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET`, `STRIPE_SECRET_KEY`
+- Vercel/client: `VITE_API_BASE_URL`, `VITE_API_URL`, `VITE_STRIPE_PUBLISHABLE_KEY`
+
+The real `BETTER_AUTH_API_KEY` value must be created in the Better Auth Infrastructure dashboard and configured only in Railway/server environment variables. It must not be committed or exposed to Vercel.
+
+### Customer Account UX Changes
+
+Files changed:
+
+- `client/src/domains/account/components/AccountShell.vue`
+- `client/src/domains/account/views/AccountSignInView.vue`
+- `client/src/domains/account/views/AccountCreateView.vue`
+- `client/src/domains/account/views/AccountProfileView.vue`
+- `client/src/domains/account/components/AccountOrderCard.vue`
+- `client/src/domains/account/views/AccountOrderDetailView.vue`
+- `client/src/app/layouts/SiteHeader.vue`
+- `client/src/app/layouts/SiteFooter.vue`
+
+Improvements:
+
+- Account pages now reuse the storefront header and footer.
+- Account shell uses Chase & Evie Co. storefront styling instead of a generic portal feel.
+- Sign-in/create-account pages now explain ecommerce benefits: faster checkout, order history, future tracking, and future rewards.
+- Sign-in/create-account forms keep using Better Auth APIs.
+- Profile page now shows editable first name, last name, phone, marketing preference, account email display, email verification status, and future address readiness.
+- Email change remains disabled because verification/security flow is not fully implemented.
+- Footer links now point back to storefront anchors from account pages.
+
+### Header And Account State
+
+File changed:
+
+- `client/src/app/layouts/SiteHeader.vue`
+
+Behavior:
+
+- Logged-out desktop/mobile header shows a visible Sign in entry.
+- Logged-in desktop header shows initials and first name with a menu for Account overview, Orders, Checkout, and Sign out.
+- Logged-in mobile header shows initials and Account.
+- Header state is driven by the existing Better Auth customer session composable.
+
+### Checkout Identity Changes
+
+Files changed:
+
+- `client/src/domains/checkout/views/CheckoutView.vue`
+- `client/src/domains/checkout/Checkout/CheckoutContactSection.vue`
+
+Behavior:
+
+- Guest checkout now shows a clear “Checking out as guest” card with Sign in/Create account links.
+- Guest checkout remains available and obvious.
+- Signed-in checkout loads `/api/account/profile`, shows “Signed in as...”, and pre-fills safe blank fields from the account profile.
+- Signed-in checkout hides the redundant save-info/marketing checkboxes and directs marketing preference management to the profile page.
+- Checkout order linking remains server-owned; the client still does not send `userId`.
+
+### Order History And Detail UX
+
+Files changed:
+
+- `server/src/domains/orders/mappers/orders.mapper.js`
+- `server/src/domains/account/repositories/account.repository.js`
+- `client/src/domains/account/components/AccountOrderCard.vue`
+- `client/src/domains/account/views/AccountOrderDetailView.vue`
+
+Behavior:
+
+- Customer-safe order responses now include customer-owned contact and shipping snapshot fields, payment status derived from order status, promo usage, and status history.
+- Account order cards show product preview, order reference, status, date, total, item count, and a detail cue.
+- Order detail now shows order reference, status, payment status, placed date, customer contact, shipping info, items with variant/quantity/unit/line totals, subtotal, discount, promo code when present, shipping, tax, donation impact, total, tracking placeholder, support entry point, and review readiness.
+- Account order routes still enforce ownership through `requireCustomerAuth` and repository filters before returning data.
+
+### Admin Customer UX
+
+No broad admin rebuild was performed.
+
+The existing admin customer dashboard remains in place and benefits from the richer customer/order mapping where safe. Admin customer routes remain protected by `requireAdminAuth`; unauthenticated `/api/admin/customers` was verified to return `401`.
+
+Sensitive data remains excluded from mapped admin customer responses:
+
+- Password hashes.
+- Session tokens.
+- Verification token values.
+- Stripe secrets or private payment data.
+
+### Customer Journey Review
+
+Reviewed journey:
+
+- Guest browse.
+- Add to cart.
+- Checkout as guest or signed-in customer.
+- Order confirmation.
+- Account creation/sign-in.
+- Order history/detail.
+- Repeat purchase path back to shop/checkout.
+
+Small fixes made:
+
+- Header account state is now clear.
+- Account pages reuse store header/footer and visual language.
+- Guest/signed-in checkout identity is explicit.
+- Checkout mobile summary prop wiring now passes `itemCount`, `mobileSummaryOpen`, and the toggle event explicitly after browser testing exposed Vue missing-prop warnings.
+- Order history and detail are easier to scan.
+- Account footer links no longer dead-end on account-local hash anchors.
+
+Remaining larger recommendations:
+
+- Add saved address management after email verification/security flow is complete.
+- Add a reorder action after inventory/variant availability rules are designed.
+- Add real support ticket submission.
+- Add real review request/submission flow.
+- Add loyalty/referral UX once earning/redemption rules are defined.
+- Add E2E tests for signup, signin, signed-in checkout, and order history.
+
+### Verification Results
+
+Commands run:
+
+```bash
+cd client
+npm run build
+npm test
+```
+
+Result: passed. Vite built 225 modules. Client tests passed: 5 files, 14 tests.
+
+```bash
+cd server
+node --check src/domains/auth/services/customerAuth.service.js
+node --check src/domains/account/repositories/account.repository.js
+node --check src/domains/orders/mappers/orders.mapper.js
+npm run build
+npm test
+```
+
+Result: passed. Prisma Client generated. Server tests passed: 9 files, 26 tests.
+
+Local auth smoke:
+
+- Started local server on `localhost:3000`.
+- Created a temporary customer through Better Auth sign-up.
+- Verified sign-up success.
+- Verified sign-up and session responses do not expose JSON `token` fields.
+- Verified `/api/account/profile` works while signed in.
+- Verified sign-out succeeds.
+- Verified `/api/account/profile` returns `401` after sign-out.
+- Removed the temporary customer from local DB.
+
+Browser/rendered UI checks:
+
+- Guest homepage desktop header shows Sign in.
+- Guest homepage mobile header shows Sign in and cart.
+- Sign-in page includes storefront brand, benefits, guest checkout copy, and footer.
+- Guest checkout shows “Checking out as guest” with Sign in/Create account.
+- Created a temporary customer through the actual `/account/create` page.
+- Verified redirect to `/account`.
+- Verified logged-in desktop header shows initials/name.
+- Verified logged-in mobile header shows Account state.
+- Verified signed-in checkout shows signed-in card and does not show guest card.
+- Verified from source and passing client build that `CheckoutMobileSummaryBar` receives the required summary props; earlier browser log buffers contained the pre-fix warnings.
+- Removed the temporary UI smoke customer from local DB.
+
+Admin protection check:
+
+```bash
+curl http://localhost:3000/api/admin/customers
+```
+
+Result: `401` with `Authentication required.`
+
+No `.env.example` files were created.
+
+### Remaining Risks
+
+- The real Better Auth Infrastructure dashboard connection cannot be fully verified until `BETTER_AUTH_API_KEY` is configured in Railway and the server is redeployed.
+- Railway migration for the Better Auth/customer tables still must be applied before deployed account flows are enabled.
+- Browser checks were local only, not Vercel/Railway.
+- Guest checkout and logged-in checkout were verified at the identity/UI/API level, but not through a real Stripe payment during this pass.
+- No automated E2E coverage exists for account/header/checkout identity states.
+- The client dev server and local server were used for verification and should not be left running after the pass.
+
+### Next Recommended Phase
+
+Configure `BETTER_AUTH_API_KEY` in Railway, deploy the server, deploy the client, then run deployed browser QA for customer signup/signin/session persistence, Better Auth Infrastructure dashboard visibility, guest checkout, logged-in Stripe checkout, account order history, and admin customers. After deployed QA passes, add Playwright E2E tests for the customer journey.

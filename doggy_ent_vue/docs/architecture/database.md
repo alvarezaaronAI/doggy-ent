@@ -1,6 +1,6 @@
 # Database Architecture
 
-Last updated: 2026-06-07
+Last updated: 2026-06-12
 
 ## Source Of Truth
 
@@ -52,6 +52,7 @@ Key relationships:
 
 - `Order.items` to `OrderItem[]`
 - `Order.statusHistory` to `OrderStatusHistory[]`
+- `Order.user` to nullable `User`
 
 Primary flow participation:
 
@@ -60,6 +61,55 @@ Primary flow participation:
 - Admin orders dashboard/detail.
 - Promo/campaign usage ownership by order ID.
 - Status history ownership by order ID.
+- Customer account order history when `userId` is present.
+- Verified-email guest order matching through normalized `customerEmail`.
+
+### User
+
+Better Auth customer/admin account row. Fields include email, email verification state, role, account status, timestamps, and relations to sessions, credential accounts, profile, orders, events, support requests, reviews, loyalty ledger rows, and notification preferences.
+
+Current role/status values:
+
+- `UserRole`: `CUSTOMER`, `ADMIN`
+- `AccountStatus`: `ACTIVE`, `DEACTIVATED`
+
+Future roles such as `OWNER`, `STAFF`, `SUPPORT`, and `MARKETING` are intentionally documented but not implemented in the enum yet.
+
+### Session
+
+Better Auth session row. Stores session token, expiry, user agent/IP metadata, and user relation. Session tokens must never be exposed in docs or client responses outside Better Auth internals.
+
+### Account
+
+Better Auth account/credential row. For email/password auth, the credential provider stores password hash data here. Password hashes must never be exposed through API responses.
+
+### Verification
+
+Better Auth verification/reset token row. Used for email verification and password reset readiness. Verification token values must never be exposed in docs or custom admin responses.
+
+### CustomerProfile
+
+Customer-editable profile extension. Stores first/last name, phone, marketing opt-in, future default address JSON, and internal notes readiness.
+
+### CustomerAccountEvent
+
+Account lifecycle/audit foundation. Records account creation, status changes, and future internal notes/audit events. Current admin account status actions use `changedByType = ADMIN_ENV` until Better Auth admin users replace custom admin auth.
+
+### CustomerSupportRequest
+
+Future support-request foundation. Not yet exposed as a live support workflow.
+
+### ProductReview
+
+Future product review foundation tied to a user and order item. Review submission/moderation is not live yet.
+
+### LoyaltyLedger
+
+Future points/rewards/referrals foundation. No live loyalty balance UI or earning rules are implemented yet.
+
+### CustomerNotificationPreference
+
+Notification preference foundation for order updates, tracking, review requests, loyalty, referral, and marketing email categories.
 
 ### OrderItem
 
@@ -158,6 +208,7 @@ Important migrations:
 - `20260605000000_unique_order_payment_intent`: Unique Stripe PaymentIntent ID for order idempotency.
 - `20260606000000_add_order_campaign_usage`: Order-level campaign attribution for donation traceability.
 - `20260607000000_add_order_status_history`: Order status transition history for admin fulfillment auditability.
+- `20260612000000_better_auth_customer_accounts`: Better Auth user/session/account/verification tables, customer profile/support/review/loyalty/notification foundations, and nullable `Order.userId`.
 
 Deployment rule:
 
@@ -173,11 +224,15 @@ Deployment rule:
 | Payment status | Stripe, verified by server before order creation |
 | Order records | Server checkout/orders domains |
 | Order status history | Server orders domain and `OrderStatusHistory` |
+| Customer account auth/session | Better Auth tables through `server/src/domains/auth/services/customerAuth.service.js` |
+| Customer account profile/orders | Server account domain and nullable `Order.userId` |
+| Admin customer management | Server customers domain and existing custom admin auth |
+| Email readiness payloads | Server emails domain; no real provider unless configured |
 | Promo rules and usage | Server promos domain |
 | Campaign rules and usage | Server campaigns domain and `OrderCampaignUsage` |
 | Admin sessions | Server auth domain, custom temporary implementation |
 
 Railway deployment note:
 
-- The order campaign attribution and order status history migrations must be applied on Railway with `cd server && npx prisma migrate deploy` after confirming the target database is correct.
+- The Better Auth customer account migration must be applied on Railway with `cd server && npx prisma migrate deploy` after confirming the target database is correct.
 - Do not run destructive reset commands on Railway.
