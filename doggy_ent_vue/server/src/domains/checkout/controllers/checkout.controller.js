@@ -5,6 +5,9 @@ import {
 import {
   fetchCustomerOrderByReference,
 } from '../../orders/services/orders.service.js'
+import {
+  getCustomerUserFromRequest,
+} from '../../auth/services/customerAuth.service.js'
 
 function handleCheckoutError(res, error, fallbackMessage) {
   return res.status(error.statusCode || 500).json({
@@ -32,7 +35,10 @@ export async function previewCheckoutController(req, res) {
 
 export async function createCheckoutController(req, res) {
   try {
-    const result = await createCheckout(req.body)
+    const customerUser = await getCustomerUserFromRequest(req)
+    const result = await createCheckout(req.body, {
+      customerUser,
+    })
 
     return res.json({
       success: true,

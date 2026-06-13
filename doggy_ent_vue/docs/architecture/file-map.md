@@ -1,6 +1,6 @@
 # File Map
 
-Last updated: 2026-06-07
+Last updated: 2026-06-13
 
 This file maps important files and folders. It is not a complete line-by-line inventory of every Vue component, but it accounts for the source files that own major behavior and data flow.
 
@@ -23,7 +23,7 @@ This file maps important files and folders. It is not a complete line-by-line in
 | --- | --- | --- | --- |
 | `client/src/main.js` | Vue application entry. | Vue, router, global CSS. | Mounts the SPA. |
 | `client/src/App.vue` | Root app shell. | Router view. | Hosts routed pages. |
-| `client/src/app/router/index.js` | Route table and admin guard. | Vue Router, `fetchApi`, `parseJsonResponse`. | Protects admin pages by calling `/api/auth/me`. |
+| `client/src/app/router/index.js` | Route table and admin/customer guards. | Vue Router, `fetchApi`, `parseJsonResponse`. | Protects admin pages by calling `/api/auth/me` and customer pages by calling `/api/account/profile`. |
 | `client/src/shared/api/http.js` | API base URL builder, credentialed fetch helper, JSON error parser, admin data target helper. | Vite env. | All client API calls should route through this helper or matching domain wrappers. |
 | `client/src/shared/utils/currency.js` | Currency formatting. | None. | Used by storefront, product, checkout, and admin displays. |
 | `client/src/shared/constants/sellingMode.js` | Selling mode and inventory helpers. | None. | Used by product cards, quick view, cart, and admin product state. |
@@ -78,6 +78,30 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `client/src/domains/admin/views/AdminOrderDetailView.vue` | Admin order detail route. | Admin orders API/utils. | Order detail, status update flow. |
 | `client/src/domains/admin/components/AdminOrderStatusPanel.vue` | Staged order status update panel. | Admin order constants and order detail state. | Displays current status, stages next status, saves/cancels, and renders status history. |
 | `client/src/domains/admin/api/adminOrders.api.js` | Admin order API calls. | `fetchApi`. | Calls `/api/admin/orders`. |
+| `client/src/domains/admin/views/AdminCustomersView.vue` | Admin customer list route. | `useAdminCustomers`, customer table. | Displays Better Auth customer accounts and aggregate order stats. |
+| `client/src/domains/admin/views/AdminCustomerDetailView.vue` | Admin customer detail route. | `useAdminCustomers`, orders panel/status badge. | Displays customer profile, linked orders, guest matches, and readiness actions. |
+| `client/src/domains/admin/api/adminCustomers.api.js` | Admin customer API calls. | `fetchApi`. | Calls `/api/admin/customers`. |
+| `client/src/domains/admin/composables/useAdminCustomers.js` | Customer admin state/actions. | Admin customer API. | Loads customer lists/details and status/readiness actions. |
+
+## Customer Accounts
+
+| File | Purpose | Dependencies | Flow Participation |
+| --- | --- | --- | --- |
+| `client/src/domains/account/api/authClient.js` | Better Auth Vue client setup. | `better-auth/vue`, `@better-auth/infra/client`, API base URL helper. | Central Better Auth customer client configuration and Infrastructure dashboard client plugin. |
+| `client/src/domains/account/api/accountAuth.api.js` | Customer auth endpoint wrappers. | `fetchApi`, Better Auth client setup. | Sign up, sign in, sign out, session, verification, password reset readiness. |
+| `client/src/domains/account/api/account.api.js` | Protected account API calls. | `fetchApi`. | Calls `/api/account` profile/orders/dashboard endpoints. |
+| `client/src/domains/account/composables/useAccountAuth.js` | Shared customer auth state. | Account auth API. | Session-aware navigation and auth forms. |
+| `client/src/domains/account/composables/useAccountProfile.js` | Profile state/actions. | Account API. | Loads and saves customer profile data. |
+| `client/src/domains/account/composables/useAccountOrders.js` | Customer order state/actions. | Account API. | Loads account order history and detail. |
+| `client/src/domains/account/validators/account.validators.js` | Account form validation and email normalization. | None. | Sign-in/create/profile validation. |
+| `client/src/domains/account/views/AccountSignInView.vue` | Customer sign-in page. | Auth composable/validators. | Calls Better Auth sign-in endpoint. |
+| `client/src/domains/account/views/AccountCreateView.vue` | Customer create-account page. | Auth composable/validators. | Calls Better Auth sign-up endpoint. |
+| `client/src/domains/account/views/AccountDashboardView.vue` | Protected account overview. | Account API, auth composable. | Shows profile summary, order stats, readiness placeholders. |
+| `client/src/domains/account/views/AccountProfileView.vue` | Protected profile editor. | Profile composable/validator. | Edits `CustomerProfile`. |
+| `client/src/domains/account/views/AccountOrdersView.vue` | Protected account order list. | Account orders composable. | Shows linked and verified-email matched orders. |
+| `client/src/domains/account/views/AccountOrderDetailView.vue` | Protected account order detail. | Account orders composable. | Shows customer-safe order detail plus tracking/review/support placeholders. |
+| `client/src/domains/account/views/AccountForgotPasswordView.vue` | Password reset request page. | Auth composable. | Queues Better Auth reset email through provider abstraction. |
+| `client/src/domains/account/views/AccountResetPasswordView.vue` | Password reset completion page. | Auth API. | Posts reset token/new password to Better Auth. |
 
 ## Server App And Shared
 
@@ -89,6 +113,7 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `server/src/db/prisma.js` | Prisma singleton. | `@prisma/client`. | Shared database client. |
 | `server/src/app/middleware/error.middleware.js` | Error response handler. | Express. | Converts thrown errors to JSON responses. |
 | `server/src/app/middleware/auth/requireAdminAuth.js` | Admin API guard. | Auth service. | Protects admin routes. |
+| `server/src/app/middleware/auth/requireCustomerAuth.js` | Customer account API guard. | Better Auth customer service. | Protects `/api/account/*` routes. |
 | `server/src/shared/utils/money.js` | Currency normalization. | None. | Used in checkout, promos, campaigns. |
 | `server/src/shared/utils/string.js` | String/email/number normalization. | None. | Used across product/promo/campaign services. |
 | `server/src/shared/services/tax.service.js` | Tax estimate hook. | None. | Used in checkout pricing. |
@@ -99,6 +124,18 @@ This file maps important files and folders. It is not a complete line-by-line in
 | --- | --- | --- | --- |
 | `server/src/domains/auth/routes/auth.routes.js` | Login/logout/me/data-target routes. | Auth service. | Owns custom admin session endpoints. |
 | `server/src/domains/auth/services/auth.service.js` | Admin credential/session/cookie logic. | bcrypt, crypto, env. | Current custom admin auth source of truth. |
+| `server/src/domains/auth/services/customerAuth.service.js` | Better Auth customer configuration. | Better Auth, Prisma adapter, `@better-auth/infra`, email payload builders. | Owns customer auth, Infrastructure dashboard plugin, role/status fields, session lookup, signup profile hooks, and response token sanitization. |
+| `server/src/domains/auth/constants/authRoles.constants.js` | Current and future role/status constants. | None. | Source of truth for CUSTOMER/ADMIN and account active/deactivated labels. |
+| `server/src/domains/account/routes/account.routes.js` | Protected customer account routes. | `requireCustomerAuth`, account controller. | Customer dashboard/profile/orders API. |
+| `server/src/domains/account/controllers/account.controller.js` | Account request handlers. | Account service. | Thin JSON handlers for `/api/account`. |
+| `server/src/domains/account/services/account.service.js` | Customer account business logic. | Account repository, order mapper. | Profile, order history, verified-email guest matching. |
+| `server/src/domains/account/repositories/account.repository.js` | Account Prisma access. | Prisma. | Reads users/profiles/orders and writes profile updates. |
+| `server/src/domains/customers/routes/adminCustomers.routes.js` | Admin customer routes. | `requireAdminAuth`, customer controller. | Protected `/api/admin/customers` endpoints. |
+| `server/src/domains/customers/controllers/adminCustomers.controller.js` | Admin customer request handlers. | Customer service. | List/detail/status/readiness JSON responses. |
+| `server/src/domains/customers/services/adminCustomers.service.js` | Admin customer business logic. | Customer repository, email payload builders. | Customer stats, detail, deactivate/reactivate, email readiness actions. |
+| `server/src/domains/customers/repositories/adminCustomers.repository.js` | Admin customer Prisma access. | Prisma. | Reads users/orders/events/readiness relations and updates account status. |
+| `server/src/domains/emails/mappers/emailPayloads.mapper.js` | Email payload builders. | Email event constants. | Verification, password reset, welcome, order/support/review readiness payloads. |
+| `server/src/domains/emails/services/emailProvider.service.js` | Email provider abstraction. | Env flag. | Queues/logs email payloads without sending real email by default. |
 | `server/src/domains/products/routes/products.routes.js` | Product API routes. | Controller/auth where needed. | Storefront and admin product endpoints. |
 | `server/src/domains/products/controllers/products.controller.js` | Product request handlers. | Product service. | Thin controller layer. |
 | `server/src/domains/products/services/products.service.js` | Product business logic. | Prisma, mapper, validators. | Product CRUD and list orchestration. |
@@ -122,7 +159,8 @@ This file maps important files and folders. It is not a complete line-by-line in
 
 | File | Purpose | Dependencies | Flow Participation |
 | --- | --- | --- | --- |
-| `server/prisma/schema.prisma` | Database schema and enums. | Prisma/PostgreSQL. | Source of truth for Product, ProductVariant, Order, OrderItem, OrderStatusHistory, Promo, PromoUsage, Campaign. |
+| `server/prisma/schema.prisma` | Database schema and enums. | Prisma/PostgreSQL. | Source of truth for Product, ProductVariant, Order, account models, OrderItem, OrderStatusHistory, Promo, PromoUsage, Campaign. |
+| `server/prisma/migrations/20260612000000_better_auth_customer_accounts/migration.sql` | Adds Better Auth/customer account tables and nullable `Order.userId`. | Prisma migrate. | Supports customer accounts, session persistence, customer order history, and future lifecycle/loyalty/support/review features. |
 | `server/prisma/migrations/20260605000000_unique_order_payment_intent/migration.sql` | Adds unique PaymentIntent constraint. | Prisma migrate. | Supports order idempotency. |
 | `server/prisma/migrations/20260606000000_add_order_campaign_usage/migration.sql` | Adds order/campaign attribution table. | Prisma migrate. | Supports admin donation traceability and campaign order attribution. |
 | `server/prisma/migrations/20260607000000_add_order_status_history/migration.sql` | Adds order status history table. | Prisma migrate. | Supports admin fulfillment status audit trail and future admin-user attribution. |

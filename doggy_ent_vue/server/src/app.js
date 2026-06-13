@@ -1,6 +1,9 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import {
+  toNodeHandler,
+} from 'better-auth/node'
 import productsRoutes from './domains/products/routes/products.routes.js'
 import promosRoutes from './domains/promos/routes/promos.routes.js'
 import campaignsRoutes from './domains/campaigns/routes/campaigns.routes.js'
@@ -8,6 +11,11 @@ import checkoutRoutes from './domains/checkout/routes/checkout.routes.js'
 import paymentRoutes from './domains/payments/routes/payment.routes.js'
 import ordersRoutes from './domains/orders/routes/orders.routes.js'
 import authRoutes from './domains/auth/routes/auth.routes.js'
+import accountRoutes from './domains/account/routes/account.routes.js'
+import adminCustomersRoutes from './domains/customers/routes/adminCustomers.routes.js'
+import {
+  customerAuth,
+} from './domains/auth/services/customerAuth.service.js'
 import {
   errorMiddleware,
 } from './app/middleware/error.middleware.js'
@@ -53,6 +61,8 @@ app.use(cors({
   credentials: true,
 }))
 
+app.all('/api/customer-auth/*splat', toNodeHandler(customerAuth))
+
 app.use(express.json())
 app.use(cookieParser())
 app.set('trust proxy', 1)
@@ -69,6 +79,8 @@ app.use('/api/admin/promos', promosRoutes)
 app.use('/api/admin/campaigns', campaignsRoutes)
 app.use('/api/campaigns', campaignsRoutes)
 app.use('/api/admin/orders', ordersRoutes)
+app.use('/api/admin/customers', adminCustomersRoutes)
+app.use('/api/account', accountRoutes)
 app.use('/api/auth', authRoutes)
 
 app.use(errorMiddleware)

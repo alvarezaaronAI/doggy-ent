@@ -1,0 +1,16 @@
+export const AUTH_ROLES = {
+  CUSTOMER: 'CUSTOMER',
+  ADMIN: 'ADMIN',
+}
+
+export const ACCOUNT_STATUS = {
+  ACTIVE: 'ACTIVE',
+  DEACTIVATED: 'DEACTIVATED',
+}
+
+export const FUTURE_AUTH_ROLES = [
+  'OWNER',
+  'STAFF',
+  'SUPPORT',
+  'MARKETING',
+]

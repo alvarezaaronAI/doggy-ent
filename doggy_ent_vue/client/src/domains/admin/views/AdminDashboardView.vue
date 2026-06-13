@@ -31,7 +31,7 @@
           </button>
         </div>
 
-        <div class="mt-10 grid gap-4 md:grid-cols-4">
+        <div class="mt-10 grid gap-4 md:grid-cols-5">
           <RouterLink
             to="/admin/products"
             class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
@@ -61,6 +61,14 @@
           >
             <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Campaigns</h2>
             <p class="mt-2 text-sm text-stone-400">Manage shelter donation campaigns and product impact tracking.</p>
+          </RouterLink>
+
+          <RouterLink
+            to="/admin/customers"
+            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
+          >
+            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Customers</h2>
+            <p class="mt-2 text-sm text-stone-400">Review accounts, order links, and readiness workflows.</p>
           </RouterLink>
         </div>
 

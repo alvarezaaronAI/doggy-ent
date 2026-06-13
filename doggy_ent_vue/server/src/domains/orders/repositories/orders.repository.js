@@ -228,6 +228,7 @@ export async function createOrder(orderInput) {
   const createdOrder = await prisma.order.create({
     data: {
       orderNumber: orderInput.orderNumber,
+      userId: orderInput.userId || null,
       customerName: orderInput.customerName,
       customerEmail: orderInput.customerEmail,
       customerPhone: orderInput.customerPhone || null,

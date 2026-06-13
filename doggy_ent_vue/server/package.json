@@ -23,8 +23,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@better-auth/infra": "^0.2.14",
     "@prisma/client": "^6.16.2",
     "bcryptjs": "^3.0.3",
+    "better-auth": "^1.6.18",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

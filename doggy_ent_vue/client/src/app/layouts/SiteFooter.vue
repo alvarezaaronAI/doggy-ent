@@ -12,13 +12,13 @@
       </div>
 
       <ul class="flex flex-wrap gap-4 justify-center text-sm">
-        <li><a class="hover:text-emerald-400" href="#shop">All Treats</a></li>
-        <li><a class="hover:text-emerald-400" href="#coming-soon">Coming Soon</a></li>
-        <li><a class="hover:text-emerald-400" href="#process">How We Make Them</a></li>
-        <li><a class="hover:text-emerald-400" href="#ingredients">Ingredients</a></li>
-        <li><a class="hover:text-emerald-400" href="#reviews">Happy Pups</a></li>
-        <li><a class="hover:text-emerald-400" href="#about">Meet Chase &amp; Evie</a></li>
-        <li><a class="hover:text-emerald-400" href="#faq">FAQ</a></li>
+        <li><a class="hover:text-emerald-400" href="/#shop">All Treats</a></li>
+        <li><a class="hover:text-emerald-400" href="/#coming-soon">Coming Soon</a></li>
+        <li><a class="hover:text-emerald-400" href="/#process">How We Make Them</a></li>
+        <li><a class="hover:text-emerald-400" href="/#ingredients">Ingredients</a></li>
+        <li><a class="hover:text-emerald-400" href="/#reviews">Happy Pups</a></li>
+        <li><a class="hover:text-emerald-400" href="/#about">Meet Chase &amp; Evie</a></li>
+        <li><a class="hover:text-emerald-400" href="/#faq">FAQ</a></li>
       </ul>
 
       <div class="flex md:justify-end justify-center gap-4 text-stone-300">

@@ -1,12 +1,12 @@
 # Doggy Ent Architecture
 
-Last updated: 2026-06-07
+Last updated: 2026-06-13
 
 This directory documents how the Doggy Ent Vue storefront, admin dashboard, Express API, Prisma database, Stripe integration, and temporary local admin workflows fit together. It is evidence-based from the repository; future plans are labeled as future work.
 
 ## Project Shape
 
-Doggy Ent is a Vue 3 + Vite storefront and admin app backed by an Express 5 API, Prisma, PostgreSQL, and Stripe. Customers browse products, choose product variants, add items to cart, validate promos, pay through Stripe, and receive an order success page. Admin users manage products, promos, campaigns, and orders through protected admin pages.
+Doggy Ent is a Vue 3 + Vite storefront and admin app backed by an Express 5 API, Prisma, PostgreSQL, Better Auth, and Stripe. Customers browse products, choose product variants, add items to cart, validate promos, pay through Stripe, and receive an order success page. Customer accounts now use Better Auth on `/api/customer-auth` while guest checkout remains available. Admin users currently continue to use the custom admin auth flow and manage products, promos, campaigns, orders, and customers through protected admin pages.
 
 ```mermaid
 flowchart LR
@@ -14,6 +14,8 @@ flowchart LR
   Admin["Admin browser"] --> AdminApp["Vue admin"]
   Storefront --> Api["Express API"]
   AdminApp --> Api
+  Storefront --> CustomerAuth["Better Auth customer API"]
+  CustomerAuth --> Prisma
   Api --> Prisma["Prisma client"]
   Prisma --> DB["PostgreSQL"]
   Api --> Stripe["Stripe API"]
@@ -27,7 +29,7 @@ flowchart LR
 - [file-map.md](./file-map.md): Important files and folders, grouped by responsibility.
 - [database.md](./database.md): Prisma models, relationships, migrations, ownership, and data-source rules.
 - [admin.md](./admin.md): Admin dashboard architecture, auth, protected APIs, and temporary data target workflow.
-- [auth-roadmap.md](./auth-roadmap.md): Current custom admin auth, same-site domain direction, and future Better Auth/customer accounts plan.
+- [auth-roadmap.md](./auth-roadmap.md): Current custom admin auth, implemented Better Auth customer accounts, same-site domain direction, and future admin/customer auth plan.
 
 ## Important Source-Of-Truth Locations
 
@@ -41,6 +43,8 @@ flowchart LR
 - Campaign statuses and donation rules: `server/src/domains/campaigns/constants/campaigns.constants.js`, `server/src/domains/campaigns/services/campaigns.service.js`
 - Order statuses, admin labels, and persisted status history: `client/src/domains/admin/constants/adminOrders.constants.js`, `server/src/domains/orders/constants/orders.constants.js`, `server/prisma/schema.prisma`
 - Admin auth/session: `server/src/domains/auth/services/auth.service.js`, `server/src/domains/auth/routes/auth.routes.js`
+- Customer auth/session and Better Auth Infrastructure dashboard connection: `server/src/domains/auth/services/customerAuth.service.js`, `client/src/domains/account/api/authClient.js`, `server/src/domains/account/*`, `client/src/domains/account/*`
+- Customer management: `server/src/domains/customers/*`, `client/src/domains/admin/views/AdminCustomersView.vue`, `client/src/domains/admin/views/AdminCustomerDetailView.vue`
 - API base URL and JSON error handling: `client/src/shared/api/http.js`
 - Environment loading and local/Railway DB admin mode: `server/src/config/env.js`
 
