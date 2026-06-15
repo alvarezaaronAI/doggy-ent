@@ -19,6 +19,7 @@ export function mapCustomerProfile(user) {
       lastName: profile.lastName || '',
       phone: profile.phone || '',
       marketingOptIn: Boolean(profile.marketingOptIn),
+      preferredContactMethod: profile.preferredContactMethod || '',
       defaultAddress: profile.defaultAddress || null,
     },
     placeholders: {

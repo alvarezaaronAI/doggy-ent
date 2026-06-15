@@ -19,7 +19,7 @@
 
         <div>
         <p class="text-sm font-semibold uppercase tracking-[0.16em] text-stone-400">
-          {{ order.customerReference || order.orderNumber }}
+          {{ displayReference }}
         </p>
 
         <h2 class="mt-1 text-xl font-bold text-stone-900">
@@ -32,20 +32,23 @@
         </div>
       </div>
 
-      <span class="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-        {{ order.status }}
+      <span class="w-fit rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.14em]" :class="statusClass">
+        {{ statusLabel }}
       </span>
     </div>
 
     <div class="mt-4 grid gap-2 text-sm text-stone-500">
       <p>
-        {{ order.items?.length || 0 }} item<span v-if="(order.items?.length || 0) !== 1">s</span>
+        {{ itemCount }} item<span v-if="itemCount !== 1">s</span>
       </p>
       <p v-if="firstItem">
         {{ firstItem.productName }}<span v-if="remainingItemCount"> + {{ remainingItemCount }} more</span>
       </p>
       <p v-if="order.donationAmount">
         Donation generated: {{ formatCurrency(order.donationAmount) }}
+      </p>
+      <p v-if="shipment" class="font-semibold text-sky-700">
+        Tracking: {{ shipment.shipmentStatus || 'Update available' }}
       </p>
       <p class="font-bold text-emerald-700">
         View order details
@@ -71,6 +74,38 @@ const firstItem = computed(() => props.order.items?.[0] || null)
 const remainingItemCount = computed(() =>
   Math.max(0, Number(props.order.items?.length || 0) - 1),
 )
+const itemCount = computed(() => props.order.items?.length || 0)
+const shipment = computed(() =>
+  props.order.shipment
+  || props.order.shipments?.[0]
+  || null,
+)
+const displayReference = computed(() =>
+  props.order.customerReference || props.order.orderNumber || 'Order pending',
+)
+const statusLabel = computed(() =>
+  String(props.order.status || 'PENDING')
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+)
+const statusClass = computed(() => {
+  const status = String(props.order.status || '').toUpperCase()
+
+  if (['DELIVERED', 'PAID'].includes(status)) {
+    return 'bg-emerald-50 text-emerald-700'
+  }
+
+  if (['SHIPPED', 'PROCESSING'].includes(status)) {
+    return 'bg-sky-50 text-sky-700'
+  }
+
+  if (['CANCELLED', 'REFUNDED'].includes(status)) {
+    return 'bg-red-50 text-red-700'
+  }
+
+  return 'bg-amber-50 text-amber-700'
+})
 
 function formatDate(value) {
   if (!value) {

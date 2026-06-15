@@ -3,16 +3,20 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import {
   fetchAdminOrderById,
+  refreshAdminOrderTracking,
+  updateAdminOrderTracking,
   updateAdminOrderStatus,
 } from '../api/adminOrders.api'
 import {
   ORDER_STATUSES,
 } from '../constants/adminOrders.constants'
 import AdminOrderStatusPanel from '../components/AdminOrderStatusPanel.vue'
+import AdminOrderTrackingPanel from '../components/AdminOrderTrackingPanel.vue'
 
 const route = useRoute()
 const order = ref(null)
 const loading = ref(false)
+const trackingSaving = ref(false)
 const statusMessage = ref('')
 
 const orderReference = computed(() =>
@@ -90,6 +94,45 @@ async function updateStatus({
     statusMessage.value = 'Order updated.'
   } catch (error) {
     statusMessage.value = error.message || 'Unable to update order.'
+  }
+}
+
+async function updateTracking(payload) {
+  if (!order.value?.id) return
+
+  trackingSaving.value = true
+  statusMessage.value = 'Saving tracking...'
+
+  try {
+    const result = await updateAdminOrderTracking(
+      order.value.id,
+      payload,
+    )
+
+    order.value = result.order || result
+    statusMessage.value = 'Tracking saved.'
+  } catch (error) {
+    statusMessage.value = error.message || 'Unable to save tracking.'
+  } finally {
+    trackingSaving.value = false
+  }
+}
+
+async function refreshTracking() {
+  if (!order.value?.id) return
+
+  trackingSaving.value = true
+  statusMessage.value = 'Refreshing tracking...'
+
+  try {
+    const result = await refreshAdminOrderTracking(order.value.id)
+
+    order.value = result.order || result
+    statusMessage.value = 'Tracking refreshed.'
+  } catch (error) {
+    statusMessage.value = error.message || 'Unable to refresh tracking.'
+  } finally {
+    trackingSaving.value = false
   }
 }
 
@@ -172,6 +215,13 @@ onMounted(loadOrder)
             :order="order"
             :status-class="statusClass"
             @save="updateStatus"
+          />
+
+          <AdminOrderTrackingPanel
+            :order="order"
+            :saving="trackingSaving"
+            @save="updateTracking"
+            @refresh="refreshTracking"
           />
 
           <div class="grid gap-6 lg:grid-cols-[1.35fr_0.9fr]">

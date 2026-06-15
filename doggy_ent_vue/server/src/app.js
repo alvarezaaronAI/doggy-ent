@@ -13,12 +13,19 @@ import ordersRoutes from './domains/orders/routes/orders.routes.js'
 import authRoutes from './domains/auth/routes/auth.routes.js'
 import accountRoutes from './domains/account/routes/account.routes.js'
 import adminCustomersRoutes from './domains/customers/routes/adminCustomers.routes.js'
+import shippingRoutes from './domains/shipping/routes/shipping.routes.js'
 import {
   customerAuth,
 } from './domains/auth/services/customerAuth.service.js'
 import {
   errorMiddleware,
 } from './app/middleware/error.middleware.js'
+import {
+  customerAuthRateLimiter,
+} from './app/middleware/security/rateLimit.middleware.js'
+import {
+  securityHeaders,
+} from './app/middleware/security/securityHeaders.middleware.js'
 
 const app = express()
 
@@ -41,6 +48,8 @@ const allowedOrigins = new Set([
   ...splitOrigins(process.env.CLIENT_URL),
 ])
 
+app.use(securityHeaders)
+
 app.use(cors({
   origin(origin, callback) {
     if (!origin) {
@@ -61,9 +70,12 @@ app.use(cors({
   credentials: true,
 }))
 
+app.use('/api/customer-auth', customerAuthRateLimiter)
 app.all('/api/customer-auth/*splat', toNodeHandler(customerAuth))
 
-app.use(express.json())
+app.use(express.json({
+  limit: '100kb',
+}))
 app.use(cookieParser())
 app.set('trust proxy', 1)
 
@@ -82,6 +94,7 @@ app.use('/api/admin/orders', ordersRoutes)
 app.use('/api/admin/customers', adminCustomersRoutes)
 app.use('/api/account', accountRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api', shippingRoutes)
 
 app.use(errorMiddleware)
 

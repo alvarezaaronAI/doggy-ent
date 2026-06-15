@@ -22,6 +22,24 @@ describe('customer-safe order lookup mapping', () => {
       items: [],
       campaignUsages: [],
       statusHistory: [],
+      shipments: [
+        {
+          id: 'internal-shipment-id',
+          carrier: 'usps',
+          trackingNumber: 'TRACK123',
+          trackingUrl: 'https://tracking.example/track',
+          shipmentStatus: 'TRANSIT',
+          events: [
+            {
+              id: 'internal-event-id',
+              status: 'TRANSIT',
+              message: 'In transit',
+              location: 'Seattle, WA',
+              occurredAt: new Date('2026-06-08T00:00:00.000Z'),
+            },
+          ],
+        },
+      ],
       createdAt: new Date('2026-06-07T00:00:00.000Z'),
       updatedAt: new Date('2026-06-07T00:00:00.000Z'),
     })
@@ -30,5 +48,8 @@ describe('customer-safe order lookup mapping', () => {
     expect(order.discountAmount).toBe(10)
     expect(order).not.toHaveProperty('id')
     expect(order).not.toHaveProperty('stripePaymentIntentId')
+    expect(order.shipment.trackingNumber).toBe('TRACK123')
+    expect(order.shipment).not.toHaveProperty('id')
+    expect(order.shipment.events[0]).not.toHaveProperty('id')
   })
 })

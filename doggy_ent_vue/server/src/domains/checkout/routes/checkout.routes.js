@@ -5,14 +5,17 @@ import {
   createCheckoutController,
   getCheckoutOrderController,
 } from '../controllers/checkout.controller.js'
+import {
+  checkoutRateLimiter,
+} from '../../../app/middleware/security/rateLimit.middleware.js'
 
 const router = express.Router()
 
 // Preview trusted checkout totals before payment.
-router.post('/preview', previewCheckoutController)
+router.post('/preview', checkoutRateLimiter, previewCheckoutController)
 
 // Create finalized checkout using backend trusted pricing.
-router.post('/', createCheckoutController)
+router.post('/', checkoutRateLimiter, createCheckoutController)
 
 // Load customer-safe order confirmation details.
 router.get('/orders/:reference', getCheckoutOrderController)

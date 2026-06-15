@@ -31,8 +31,10 @@ export function buildAccountVerificationEmail({
   return {
     event,
     to: user.email,
+    userId: user.id,
     customerName: user.name,
     actionUrl: url,
+    dedupeKey: `${event}:${user.id || user.email}`,
   }
 }
 
@@ -43,8 +45,10 @@ export function buildPasswordResetEmail({
   return {
     event: EMAIL_EVENTS.PASSWORD_RESET,
     to: user.email,
+    userId: user.id,
     customerName: user.name,
     actionUrl: url,
+    dedupeKey: `${EMAIL_EVENTS.PASSWORD_RESET}:${user.id || user.email}:${Date.now()}`,
   }
 }
 
@@ -52,26 +56,55 @@ export function buildWelcomeEmail(user) {
   return {
     event: EMAIL_EVENTS.WELCOME,
     to: user.email,
+    userId: user.id,
     customerName: user.name,
     actionUrl: `${getFrontendOrigin()}/account`,
+    dedupeKey: `${EMAIL_EVENTS.WELCOME}:${user.id || user.email}`,
+  }
+}
+
+export function buildAccountCreatedEmail(user) {
+  return {
+    event: EMAIL_EVENTS.ACCOUNT_CREATED,
+    to: user.email,
+    userId: user.id,
+    customerName: user.name,
+    actionUrl: `${getFrontendOrigin()}/account`,
+    dedupeKey: `${EMAIL_EVENTS.ACCOUNT_CREATED}:${user.id || user.email}`,
+  }
+}
+
+export function buildProfileUpdatedEmail({
+  user,
+}) {
+  return {
+    event: EMAIL_EVENTS.PROFILE_UPDATED,
+    to: user.email,
+    userId: user.id,
+    customerName: user.name,
+    actionUrl: `${getFrontendOrigin()}/account/profile`,
+    dedupeKey: `${EMAIL_EVENTS.PROFILE_UPDATED}:${user.id || user.email}:${new Date().toISOString().slice(0, 13)}`,
   }
 }
 
 export function buildOrderEmailPayload({
   event,
   order,
+  tracking = null,
+  to = null,
+  message = null,
 }) {
   return {
     event,
-    to: order.customerEmail,
+    to: to || order.customerEmail,
+    orderId: order.id,
+    userId: order.userId || null,
     customerName: order.customerName,
     orderReference: order.orderNumber || order.customerReference,
     orderStatus: order.status,
     actionUrl: `${getFrontendOrigin()}/account/orders/${order.orderNumber || order.id}`,
-    tracking: {
-      available: false,
-      message: 'Tracking updates are not configured yet.',
-    },
+    message,
+    tracking: tracking || order.shipment || order.shipments?.[0] || null,
     pricing: {
       subtotal: Number(order.subtotal || 0),
       discountAmount: Number(order.discountAmount || 0),
@@ -83,6 +116,29 @@ export function buildOrderEmailPayload({
     items: Array.isArray(order.items)
       ? order.items.map(mapOrderItem)
       : [],
+    dedupeKey: `${event}:${order.id}`,
+  }
+}
+
+export function buildAdminOrderEmailPayload({
+  event,
+  order,
+  message = null,
+}) {
+  const adminRecipient =
+    process.env.ADMIN_NOTIFICATION_EMAIL
+    || process.env.ADMIN_EMAIL
+    || null
+
+  return {
+    ...buildOrderEmailPayload({
+      event,
+      order,
+      to: adminRecipient,
+      message,
+    }),
+    customerEmail: order.customerEmail,
+    dedupeKey: `${event}:${order.id}`,
   }
 }
 
@@ -93,12 +149,31 @@ export function buildSupportRequestEmail({
 }) {
   return {
     event: EMAIL_EVENTS.SUPPORT_REQUEST,
-    to: process.env.SUPPORT_EMAIL || null,
+    to: process.env.SUPPORT_EMAIL || process.env.ADMIN_EMAIL || null,
     customerEmail: user.email,
     customerName: user.name,
     orderReference: order?.orderNumber || order?.customerReference || null,
     orderId: order?.id || null,
     orderStatus: order?.status || null,
     message,
+    dedupeKey: `${EMAIL_EVENTS.SUPPORT_REQUEST}:${order?.id || user.id}:${Date.now()}`,
+  }
+}
+
+export function buildAdminFailedPaymentEmail({
+  customerEmail = null,
+  message = null,
+}) {
+  const adminRecipient =
+    process.env.ADMIN_NOTIFICATION_EMAIL
+    || process.env.ADMIN_EMAIL
+    || null
+
+  return {
+    event: EMAIL_EVENTS.ADMIN_FAILED_PAYMENT,
+    to: adminRecipient,
+    customerEmail,
+    message,
+    dedupeKey: `${EMAIL_EVENTS.ADMIN_FAILED_PAYMENT}:${Date.now()}`,
   }
 }

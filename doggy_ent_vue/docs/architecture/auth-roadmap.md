@@ -58,6 +58,10 @@ Notes:
 - Sentinel/security challenge plugins are not enabled in this pass.
 - Activity tracking schema additions are not enabled in this pass, so no new activity field migration was added.
 - The real Infrastructure API key must be created in the Better Auth Infrastructure dashboard and configured only in Railway/server environment variables.
+- Dashboard Base URL should be the public backend/server origin where Better Auth runs. In production for this project, copy the Railway backend public domain from Railway service networking. Do not use the Vercel storefront URL unless the auth server is actually hosted there.
+- Dashboard Base Path is verified from code as `/api/customer-auth`.
+- Local route proof: `GET http://localhost:3000/api/customer-auth/get-session` returned `200` with unauthenticated `null`, proving the local Better Auth route exists.
+- Verification endpoint shape: `<BackendBaseUrl>/api/customer-auth/get-session`.
 
 Customer routes:
 

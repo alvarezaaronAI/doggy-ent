@@ -52,7 +52,7 @@
             {{ loading ? 'Creating account...' : 'Create account' }}
           </button>
 
-          <RouterLink class="text-sm font-bold text-emerald-700 hover:text-emerald-900" to="/account/sign-in">
+          <RouterLink class="text-sm font-bold text-emerald-700 hover:text-emerald-900" :to="{ path: '/account/sign-in', query: redirectQuery }">
             Sign in instead
           </RouterLink>
         </div>
@@ -86,8 +86,8 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AccountShell from '../components/AccountShell.vue'
 import {
   useAccountAuth,
@@ -98,6 +98,7 @@ import {
 } from '../validators/account.validators.js'
 
 const router = useRouter()
+const route = useRoute()
 const { loading, signUp } = useAccountAuth()
 const message = ref('')
 const form = reactive({
@@ -105,6 +106,20 @@ const form = reactive({
   email: '',
   password: '',
 })
+
+const redirectQuery = computed(() =>
+  getRedirectTarget()
+    ? { redirect: String(route.query.redirect) }
+    : {},
+)
+
+function getRedirectTarget() {
+  const redirect = String(route.query.redirect || '')
+
+  return redirect.startsWith('/') && !redirect.startsWith('//')
+    ? redirect
+    : ''
+}
 
 async function submit() {
   message.value = validateCreateAccountForm(form)
@@ -119,7 +134,7 @@ async function submit() {
       email: normalizeAccountEmail(form.email),
     })
 
-    router.push('/account')
+    router.push(getRedirectTarget() || '/account')
   }
   catch (error) {
     message.value = error.message || 'Unable to create account.'

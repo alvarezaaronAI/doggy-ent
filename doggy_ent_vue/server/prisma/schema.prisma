@@ -80,6 +80,8 @@ model Order {
   items OrderItem[]
   campaignUsages OrderCampaignUsage[]
   statusHistory OrderStatusHistory[]
+  shipments OrderShipment[]
+  emailDeliveries EmailDelivery[]
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
@@ -229,6 +231,74 @@ model OrderStatusHistory {
   @@index([createdAt])
 }
 
+model OrderShipment {
+  id              String   @id @default(cuid())
+  orderId         String
+  carrier         String
+  trackingNumber  String
+  trackingUrl     String?
+  shipmentStatus  String   @default("UNKNOWN")
+  estimatedDelivery DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  lastSyncedAt    DateTime?
+  source          String   @default("ADMIN")
+  rawStatus       Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  events          OrderShipmentEvent[]
+
+  @@unique([orderId, trackingNumber])
+  @@index([orderId])
+  @@index([trackingNumber])
+  @@index([shipmentStatus])
+}
+
+model OrderShipmentEvent {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  status      String
+  message     String?
+  location    String?
+  occurredAt  DateTime?
+  rawEvent    Json?
+  createdAt   DateTime @default(now())
+
+  shipment    OrderShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId])
+  @@index([occurredAt])
+  @@unique([shipmentId, status, occurredAt])
+}
+
+model EmailDelivery {
+  id            String   @id @default(cuid())
+  dedupeKey     String   @unique
+  event         String
+  recipient     String
+  subject       String
+  provider      String   @default("MOCK")
+  status        String   @default("PENDING")
+  providerId    String?
+  orderId       String?
+  userId        String?
+  errorMessage  String?
+  metadata      Json?
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  order         Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([event])
+  @@index([recipient])
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+}
+
 model User {
   id            String        @id
   name          String
@@ -308,6 +378,7 @@ model CustomerProfile {
   lastName       String?
   phone          String?
   marketingOptIn Boolean  @default(false)
+  preferredContactMethod String?
   defaultAddress Json?
   notes          String?
   createdAt      DateTime @default(now())

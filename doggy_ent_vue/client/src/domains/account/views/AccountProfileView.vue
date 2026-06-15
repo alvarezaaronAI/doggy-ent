@@ -34,14 +34,57 @@
           />
         </label>
 
-        <label class="mt-5 flex items-start gap-3 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-stone-700">
-          <input
-            v-model="form.marketingOptIn"
-            class="mt-1"
-            type="checkbox"
-          />
-          <span>Email me about new treat drops, exclusive offers, and future rewards.</span>
-        </label>
+        <fieldset class="mt-5 rounded-xl border border-stone-200 bg-stone-50 p-4">
+          <legend class="px-1 text-sm font-black text-stone-800">
+            Marketing preferences
+          </legend>
+
+          <div class="mt-3 grid gap-3 sm:grid-cols-2">
+            <label
+              v-for="option in marketingOptions"
+              :key="option.value"
+              class="flex items-start gap-3 rounded-xl border bg-white p-4 text-sm font-semibold text-stone-700"
+              :class="form.marketingOptIn === option.value ? 'border-emerald-400 ring-2 ring-emerald-100' : 'border-stone-200'"
+            >
+              <input
+                v-model="form.marketingOptIn"
+                class="mt-1"
+                type="radio"
+                :value="option.value"
+              />
+              <span>
+                <span class="block font-black text-stone-900">{{ option.label }}</span>
+                <span class="mt-1 block text-stone-500">{{ option.description }}</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="mt-5 rounded-xl border border-stone-200 bg-white p-4">
+          <legend class="px-1 text-sm font-black text-stone-800">
+            Preferred contact method
+          </legend>
+
+          <div class="mt-3 grid gap-3 sm:grid-cols-3">
+            <label
+              v-for="option in contactOptions"
+              :key="option.value"
+              class="flex items-center gap-2 rounded-xl border px-3 py-3 text-sm font-bold text-stone-700"
+              :class="form.preferredContactMethod === option.value ? 'border-emerald-400 bg-emerald-50 text-emerald-800' : 'border-stone-200'"
+            >
+              <input
+                v-model="form.preferredContactMethod"
+                type="radio"
+                :value="option.value"
+              />
+              <span>{{ option.label }}</span>
+            </label>
+          </div>
+
+          <p class="mt-3 text-xs font-semibold text-stone-500">
+            Order confirmations still go to your account email. This preference prepares future support and notification flows.
+          </p>
+        </fieldset>
 
         <p v-if="message" class="mt-4 rounded-xl px-4 py-3 text-sm font-semibold" :class="messageClass">
           {{ message }}
@@ -73,10 +116,27 @@
         </section>
 
         <section class="rounded-2xl border border-dashed border-stone-300 bg-white p-6">
-          <h2 class="font-black text-[var(--brand-4)]">Address readiness</h2>
-          <p class="mt-2 text-sm text-stone-500">
-            Saved addresses are prepared in the account architecture and will be added after the verification and address safety flow is ready.
+          <p class="text-xs font-black uppercase tracking-[0.18em] text-stone-400">
+            Coming in future phase
           </p>
+          <h2 class="mt-2 font-black text-[var(--brand-4)]">Saved addresses</h2>
+          <p class="mt-2 text-sm text-stone-500">
+            The profile has a foundation for saved checkout details, but the full address book is intentionally not active yet.
+          </p>
+          <div class="mt-4 space-y-3 text-sm">
+            <div class="rounded-xl bg-stone-50 p-4">
+              <p class="font-black text-stone-900">Default shipping address</p>
+              <p class="mt-1 text-stone-500">Coming in future phase.</p>
+            </div>
+            <div class="rounded-xl bg-stone-50 p-4">
+              <p class="font-black text-stone-900">Default billing address</p>
+              <p class="mt-1 text-stone-500">Coming in future phase.</p>
+            </div>
+            <div class="rounded-xl bg-stone-50 p-4">
+              <p class="font-black text-stone-900">Preferred shipping profile</p>
+              <p class="mt-1 text-stone-500">Coming in future phase.</p>
+            </div>
+          </div>
         </section>
       </aside>
     </div>
@@ -107,7 +167,36 @@ const form = reactive({
   lastName: '',
   phone: '',
   marketingOptIn: false,
+  preferredContactMethod: 'EMAIL',
 })
+
+const marketingOptions = [
+  {
+    label: 'Opt in',
+    description: 'Send new drops, offers, rewards, and account updates.',
+    value: true,
+  },
+  {
+    label: 'Opt out',
+    description: 'Only send transactional order and account messages.',
+    value: false,
+  },
+]
+
+const contactOptions = [
+  {
+    label: 'Email',
+    value: 'EMAIL',
+  },
+  {
+    label: 'Phone',
+    value: 'PHONE',
+  },
+  {
+    label: 'Text',
+    value: 'TEXT',
+  },
+]
 
 const messageClass = computed(() =>
   messageType.value === 'success'
@@ -120,6 +209,8 @@ function syncForm() {
   form.lastName = profile.value?.profile?.lastName || ''
   form.phone = profile.value?.profile?.phone || ''
   form.marketingOptIn = Boolean(profile.value?.profile?.marketingOptIn)
+  form.preferredContactMethod =
+    profile.value?.profile?.preferredContactMethod || 'EMAIL'
 }
 
 async function submit() {

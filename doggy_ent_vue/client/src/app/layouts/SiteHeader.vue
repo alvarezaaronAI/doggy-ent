@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   useAccountAuth,
 } from '@domains/account/composables/useAccountAuth.js'
@@ -16,6 +16,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['open-cart', 'update:search-query'])
+const accountMenuOpen = ref(false)
+const accountMenuRef = ref(null)
 const {
   authenticated,
   loadSession,
@@ -42,10 +44,40 @@ function getInitials() {
 }
 
 async function logout() {
+  accountMenuOpen.value = false
   await signOut()
 }
 
-onMounted(loadSession)
+function toggleAccountMenu() {
+  accountMenuOpen.value = !accountMenuOpen.value
+}
+
+function closeAccountMenu() {
+  accountMenuOpen.value = false
+}
+
+function handleDocumentClick(event) {
+  if (!accountMenuRef.value?.contains(event.target)) {
+    closeAccountMenu()
+  }
+}
+
+function handleEscape(event) {
+  if (event.key === 'Escape') {
+    closeAccountMenu()
+  }
+}
+
+onMounted(() => {
+  loadSession()
+  document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleEscape)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleEscape)
+})
 </script>
 
 <template>
@@ -59,13 +91,13 @@ onMounted(loadSession)
       </RouterLink>
 
       <ul class="hidden md:flex items-center gap-6 text-sm text-stone-200">
-        <li><a class="hover:text-emerald-400" href="#shop">All Treats</a></li>
-        <li><a class="hover:text-emerald-400" href="#coming-soon">Coming Soon</a></li>
-        <li><a class="hover:text-emerald-400" href="#process">How We Make Them</a></li>
-        <li><a class="hover:text-emerald-400" href="#ingredients">Ingredients</a></li>
-        <li><a class="hover:text-emerald-400" href="#reviews">Happy Pups</a></li>
-        <li><a class="hover:text-emerald-400" href="#about">Meet Chase &amp; Evie</a></li>
-        <li><a class="hover:text-emerald-400" href="#faq">FAQ</a></li>
+        <li><a class="hover:text-emerald-400" href="/#shop">All Treats</a></li>
+        <li><a class="hover:text-emerald-400" href="/#coming-soon">Coming Soon</a></li>
+        <li><a class="hover:text-emerald-400" href="/#process">How We Make Them</a></li>
+        <li><a class="hover:text-emerald-400" href="/#ingredients">Ingredients</a></li>
+        <li><a class="hover:text-emerald-400" href="/#reviews">Happy Pups</a></li>
+        <li><a class="hover:text-emerald-400" href="/#about">Meet Chase &amp; Evie</a></li>
+        <li><a class="hover:text-emerald-400" href="/#faq">FAQ</a></li>
       </ul>
 
       <div class="hidden md:flex items-center gap-4">
@@ -81,7 +113,7 @@ onMounted(loadSession)
           />
         </div>
 
-        <div class="group relative">
+        <div ref="accountMenuRef" class="relative">
           <RouterLink
             v-if="!authenticated"
             to="/account/sign-in"
@@ -97,6 +129,9 @@ onMounted(loadSession)
             class="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 transition hover:border-emerald-500"
             type="button"
             :aria-label="`Account menu for ${user?.email}`"
+            :aria-expanded="accountMenuOpen"
+            aria-haspopup="menu"
+            @click.stop="toggleAccountMenu"
           >
             <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-400 text-xs font-black uppercase text-stone-900">
               {{ getInitials() }}
@@ -107,20 +142,23 @@ onMounted(loadSession)
 
           <div
             v-if="authenticated"
-            class="invisible absolute right-0 top-full z-30 mt-3 w-56 rounded-xl border border-[color-mix(in_srgb,var(--brand-3)_40%,white)] bg-white p-2 text-sm text-stone-700 opacity-0 shadow-xl transition duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+            class="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-[color-mix(in_srgb,var(--brand-3)_40%,white)] bg-white p-2 text-sm text-stone-700 shadow-xl transition duration-150"
+            :class="accountMenuOpen ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-1 opacity-0'"
+            role="menu"
           >
-            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/account">
+            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/account" role="menuitem" @click="closeAccountMenu">
               Account overview
             </RouterLink>
-            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/account/orders">
+            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/account/orders" role="menuitem" @click="closeAccountMenu">
               Orders
             </RouterLink>
-            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/checkout">
-              Checkout
+            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/account/profile" role="menuitem" @click="closeAccountMenu">
+              Profile
             </RouterLink>
             <button
               class="mt-1 block w-full rounded-lg px-3 py-2 text-left font-bold text-red-600 hover:bg-red-50"
               type="button"
+              role="menuitem"
               @click="logout"
             >
               Sign out

@@ -46,5 +46,12 @@ export function validateProfileForm(profile) {
     return 'Last name is required.'
   }
 
+  if (
+    profile.preferredContactMethod
+    && !['EMAIL', 'PHONE', 'TEXT'].includes(profile.preferredContactMethod)
+  ) {
+    return 'Choose a valid preferred contact method.'
+  }
+
   return ''
 }

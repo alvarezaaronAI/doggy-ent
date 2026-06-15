@@ -3,6 +3,30 @@
     title="Account"
     :subtitle="user?.email ? `Signed in as ${user.email}` : 'Your customer account.'"
   >
+    <section class="mb-5 rounded-2xl border border-[color-mix(in_srgb,var(--brand-1)_26%,white)] bg-white p-6 shadow-sm">
+      <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+        Welcome back
+      </p>
+      <div class="mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 class="text-3xl font-black text-[var(--brand-4)]">
+            {{ dashboard?.profile?.profile?.firstName || dashboard?.profile?.name || user?.name || 'Treat shopper' }}
+          </h2>
+          <p class="mt-2 max-w-2xl text-sm text-stone-600">
+            Your order history, profile details, and future rewards live here so checkout can stay quick.
+          </p>
+        </div>
+
+        <RouterLink
+          class="inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-700"
+          to="/#shop"
+        >
+          Shop treats
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </RouterLink>
+      </div>
+    </section>
+
     <div class="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
       <section class="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -44,13 +68,21 @@
       </section>
 
       <section class="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
-        <p class="text-sm font-semibold uppercase tracking-[0.16em] text-stone-400">
-          Recent orders
-        </p>
+        <div class="flex items-center justify-between gap-4">
+          <p class="text-sm font-semibold uppercase tracking-[0.16em] text-stone-400">
+            Recent orders
+          </p>
+          <RouterLink
+            class="text-sm font-black text-emerald-700 hover:text-emerald-900"
+            to="/account/orders"
+          >
+            View all orders
+          </RouterLink>
+        </div>
 
-        <div v-if="dashboard?.recentOrders?.length" class="mt-4 space-y-3">
+        <div v-if="recentOrders.length" class="mt-4 space-y-3">
           <AccountOrderCard
-            v-for="order in dashboard.recentOrders"
+            v-for="order in recentOrders"
             :key="order.customerReference || order.orderNumber"
             :order="order"
           />
@@ -62,18 +94,22 @@
       </section>
     </div>
 
-    <div class="mt-5 grid gap-5 md:grid-cols-3">
+    <div class="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
       <AccountPlaceholderPanel
         title="Tracking"
-        message="Tracking updates are prepared in the account flow and will activate when fulfillment tracking is added."
+        message="Coming in future phase. Tracking updates are prepared in the account flow and will activate when fulfillment tracking is added."
       />
       <AccountPlaceholderPanel
         title="Reviews"
-        message="Review requests have a database foundation and will be sent after the email provider is connected."
+        message="Coming in future phase. Review requests have a database foundation and will be sent after the email provider is connected."
       />
       <AccountPlaceholderPanel
         title="Loyalty"
-        message="Rewards, referrals, and points are reserved for the next customer loyalty phase."
+        message="Coming in future phase. Rewards, referrals, and points are reserved for the next customer loyalty phase."
+      />
+      <AccountPlaceholderPanel
+        title="Wishlist"
+        message="Coming in future phase. Saved favorites and reorder shortcuts will be added after product availability rules are finalized."
       />
     </div>
 
@@ -84,7 +120,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AccountShell from '../components/AccountShell.vue'
 import AccountOrderCard from '../components/AccountOrderCard.vue'
@@ -106,6 +142,10 @@ const {
   signOut,
   user,
 } = useAccountAuth()
+
+const recentOrders = computed(() =>
+  (dashboard.value?.recentOrders || []).slice(0, 3),
+)
 
 async function loadDashboard() {
   try {

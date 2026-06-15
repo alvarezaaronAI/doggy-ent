@@ -1,6 +1,11 @@
 <template>
   <div class="min-h-screen bg-[linear-gradient(180deg,rgba(243,232,210,0.72)_0%,#fff_58%,rgba(242,248,235,0.62)_100%)] text-slate-900">
-    <SiteHeader />
+    <SiteHeader
+      :cart-count="itemCount"
+      :search-query="searchQuery"
+      @open-cart="isCartOpen = true"
+      @update:search-query="searchQuery = $event"
+    />
 
     <main>
       <section class="mx-auto max-w-6xl px-6 py-10 md:py-14">
@@ -35,12 +40,28 @@
     </main>
 
     <SiteFooter />
+
+    <CartDrawer
+      :is-open="isCartOpen"
+      :cart-items="cart"
+      :subtotal="subtotal"
+      :item-count="itemCount"
+      @close="isCartOpen = false"
+      @increase="increase"
+      @decrease="decrease"
+      @remove="remove"
+      @continue-shopping="isCartOpen = false"
+    />
   </div>
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
+import CartDrawer from '@cart/CartDrawer/CartDrawer.vue'
 import SiteFooter from '@app/layouts/SiteFooter.vue'
 import SiteHeader from '@app/layouts/SiteHeader.vue'
+import { useCart } from '@cart/composables/useCart'
+import { useStorefrontSearch } from '@storefront/composables/useStorefrontSearch.js'
 import AccountNav from './AccountNav.vue'
 
 defineProps({
@@ -57,4 +78,18 @@ defineProps({
     default: true,
   },
 })
+
+const { searchQuery } = useStorefrontSearch()
+const {
+  cart,
+  decrease,
+  increase,
+  isCartOpen,
+  itemCount,
+  loadSavedCart,
+  remove,
+  subtotal,
+} = useCart()
+
+onMounted(loadSavedCart)
 </script>

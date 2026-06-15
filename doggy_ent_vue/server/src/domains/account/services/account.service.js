@@ -11,9 +11,29 @@ import {
 import {
   mapCustomerOrder,
 } from '../../orders/mappers/orders.mapper.js'
+import {
+  buildProfileUpdatedEmail,
+} from '../../emails/mappers/emailPayloads.mapper.js'
+import {
+  queueEmail,
+} from '../../emails/services/emailProvider.service.js'
 
 function canIncludeVerifiedEmailMatches(user) {
   return Boolean(user?.emailVerified && user?.email)
+}
+
+function normalizePreferredContactMethod(value) {
+  const normalized = String(value || '').trim().toUpperCase()
+
+  if ([
+    'EMAIL',
+    'PHONE',
+    'TEXT',
+  ].includes(normalized)) {
+    return normalized
+  }
+
+  return null
 }
 
 export async function getAccountDashboard(user) {
@@ -47,19 +67,34 @@ export async function updateAccountProfile(user, input = {}) {
       lastName: String(input.lastName || '').trim() || null,
       phone: String(input.phone || '').trim() || null,
       marketingOptIn: Boolean(input.marketingOptIn),
+      preferredContactMethod: normalizePreferredContactMethod(
+        input.preferredContactMethod,
+      ),
     },
   )
 
-  return {
+  const result = {
     ...(await getAccountProfile(user)),
     profile: {
       firstName: profile.firstName || '',
       lastName: profile.lastName || '',
       phone: profile.phone || '',
       marketingOptIn: Boolean(profile.marketingOptIn),
+      preferredContactMethod: profile.preferredContactMethod || '',
       defaultAddress: profile.defaultAddress || null,
     },
   }
+
+  queueEmail(buildProfileUpdatedEmail({
+    user,
+  })).catch((error) => {
+    console.error(
+      '[account] Failed to queue profile update email.',
+      error?.message || error,
+    )
+  })
+
+  return result
 }
 
 export async function getAccountOrders(user) {

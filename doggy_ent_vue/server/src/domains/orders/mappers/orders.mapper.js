@@ -67,6 +67,72 @@ export function mapOrderStatusHistoryEntry(entry) {
   }
 }
 
+export function mapOrderShipmentEvent(event) {
+  if (!event) {
+    return null
+  }
+
+  return {
+    id: event.id,
+    status: event.status,
+    message: event.message,
+    location: event.location,
+    occurredAt: event.occurredAt,
+    createdAt: event.createdAt,
+  }
+}
+
+export function mapOrderShipment(shipment) {
+  if (!shipment) {
+    return null
+  }
+
+  return {
+    id: shipment.id,
+    carrier: shipment.carrier,
+    trackingNumber: shipment.trackingNumber,
+    trackingUrl: shipment.trackingUrl,
+    shipmentStatus: shipment.shipmentStatus,
+    estimatedDelivery: shipment.estimatedDelivery,
+    shippedAt: shipment.shippedAt,
+    deliveredAt: shipment.deliveredAt,
+    lastSyncedAt: shipment.lastSyncedAt,
+    source: shipment.source,
+    createdAt: shipment.createdAt,
+    updatedAt: shipment.updatedAt,
+    events: Array.isArray(shipment.events)
+      ? shipment.events
+          .map(mapOrderShipmentEvent)
+          .filter(Boolean)
+      : [],
+  }
+}
+
+export function mapCustomerShipment(shipment) {
+  const mappedShipment = mapOrderShipment(shipment)
+
+  if (!mappedShipment) {
+    return null
+  }
+
+  return {
+    carrier: mappedShipment.carrier,
+    trackingNumber: mappedShipment.trackingNumber,
+    trackingUrl: mappedShipment.trackingUrl,
+    shipmentStatus: mappedShipment.shipmentStatus,
+    estimatedDelivery: mappedShipment.estimatedDelivery,
+    shippedAt: mappedShipment.shippedAt,
+    deliveredAt: mappedShipment.deliveredAt,
+    lastSyncedAt: mappedShipment.lastSyncedAt,
+    events: mappedShipment.events.map((event) => ({
+      status: event.status,
+      message: event.message,
+      location: event.location,
+      occurredAt: event.occurredAt,
+    })),
+  }
+}
+
 export function getOrderDonationAmount(order) {
   return Array.isArray(order?.campaignUsages)
     ? order.campaignUsages.reduce(
@@ -110,6 +176,14 @@ export function mapOrder(order) {
       : [],
     lastStatusChange: Array.isArray(order.statusHistory)
       ? mapOrderStatusHistoryEntry(order.statusHistory[0])
+      : null,
+    shipments: Array.isArray(order.shipments)
+      ? order.shipments
+          .map(mapOrderShipment)
+          .filter(Boolean)
+      : [],
+    shipment: Array.isArray(order.shipments)
+      ? mapOrderShipment(order.shipments[0])
       : null,
     campaignAttributions: Array.isArray(order.campaignUsages)
       ? order.campaignUsages
@@ -163,6 +237,12 @@ export function mapCustomerOrder(order) {
     items: mappedOrder.items,
     promoUsage: mappedOrder.promoUsage,
     statusHistory: mappedOrder.statusHistory,
+    shipment: mapCustomerShipment(mappedOrder.shipment),
+    shipments: Array.isArray(mappedOrder.shipments)
+      ? mappedOrder.shipments
+          .map(mapCustomerShipment)
+          .filter(Boolean)
+      : [],
     campaignAttributions: mappedOrder.campaignAttributions,
   }
 }

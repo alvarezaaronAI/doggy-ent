@@ -8,6 +8,16 @@ import {
 } from '../../campaigns/services/campaigns.service.js'
 import { calculateTax } from '../../../shared/services/tax.service.js'
 import { createNewOrder } from '../../orders/services/orders.service.js'
+import {
+  EMAIL_EVENTS,
+} from '../../emails/constants/emailEvents.constants.js'
+import {
+  buildAdminOrderEmailPayload,
+  buildOrderEmailPayload,
+} from '../../emails/mappers/emailPayloads.mapper.js'
+import {
+  queueEmail,
+} from '../../emails/services/emailProvider.service.js'
 
 import {
   validateStripePaymentIntent,
@@ -36,6 +46,28 @@ import {
   validateFinalizedCheckoutPreview,
   validateRequiredCheckoutFields,
 } from '../validators/checkout.validator.js'
+
+async function queueCheckoutEmails(order) {
+  if (!order?.id) {
+    return
+  }
+
+  await Promise.allSettled([
+    queueEmail(
+      buildOrderEmailPayload({
+        event: EMAIL_EVENTS.ORDER_CONFIRMATION,
+        order,
+      }),
+    ),
+    queueEmail(
+      buildAdminOrderEmailPayload({
+        event: EMAIL_EVENTS.ADMIN_NEW_ORDER,
+        order,
+        message: 'A new paid checkout order was created.',
+      }),
+    ),
+  ])
+}
 
 export async function previewCheckout(checkoutInput = {}) {
   const {
@@ -270,6 +302,13 @@ export async function createCheckout(
       )
     }
   }
+
+  queueCheckoutEmails(order).catch((error) => {
+    console.error(
+      '[checkout] Failed checkout email dispatch.',
+      error,
+    )
+  })
 
   return {
     ...checkoutPreview,

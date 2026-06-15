@@ -41,7 +41,7 @@
             {{ loading ? 'Signing in...' : 'Sign in' }}
           </button>
 
-          <RouterLink class="text-sm font-bold text-emerald-700 hover:text-emerald-900" to="/account/create">
+          <RouterLink class="text-sm font-bold text-emerald-700 hover:text-emerald-900" :to="{ path: '/account/create', query: redirectQuery }">
             Create account
           </RouterLink>
 
@@ -82,7 +82,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AccountShell from '../components/AccountShell.vue'
 import {
@@ -102,6 +102,20 @@ const form = reactive({
   password: '',
 })
 
+const redirectQuery = computed(() =>
+  getRedirectTarget()
+    ? { redirect: String(route.query.redirect) }
+    : {},
+)
+
+function getRedirectTarget() {
+  const redirect = String(route.query.redirect || '')
+
+  return redirect.startsWith('/') && !redirect.startsWith('//')
+    ? redirect
+    : ''
+}
+
 async function submit() {
   message.value = validateSignInForm(form)
 
@@ -115,7 +129,7 @@ async function submit() {
       email: normalizeAccountEmail(form.email),
     })
 
-    router.push(String(route.query.redirect || '/account'))
+    router.push(getRedirectTarget() || '/account')
   }
   catch (error) {
     message.value = error.message || 'Unable to sign in.'

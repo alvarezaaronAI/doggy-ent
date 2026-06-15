@@ -90,12 +90,84 @@
           </div>
         </div>
       </div>
+
+      <section class="mt-6 rounded-xl border border-stone-200 bg-white p-5">
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <h3 class="font-black text-stone-900">Tracking</h3>
+          <p class="text-sm font-semibold text-stone-500">
+            {{ shipment ? shipment.shipmentStatus || 'Tracking added' : 'Coming in future phase: carrier tracking.' }}
+          </p>
+        </div>
+
+        <div v-if="shipment" class="mt-4 grid gap-3 rounded-xl bg-stone-50 p-4 text-sm sm:grid-cols-2">
+          <p><span class="font-semibold text-stone-500">Carrier:</span> {{ shipment.carrier || 'N/A' }}</p>
+          <p><span class="font-semibold text-stone-500">Tracking #:</span> {{ shipment.trackingNumber || 'N/A' }}</p>
+          <p><span class="font-semibold text-stone-500">Estimated delivery:</span> {{ formatDateTime(shipment.estimatedDelivery) }}</p>
+          <p><span class="font-semibold text-stone-500">Last sync:</span> {{ formatDateTime(shipment.lastSyncedAt) }}</p>
+          <p v-if="shipment.trackingUrl" class="sm:col-span-2">
+            <a
+              :href="shipment.trackingUrl"
+              target="_blank"
+              rel="noreferrer"
+              class="font-bold text-emerald-700"
+            >
+              Track package
+            </a>
+          </p>
+        </div>
+
+        <div v-if="shipmentEvents.length" class="mt-4 space-y-3">
+          <div
+            v-for="event in shipmentEvents"
+            :key="`${event.status}-${event.occurredAt}-${event.message}`"
+            class="flex gap-3 rounded-xl bg-stone-50 p-4 text-sm"
+          >
+            <span class="mt-1 h-3 w-3 flex-shrink-0 rounded-full bg-sky-400"></span>
+            <div>
+              <p class="font-black text-stone-900">{{ formatStatus(event.status || 'Tracking update') }}</p>
+              <p class="mt-1 text-stone-500">{{ formatDateTime(event.occurredAt) }}</p>
+              <p v-if="event.message" class="mt-1 text-stone-600">{{ event.message }}</p>
+              <p v-if="event.location" class="mt-1 text-stone-500">{{ event.location }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-6 rounded-xl border border-stone-200 bg-white p-5">
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <h3 class="font-black text-stone-900">Order timeline</h3>
+          <p class="text-sm font-semibold text-stone-500">
+            {{ timelineItems.length ? 'Latest updates first' : 'Coming in future phase: richer tracking updates.' }}
+          </p>
+        </div>
+
+        <div v-if="timelineItems.length" class="mt-4 space-y-3">
+          <div
+            v-for="item in timelineItems"
+            :key="item.id || `${item.toStatus}-${item.createdAt}`"
+            class="flex gap-3 rounded-xl bg-stone-50 p-4 text-sm"
+          >
+            <span class="mt-1 h-3 w-3 flex-shrink-0 rounded-full bg-emerald-400"></span>
+            <div>
+              <p class="font-black text-stone-900">
+                {{ formatStatus(item.fromStatus) }} → {{ formatStatus(item.toStatus) }}
+              </p>
+              <p class="mt-1 text-stone-500">{{ formatDateTime(item.createdAt) }}</p>
+              <p v-if="item.note" class="mt-1 text-stone-600">{{ item.note }}</p>
+            </div>
+          </div>
+        </div>
+
+        <p v-else class="mt-4 rounded-xl bg-stone-50 p-4 text-sm text-stone-500">
+          Detailed carrier tracking is coming in future phase. For now, your current status is shown above.
+        </p>
+      </section>
     </section>
 
     <div v-if="order" class="mt-5 grid gap-5 md:grid-cols-3">
       <AccountPlaceholderPanel
         title="Tracking"
-        :message="order.tracking?.message || 'Tracking will appear here once fulfillment tracking is connected.'"
+        :message="shipment ? 'Carrier tracking is connected for this order.' : 'Tracking will appear here once fulfillment tracking is connected.'"
       />
       <AccountPlaceholderPanel
         title="Reviews"
@@ -156,6 +228,29 @@ const shippingLines = computed(() => {
   ].filter(Boolean)
 })
 
+const timelineItems = computed(() =>
+  Array.isArray(order.value?.statusHistory)
+    ? order.value.statusHistory
+    : [],
+)
+const shipment = computed(() =>
+  order.value?.shipment
+  || order.value?.shipments?.[0]
+  || null,
+)
+const shipmentEvents = computed(() =>
+  Array.isArray(shipment.value?.events)
+    ? shipment.value.events
+    : [],
+)
+
+function formatStatus(value) {
+  return String(value || 'Pending')
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
 function formatDate(value) {
   if (!value) {
     return 'date unavailable'
@@ -165,6 +260,20 @@ function formatDate(value) {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+  }).format(new Date(value))
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return 'date unavailable'
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
   }).format(new Date(value))
 }
 

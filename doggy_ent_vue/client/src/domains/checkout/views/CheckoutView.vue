@@ -5,6 +5,7 @@ import CheckoutProcessingOverlay from '@checkout/Checkout/CheckoutProcessingOver
 import CheckoutProgress from '@checkout/Checkout/CheckoutProgress.vue'
 import CheckoutHeader from '@checkout/Checkout/CheckoutHeader.vue'
 import CheckoutContactSection from '@checkout/Checkout/CheckoutContactSection.vue'
+import CheckoutAuthModal from '@checkout/Checkout/CheckoutAuthModal.vue'
 import CheckoutShippingSection from '@checkout/Checkout/CheckoutShippingSection.vue'
 import CheckoutDeliverySection from '@checkout/Checkout/CheckoutDeliverySection.vue'
 import CheckoutPaymentSection from '@checkout/Checkout/CheckoutPaymentSection.vue'
@@ -56,6 +57,7 @@ const paymentFormComplete = ref(false)
 const accountProfile = ref(null)
 const accountProfileLoaded = ref(false)
 const profilePrefilled = ref(false)
+const checkoutAuthMode = ref(null)
 
 const mobileSummaryOpen = ref(false)
 
@@ -286,6 +288,15 @@ async function loadCheckoutAccountProfile() {
   finally {
     accountProfileLoaded.value = true
   }
+}
+
+function openCheckoutAuth(mode) {
+  checkoutAuthMode.value = mode || 'sign-in'
+}
+
+async function handleCheckoutAuthenticated() {
+  checkoutAuthMode.value = null
+  await loadCheckoutAccountProfile()
 }
 
 
@@ -609,6 +620,7 @@ onMounted(() => {
                 :account-profile="accountProfile"
                 :is-signed-in="isSignedInCheckout"
                 :profile-prefilled="profilePrefilled"
+                @open-auth="openCheckoutAuth"
               />
 
               <CheckoutShippingSection
@@ -731,6 +743,13 @@ onMounted(() => {
         :format-price="formatPrice"
         @toggle-summary="mobileSummaryOpen = !mobileSummaryOpen"
         @place-order="placeOrder"
+      />
+
+      <CheckoutAuthModal
+        v-if="checkoutAuthMode"
+        :mode="checkoutAuthMode"
+        @authenticated="handleCheckoutAuthenticated"
+        @close="checkoutAuthMode = null"
       />
 
     </main>

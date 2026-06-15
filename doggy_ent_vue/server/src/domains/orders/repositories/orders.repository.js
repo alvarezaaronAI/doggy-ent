@@ -8,6 +8,19 @@ import {
   ORDER_STATUS,
 } from '../constants/orders.constants.js'
 
+const orderShipmentsInclude = {
+  orderBy: {
+    createdAt: 'desc',
+  },
+  include: {
+    events: {
+      orderBy: {
+        occurredAt: 'desc',
+      },
+    },
+  },
+}
+
 export async function findAllOrders() {
   const orders = await prisma.order.findMany({
     orderBy: {
@@ -24,6 +37,7 @@ export async function findAllOrders() {
           createdAt: 'desc',
         },
       },
+      shipments: orderShipmentsInclude,
     },
   })
 
@@ -48,6 +62,7 @@ export async function findOrderById(orderId) {
             createdAt: 'desc',
           },
         },
+        shipments: orderShipmentsInclude,
       },
     }),
     prisma.promoUsage.findFirst({
@@ -84,6 +99,7 @@ export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
           createdAt: 'desc',
         },
       },
+      shipments: orderShipmentsInclude,
     },
   })
 
@@ -120,6 +136,7 @@ export async function findCustomerOrderByReference(reference) {
           createdAt: 'desc',
         },
       },
+      shipments: orderShipmentsInclude,
     },
   })
 
@@ -173,6 +190,7 @@ export async function findOrdersByCustomerEmail(
           createdAt: 'desc',
         },
       },
+      shipments: orderShipmentsInclude,
     },
   })
 
@@ -270,6 +288,7 @@ export async function createOrder(orderInput) {
           campaign: true,
         },
       },
+      shipments: orderShipmentsInclude,
     },
   })
 
@@ -330,6 +349,7 @@ export async function updateOrderStatusById(
             createdAt: 'desc',
           },
         },
+        shipments: orderShipmentsInclude,
       },
     })
   })

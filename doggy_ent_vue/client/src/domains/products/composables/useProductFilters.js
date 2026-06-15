@@ -1,9 +1,12 @@
 
 
 import { computed, ref } from 'vue'
+import {
+  useStorefrontSearch,
+} from '@storefront/composables/useStorefrontSearch.js'
 
 export function useProductFilters(products, getSelectedCardPrice) {
-  const searchQuery = ref('')
+  const { searchQuery } = useStorefrontSearch()
   const selectedCategory = ref('all')
   const selectedProtein = ref('all')
   const selectedSort = ref('featured')

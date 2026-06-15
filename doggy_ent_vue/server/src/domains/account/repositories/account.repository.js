@@ -1,5 +1,18 @@
 import { prisma } from '../../../db/prisma.js'
 
+const orderShipmentsInclude = {
+  orderBy: {
+    createdAt: 'desc',
+  },
+  include: {
+    events: {
+      orderBy: {
+        occurredAt: 'desc',
+      },
+    },
+  },
+}
+
 export async function findAccountUserById(userId) {
   return prisma.user.findUnique({
     where: {
@@ -50,6 +63,7 @@ export async function findCustomerOrdersForAccount({
           createdAt: 'desc',
         },
       },
+      shipments: orderShipmentsInclude,
     },
   })
 }
@@ -109,6 +123,7 @@ export async function findCustomerOrderForAccount({
           createdAt: 'desc',
         },
       },
+      shipments: orderShipmentsInclude,
     },
   })
 

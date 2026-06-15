@@ -1,12 +1,23 @@
 import { computed, ref, watch } from 'vue'
 
+function defaultLimitQuantity(_product, quantity, availableQuantity) {
+  const normalizedQuantity = Number(quantity || 1)
+  const normalizedAvailable = Number(availableQuantity)
+
+  if (Number.isFinite(normalizedAvailable) && normalizedAvailable > 0) {
+    return Math.min(normalizedQuantity, normalizedAvailable)
+  }
+
+  return normalizedQuantity
+}
+
 export function useCart({
-  products,
-  getSellingMode,
-  isPurchasable,
-  getAvailableQuantity,
-  limitQuantity,
-}) {
+  products = ref([]),
+  getSellingMode = (product) => product?.sellingMode || 'made-to-order',
+  isPurchasable = () => true,
+  getAvailableQuantity = (product) => Number(product?.availableQuantity || 0),
+  limitQuantity = defaultLimitQuantity,
+} = {}) {
   const cart = ref([])
   const isCartOpen = ref(false)
 

@@ -1,21 +1,218 @@
-export function isEmailProviderConfigured() {
-  return String(process.env.EMAIL_PROVIDER || '')
-    .trim()
-    .toUpperCase() === 'ENABLED'
+import {
+  EMAIL_STATUS,
+} from '../constants/emailEvents.constants.js'
+import {
+  renderEmailTemplate,
+} from '../mappers/emailTemplates.mapper.js'
+import {
+  createEmailDelivery,
+  findEmailDeliveryByDedupeKey,
+  updateEmailDeliveryById,
+} from '../repositories/emailDelivery.repository.js'
+
+function getResendApiKey() {
+  return String(process.env.RESEND_API_KEY || '').trim()
 }
 
-export async function queueEmail(payload) {
-  if (!isEmailProviderConfigured()) {
+function getEmailFrom() {
+  return String(
+    process.env.EMAIL_FROM
+    || process.env.RESEND_FROM_EMAIL
+    || '',
+  ).trim()
+}
+
+function getEmailReplyTo() {
+  return String(
+    process.env.EMAIL_REPLY_TO
+    || process.env.RESEND_REPLY_TO_EMAIL
+    || '',
+  ).trim()
+}
+
+function isMockEmailMode() {
+  const mode = String(
+    process.env.EMAIL_PROVIDER
+    || process.env.EMAIL_MODE
+    || '',
+  )
+    .trim()
+    .toUpperCase()
+
+  return (
+    process.env.NODE_ENV === 'test'
+    || mode === 'MOCK'
+    || mode === 'TEST'
+    || !getResendApiKey()
+    || !getEmailFrom()
+  )
+}
+
+function sanitizeEmailError(error) {
+  return String(error?.message || error || 'Email provider error.')
+    .replace(getResendApiKey(), '[redacted]')
+    .slice(0, 500)
+}
+
+function getDedupeKey(payload) {
+  return String(
+    payload.dedupeKey
+    || `${payload.event}:${payload.to}:${payload.orderId || payload.userId || ''}`,
+  )
+    .trim()
+}
+
+function normalizeRecipients(to) {
+  return Array.isArray(to)
+    ? to.map((recipient) => String(recipient || '').trim()).filter(Boolean)
+    : [String(to || '').trim()].filter(Boolean)
+}
+
+async function sendWithResend({
+  html,
+  subject,
+  text,
+  to,
+}) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${getResendApiKey()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: getEmailFrom(),
+      to,
+      subject,
+      html,
+      text,
+      ...(getEmailReplyTo()
+        ? {
+            reply_to: getEmailReplyTo(),
+          }
+        : {}),
+    }),
+  })
+
+  const data = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    const error = new Error(
+      data?.message
+      || data?.error?.message
+      || `Resend returned ${response.status}.`,
+    )
+
+    error.statusCode = response.status
+    throw error
+  }
+
+  return data
+}
+
+export function isEmailProviderConfigured() {
+  return Boolean(getResendApiKey() && getEmailFrom())
+}
+
+export async function queueEmail(payload = {}) {
+  const recipients = normalizeRecipients(payload.to)
+
+  if (!payload.event || !recipients.length) {
     return {
       queued: false,
-      reason: 'EMAIL_PROVIDER is not configured.',
-      payload,
+      status: EMAIL_STATUS.SKIPPED,
+      reason: 'Missing email event or recipient.',
     }
   }
 
-  return {
-    queued: false,
-    reason: 'No concrete email provider adapter has been implemented.',
-    payload,
+  const dedupeKey = getDedupeKey(payload)
+  const existingDelivery =
+    await findEmailDeliveryByDedupeKey(dedupeKey)
+
+  if (existingDelivery) {
+    return {
+      queued: false,
+      status: EMAIL_STATUS.DUPLICATE,
+      delivery: existingDelivery,
+    }
+  }
+
+  const rendered = renderEmailTemplate(payload)
+  const provider = isMockEmailMode() ? 'MOCK' : 'RESEND'
+  const initialStatus = provider === 'MOCK'
+    ? EMAIL_STATUS.MOCKED
+    : 'PENDING'
+
+  const delivery = await createEmailDelivery({
+    dedupeKey,
+    event: payload.event,
+    recipient: recipients.join(','),
+    subject: rendered.subject,
+    provider,
+    status: initialStatus,
+    orderId: payload.orderId || null,
+    userId: payload.userId || null,
+    metadata: {
+      hasActionUrl: Boolean(payload.actionUrl),
+      orderReference: payload.orderReference || null,
+      mockMode: provider === 'MOCK',
+    },
+    sentAt: provider === 'MOCK' ? new Date() : null,
+  })
+
+  if (provider === 'MOCK') {
+    console.info(
+      `[email] Mocked ${payload.event} email to ${recipients.join(', ')}`,
+    )
+
+    return {
+      queued: true,
+      status: EMAIL_STATUS.MOCKED,
+      delivery,
+    }
+  }
+
+  try {
+    const result = await sendWithResend({
+      ...rendered,
+      to: recipients,
+    })
+
+    const updatedDelivery = await updateEmailDeliveryById(
+      delivery.id,
+      {
+        status: EMAIL_STATUS.SENT,
+        providerId: result?.id || null,
+        sentAt: new Date(),
+      },
+    )
+
+    return {
+      queued: true,
+      status: EMAIL_STATUS.SENT,
+      delivery: updatedDelivery,
+    }
+  }
+  catch (error) {
+    const safeMessage = sanitizeEmailError(error)
+
+    console.error(
+      `[email] ${payload.event} email failed: ${safeMessage}`,
+    )
+
+    const updatedDelivery = await updateEmailDeliveryById(
+      delivery.id,
+      {
+        status: EMAIL_STATUS.FAILED,
+        errorMessage: safeMessage,
+      },
+    )
+
+    return {
+      queued: false,
+      status: EMAIL_STATUS.FAILED,
+      delivery: updatedDelivery,
+      reason: safeMessage,
+    }
   }
 }

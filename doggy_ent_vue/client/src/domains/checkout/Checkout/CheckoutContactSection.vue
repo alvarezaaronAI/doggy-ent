@@ -19,6 +19,8 @@ const props = defineProps({
     default: false,
   },
 })
+
+const emit = defineEmits(['open-auth'])
 </script>
 
 <template>
@@ -53,12 +55,20 @@ const props = defineProps({
             Guest checkout is ready. Sign in or create an account for order history and faster future checkout.
           </p>
           <div class="mt-3 flex flex-wrap gap-2">
-            <RouterLink class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white" to="/account/sign-in">
+            <button
+              class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black text-white"
+              type="button"
+              @click="emit('open-auth', 'sign-in')"
+            >
               Sign in
-            </RouterLink>
-            <RouterLink class="rounded-lg border border-stone-300 px-3 py-2 text-xs font-black text-stone-700" to="/account/create">
+            </button>
+            <button
+              class="rounded-lg border border-stone-300 px-3 py-2 text-xs font-black text-stone-700"
+              type="button"
+              @click="emit('open-auth', 'create')"
+            >
               Create account
-            </RouterLink>
+            </button>
           </div>
         </div>
 
