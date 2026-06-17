@@ -28,6 +28,21 @@ export function calculateShipping(shipping = {}) {
   )
 }
 
+export function buildStaticShippingOption(method = DEFAULT_SHIPPING_METHOD) {
+  const option =
+    SHIPPING_OPTIONS[method]
+    || SHIPPING_OPTIONS[DEFAULT_SHIPPING_METHOD]
+
+  return {
+    ...option,
+    code: option.method,
+    carrier: null,
+    service: option.label,
+    rateId: null,
+    provider: 'STATIC',
+  }
+}
+
 export function calculateCheckoutDiscountAmount(promoResult) {
   if (!promoResult?.valid) {
     return 0

@@ -7,6 +7,7 @@ export function buildCheckoutResponse({
   total,
   promoResult,
   campaignPreview,
+  shipping = null,
 }) {
   return {
     pricing: {
@@ -22,5 +23,6 @@ export function buildCheckoutResponse({
     promo: promoResult,
 
     campaigns: campaignPreview,
+    shipping,
   }
 }

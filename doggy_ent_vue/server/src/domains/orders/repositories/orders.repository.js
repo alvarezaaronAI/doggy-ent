@@ -21,6 +21,13 @@ const orderShipmentsInclude = {
   },
 }
 
+const orderEmailDeliveriesInclude = {
+  orderBy: {
+    createdAt: 'desc',
+  },
+  take: 20,
+}
+
 export async function findAllOrders() {
   const orders = await prisma.order.findMany({
     orderBy: {
@@ -38,6 +45,7 @@ export async function findAllOrders() {
         },
       },
       shipments: orderShipmentsInclude,
+      emailDeliveries: orderEmailDeliveriesInclude,
     },
   })
 
@@ -63,6 +71,7 @@ export async function findOrderById(orderId) {
           },
         },
         shipments: orderShipmentsInclude,
+        emailDeliveries: orderEmailDeliveriesInclude,
       },
     }),
     prisma.promoUsage.findFirst({
@@ -100,6 +109,7 @@ export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
         },
       },
       shipments: orderShipmentsInclude,
+      emailDeliveries: orderEmailDeliveriesInclude,
     },
   })
 
@@ -137,6 +147,7 @@ export async function findCustomerOrderByReference(reference) {
         },
       },
       shipments: orderShipmentsInclude,
+      emailDeliveries: orderEmailDeliveriesInclude,
     },
   })
 
@@ -191,6 +202,7 @@ export async function findOrdersByCustomerEmail(
         },
       },
       shipments: orderShipmentsInclude,
+      emailDeliveries: orderEmailDeliveriesInclude,
     },
   })
 
@@ -262,6 +274,11 @@ export async function createOrder(orderInput) {
       status: orderInput.status || 'PENDING',
       total: Number(orderInput.total || 0),
       subtotal: Number(orderInput.subtotal || 0),
+      shippingMethod: orderInput.shippingMethod || null,
+      shippingCarrier: orderInput.shippingCarrier || null,
+      shippingService: orderInput.shippingService || null,
+      shippingRateId: orderInput.shippingRateId || null,
+      shippingRateProvider: orderInput.shippingRateProvider || null,
       shippingAmount: Number(orderInput.shippingAmount || 0),
       discountAmount: Number(orderInput.discountAmount || 0),
       taxAmount: Number(orderInput.taxAmount || 0),
@@ -289,6 +306,7 @@ export async function createOrder(orderInput) {
         },
       },
       shipments: orderShipmentsInclude,
+      emailDeliveries: orderEmailDeliveriesInclude,
     },
   })
 
@@ -350,6 +368,7 @@ export async function updateOrderStatusById(
           },
         },
         shipments: orderShipmentsInclude,
+        emailDeliveries: orderEmailDeliveriesInclude,
       },
     })
   })

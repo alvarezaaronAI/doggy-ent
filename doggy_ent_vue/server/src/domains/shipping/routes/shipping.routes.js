@@ -7,6 +7,7 @@ import {
 } from '../../../app/middleware/security/rateLimit.middleware.js'
 import {
   postAdminOrderTrackingRefresh,
+  getAdminShipmentsController,
   postShippoWebhook,
   putAdminOrderTracking,
 } from '../controllers/shipping.controller.js'
@@ -25,6 +26,12 @@ router.post(
   '/admin/orders/:orderId/tracking/refresh',
   requireAdminAuth,
   postAdminOrderTrackingRefresh,
+)
+
+router.get(
+  '/admin/shipments',
+  requireAdminAuth,
+  getAdminShipmentsController,
 )
 
 export default router

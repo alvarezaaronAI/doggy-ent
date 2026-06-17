@@ -31,7 +31,7 @@
           </button>
         </div>
 
-        <div class="mt-10 grid gap-4 md:grid-cols-5">
+        <div class="mt-10 grid gap-4 md:grid-cols-4 lg:grid-cols-8">
           <RouterLink
             to="/admin/products"
             class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
@@ -70,7 +70,49 @@
             <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Customers</h2>
             <p class="mt-2 text-sm text-stone-400">Review accounts, order links, and readiness workflows.</p>
           </RouterLink>
+
+          <RouterLink
+            to="/admin/notifications"
+            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
+          >
+            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Notifications</h2>
+            <p class="mt-2 text-sm text-stone-400">Review email delivery history and provider status.</p>
+          </RouterLink>
+
+          <RouterLink
+            to="/admin/shipments"
+            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
+          >
+            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Shipments</h2>
+            <p class="mt-2 text-sm text-stone-400">Review tracking, delivery timelines, and refresh tools.</p>
+          </RouterLink>
+
+          <RouterLink
+            to="/admin/reports"
+            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
+          >
+            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Reports</h2>
+            <p class="mt-2 text-sm text-stone-400">See compact revenue, orders, customer, and ops totals.</p>
+          </RouterLink>
         </div>
+
+        <section class="mt-10 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <div
+            v-for="metric in dashboardMetrics"
+            :key="metric.label"
+            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm"
+          >
+            <p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">
+              {{ metric.label }}
+            </p>
+            <p class="mt-2 text-2xl font-black text-[var(--brand-4)]">
+              {{ metric.value }}
+            </p>
+            <p class="mt-1 text-xs font-semibold text-stone-400">
+              {{ metric.hint }}
+            </p>
+          </div>
+        </section>
 
         <div class="mt-10">
           <RouterLink
@@ -86,9 +128,18 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminDataTargetBadge from '../components/AdminDataTargetBadge.vue'
+import {
+  fetchAdminCustomers,
+} from '../api/adminCustomers.api.js'
+import {
+  fetchAdminNotifications,
+} from '../api/adminNotifications.api.js'
+import {
+  fetchAdminOrderStats,
+} from '../api/adminOrders.api.js'
 import {
   fetchApi,
   parseJsonResponse,
@@ -96,6 +147,56 @@ import {
 
 const router = useRouter()
 const admin = ref(null)
+const customers = ref([])
+const notifications = ref({
+  total: 0,
+  sent: 0,
+  failed: 0,
+  mocked: 0,
+  pending: 0,
+  recent: [],
+})
+const orderStats = ref({})
+
+const dashboardMetrics = computed(() => [
+  {
+    label: 'Orders',
+    value: orderStats.value.totalOrders || 0,
+    hint: `${orderStats.value.pendingOrders || 0} pending`,
+  },
+  {
+    label: 'Customers',
+    value: customers.value.length,
+    hint: 'Account records',
+  },
+  {
+    label: 'Revenue',
+    value: formatCurrency(orderStats.value.totalRevenue),
+    hint: 'All orders',
+  },
+  {
+    label: 'Notifications',
+    value: notifications.value.total || 0,
+    hint: `${notifications.value.failed || 0} failed`,
+  },
+  {
+    label: 'Shipments',
+    value: orderStats.value.shippedOrders || 0,
+    hint: 'Marked shipped',
+  },
+  {
+    label: 'Delivered',
+    value: orderStats.value.deliveredOrders || 0,
+    hint: 'Fulfilled',
+  },
+])
+
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString(undefined, {
+    style: 'currency',
+    currency: 'USD',
+  })
+}
 
 async function loadAdminSession() {
   try {
@@ -114,6 +215,29 @@ async function loadAdminSession() {
   }
 }
 
+async function loadDashboardActivity() {
+  const [statsResult, customersResult, notificationsResult] =
+    await Promise.allSettled([
+      fetchAdminOrderStats(),
+      fetchAdminCustomers(),
+      fetchAdminNotifications(),
+    ])
+
+  if (statsResult.status === 'fulfilled') {
+    orderStats.value = statsResult.value || {}
+  }
+
+  if (customersResult.status === 'fulfilled') {
+    customers.value = Array.isArray(customersResult.value)
+      ? customersResult.value
+      : []
+  }
+
+  if (notificationsResult.status === 'fulfilled') {
+    notifications.value = notificationsResult.value || notifications.value
+  }
+}
+
 async function logout() {
   try {
     await fetchApi('/api/auth/logout', {
@@ -125,5 +249,8 @@ async function logout() {
   }
 }
 
-onMounted(loadAdminSession)
+onMounted(() => {
+  loadAdminSession()
+  loadDashboardActivity()
+})
 </script>

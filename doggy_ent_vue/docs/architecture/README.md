@@ -1,6 +1,6 @@
 # Doggy Ent Architecture
 
-Last updated: 2026-06-13
+Last updated: 2026-06-15
 
 This directory documents how the Doggy Ent Vue storefront, admin dashboard, Express API, Prisma database, Stripe integration, and temporary local admin workflows fit together. It is evidence-based from the repository; future plans are labeled as future work.
 
@@ -45,6 +45,9 @@ flowchart LR
 - Admin auth/session: `server/src/domains/auth/services/auth.service.js`, `server/src/domains/auth/routes/auth.routes.js`
 - Customer auth/session and Better Auth Infrastructure dashboard connection: `server/src/domains/auth/services/customerAuth.service.js`, `client/src/domains/account/api/authClient.js`, `server/src/domains/account/*`, `client/src/domains/account/*`
 - Customer management: `server/src/domains/customers/*`, `client/src/domains/admin/views/AdminCustomersView.vue`, `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+- Admin notification, shipment, and report pages: `client/src/domains/admin/views/AdminNotificationsView.vue`, `AdminShipmentsView.vue`, `AdminReportsView.vue`
+- Email delivery history: `server/src/domains/emails/*`, `client/src/domains/admin/api/adminNotifications.api.js`
+- Shippo tracking and checkout rate shopping: `server/src/domains/shipping/*`, `server/src/domains/checkout/services/checkout.service.js`, `client/src/domains/checkout/views/CheckoutView.vue`
 - API base URL and JSON error handling: `client/src/shared/api/http.js`
 - Environment loading and local/Railway DB admin mode: `server/src/config/env.js`
 
@@ -60,4 +63,4 @@ No real environment values should be committed or documented. See [admin.md](./a
 
 ## Mermaid Verification
 
-All Mermaid blocks in this directory were rendered to SVG with `npx -y @mermaid-js/mermaid-cli` on 2026-06-07. The verified root cause of the reported docs issue was not invalid Mermaid syntax in the checked files; every block rendered successfully. The stale issue found during the audit was documentation drift in older diagram files, especially references to temporary in-memory product data that no longer matches the Prisma-backed application.
+Mermaid fence balance was rechecked on 2026-06-15. `mmdc` was not installed in the local workspace during this pass, so SVG rendering was not rerun. The prior verified root cause of docs issues was documentation drift in older diagram files, especially references to temporary in-memory product data that no longer matches the Prisma-backed application.

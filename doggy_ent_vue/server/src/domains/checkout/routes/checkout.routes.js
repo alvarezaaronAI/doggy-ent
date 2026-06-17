@@ -3,6 +3,8 @@ import express from 'express'
 import {
   previewCheckoutController,
   createCheckoutController,
+  getCheckoutShippingOptionsController,
+  postCheckoutShippingRatesController,
   getCheckoutOrderController,
 } from '../controllers/checkout.controller.js'
 import {
@@ -10,6 +12,9 @@ import {
 } from '../../../app/middleware/security/rateLimit.middleware.js'
 
 const router = express.Router()
+
+router.get('/shipping-options', getCheckoutShippingOptionsController)
+router.post('/shipping-rates', checkoutRateLimiter, postCheckoutShippingRatesController)
 
 // Preview trusted checkout totals before payment.
 router.post('/preview', checkoutRateLimiter, previewCheckoutController)

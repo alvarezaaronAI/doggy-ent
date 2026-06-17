@@ -69,6 +69,11 @@ model Order {
   status        OrderStatus   @default(PENDING)
   total         Float
   subtotal      Float
+  shippingMethod String?
+  shippingCarrier String?
+  shippingService String?
+  shippingRateId String?
+  shippingRateProvider String?
   shippingAmount Float @default(0)
   discountAmount Float @default(0)
   taxAmount      Float @default(0)

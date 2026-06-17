@@ -39,6 +39,10 @@
             <span v-for="line in shippingLines" :key="line" class="block">{{ line }}</span>
           </p>
           <p v-else class="mt-2 text-stone-500">Shipping details are unavailable.</p>
+          <p class="mt-2 text-stone-500">Method: {{ order.shippingMethod || 'Standard' }}</p>
+          <p v-if="order.shippingCarrier || order.shippingService" class="mt-1 text-stone-500">
+            Carrier: {{ [order.shippingCarrier, order.shippingService].filter(Boolean).join(' - ') }}
+          </p>
           <p v-if="order.deliveryNotes" class="mt-2 text-stone-500">Notes: {{ order.deliveryNotes }}</p>
         </div>
       </div>

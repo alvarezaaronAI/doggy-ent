@@ -106,3 +106,28 @@ export async function fetchCheckoutOrder(reference) {
     'Unable to load order confirmation.',
   )
 }
+
+export async function fetchCheckoutShippingOptions() {
+  const response = await fetchApi('/api/checkout/shipping-options')
+
+  return parseCheckoutResponse(
+    response,
+    'Unable to load shipping options.',
+  )
+}
+
+export async function fetchCheckoutShippingRates({
+  customer,
+  cartItems,
+}) {
+  const normalizedCustomer = normalizeCustomer(customer)
+
+  return postCheckoutRequest(
+    '/api/checkout/shipping-rates',
+    {
+      customer: normalizedCustomer,
+      cartItems,
+    },
+    'Unable to load shipping rates.',
+  )
+}

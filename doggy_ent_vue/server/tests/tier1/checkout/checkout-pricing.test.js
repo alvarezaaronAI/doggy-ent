@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  buildStaticShippingOption,
   calculateCheckoutDiscountAmount,
   calculateCheckoutDonationAmount,
   calculateShipping,
@@ -56,5 +57,14 @@ describe('checkout pricing helpers', () => {
     expect(calculateShipping({
       method: 'not-real',
     })).toBe(5.99)
+  })
+
+  it('maps static shipping options with provider metadata for fallback checkout', () => {
+    const option = buildStaticShippingOption('priority')
+
+    expect(option.code).toBe('priority')
+    expect(option.provider).toBe('STATIC')
+    expect(option.rateId).toBeNull()
+    expect(option.price).toBe(11.99)
   })
 })

@@ -194,6 +194,66 @@ export async function updateAdminOrderStatus(
   }
 }
 
+function withAdminResendDedupe(payload) {
+  return {
+    ...payload,
+    dedupeKey: `${payload.event}:${payload.orderId || payload.orderReference}:admin-resend:${Date.now()}`,
+  }
+}
+
+export async function resendAdminOrderEmail(
+  orderId,
+  {
+    event,
+  },
+) {
+  const order = await findOrderById(orderId)
+
+  if (!order) {
+    const error = new Error('Order not found.')
+    error.statusCode = 404
+    throw error
+  }
+
+  const allowedEvents = new Set([
+    EMAIL_EVENTS.ORDER_CONFIRMATION,
+    EMAIL_EVENTS.ORDER_SHIPPED,
+    EMAIL_EVENTS.TRACKING_UPDATE,
+    EMAIL_EVENTS.ORDER_DELIVERED,
+    EMAIL_EVENTS.REVIEW_REQUEST,
+  ])
+
+  if (!allowedEvents.has(event)) {
+    const error = new Error('Unsupported resend email event.')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (
+    event === EMAIL_EVENTS.REVIEW_REQUEST
+    && order.status !== ORDER_STATUS.DELIVERED
+  ) {
+    const error = new Error('Review requests can only be sent for delivered orders.')
+    error.statusCode = 400
+    throw error
+  }
+
+  const result = await queueEmail(
+    withAdminResendDedupe(
+      buildOrderEmailPayload({
+        event,
+        order,
+        message: 'This message was resent by admin request.',
+      }),
+    ),
+  )
+
+  return {
+    result,
+    order: await findOrderById(orderId),
+  }
+}
+
 export async function createNewOrder(orderInput) {
   const orderNumber = `DGE-${Date.now()}`
   const stripePaymentIntentId =
@@ -219,6 +279,9 @@ export async function createNewOrder(orderInput) {
   const shippingAmount = normalizeCurrencyAmount(
     orderInput.shippingAmount || 0,
   )
+  const shippingMethod = String(
+    orderInput.shippingMethod || '',
+  ).trim() || null
 
   const discountAmount = normalizeCurrencyAmount(
     orderInput.discountAmount || 0,
@@ -277,6 +340,7 @@ export async function createNewOrder(orderInput) {
       subtotal,
       total,
       currency: orderInput.currency || 'usd',
+      shippingMethod,
       shippingAmount,
       discountAmount,
       taxAmount,

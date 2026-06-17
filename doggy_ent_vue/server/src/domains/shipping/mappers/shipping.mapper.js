@@ -51,6 +51,33 @@ export function mapShipment(shipment) {
   }
 }
 
+export function mapAdminShipment(shipment) {
+  const mappedShipment = mapShipment(shipment)
+
+  if (!mappedShipment) {
+    return null
+  }
+
+  return {
+    ...mappedShipment,
+    order: shipment.order
+      ? {
+          id: shipment.order.id,
+          orderNumber: shipment.order.orderNumber,
+          customerName: shipment.order.customerName,
+          customerEmail: shipment.order.customerEmail,
+          status: shipment.order.status,
+          total: Number(shipment.order.total || 0),
+          shippingMethod: shipment.order.shippingMethod,
+          shippingCarrier: shipment.order.shippingCarrier,
+          shippingService: shipment.order.shippingService,
+          createdAt: shipment.order.createdAt,
+          updatedAt: shipment.order.updatedAt,
+        }
+      : null,
+  }
+}
+
 export function mapShippoTrackingResponse({
   carrier,
   trackingNumber,
@@ -100,5 +127,45 @@ export function mapShippoTrackingResponse({
       occurredAt: parseDate(event.status_date),
       rawEvent: event,
     })),
+  }
+}
+
+export function mapShippoRate(rate) {
+  if (!rate) {
+    return null
+  }
+
+  const amount =
+    rate.amount
+    || rate.amount_local
+    || rate.price
+    || null
+  const service =
+    rate.servicelevel?.name
+    || rate.servicelevel?.token
+    || rate.service
+    || rate.provider
+    || 'Shipping'
+  const estimatedDays =
+    rate.estimated_days
+    ?? null
+
+  return {
+    code: `shippo:${rate.object_id || rate.id}`,
+    method: `shippo:${rate.object_id || rate.id}`,
+    rateId: rate.object_id || rate.id || null,
+    provider: 'SHIPPO',
+    carrier: rate.provider || rate.carrier || null,
+    service,
+    label: [
+      rate.provider || rate.carrier,
+      service,
+    ].filter(Boolean).join(' - ') || 'Carrier shipping',
+    description:
+      estimatedDays && Number.isFinite(Number(estimatedDays))
+        ? `Estimated arrival in ${estimatedDays} business days.`
+        : rate.duration_terms || 'Carrier-calculated shipping rate.',
+    price: Number(amount || 0),
+    currency: String(rate.currency || rate.currency_local || 'USD').toUpperCase(),
   }
 }

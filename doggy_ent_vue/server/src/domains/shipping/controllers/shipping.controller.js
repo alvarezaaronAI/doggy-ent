@@ -1,5 +1,6 @@
 import {
   addOrUpdateOrderTracking,
+  fetchAdminShipmentOverview,
   refreshOrderTracking,
 } from '../services/shipping.service.js'
 
@@ -45,6 +46,27 @@ export async function postAdminOrderTrackingRefresh(req, res) {
       res,
       error,
       'Unable to refresh tracking.',
+    )
+  }
+}
+
+export async function getAdminShipmentsController(req, res) {
+  try {
+    const result = await fetchAdminShipmentOverview({
+      status: req.query.status,
+      limit: req.query.limit,
+    })
+
+    return res.json({
+      success: true,
+      result,
+    })
+  }
+  catch (error) {
+    return handleShippingError(
+      res,
+      error,
+      'Unable to load shipments.',
     )
   }
 }

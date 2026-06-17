@@ -4,6 +4,7 @@ import {
 } from '../../../app/middleware/auth/requireCustomerAuth.js'
 import {
   getAccountDashboardController,
+  getAccountNotificationsController,
   getAccountOrderController,
   getAccountOrdersController,
   getAccountProfileController,
@@ -17,6 +18,7 @@ router.use(requireCustomerAuth)
 router.get('/', getAccountDashboardController)
 router.get('/profile', getAccountProfileController)
 router.put('/profile', updateAccountProfileController)
+router.get('/notifications', getAccountNotificationsController)
 router.get('/orders', getAccountOrdersController)
 router.get('/orders/:reference', getAccountOrderController)
 

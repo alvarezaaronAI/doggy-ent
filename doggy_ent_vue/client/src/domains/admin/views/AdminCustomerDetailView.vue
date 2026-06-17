@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminCustomerOrdersPanel from '../components/AdminCustomerOrdersPanel.vue'
+import AdminCustomerNotificationsPanel from '../components/AdminCustomerNotificationsPanel.vue'
 import AdminCustomerStatusBadge from '../components/AdminCustomerStatusBadge.vue'
 import AdminDataTargetBadge from '../components/AdminDataTargetBadge.vue'
 import {
@@ -55,11 +56,13 @@ async function toggleStatus() {
 
 async function queueVerificationEmail() {
   await queueVerification(route.params.customerId)
+  await loadCustomer(route.params.customerId)
   message.value = 'Verification email payload queued or logged by the email provider abstraction.'
 }
 
 async function queueResetEmail() {
   await queuePasswordReset(route.params.customerId)
+  await loadCustomer(route.params.customerId)
   message.value = 'Password reset payload queued or logged by the email provider abstraction.'
 }
 
@@ -164,6 +167,9 @@ onMounted(() => loadCustomer(route.params.customerId))
           </div>
 
           <div class="grid gap-5">
+            <AdminCustomerNotificationsPanel
+              :deliveries="customer.emailDeliveries || []"
+            />
             <AdminCustomerOrdersPanel
               title="Linked orders"
               :orders="customer.orders"

@@ -90,3 +90,18 @@ export async function refreshAdminOrderTracking(orderId) {
     'Unable to refresh tracking.',
   )
 }
+
+export async function resendAdminOrderEmail(orderId, event) {
+  return parseOrderResponse(
+    await fetchApi(`${ADMIN_ORDERS_API_URL}/${orderId}/emails/resend`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        event,
+      }),
+    }),
+    'Unable to resend order email.',
+  )
+}

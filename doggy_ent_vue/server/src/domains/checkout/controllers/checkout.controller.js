@@ -1,7 +1,12 @@
 import {
   previewCheckout,
   createCheckout,
+  fetchCheckoutShippingRates,
 } from '../services/checkout.service.js'
+import {
+  DEFAULT_SHIPPING_METHOD,
+  SHIPPING_OPTIONS,
+} from '../constants/checkout.constants.js'
 import {
   fetchCustomerOrderByReference,
 } from '../../orders/services/orders.service.js'
@@ -29,6 +34,33 @@ export async function previewCheckoutController(req, res) {
       res,
       error,
       'Checkout preview failed.',
+    )
+  }
+}
+
+export async function getCheckoutShippingOptionsController(req, res) {
+  return res.json({
+    success: true,
+    result: {
+      defaultMethod: DEFAULT_SHIPPING_METHOD,
+      options: Object.values(SHIPPING_OPTIONS),
+    },
+  })
+}
+
+export async function postCheckoutShippingRatesController(req, res) {
+  try {
+    const result = await fetchCheckoutShippingRates(req.body || {})
+
+    return res.json({
+      success: true,
+      result,
+    })
+  } catch (error) {
+    return handleCheckoutError(
+      res,
+      error,
+      'Unable to load shipping rates.',
     )
   }
 }

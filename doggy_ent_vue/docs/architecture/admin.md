@@ -1,6 +1,6 @@
 # Admin Architecture
 
-Last updated: 2026-06-12
+Last updated: 2026-06-15
 
 ## Overview
 
@@ -173,6 +173,10 @@ Admin order detail shows:
 - Last order update timestamp.
 - Last status change.
 - Full status history.
+- Shipment tracking controls for carrier, tracking number, status, tracking URL, and refresh.
+- Shipment timeline/event history when Shippo or manual status updates are present.
+- Order notification history from `EmailDelivery`.
+- Resend controls for confirmation, tracking, delivered, and review request emails.
 
 ### Customers
 
@@ -196,6 +200,74 @@ Implemented customer admin capabilities:
 - Customer detail with profile summary, linked orders, verified-email guest order matches, activity/events, support/review/loyalty/referral readiness copy, and notification preference visibility through the API.
 - Deactivate/reactivate readiness by updating `User.status` and recording `CustomerAccountEvent`.
 - Resend verification and password reset readiness through the email provider abstraction.
+- Notification history from `EmailDelivery`.
+
+### Notifications
+
+Admin notification activity is visible in:
+
+- `/admin`: compact dashboard metric cards.
+- `/admin/notifications`: delivery history, resend history, failed/mocked/skipped status, provider state, and event/status filters.
+- `/admin/orders/:orderId`: order-scoped email delivery history and resend controls.
+- `/admin/customers/:customerId`: customer-scoped email delivery history.
+
+Server routes:
+
+- `GET /api/admin/notifications`
+- `POST /api/admin/orders/:orderId/emails/resend`
+
+Server files:
+
+- `server/src/domains/emails/routes/adminEmailDelivery.routes.js`
+- `server/src/domains/emails/services/emailDelivery.service.js`
+- `server/src/domains/emails/repositories/emailDelivery.repository.js`
+- `server/src/domains/orders/services/orders.service.js`
+
+### Shipments
+
+Shipment activity is visible in:
+
+- `/admin`: compact dashboard cards and navigation.
+- `/admin/shipments`: tracking record list, provider configured state, shipped/delivered/needs-review rollups, status filter, links to order detail, and shipment timelines.
+- `/admin/orders/:orderId`: tracking edit/refresh controls and order-scoped timeline.
+
+Server routes:
+
+- `GET /api/admin/shipments`
+- `PUT /api/admin/orders/:orderId/tracking`
+- `POST /api/admin/orders/:orderId/tracking/refresh`
+- `POST /api/webhooks/shippo`
+
+Server files:
+
+- `server/src/domains/shipping/routes/shipping.routes.js`
+- `server/src/domains/shipping/controllers/shipping.controller.js`
+- `server/src/domains/shipping/services/shipping.service.js`
+- `server/src/domains/shipping/services/shippo.service.js`
+- `server/src/domains/shipping/repositories/shipping.repository.js`
+
+### Reports
+
+`/admin/reports` aggregates existing protected admin APIs into compact cards for order totals, revenue, donation impact, customers, notifications, and shipments. It does not introduce separate reporting persistence.
+
+### Tracking
+
+Tracking is managed from admin order detail.
+
+Server routes:
+
+- `PUT /api/admin/orders/:orderId/tracking`
+- `POST /api/admin/orders/:orderId/tracking/refresh`
+- `POST /api/webhooks/shippo`
+
+Server files:
+
+- `server/src/domains/shipping/routes/shipping.routes.js`
+- `server/src/domains/shipping/services/shipping.service.js`
+- `server/src/domains/shipping/services/shippo.service.js`
+- `server/src/domains/shipping/repositories/shipping.repository.js`
+
+Customer-safe shipment fields are exposed on account order detail and checkout order success. Admin responses also include internal shipment ids/source fields.
 
 Security constraints:
 

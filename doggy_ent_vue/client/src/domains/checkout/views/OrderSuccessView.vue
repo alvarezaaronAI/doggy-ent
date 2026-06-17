@@ -146,6 +146,15 @@ onMounted(loadOrder)
                       Most orders are packed and shipped within 1-2 business days.
                     </template>
                   </p>
+                  <p class="mt-2 text-xs font-semibold text-stone-400">
+                    Shipping method: {{ order.shippingMethod || 'standard' }}
+                  </p>
+                  <p
+                    v-if="order.shippingCarrier || order.shippingService"
+                    class="mt-1 text-xs font-semibold text-stone-400"
+                  >
+                    Carrier: {{ [order.shippingCarrier, order.shippingService].filter(Boolean).join(' - ') }}
+                  </p>
 
                   <a
                     v-if="shipment?.trackingUrl"

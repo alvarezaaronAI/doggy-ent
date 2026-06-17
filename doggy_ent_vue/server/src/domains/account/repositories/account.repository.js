@@ -153,3 +153,16 @@ export async function updateCustomerProfileByUserId(userId, data) {
     update: data,
   })
 }
+
+export async function updateCustomerNotificationPreferenceByUserId(userId, data) {
+  return prisma.customerNotificationPreference.upsert({
+    where: {
+      userId,
+    },
+    create: {
+      userId,
+      ...data,
+    },
+    update: data,
+  })
+}

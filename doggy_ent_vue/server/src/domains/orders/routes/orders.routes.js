@@ -5,6 +5,7 @@ import {
   getAdminOrders,
   getAdminOrderStats,
   patchAdminOrderStatus,
+  postAdminOrderEmailResend,
 } from '../controllers/orders.controller.js'
 import {
   requireAdminAuth,
@@ -18,5 +19,6 @@ router.get('/', getAdminOrders)
 router.get('/stats', getAdminOrderStats)
 router.get('/:orderId', getAdminOrderById)
 router.patch('/:orderId/status', patchAdminOrderStatus)
+router.post('/:orderId/emails/resend', postAdminOrderEmailResend)
 
 export default router

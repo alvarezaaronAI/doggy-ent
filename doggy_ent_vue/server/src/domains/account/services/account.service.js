@@ -6,6 +6,7 @@ import {
   findAccountUserById,
   findCustomerOrderForAccount,
   findCustomerOrdersForAccount,
+  updateCustomerNotificationPreferenceByUserId,
   updateCustomerProfileByUserId,
 } from '../repositories/account.repository.js'
 import {
@@ -17,6 +18,9 @@ import {
 import {
   queueEmail,
 } from '../../emails/services/emailProvider.service.js'
+import {
+  fetchCustomerEmailDeliveries,
+} from '../../emails/services/emailDelivery.service.js'
 
 function canIncludeVerifiedEmailMatches(user) {
   return Boolean(user?.emailVerified && user?.email)
@@ -60,18 +64,38 @@ export async function getAccountProfile(user) {
 }
 
 export async function updateAccountProfile(user, input = {}) {
-  const profile = await updateCustomerProfileByUserId(
-    user.id,
-    {
-      firstName: String(input.firstName || '').trim() || null,
-      lastName: String(input.lastName || '').trim() || null,
-      phone: String(input.phone || '').trim() || null,
-      marketingOptIn: Boolean(input.marketingOptIn),
-      preferredContactMethod: normalizePreferredContactMethod(
-        input.preferredContactMethod,
-      ),
-    },
-  )
+  const [profile, notificationPreference] = await Promise.all([
+    updateCustomerProfileByUserId(
+      user.id,
+      {
+        firstName: String(input.firstName || '').trim() || null,
+        lastName: String(input.lastName || '').trim() || null,
+        phone: String(input.phone || '').trim() || null,
+        marketingOptIn: Boolean(input.marketingOptIn),
+        preferredContactMethod: normalizePreferredContactMethod(
+          input.preferredContactMethod,
+        ),
+      },
+    ),
+    updateCustomerNotificationPreferenceByUserId(
+      user.id,
+      {
+        orderUpdates:
+          input.notificationPreference?.orderUpdates !== false,
+        trackingUpdates:
+          input.notificationPreference?.trackingUpdates !== false,
+        reviewRequests:
+          input.notificationPreference?.reviewRequests !== false,
+        loyaltyNotifications:
+          input.notificationPreference?.loyaltyNotifications !== false,
+        referralNotifications:
+          input.notificationPreference?.referralNotifications !== false,
+        marketingEmails: Boolean(
+          input.notificationPreference?.marketingEmails,
+        ),
+      },
+    ),
+  ])
 
   const result = {
     ...(await getAccountProfile(user)),
@@ -82,6 +106,21 @@ export async function updateAccountProfile(user, input = {}) {
       marketingOptIn: Boolean(profile.marketingOptIn),
       preferredContactMethod: profile.preferredContactMethod || '',
       defaultAddress: profile.defaultAddress || null,
+    },
+    notificationPreference: {
+      orderUpdates:
+        notificationPreference.orderUpdates !== false,
+      trackingUpdates:
+        notificationPreference.trackingUpdates !== false,
+      reviewRequests:
+        notificationPreference.reviewRequests !== false,
+      loyaltyNotifications:
+        notificationPreference.loyaltyNotifications !== false,
+      referralNotifications:
+        notificationPreference.referralNotifications !== false,
+      marketingEmails: Boolean(
+        notificationPreference.marketingEmails,
+      ),
     },
   }
 
@@ -138,5 +177,18 @@ export async function getAccountOrderByReference(user, reference) {
       eligible: order.status === 'DELIVERED',
       message: 'Reviews are planned for delivered orders in a future phase.',
     },
+  }
+}
+
+export async function getAccountNotifications(user) {
+  const [accountUser, deliveries] = await Promise.all([
+    findAccountUserById(user.id),
+    fetchCustomerEmailDeliveries(user),
+  ])
+
+  return {
+    notificationPreference:
+      mapCustomerProfile(accountUser || user)?.notificationPreference,
+    deliveries,
   }
 }

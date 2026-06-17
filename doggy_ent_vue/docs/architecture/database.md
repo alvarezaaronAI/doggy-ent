@@ -209,6 +209,8 @@ Important migrations:
 - `20260606000000_add_order_campaign_usage`: Order-level campaign attribution for donation traceability.
 - `20260607000000_add_order_status_history`: Order status transition history for admin fulfillment auditability.
 - `20260612000000_better_auth_customer_accounts`: Better Auth user/session/account/verification tables, customer profile/support/review/loyalty/notification foundations, and nullable `Order.userId`.
+- `20260615000000_add_order_shipping_method`: Nullable `Order.shippingMethod` for preserving the selected checkout delivery method.
+- `20260615001000_add_order_shipping_rate_fields`: Nullable `Order.shippingCarrier`, `shippingService`, `shippingRateId`, and `shippingRateProvider` fields for Shippo/static shipping rate traceability.
 
 Deployment rule:
 

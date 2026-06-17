@@ -16,6 +16,11 @@ describe('customer-safe order lookup mapping', () => {
       total: 50,
       subtotal: 40,
       shippingAmount: 5,
+      shippingMethod: 'shippo:rate_123',
+      shippingCarrier: 'USPS',
+      shippingService: 'Ground Advantage',
+      shippingRateId: 'rate_123',
+      shippingRateProvider: 'SHIPPO',
       discountAmount: 10,
       taxAmount: 3,
       currency: 'usd',
@@ -48,6 +53,9 @@ describe('customer-safe order lookup mapping', () => {
     expect(order.discountAmount).toBe(10)
     expect(order).not.toHaveProperty('id')
     expect(order).not.toHaveProperty('stripePaymentIntentId')
+    expect(order.shippingCarrier).toBe('USPS')
+    expect(order.shippingService).toBe('Ground Advantage')
+    expect(order.shippingRateId).toBe('rate_123')
     expect(order.shipment.trackingNumber).toBe('TRACK123')
     expect(order.shipment).not.toHaveProperty('id')
     expect(order.shipment.events[0]).not.toHaveProperty('id')

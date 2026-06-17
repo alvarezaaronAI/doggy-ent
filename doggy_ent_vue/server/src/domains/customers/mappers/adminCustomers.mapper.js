@@ -48,6 +48,7 @@ export function mapAdminCustomerDetail(user) {
     notificationPreference: user.notificationPreference || null,
     orders: user.orders || [],
     matchedGuestOrders: user.matchedGuestOrders || [],
+    emailDeliveries: user.emailDeliveries || [],
     events: user.events || [],
     supportRequests: user.supportRequests || [],
     reviews: user.reviews || [],

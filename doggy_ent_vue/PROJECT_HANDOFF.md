@@ -4237,3 +4237,410 @@ After code review and Railway migration/deploy:
 ### Next Recommended Phase
 
 After review, apply the Railway migration, configure Resend/Shippo env vars, redeploy, and run deployed QA for email delivery, tracking save/refresh, customer tracking visibility, and checkout/order idempotency. Then add Stripe webhooks for payment failure/refund events and Shippo webhook auto-processing once live webhook payloads are captured and verified.
+
+## 2026-06-15 Reality Verification And Completion Pass
+
+### Objective
+
+The previous handoff claimed Resend, Shippo, notification persistence, admin tracking endpoints, security hardening, shipment models, `EmailDelivery`, and customer tracking UI. This pass verified those claims against source, classified incomplete areas, then built missing end-to-end links without committing or pushing.
+
+### Reality Matrix
+
+| Area | Status before this pass | Evidence before this pass | Work completed now |
+| --- | --- | --- | --- |
+| Welcome email | Partial | Better Auth user create hook queued welcome/account-created emails through `emailProvider.service.js`; `EmailDelivery` model existed. | Added customer/admin delivery history surfaces so sent/mocked/skipped state is visible. |
+| Verification email | Partial | Better Auth `sendVerificationEmail` hook existed; admin customer action previously built a null-url payload. | Admin resend verification now calls Better Auth `sendVerificationEmail`, which generates a real verification URL. |
+| Resend verification email | Falsely complete | Admin UI button existed, but server passed `url: null`. | Rewired to Better Auth API. |
+| Forgot/password reset email | Partial | Customer forgot-password UI called Better Auth request reset; admin reset used null-url payload. | Admin reset now calls Better Auth `requestPasswordReset`, producing a real reset URL. |
+| Profile update email | Partial | Account service queued profile update email. | Added customer notification history and preference controls. |
+| Order confirmation email | Partial | Checkout service queued email after order creation. | Added admin order resend confirmation control and email delivery history. |
+| Order status email | Partial | Status service queued status emails. | Added admin notification history visibility. |
+| Tracking shipped email | Partial | Shipping service queued tracking/shipped email. | Added order resend tracking controls and visible delivery history. |
+| Delivered email | Partial | Status/tracking service queued delivered email. | Added delivered resend control. |
+| Review request email | Missing | Event/template existed, but no trigger/API/UI. | Added admin order review request send control, gated to delivered orders server-side. |
+| Shippo provider integration | Complete backend, unverified live | `shippo.service.js` called Shippo Tracking API; tests covered mapper. | Verified env presence only, no label purchase; documented test-mode limitation. |
+| Shipment persistence | Complete | `OrderShipment`, repository, service, mapper existed. | Preserved and surfaced in dashboard/order/customer docs. |
+| Shipment event persistence | Complete | `OrderShipmentEvent` unique event rows existed. | Included in docs and dashboard tracking summary. |
+| Tracking refresh | Complete | `POST /api/admin/orders/:id/tracking/refresh` existed. | Verified protected endpoint shape. |
+| Tracking timeline | Partial | Admin/customer order detail showed events; dashboard did not summarize. | Added dashboard shipment activity summary. |
+| Customer tracking visibility | Complete for order detail/card | Account order card/detail and success page displayed tracking. | Added shipping method visibility. |
+| Admin tracking visibility | Complete for order detail | Admin tracking panel existed. | Added dashboard shipment summary. |
+| Admin dashboard visibility | Partial | Only navigation cards existed. | Added metrics for orders, customers, revenue, notifications, shipments, delivered orders, and recent notification activity. |
+| Admin notification visibility | Missing | `EmailDelivery` persisted but no admin route/UI. | Added `GET /api/admin/notifications`, dashboard panel, order panel, customer panel. |
+| Notification resend controls | Partial | Customer verification/reset buttons existed; order resends missing. | Added order confirmation/tracking/delivered/review resend controls. |
+| Customer notification preferences | Partial | Prisma model existed and profile had marketing opt-in only. | Added profile controls for order, tracking, review, loyalty/referral, marketing categories; provider records `SKIPPED` when preferences block eligible events. |
+| Email status feedback | Missing | Email rows existed but were not surfaced. | Added customer profile recent email activity. |
+| Checkout shipping methods | Partial | Client had fixed options and server recalculated price by method; order did not store method. | Added `GET /api/checkout/shipping-options`, server-provided labels/descriptions, and nullable `Order.shippingMethod`. |
+
+### Files Created
+
+- `client/src/domains/admin/api/adminNotifications.api.js`
+- `client/src/domains/admin/components/AdminCustomerNotificationsPanel.vue`
+- `client/src/domains/admin/components/AdminOrderNotificationsPanel.vue`
+- `server/prisma/migrations/20260615000000_add_order_shipping_method/migration.sql`
+- `server/src/domains/emails/controllers/emailDelivery.controller.js`
+- `server/src/domains/emails/mappers/emailDelivery.mapper.js`
+- `server/src/domains/emails/routes/adminEmailDelivery.routes.js`
+- `server/src/domains/emails/services/emailDelivery.service.js`
+
+### Files Modified
+
+- `client/src/domains/account/api/account.api.js`
+- `client/src/domains/account/views/AccountProfileView.vue`
+- `client/src/domains/account/views/AccountOrderDetailView.vue`
+- `client/src/domains/admin/views/AdminDashboardView.vue`
+- `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+- `client/src/domains/admin/views/AdminOrderDetailView.vue`
+- `client/src/domains/admin/api/adminOrders.api.js`
+- `client/src/domains/checkout/api/checkout.api.js`
+- `client/src/domains/checkout/views/CheckoutView.vue`
+- `client/src/domains/checkout/views/OrderSuccessView.vue`
+- `docs/architecture/admin.md`
+- `docs/architecture/data-flow.md`
+- `docs/architecture/diagram.md`
+- `docs/architecture/mockdiagram.md`
+- `server/prisma/schema.prisma`
+- `server/src/app.js`
+- `server/src/domains/account/controllers/account.controller.js`
+- `server/src/domains/account/mappers/account.mapper.js`
+- `server/src/domains/account/repositories/account.repository.js`
+- `server/src/domains/account/routes/account.routes.js`
+- `server/src/domains/account/services/account.service.js`
+- `server/src/domains/checkout/constants/checkout.constants.js`
+- `server/src/domains/checkout/controllers/checkout.controller.js`
+- `server/src/domains/checkout/routes/checkout.routes.js`
+- `server/src/domains/checkout/services/checkout.service.js`
+- `server/src/domains/customers/mappers/adminCustomers.mapper.js`
+- `server/src/domains/customers/services/adminCustomers.service.js`
+- `server/src/domains/emails/repositories/emailDelivery.repository.js`
+- `server/src/domains/emails/services/emailProvider.service.js`
+- `server/src/domains/orders/controllers/orders.controller.js`
+- `server/src/domains/orders/mappers/orders.mapper.js`
+- `server/src/domains/orders/repositories/orders.repository.js`
+- `server/src/domains/orders/routes/orders.routes.js`
+- `server/src/domains/orders/services/orders.service.js`
+
+### API Routes Added
+
+- `GET /api/admin/notifications`
+- `GET /api/account/notifications`
+- `POST /api/admin/orders/:orderId/emails/resend`
+- `GET /api/checkout/shipping-options`
+
+Existing tracking routes verified/preserved:
+
+- `PUT /api/admin/orders/:orderId/tracking`
+- `POST /api/admin/orders/:orderId/tracking/refresh`
+- `POST /api/webhooks/shippo`
+
+### Prisma Changes
+
+- Added nullable `Order.shippingMethod`.
+- Added migration `20260615000000_add_order_shipping_method`.
+- Local migration applied with `npx prisma migrate dev`.
+- Final local `npx prisma migrate status`: database schema is up to date with 15 migrations.
+
+### Provider Checks
+
+Local env presence was checked without printing values:
+
+- `RESEND_API_KEY`: present
+- `EMAIL_FROM`: missing
+- `EMAIL_REPLY_TO`: present
+- `RESEND_FROM_EMAIL`: missing
+- `RESEND_REPLY_TO_EMAIL`: missing
+- `SHIPPO_API_KEY`: present
+- `SHIPPO_API_TOKEN`: missing
+
+Resend live email verification:
+
+- Blocked. The app requires `EMAIL_FROM` or `RESEND_FROM_EMAIL` in addition to `RESEND_API_KEY`; neither from-address variable was present locally.
+- Emails sent count: `0`.
+- Apple Mail verification was not performed because no real emails were sent.
+
+Shippo verification:
+
+- Env presence confirmed for `SHIPPO_API_KEY`.
+- No labels were purchased.
+- No production shipment was created.
+- Shippo documentation notes test mode does not create usable shipped labels and test tracking has limitations, so verification stayed to provider wiring, endpoint protection, normalization tests, and mapper tests.
+
+### Verification Commands
+
+```bash
+git status --short
+git diff --stat
+git diff --name-status
+node --check src/app.js
+node --check src/domains/account/services/account.service.js
+node --check src/domains/customers/services/adminCustomers.service.js
+node --check src/domains/emails/services/emailProvider.service.js
+node --check src/domains/orders/services/orders.service.js
+node --check src/domains/checkout/controllers/checkout.controller.js
+cd client && npm run build
+cd server && npm run build
+cd server && npx prisma migrate dev
+cd client && npm run test
+cd server && npm run test
+cd server && npx prisma migrate status
+node -e "import('./src/app.js').then(() => console.log('app import ok'))"
+find . -name '.env.example' -o -name '*.env.example'
+rg -n "sk_live|rk_live|whsec_|postgres://|postgresql://|RESEND_API_KEY=|SHIPPO_API_KEY=|SHIPPO_API_TOKEN=|EMAIL_FROM=|STRIPE_SECRET_KEY=|ADMIN_PASSWORD_HASH=" --glob '!node_modules/**' --glob '!client/dist/**' .
+```
+
+Results:
+
+- Client build passed.
+- Server build passed and generated Prisma Client.
+- Client tests passed: 5 files, 14 tests.
+- Server tests passed: 10 files, 28 tests.
+- Server syntax checks passed.
+- App import smoke check printed `app import ok`.
+- No `.env.example` files found.
+- Secret scan found only command text in this handoff, not committed secret values.
+
+Local endpoint smoke checks:
+
+- `GET /api/admin/notifications` unauthenticated: `401`.
+- `PUT /api/admin/orders/test-order/tracking` unauthenticated: `401`.
+- `GET /api/account/notifications` unauthenticated: `401`.
+- `GET /api/checkout/shipping-options`: `200` with standard/priority server-owned methods.
+
+Mermaid/doc checks:
+
+- `mmdc` was not installed locally.
+- Markdown fence balance check passed for `diagram.md`, `mockdiagram.md`, `data-flow.md`, and `admin.md`.
+
+### Remaining Blockers
+
+- Configure `EMAIL_FROM` or `RESEND_FROM_EMAIL` locally before live Resend testing.
+- After setting the from address, perform the approved Resend tests to `alvarez.a.aaron@gmail.com`, max 10 emails, starting with forgot password.
+- Railway must run `npx prisma migrate deploy` after review for `20260615000000_add_order_shipping_method` and any unapplied prior migrations.
+- Shippo live tracking refresh still needs a real or predefined valid tracking test strategy; no label purchase should happen in Codex.
+- Shippo webhook auto-processing remains intentionally receipt-only until real deployed payloads are verified.
+- No browser E2E automation was added for admin notification panels or customer notification preferences.
+
+### Safe-To-Review Status
+
+Local code builds and tests pass. The implementation is safe for code review, but not ready for deployed launch until the Resend from-address env is configured, the Railway migration is deployed, and manual QA confirms live email delivery and admin/customer notification visibility.
+
+## 2026-06-15 Admin Pages, Shippo Rate Shopping, And Email Verification Pass
+
+This section supersedes the earlier same-day provider note that said `EMAIL_FROM` was missing. The current local `server/.env` variable-name audit found `RESEND_API_KEY`, `EMAIL_FROM`, `RESEND_FROM_EMAIL`, `EMAIL_REPLY_TO`, and `RESEND_REPLY_TO_EMAIL` present. Values were not printed or copied.
+
+### Completed Code Changes
+
+- Added dedicated admin pages:
+  - `/admin/notifications` via `client/src/domains/admin/views/AdminNotificationsView.vue`.
+  - `/admin/shipments` via `client/src/domains/admin/views/AdminShipmentsView.vue`.
+  - `/admin/reports` via `client/src/domains/admin/views/AdminReportsView.vue`.
+- Kept `/admin` compact by moving large notification/shipment blocks into the dedicated pages.
+- Added client API `client/src/domains/admin/api/adminShipments.api.js`.
+- Expanded notification API filtering in `client/src/domains/admin/api/adminNotifications.api.js`, `server/src/domains/emails/controllers/emailDelivery.controller.js`, `server/src/domains/emails/services/emailDelivery.service.js`, and `server/src/domains/emails/repositories/emailDelivery.repository.js`.
+- Added protected `GET /api/admin/shipments` backed by the shipping route/controller/service/repository stack.
+- Added checkout rate shopping endpoint `POST /api/checkout/shipping-rates`.
+- Added Shippo rate mapping and rate-only shipment creation for checkout rate shopping. Checkout never buys labels.
+- Preserved static Standard/Priority shipping fallback when Shippo config, sender address env, address data, or provider calls are unavailable.
+- Updated checkout UI to request shipping rates after the address is present, display loading/fallback messages, and submit selected shipping `rateId`, carrier, service, provider, and method.
+- Server checkout re-resolves the selected rate before PaymentIntent creation and order creation, so shipping price remains server-owned.
+- Added nullable order fields:
+  - `shippingCarrier`
+  - `shippingService`
+  - `shippingRateId`
+  - `shippingRateProvider`
+- Added migration `20260615001000_add_order_shipping_rate_fields`.
+- Admin order detail, customer order detail, and order success now display carrier/service/rate source when present.
+- Added tests for Shippo rate mapping, static shipping fallback metadata, and customer-safe shipping-rate fields.
+
+### API Routes Added Or Updated
+
+- `GET /api/admin/notifications?event=&status=&limit=`
+- `GET /api/admin/shipments?status=&limit=`
+- `POST /api/checkout/shipping-rates`
+
+Protected route checks performed locally:
+
+- `GET /api/admin/notifications` without admin session returned `401 Authentication required`.
+- `GET /api/admin/shipments` without admin session returned `401 Authentication required`.
+- `POST /api/webhooks/shippo` without the configured webhook secret returned `401 Invalid webhook secret`.
+
+### Shippo Verification
+
+Local env-name audit found `SHIPPO_API_KEY` present, but `SHIPPO_FROM_STREET1`, `SHIPPO_FROM_CITY`, `SHIPPO_FROM_STATE`, and `SHIPPO_FROM_ZIP` missing. Because sender address variables are required for rate shopping, `POST /api/checkout/shipping-rates` returned the static fallback with message `Carrier rates are unavailable. Store shipping rates are shown.`
+
+No labels were purchased. No production shipment was created.
+
+Required server variable names for live/test Shippo rate shopping:
+
+- `SHIPPO_API_KEY` or `SHIPPO_API_TOKEN`
+- `SHIPPO_FROM_NAME`
+- `SHIPPO_FROM_STREET1`
+- `SHIPPO_FROM_CITY`
+- `SHIPPO_FROM_STATE`
+- `SHIPPO_FROM_ZIP`
+- `SHIPPO_FROM_COUNTRY`
+- Optional: `SHIPPO_FROM_STREET2`, `SHIPPO_FROM_PHONE`, `SHIPPO_FROM_EMAIL`
+- Optional parcel defaults: `SHIPPO_PARCEL_LENGTH`, `SHIPPO_PARCEL_WIDTH`, `SHIPPO_PARCEL_HEIGHT`, `SHIPPO_PARCEL_DISTANCE_UNIT`, `SHIPPO_PARCEL_WEIGHT`, `SHIPPO_PARCEL_MASS_UNIT`
+
+### Resend Verification
+
+Approved inbox used: `alvarez.a.aaron@gmail.com`.
+
+Live emails sent in this pass: `6`, below the requested budget of `10`.
+
+Recorded live `EmailDelivery` rows with provider `RESEND` and status `SENT`:
+
+- `PASSWORD_RESET`: `Reset your Chase & Evie Co. password`.
+- `ACCOUNT_VERIFICATION`: `Verify your Chase & Evie Co. email`.
+- `ORDER_CONFIRMATION`: `Order DGE-1781505157834 confirmation`.
+- `ORDER_SHIPPED`: `Order DGE-1781501526357 has shipped`.
+- `TRACKING_UPDATE`: `Tracking update for order DGE-1781501526357`.
+- `PROFILE_UPDATED`: `Your Chase & Evie Co. profile was updated`.
+
+What was not fully end-to-end verified:
+
+- Profile update was verified through the account service and email provider path, not browser/customer session API, because the test account password was not available.
+- Order resend emails were verified through the order service/email provider path, not admin UI/API, because no plaintext admin password was available in code and secrets were not exposed.
+- Review request was not sent because no approved-inbox local order was already `DELIVERED`; the service correctly gates review requests to delivered orders.
+- Apple Mail inbox search was not automated from this workspace. The database and Resend provider acknowledgements show sent delivery records; inbox receipt still requires user confirmation.
+
+### Shipping Spoofing Verification
+
+Local smoke request sent `shipping.price: 999` with method `priority` to `POST /api/checkout/preview`. Server response used trusted `shippingAmount: 11.99`, proving client-submitted shipping price was ignored for totals.
+
+### Verification Commands
+
+```bash
+git status --short --branch
+git diff --stat
+git diff --name-status
+node --check src/domains/checkout/services/checkout.service.js
+node --check src/domains/checkout/controllers/checkout.controller.js
+node --check src/domains/shipping/services/shippo.service.js
+node --check src/domains/shipping/services/shipping.service.js
+node --check src/domains/shipping/controllers/shipping.controller.js
+node --check src/domains/emails/services/emailDelivery.service.js
+cd server && npx prisma generate
+cd server && npx prisma migrate dev --name add_order_shipping_rate_fields
+cd client && npm run build
+cd client && npm run test
+cd server && npm run build
+cd server && npm run test
+cd server && npx prisma migrate status
+cd server && node -e "import('./src/app.js').then(()=>console.log('app import ok'))"
+curl http://localhost:3000/api/checkout/shipping-rates
+curl http://localhost:3000/api/checkout/preview
+curl http://localhost:3000/api/admin/notifications
+curl http://localhost:3000/api/admin/shipments
+curl http://localhost:3000/api/webhooks/shippo
+```
+
+Results:
+
+- Client build passed.
+- Client tests passed: 5 files, 14 tests.
+- Server build passed and generated Prisma Client.
+- Server tests passed: 10 files, 30 tests.
+- Prisma migrate status passed with 16 local migrations and database schema up to date.
+- Server app import passed with `app import ok`; Better Auth emitted a warning that `BETTER_AUTH_SECRET` should be at least 32 characters.
+
+### Remaining Risks
+
+- Railway must run `npx prisma migrate deploy` for `20260615001000_add_order_shipping_rate_fields` after review.
+- Shippo rate shopping needs sender address env variables before live/test carrier rates can be returned.
+- Admin pages need browser manual QA after deploying/restarting because terminal smoke checks only verified route protection and API responses.
+- Review request email remains unverified for the approved inbox until a delivered order exists.
+- Better Auth secret length warning should be resolved in environment configuration with a stronger secret value.
+
+## 2026-06-17 Documentation Operating Model Restructure
+
+This docs-only pass reorganized the oversized project instructions into a concise operating hub plus focused durable documents. No application code was intentionally changed in this pass.
+
+### New Documentation Structure
+
+- `AGENTS.md`: concise permanent entry point, required reading order, core architecture/security/deployment/database/verification rules, and links to focused docs.
+- `docs/product-philosophy.md`: premium product philosophy, progressive disclosure, customer/admin usefulness, and feature-design checklist.
+- `docs/ux-ui-standards.md`: Tailwind-first styling, visual-system expectations, motion rules, and UI completeness requirements.
+- `docs/customer-experience.md`: customer account, profile, orders, order-help, checkout, Apple Pay/Google Pay disabled-state, and shipping-rate UX requirements.
+- `docs/admin-experience.md`: admin workspace philosophy, dashboard rules, Order Issues, Internal Issues, Email Template Center, promo email tooling, and save/send separation for order updates.
+- `docs/communications.md`: manual-first email policy, account-first communications, send controls, template/provider rules, Resend/Shippo rules, and excluded SMS/Apple Messages channels.
+- `docs/operations-and-issues.md`: suggested OrderIssue, OrderIssueMessage, OrderIssueEvent, InternalIssue, and InternalIssueEvent architecture and ownership/audit rules.
+- `docs/implementation-roadmap.md`: three-run implementation roadmap and the exact recommended Run 1 prompt.
+- `docs/verification-and-qa.md`: repair/launch-readiness priorities, interrupted-work verification, provider verification, docs checks, and final-report requirements.
+- `docs/architecture/*`: remains the current architecture/file-flow/database/admin/auth reference set.
+
+### Rules Moved
+
+- Product and feature philosophy moved out of `AGENTS.md` into `docs/product-philosophy.md`.
+- Tailwind, visual system, animation, responsive, state, and accessibility standards moved into `docs/ux-ui-standards.md`.
+- Customer account/profile/order/checkout/order-help requirements moved into `docs/customer-experience.md`.
+- Admin dashboard/tooling/email-template/order-update requirements moved into `docs/admin-experience.md`.
+- Resend, Shippo, manual-send, provider, template, dry-run, approved-inbox, no-bulk, no-secret, no-SMS rules moved into `docs/communications.md`.
+- Order issue and internal issue model direction moved into `docs/operations-and-issues.md`.
+- Repair, verification, provider retry, docs validation, and final-report rules moved into `docs/verification-and-qa.md`.
+- Three-run product/admin/final-integration plan moved into `docs/implementation-roadmap.md`.
+
+### Important Policy Changes
+
+- Manual-first email policy is now explicit: automatic emails are limited to essential account/security messages and intentionally retained order confirmation. Order updates, tracking, delivered, support replies, issue resolutions, review requests, apology, promo, and marketing emails require explicit admin action unless the user changes this policy later.
+- In-account communication is the default direction for customer issues and order updates.
+- Customer-facing email activity history and preferred communication method controls should be removed in the next customer UX implementation pass.
+- Twilio/SMS and Apple Messages for Business remain excluded unless the user explicitly requests them.
+- Apple Pay and Google Pay should remain disabled/future-only, with copy such as `Coming Fall 2026`, until a complete payment-sheet flow is intentionally built.
+- Admin tracking/order status save flows should be separated from customer-send flows.
+
+### Current Three-Run Roadmap
+
+Run 1: Product philosophy, customer account redesign, checkout UX, and supporting database changes.
+
+Run 2: Admin redesign, Order Issues, Internal Issues, and Email Template Center.
+
+Run 3: Final integration, Shippo/email workflows, polish, animations, QA, docs, and launch-readiness report.
+
+### Validation Notes
+
+This pass should be validated with docs-only checks:
+
+- Internal Markdown links for new docs.
+- Markdown fence balance.
+- Mermaid fence checks if Mermaid blocks are touched.
+- Search for outdated automatic-email guidance.
+- Search for old Twilio/SMS requirements.
+- Search for duplicated product philosophy.
+- Search for references to deleted/moved sections.
+- Confirm no secret values were copied.
+- `git diff --check`.
+
+Client/server builds are not required for this docs-only phase.
+
+### Recommended Run 1 Prompt
+
+```text
+Read AGENTS.md, PROJECT_HANDOFF.md, docs/product-philosophy.md, docs/ux-ui-standards.md, docs/customer-experience.md, docs/communications.md, docs/operations-and-issues.md, docs/implementation-roadmap.md, docs/verification-and-qa.md, and relevant docs/architecture files first.
+
+Start Run 1 from docs/implementation-roadmap.md.
+
+Do not start a broad refactor. Do not commit or push. Preserve guest checkout, Better Auth customer accounts, existing admin dashboard behavior, checkout payment correctness, server-owned totals, and current architecture patterns.
+
+First run git status, git diff --stat, and git diff --name-status. Audit current account, profile, orders, checkout, shipping, and support-related files. Preserve existing uncommitted work.
+
+Implement the customer-facing Run 1 scope end-to-end:
+- account navigation hub
+- account overview cleanup with max two recent orders
+- useful empty states with featured products where appropriate
+- profile redesign with stored-information card, verified email state, resend verification UX, no customer email activity, and no preferred communication controls
+- default shipping address foundation/editing when supported safely
+- orders split-view or mobile-friendly drill-in pattern with month grouping
+- conditional order detail sections with product images and selected shipping method visibility
+- removal of customer-facing internal timeline
+- Need Help/order issue foundation with seven-day delivery eligibility and customer-safe case direction
+- signed-in checkout prefilling without silently overwriting saved profile data
+- Apple Pay/Google Pay disabled or future-only messaging such as Coming Fall 2026
+- Shippo carrier-rate root-cause investigation and customer-safe fallback rate UX
+- server-owned shipping verification preserved across preview, PaymentIntent, and order creation
+- Tailwind-first polish, subtle motion, responsive states, accessibility, and tests
+
+Do not send automatic order/tracking/support/review/promo emails. Keep manual-first communication policy intact.
+
+Run required verification, update PROJECT_HANDOFF.md and relevant docs, and provide files changed, commands/results, remaining risks, manual QA, and whether the tree is safe for commit review.
+```

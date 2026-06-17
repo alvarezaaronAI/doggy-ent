@@ -20,7 +20,11 @@ import {
 } from './shippo.service.js'
 import {
   upsertShipmentForOrder,
+  findAdminShipments,
 } from '../repositories/shipping.repository.js'
+import {
+  mapAdminShipment,
+} from '../mappers/shipping.mapper.js'
 import {
   validateTrackingPayload,
 } from '../validators/shipping.validator.js'
@@ -163,4 +167,37 @@ export async function refreshOrderTracking(orderId) {
     trackingNumber: shipment.trackingNumber,
     trackingUrl: shipment.trackingUrl,
   })
+}
+
+export async function fetchAdminShipmentOverview({
+  status = null,
+  limit = 75,
+} = {}) {
+  const shipments = await findAdminShipments({
+    status: status ? String(status).trim().toUpperCase() : null,
+    limit,
+  })
+
+  const mappedShipments = shipments
+    .map(mapAdminShipment)
+    .filter(Boolean)
+
+  return {
+    providerConfigured: isShippoConfigured(),
+    total: mappedShipments.length,
+    shipped: mappedShipments.filter((shipment) =>
+      ['SHIPPED', 'TRANSIT', 'PRE_TRANSIT', 'OUT_FOR_DELIVERY'].includes(
+        String(shipment.shipmentStatus || '').toUpperCase(),
+      ),
+    ).length,
+    delivered: mappedShipments.filter((shipment) =>
+      String(shipment.shipmentStatus || '').toUpperCase() === 'DELIVERED',
+    ).length,
+    failed: mappedShipments.filter((shipment) =>
+      ['FAILURE', 'ERROR', 'RETURNED'].includes(
+        String(shipment.shipmentStatus || '').toUpperCase(),
+      ),
+    ).length,
+    recent: mappedShipments,
+  }
 }

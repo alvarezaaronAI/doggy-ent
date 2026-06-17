@@ -10,6 +10,9 @@ import AdminOrdersView from '../../domains/admin/views/AdminOrdersView.vue'
 import AdminPromosView from '../../domains/admin/views/AdminPromosView.vue'
 import AdminCampaignsView from '../../domains/admin/views/AdminCampaignsView.vue'
 import AdminCustomersView from '../../domains/admin/views/AdminCustomersView.vue'
+import AdminNotificationsView from '../../domains/admin/views/AdminNotificationsView.vue'
+import AdminReportsView from '../../domains/admin/views/AdminReportsView.vue'
+import AdminShipmentsView from '../../domains/admin/views/AdminShipmentsView.vue'
 import CheckoutView from '../../domains/checkout/views/CheckoutView.vue'
 import OrderSuccessView from '../../domains/checkout/views/OrderSuccessView.vue'
 import AdminLoginView from '../../domains/admin/views/AdminLoginView.vue'
@@ -71,6 +74,24 @@ const routes = [
     path: '/admin/customers/:customerId',
     name: 'admin-customer-detail',
     component: () => import('../../domains/admin/views/AdminCustomerDetailView.vue'),
+    meta: { requiresAdminAuth: true },
+  },
+  {
+    path: '/admin/notifications',
+    name: 'admin-notifications',
+    component: AdminNotificationsView,
+    meta: { requiresAdminAuth: true },
+  },
+  {
+    path: '/admin/shipments',
+    name: 'admin-shipments',
+    component: AdminShipmentsView,
+    meta: { requiresAdminAuth: true },
+  },
+  {
+    path: '/admin/reports',
+    name: 'admin-reports',
+    component: AdminReportsView,
     meta: { requiresAdminAuth: true },
   },
   {

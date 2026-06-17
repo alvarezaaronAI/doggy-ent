@@ -86,6 +86,30 @@
           </p>
         </fieldset>
 
+        <fieldset class="mt-5 rounded-xl border border-stone-200 bg-stone-50 p-4">
+          <legend class="px-1 text-sm font-black text-stone-800">
+            Notification preferences
+          </legend>
+
+          <div class="mt-3 grid gap-3 sm:grid-cols-2">
+            <label
+              v-for="option in notificationOptions"
+              :key="option.key"
+              class="flex items-start gap-3 rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-700"
+            >
+              <input
+                v-model="form.notificationPreference[option.key]"
+                class="mt-1"
+                type="checkbox"
+              />
+              <span>
+                <span class="block font-black text-stone-900">{{ option.label }}</span>
+                <span class="mt-1 block text-stone-500">{{ option.description }}</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
         <p v-if="message" class="mt-4 rounded-xl px-4 py-3 text-sm font-semibold" :class="messageClass">
           {{ message }}
         </p>
@@ -112,6 +136,35 @@
           </p>
           <p class="mt-3 text-sm text-stone-500">
             Email changes are disabled until the verification flow is fully implemented.
+          </p>
+        </section>
+
+        <section class="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+          <p class="text-xs font-black uppercase tracking-[0.18em] text-stone-400">
+            Recent email activity
+          </p>
+          <div v-if="notificationDeliveries.length" class="mt-4 space-y-3">
+            <div
+              v-for="delivery in notificationDeliveries"
+              :key="delivery.id"
+              class="rounded-xl bg-stone-50 p-4 text-sm"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-black text-stone-900">{{ formatEvent(delivery.event) }}</p>
+                  <p class="mt-1 text-stone-500">{{ delivery.subject }}</p>
+                </div>
+                <span class="rounded-full bg-white px-2 py-1 text-xs font-black uppercase text-stone-500">
+                  {{ delivery.status }}
+                </span>
+              </div>
+              <p class="mt-2 text-xs text-stone-400">
+                {{ formatDateTime(delivery.sentAt || delivery.createdAt) }}
+              </p>
+            </div>
+          </div>
+          <p v-else class="mt-4 text-sm text-stone-500">
+            Email delivery history will appear here after account or order notifications are sent.
           </p>
         </section>
 
@@ -147,6 +200,9 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import AccountShell from '../components/AccountShell.vue'
 import {
+  fetchAccountNotifications,
+} from '../api/account.api.js'
+import {
   useAccountProfile,
 } from '../composables/useAccountProfile.js'
 import {
@@ -162,12 +218,21 @@ const {
 
 const message = ref('')
 const messageType = ref('error')
+const notificationDeliveries = ref([])
 const form = reactive({
   firstName: '',
   lastName: '',
   phone: '',
   marketingOptIn: false,
   preferredContactMethod: 'EMAIL',
+  notificationPreference: {
+    orderUpdates: true,
+    trackingUpdates: true,
+    reviewRequests: true,
+    loyaltyNotifications: true,
+    referralNotifications: true,
+    marketingEmails: false,
+  },
 })
 
 const marketingOptions = [
@@ -198,6 +263,29 @@ const contactOptions = [
   },
 ]
 
+const notificationOptions = [
+  {
+    key: 'orderUpdates',
+    label: 'Order updates',
+    description: 'Confirmation and status messages for your orders.',
+  },
+  {
+    key: 'trackingUpdates',
+    label: 'Tracking updates',
+    description: 'Shipping and carrier tracking messages.',
+  },
+  {
+    key: 'reviewRequests',
+    label: 'Review requests',
+    description: 'Post-delivery review reminders.',
+  },
+  {
+    key: 'marketingEmails',
+    label: 'Marketing emails',
+    description: 'New drops, offers, rewards, and seasonal notes.',
+  },
+]
+
 const messageClass = computed(() =>
   messageType.value === 'success'
     ? 'bg-emerald-50 text-emerald-700'
@@ -211,6 +299,37 @@ function syncForm() {
   form.marketingOptIn = Boolean(profile.value?.profile?.marketingOptIn)
   form.preferredContactMethod =
     profile.value?.profile?.preferredContactMethod || 'EMAIL'
+  form.notificationPreference = {
+    ...form.notificationPreference,
+    ...(profile.value?.notificationPreference || {}),
+  }
+}
+
+async function loadNotifications() {
+  try {
+    const result = await fetchAccountNotifications()
+    notificationDeliveries.value = Array.isArray(result?.deliveries)
+      ? result.deliveries
+      : []
+  }
+  catch {
+    notificationDeliveries.value = []
+  }
+}
+
+function formatEvent(value) {
+  return String(value || 'Notification')
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return 'Date unavailable'
+  }
+
+  return new Date(value).toLocaleString()
 }
 
 async function submit() {
@@ -223,6 +342,7 @@ async function submit() {
 
   try {
     await saveProfile(form)
+    await loadNotifications()
     messageType.value = 'success'
     message.value = 'Profile saved.'
   }
@@ -234,5 +354,6 @@ async function submit() {
 onMounted(async () => {
   await loadProfile()
   syncForm()
+  await loadNotifications()
 })
 </script>

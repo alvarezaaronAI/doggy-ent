@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import {
   fetchAdminOrderById,
   refreshAdminOrderTracking,
+  resendAdminOrderEmail,
   updateAdminOrderTracking,
   updateAdminOrderStatus,
 } from '../api/adminOrders.api'
@@ -11,12 +12,14 @@ import {
   ORDER_STATUSES,
 } from '../constants/adminOrders.constants'
 import AdminOrderStatusPanel from '../components/AdminOrderStatusPanel.vue'
+import AdminOrderNotificationsPanel from '../components/AdminOrderNotificationsPanel.vue'
 import AdminOrderTrackingPanel from '../components/AdminOrderTrackingPanel.vue'
 
 const route = useRoute()
 const order = ref(null)
 const loading = ref(false)
 const trackingSaving = ref(false)
+const notificationSaving = ref(false)
 const statusMessage = ref('')
 
 const orderReference = computed(() =>
@@ -136,6 +139,27 @@ async function refreshTracking() {
   }
 }
 
+async function resendOrderEmail(event) {
+  if (!order.value?.id) return
+
+  notificationSaving.value = true
+  statusMessage.value = 'Sending notification...'
+
+  try {
+    const result = await resendAdminOrderEmail(
+      order.value.id,
+      event,
+    )
+
+    order.value = result.order || order.value
+    statusMessage.value = 'Notification queued.'
+  } catch (error) {
+    statusMessage.value = error.message || 'Unable to resend notification.'
+  } finally {
+    notificationSaving.value = false
+  }
+}
+
 async function loadOrder() {
   loading.value = true
   statusMessage.value = ''
@@ -222,6 +246,12 @@ onMounted(loadOrder)
             :saving="trackingSaving"
             @save="updateTracking"
             @refresh="refreshTracking"
+          />
+
+          <AdminOrderNotificationsPanel
+            :deliveries="order.emailDeliveries || []"
+            :disabled="notificationSaving"
+            @resend="resendOrderEmail"
           />
 
           <div class="grid gap-6 lg:grid-cols-[1.35fr_0.9fr]">
@@ -333,6 +363,10 @@ onMounted(loadOrder)
               <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Shipping</h2>
               <div class="mt-3 space-y-2 text-sm">
                 <p><span class="font-semibold text-stone-400">Address:</span> {{ shippingAddress }}</p>
+                <p><span class="font-semibold text-stone-400">Method:</span> {{ order.shippingMethod || 'N/A' }}</p>
+                <p><span class="font-semibold text-stone-400">Carrier:</span> {{ order.shippingCarrier || 'N/A' }}</p>
+                <p><span class="font-semibold text-stone-400">Service:</span> {{ order.shippingService || 'N/A' }}</p>
+                <p><span class="font-semibold text-stone-400">Rate source:</span> {{ order.shippingRateProvider || 'N/A' }}</p>
                 <p><span class="font-semibold text-stone-400">Delivery notes:</span> {{ order.deliveryNotes || 'N/A' }}</p>
                 <p><span class="font-semibold text-stone-400">Expectation:</span> Pack and ship according to the selected fulfillment queue.</p>
               </div>

@@ -4,6 +4,8 @@ export function mapCustomerProfile(user) {
   }
 
   const profile = user.profile || {}
+  const notificationPreference =
+    user.notificationPreference || {}
 
   return {
     id: user.id,
@@ -21,6 +23,21 @@ export function mapCustomerProfile(user) {
       marketingOptIn: Boolean(profile.marketingOptIn),
       preferredContactMethod: profile.preferredContactMethod || '',
       defaultAddress: profile.defaultAddress || null,
+    },
+    notificationPreference: {
+      orderUpdates:
+        notificationPreference.orderUpdates !== false,
+      trackingUpdates:
+        notificationPreference.trackingUpdates !== false,
+      reviewRequests:
+        notificationPreference.reviewRequests !== false,
+      loyaltyNotifications:
+        notificationPreference.loyaltyNotifications !== false,
+      referralNotifications:
+        notificationPreference.referralNotifications !== false,
+      marketingEmails: Boolean(
+        notificationPreference.marketingEmails,
+      ),
     },
     placeholders: {
       tracking: 'Tracking updates will appear here when shipping integration is added.',

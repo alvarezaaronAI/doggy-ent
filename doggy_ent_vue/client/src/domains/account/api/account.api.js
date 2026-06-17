@@ -38,6 +38,15 @@ export async function updateAccountProfile(profile) {
   return data.result
 }
 
+export async function fetchAccountNotifications() {
+  const data = await parseJsonResponse(
+    await fetchApi(`${ACCOUNT_API_URL}/notifications`),
+    'Unable to load notification activity.',
+  )
+
+  return data.result
+}
+
 export async function fetchAccountOrders() {
   const data = await parseJsonResponse(
     await fetchApi(`${ACCOUNT_API_URL}/orders`),

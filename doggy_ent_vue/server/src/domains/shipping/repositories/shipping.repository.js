@@ -107,3 +107,36 @@ export async function upsertShipmentForOrder({
     }),
   )
 }
+
+export async function findAdminShipments({
+  status = null,
+  limit = 75,
+} = {}) {
+  return prisma.orderShipment.findMany({
+    where: {
+      ...(status ? { shipmentStatus: status } : {}),
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+    take: Math.min(Math.max(Number(limit) || 75, 1), 150),
+    include: {
+      ...SHIPMENT_INCLUDE,
+      order: {
+        select: {
+          id: true,
+          orderNumber: true,
+          customerName: true,
+          customerEmail: true,
+          status: true,
+          total: true,
+          shippingMethod: true,
+          shippingCarrier: true,
+          shippingService: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+    },
+  })
+}

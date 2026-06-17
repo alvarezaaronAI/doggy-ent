@@ -2,12 +2,14 @@ import {
   ACCOUNT_STATUS,
 } from '../../auth/constants/authRoles.constants.js'
 import {
-  buildAccountVerificationEmail,
-  buildPasswordResetEmail,
-} from '../../emails/mappers/emailPayloads.mapper.js'
+  customerAuth,
+} from '../../auth/services/customerAuth.service.js'
 import {
-  queueEmail,
-} from '../../emails/services/emailProvider.service.js'
+  findRecentEmailDeliveries,
+} from '../../emails/repositories/emailDelivery.repository.js'
+import {
+  mapEmailDelivery,
+} from '../../emails/mappers/emailDelivery.mapper.js'
 import {
   mapAdminCustomerDetail,
   mapAdminCustomerListItem,
@@ -30,13 +32,21 @@ async function buildCustomerDetail(user) {
     return null
   }
 
-  const matchedGuestOrders = user.emailVerified
-    ? await findGuestOrdersByCustomerEmail(user.email)
-    : []
+  const [matchedGuestOrders, emailDeliveries] = await Promise.all([
+    user.emailVerified
+      ? findGuestOrdersByCustomerEmail(user.email)
+      : [],
+    findRecentEmailDeliveries({
+      limit: 20,
+      userId: user.id,
+    }),
+  ])
 
   return mapAdminCustomerDetail({
     ...user,
     matchedGuestOrders,
+    emailDeliveries:
+      emailDeliveries.map(mapEmailDelivery).filter(Boolean),
   })
 }
 
@@ -81,13 +91,12 @@ export async function queueAdminCustomerVerification(customerId) {
     throwNotFound()
   }
 
-  return queueEmail(
-    buildAccountVerificationEmail({
-      user: customer,
-      url: null,
-      event: 'RESEND_VERIFICATION',
-    }),
-  )
+  return customerAuth.api.sendVerificationEmail({
+    body: {
+      email: customer.email,
+      callbackURL: '/account/profile',
+    },
+  })
 }
 
 export async function queueAdminCustomerPasswordReset(customerId) {
@@ -97,10 +106,10 @@ export async function queueAdminCustomerPasswordReset(customerId) {
     throwNotFound()
   }
 
-  return queueEmail(
-    buildPasswordResetEmail({
-      user: customer,
-      url: null,
-    }),
-  )
+  return customerAuth.api.requestPasswordReset({
+    body: {
+      email: customer.email,
+      redirectTo: '/account/reset-password',
+    },
+  })
 }

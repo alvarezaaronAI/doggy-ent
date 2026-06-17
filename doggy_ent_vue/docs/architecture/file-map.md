@@ -82,6 +82,11 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `client/src/domains/admin/views/AdminCustomerDetailView.vue` | Admin customer detail route. | `useAdminCustomers`, orders panel/status badge. | Displays customer profile, linked orders, guest matches, and readiness actions. |
 | `client/src/domains/admin/api/adminCustomers.api.js` | Admin customer API calls. | `fetchApi`. | Calls `/api/admin/customers`. |
 | `client/src/domains/admin/composables/useAdminCustomers.js` | Customer admin state/actions. | Admin customer API. | Loads customer lists/details and status/readiness actions. |
+| `client/src/domains/admin/views/AdminNotificationsView.vue` | Dedicated admin notification history route. | Admin notification API. | Filters and displays `EmailDelivery` rows by event/status, plus provider/delivery totals. |
+| `client/src/domains/admin/api/adminNotifications.api.js` | Admin notification API calls. | `fetchApi`. | Calls `/api/admin/notifications` with optional filters. |
+| `client/src/domains/admin/views/AdminShipmentsView.vue` | Dedicated shipment overview route. | Admin shipment API. | Displays tracking records, provider configured state, shipment status filters, and order links. |
+| `client/src/domains/admin/api/adminShipments.api.js` | Admin shipment API calls. | `fetchApi`. | Calls `/api/admin/shipments` with optional filters. |
+| `client/src/domains/admin/views/AdminReportsView.vue` | Compact operations reporting route. | Orders, customers, notifications, shipments APIs. | Aggregates protected admin API data into overview cards without separate report persistence. |
 
 ## Customer Accounts
 
@@ -136,13 +141,17 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `server/src/domains/customers/repositories/adminCustomers.repository.js` | Admin customer Prisma access. | Prisma. | Reads users/orders/events/readiness relations and updates account status. |
 | `server/src/domains/emails/mappers/emailPayloads.mapper.js` | Email payload builders. | Email event constants. | Verification, password reset, welcome, order/support/review readiness payloads. |
 | `server/src/domains/emails/services/emailProvider.service.js` | Email provider abstraction. | Env flag. | Queues/logs email payloads without sending real email by default. |
+| `server/src/domains/emails/routes/adminEmailDelivery.routes.js` | Admin notification route. | Admin auth, email delivery controller. | Protects `GET /api/admin/notifications`. |
+| `server/src/domains/emails/controllers/emailDelivery.controller.js` | Email delivery admin handler. | Email delivery service. | Reads notification history and stats with filters. |
+| `server/src/domains/emails/services/emailDelivery.service.js` | Email delivery read logic. | Email delivery repository, mapper. | Provides admin and customer email history responses. |
+| `server/src/domains/emails/repositories/emailDelivery.repository.js` | Email delivery Prisma access. | Prisma. | Creates, updates, filters, and summarizes `EmailDelivery` records. |
 | `server/src/domains/products/routes/products.routes.js` | Product API routes. | Controller/auth where needed. | Storefront and admin product endpoints. |
 | `server/src/domains/products/controllers/products.controller.js` | Product request handlers. | Product service. | Thin controller layer. |
 | `server/src/domains/products/services/products.service.js` | Product business logic. | Prisma, mapper, validators. | Product CRUD and list orchestration. |
 | `server/src/domains/products/mappers/products.mapper.js` | Product database-to-response mapping. | Product constants/utils. | Normalizes product and variant response shapes. |
 | `server/src/domains/checkout/routes/checkout.routes.js` | Checkout preview/order routes. | Checkout controller. | `POST /api/checkout/preview` and order creation. |
-| `server/src/domains/checkout/services/checkout.service.js` | Checkout orchestration. | Orders, promos, campaigns, Stripe, pricing. | Trusted totals, idempotency, inventory, usage recording. |
-| `server/src/domains/checkout/utils/checkoutPricing.js` | Pricing calculations. | Money/tax helpers. | Source of truth for subtotal, discounts, shipping, tax, total. |
+| `server/src/domains/checkout/services/checkout.service.js` | Checkout orchestration. | Orders, promos, campaigns, Stripe, pricing, shipping. | Trusted totals, idempotency, inventory, usage recording, and server-side selected shipping rate resolution. |
+| `server/src/domains/checkout/utils/checkoutPricing.js` | Pricing calculations. | Money/tax helpers. | Source of truth for subtotal, discounts, static shipping fallback, tax, total. |
 | `server/src/domains/payments/routes/payment.routes.js` | PaymentIntent route mounted under checkout. | Payment controller. | `POST /api/checkout/create-payment-intent`. |
 | `server/src/domains/payments/services/stripe.payment.js` | Stripe SDK wrapper. | Stripe secret key. | Creates/retrieves PaymentIntents. |
 | `server/src/domains/orders/routes/orders.routes.js` | Admin order routes. | Orders controller, admin auth. | Lists/details/status updates for admin orders. |
@@ -154,6 +163,12 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `server/src/domains/campaigns/routes/campaigns.routes.js` | Campaign routes. | Campaign controller/admin auth. | Public campaign reads and admin CRUD. |
 | `server/src/domains/campaigns/services/campaigns.service.js` | Campaign business logic. | Repository/mapper/validator. | Donation rules, lifecycle, aggregate stats, order attribution usage. |
 | `server/src/domains/campaigns/repositories/campaigns.repository.js` | Campaign Prisma access. | Prisma. | Campaign CRUD, aggregate increments, and `OrderCampaignUsage` recording. |
+| `server/src/domains/shipping/routes/shipping.routes.js` | Shipping/tracking/admin shipment routes. | Admin auth, rate limits, shipping controller. | Protects admin tracking and shipment overview routes; receives Shippo webhook pings. |
+| `server/src/domains/shipping/controllers/shipping.controller.js` | Shipping request handlers. | Shipping service. | Handles admin tracking updates, refreshes, shipment overview, and webhook receipt. |
+| `server/src/domains/shipping/services/shipping.service.js` | Shipping business logic. | Shippo service, order repository, email service. | Upserts tracking, refreshes tracking, maps status to orders, and lists admin shipments. Future work should separate tracking saves from explicit admin-triggered customer email sends. |
+| `server/src/domains/shipping/services/shippo.service.js` | Shippo provider wrapper. | Shippo env, mapper. | Fetches tracking and rate-only shipment quotes; never buys labels. |
+| `server/src/domains/shipping/repositories/shipping.repository.js` | Shipping Prisma access. | Prisma. | Upserts `OrderShipment`, stores events, and lists admin shipment records. |
+| `server/src/domains/shipping/mappers/shipping.mapper.js` | Shipping response/provider mapping. | None. | Maps Shippo tracking/rates and database shipments into API-safe objects. |
 
 ## Prisma
 
@@ -161,6 +176,8 @@ This file maps important files and folders. It is not a complete line-by-line in
 | --- | --- | --- | --- |
 | `server/prisma/schema.prisma` | Database schema and enums. | Prisma/PostgreSQL. | Source of truth for Product, ProductVariant, Order, account models, OrderItem, OrderStatusHistory, Promo, PromoUsage, Campaign. |
 | `server/prisma/migrations/20260612000000_better_auth_customer_accounts/migration.sql` | Adds Better Auth/customer account tables and nullable `Order.userId`. | Prisma migrate. | Supports customer accounts, session persistence, customer order history, and future lifecycle/loyalty/support/review features. |
+| `server/prisma/migrations/20260615000000_add_order_shipping_method/migration.sql` | Adds nullable `Order.shippingMethod`. | Prisma migrate. | Preserves selected checkout delivery method. |
+| `server/prisma/migrations/20260615001000_add_order_shipping_rate_fields/migration.sql` | Adds nullable shipping carrier/service/rate/provider fields. | Prisma migrate. | Preserves Shippo/static shipping-rate traceability. |
 | `server/prisma/migrations/20260605000000_unique_order_payment_intent/migration.sql` | Adds unique PaymentIntent constraint. | Prisma migrate. | Supports order idempotency. |
 | `server/prisma/migrations/20260606000000_add_order_campaign_usage/migration.sql` | Adds order/campaign attribution table. | Prisma migrate. | Supports admin donation traceability and campaign order attribution. |
 | `server/prisma/migrations/20260607000000_add_order_status_history/migration.sql` | Adds order status history table. | Prisma migrate. | Supports admin fulfillment status audit trail and future admin-user attribution. |

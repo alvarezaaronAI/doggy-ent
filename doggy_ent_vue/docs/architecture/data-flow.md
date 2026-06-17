@@ -1,6 +1,6 @@
 # Data Flow Maps
 
-Last updated: 2026-06-13
+Last updated: 2026-06-15
 
 ## Overall Request Flow
 
@@ -64,6 +64,8 @@ sequenceDiagram
   participant DB as PostgreSQL
 
   Browser->>Client: Submit checkout form
+  Client->>API: GET /api/checkout/shipping-options
+  API-->>Client: Server-owned shipping methods
   Client->>API: POST /api/checkout/preview
   API->>DB: Read products, promos, campaigns
   API-->>Client: Trusted preview totals
@@ -75,7 +77,8 @@ sequenceDiagram
   Stripe-->>Client: PaymentIntent succeeded
   Client->>API: POST /api/checkout with paymentIntentId
   API->>Stripe: Retrieve PaymentIntent
-  API->>DB: Recompute totals, create order, decrement inventory, record promo/campaign usage
+  API->>DB: Recompute totals, create order with shipping method, decrement inventory, record promo/campaign usage
+  API->>DB: Create EmailDelivery rows
   DB-->>API: Order
   API-->>Client: Order response
   Client->>Browser: Navigate to /order-success/:orderId
@@ -91,6 +94,7 @@ Key files:
 - Server preview/create route: `server/src/domains/checkout/routes/checkout.routes.js`
 - Server checkout service: `server/src/domains/checkout/services/checkout.service.js`
 - Server pricing: `server/src/domains/checkout/utils/checkoutPricing.js`
+- Server shipping options: `server/src/domains/checkout/constants/checkout.constants.js`
 - Stripe service: `server/src/domains/payments/services/stripe.payment.js`
 - Order repository: `server/src/domains/orders/repositories/orders.repository.js`
 
@@ -179,7 +183,92 @@ Important constraints:
 3. Admin customer API calls use `/api/admin/customers`, protected by `requireAdminAuth`.
 4. Server customer services read `User`, linked `Order` rows, verified-email guest matches, account events, support placeholders, review placeholders, notification preferences, and loyalty placeholders.
 5. Deactivate/reactivate actions update `User.status` and create `CustomerAccountEvent` rows with `changedByType: ADMIN_ENV`.
-6. Resend verification and password reset actions queue payloads through the email provider abstraction. They do not send real email unless a provider is configured.
+6. Resend verification and password reset actions call Better Auth email APIs, which queue Resend-backed `EmailDelivery` records when provider env is configured.
+7. Admin customer detail shows recent notification delivery history from `EmailDelivery`.
+8. Admin dashboard reads order stats, customer summaries, and notification stats to show orders, customers, revenue, shipment activity, tracking summary, and notification activity.
+
+## Notification Flow
+
+```mermaid
+sequenceDiagram
+  participant Trigger as Account, checkout, or admin action
+  participant Email as Email service
+  participant Prefs as Customer preferences
+  participant DB as PostgreSQL
+  participant Resend
+  participant UI as Admin or customer UI
+
+  Trigger->>Email: queueEmail(payload)
+  Email->>Prefs: Check category preferences when userId exists
+  Email->>DB: Create EmailDelivery
+  alt Provider configured and preference allows
+    Email->>Resend: Send transactional email
+    Resend-->>Email: Provider id
+    Email->>DB: Mark SENT
+  else Mock, missing provider, or opted out
+    Email->>DB: Mark MOCKED or SKIPPED
+  end
+  UI->>DB: Read EmailDelivery history
+```
+
+Notification surfaces:
+
+- Customer profile reads `/api/account/notifications`.
+- Admin dashboard reads `/api/admin/notifications`.
+- Admin order detail reads order-scoped `emailDeliveries` from `/api/admin/orders/:orderId`.
+- Admin customer detail reads customer-scoped `emailDeliveries` from `/api/admin/customers/:customerId`.
+
+## Tracking Flow
+
+```mermaid
+sequenceDiagram
+  participant Admin as Admin order detail
+  participant API as Shipping API
+  participant Shippo
+  participant DB as PostgreSQL
+  participant Email as Email service
+  participant Customer as Customer account/order success
+
+  Admin->>API: PUT /api/admin/orders/:orderId/tracking
+  API->>Shippo: Fetch status when API key exists
+  API->>DB: Upsert OrderShipment
+  API->>DB: Create OrderShipmentEvent timeline
+  API->>DB: Update Order.status when shipped or delivered
+  API-->>Admin: Return saved tracking state
+  Customer->>API: GET account or checkout order detail
+  API-->>Customer: Customer-safe shipment and events
+```
+
+Communications policy note: tracking/order changes should be saved separately from customer email sends. Future tracking work should require an explicit admin send action for tracking, shipped, delivered, review, support, issue-resolution, apology, promo, and marketing emails.
+
+## Checkout Shipping Rate Flow
+
+```mermaid
+sequenceDiagram
+  participant Client as CheckoutView.vue
+  participant CheckoutAPI as Checkout API
+  participant Shippo as Shippo test API
+  participant CheckoutService as checkout.service.js
+  participant Stripe as Stripe API
+  participant DB as PostgreSQL
+
+  Client->>CheckoutAPI: POST /api/checkout/shipping-rates
+  CheckoutAPI->>CheckoutService: fetchCheckoutShippingRates(customer, cartItems)
+  alt Shippo key and from-address env are configured
+    CheckoutService->>Shippo: Create shipment for rates only
+    Shippo-->>CheckoutService: Rate list
+    CheckoutService-->>Client: Carrier/service/rateId/amount options
+  else Missing config or provider failure
+    CheckoutService-->>Client: Static store fallback rates
+  end
+  Client->>CheckoutAPI: POST /api/checkout/create-payment-intent with selected rateId
+  CheckoutAPI->>CheckoutService: Re-resolve selected rate server-side
+  CheckoutService->>Stripe: Create PaymentIntent from trusted total
+  Client->>CheckoutAPI: POST /api/checkout with selected rateId
+  CheckoutService->>DB: Store order shipping carrier, service, rate id, provider, amount
+```
+
+Shippo rate shopping is intentionally rate-only. The app does not buy labels from checkout and falls back to store rates when Shippo configuration or address data is incomplete.
 
 ## Order Status History Flow
 

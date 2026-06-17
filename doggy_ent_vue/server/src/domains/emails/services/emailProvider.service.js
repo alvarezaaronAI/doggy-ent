@@ -1,5 +1,6 @@
 import {
   EMAIL_STATUS,
+  EMAIL_EVENTS,
 } from '../constants/emailEvents.constants.js'
 import {
   renderEmailTemplate,
@@ -9,6 +10,7 @@ import {
   findEmailDeliveryByDedupeKey,
   updateEmailDeliveryById,
 } from '../repositories/emailDelivery.repository.js'
+import { prisma } from '../../../db/prisma.js'
 
 function getResendApiKey() {
   return String(process.env.RESEND_API_KEY || '').trim()
@@ -66,6 +68,45 @@ function normalizeRecipients(to) {
   return Array.isArray(to)
     ? to.map((recipient) => String(recipient || '').trim()).filter(Boolean)
     : [String(to || '').trim()].filter(Boolean)
+}
+
+async function isAllowedByNotificationPreferences(payload) {
+  if (!payload.userId) {
+    return true
+  }
+
+  const preference =
+    await prisma.customerNotificationPreference.findUnique({
+      where: {
+        userId: payload.userId,
+      },
+    })
+
+  if (!preference) {
+    return true
+  }
+
+  if ([
+    EMAIL_EVENTS.ORDER_STATUS_UPDATE,
+    EMAIL_EVENTS.ORDER_CANCELLED,
+    EMAIL_EVENTS.REFUND_ISSUED,
+  ].includes(payload.event)) {
+    return preference.orderUpdates !== false
+  }
+
+  if ([
+    EMAIL_EVENTS.ORDER_SHIPPED,
+    EMAIL_EVENTS.ORDER_DELIVERED,
+    EMAIL_EVENTS.TRACKING_UPDATE,
+  ].includes(payload.event)) {
+    return preference.trackingUpdates !== false
+  }
+
+  if (payload.event === EMAIL_EVENTS.REVIEW_REQUEST) {
+    return preference.reviewRequests !== false
+  }
+
+  return true
 }
 
 async function sendWithResend({
@@ -139,6 +180,33 @@ export async function queueEmail(payload = {}) {
 
   const rendered = renderEmailTemplate(payload)
   const provider = isMockEmailMode() ? 'MOCK' : 'RESEND'
+  const allowedByPreferences =
+    await isAllowedByNotificationPreferences(payload)
+
+  if (!allowedByPreferences) {
+    const delivery = await createEmailDelivery({
+      dedupeKey,
+      event: payload.event,
+      recipient: recipients.join(','),
+      subject: rendered.subject,
+      provider,
+      status: EMAIL_STATUS.SKIPPED,
+      orderId: payload.orderId || null,
+      userId: payload.userId || null,
+      metadata: {
+        reason: 'Customer notification preference disabled this event.',
+      },
+      sentAt: null,
+    })
+
+    return {
+      queued: false,
+      status: EMAIL_STATUS.SKIPPED,
+      delivery,
+      reason: 'Customer notification preference disabled this event.',
+    }
+  }
+
   const initialStatus = provider === 'MOCK'
     ? EMAIL_STATUS.MOCKED
     : 'PENDING'
