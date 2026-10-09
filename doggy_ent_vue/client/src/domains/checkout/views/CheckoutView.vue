@@ -276,6 +276,12 @@ function applyAccountProfileToCheckout(profile) {
     lastName: profile.profile?.lastName || '',
     phone: profile.profile?.phone || '',
     marketingOptIn: Boolean(profile.profile?.marketingOptIn),
+    address1: profile.profile?.defaultAddress?.address1 || '',
+    address2: profile.profile?.defaultAddress?.address2 || '',
+    city: profile.profile?.defaultAddress?.city || '',
+    state: profile.profile?.defaultAddress?.state || '',
+    zip: profile.profile?.defaultAddress?.zip || '',
+    country: profile.profile?.defaultAddress?.country || '',
   }
 
   let changed = false

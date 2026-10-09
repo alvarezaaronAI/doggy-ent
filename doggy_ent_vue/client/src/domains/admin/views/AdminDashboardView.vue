@@ -1,256 +1,127 @@
-<template>
-  <main class="min-h-screen bg-[var(--brand-5)] text-slate-900">
-    <section class="mx-auto max-w-7xl px-6 py-10 md:py-14">
-      <div class="section-panel p-8 md:p-10">
-        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <div class="mb-3 flex flex-wrap items-center gap-3">
-              <p class="text-sm font-semibold uppercase tracking-[0.2em] text-stone-400">
-                Admin CMS
-              </p>
-
-              <AdminDataTargetBadge />
-            </div>
-
-            <h1 class="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
-
-            <p class="mt-3 max-w-2xl text-stone-300">
-              Manage products, orders, promos, and donation campaigns from one protected admin area.
-            </p>
-
-            <p v-if="admin" class="mt-3 text-sm text-stone-400">
-              Signed in as <span class="font-semibold text-emerald-300">{{ admin.email }}</span>
-            </p>
-          </div>
-
-          <button
-            class="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-            @click="logout"
-          >
-            Logout
-          </button>
-        </div>
-
-        <div class="mt-10 grid gap-4 md:grid-cols-4 lg:grid-cols-8">
-          <RouterLink
-            to="/admin/products"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Products</h2>
-            <p class="mt-2 text-sm text-stone-400">Manage listings, pricing, and product status.</p>
-          </RouterLink>
-
-          <RouterLink
-            to="/admin/orders"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Orders</h2>
-            <p class="mt-2 text-sm text-stone-400">Review incoming orders and fulfillment flow.</p>
-          </RouterLink>
-
-          <RouterLink
-            to="/admin/promos"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Promos</h2>
-            <p class="mt-2 text-sm text-stone-400">Handle coupon codes, offers, and campaigns.</p>
-          </RouterLink>
-          <RouterLink
-            to="/admin/campaigns"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Campaigns</h2>
-            <p class="mt-2 text-sm text-stone-400">Manage shelter donation campaigns and product impact tracking.</p>
-          </RouterLink>
-
-          <RouterLink
-            to="/admin/customers"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Customers</h2>
-            <p class="mt-2 text-sm text-stone-400">Review accounts, order links, and readiness workflows.</p>
-          </RouterLink>
-
-          <RouterLink
-            to="/admin/notifications"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Notifications</h2>
-            <p class="mt-2 text-sm text-stone-400">Review email delivery history and provider status.</p>
-          </RouterLink>
-
-          <RouterLink
-            to="/admin/shipments"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Shipments</h2>
-            <p class="mt-2 text-sm text-stone-400">Review tracking, delivery timelines, and refresh tools.</p>
-          </RouterLink>
-
-          <RouterLink
-            to="/admin/reports"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Reports</h2>
-            <p class="mt-2 text-sm text-stone-400">See compact revenue, orders, customer, and ops totals.</p>
-          </RouterLink>
-        </div>
-
-        <section class="mt-10 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-          <div
-            v-for="metric in dashboardMetrics"
-            :key="metric.label"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm"
-          >
-            <p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">
-              {{ metric.label }}
-            </p>
-            <p class="mt-2 text-2xl font-black text-[var(--brand-4)]">
-              {{ metric.value }}
-            </p>
-            <p class="mt-1 text-xs font-semibold text-stone-400">
-              {{ metric.hint }}
-            </p>
-          </div>
-        </section>
-
-        <div class="mt-10">
-          <RouterLink
-            to="/"
-            class="inline-flex rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-[var(--brand-4)] transition hover:border-emerald-400"
-          >
-            Back to Home
-          </RouterLink>
-        </div>
-      </div>
-    </section>
-  </main>
-</template>
-
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import AdminDataTargetBadge from '../components/AdminDataTargetBadge.vue'
-import {
-  fetchAdminCustomers,
-} from '../api/adminCustomers.api.js'
-import {
-  fetchAdminNotifications,
-} from '../api/adminNotifications.api.js'
-import {
-  fetchAdminOrderStats,
-} from '../api/adminOrders.api.js'
-import {
-  fetchApi,
-  parseJsonResponse,
-} from '@shared/api/http.js'
-
-const router = useRouter()
-const admin = ref(null)
-const customers = ref([])
-const notifications = ref({
-  total: 0,
-  sent: 0,
-  failed: 0,
-  mocked: 0,
-  pending: 0,
-  recent: [],
-})
-const orderStats = ref({})
-
-const dashboardMetrics = computed(() => [
+import { computed, onMounted } from 'vue'
+import AdminPageHeader from '../components/AdminPageHeader.vue'
+import AdminIcon from '../components/AdminIcon.vue'
+import AdminMetrics from '../components/AdminMetrics.vue'
+import { useAdminOverview } from '../composables/useAdminOverview.js'
+import { formatCurrency } from '@shared/utils/currency.js'
+const { activity, errors, loading, load } = useAdminOverview()
+const metrics = computed(() => [
   {
-    label: 'Orders',
-    value: orderStats.value.totalOrders || 0,
-    hint: `${orderStats.value.pendingOrders || 0} pending`,
+    label: 'Paid orders',
+    value: activity.value.stats?.paidOrders ?? 'Unavailable',
+    hint: 'Ready for fulfillment review',
+  },
+  {
+    label: 'Open order issues',
+    value: activity.value.support?.counts?.open ?? 'Unavailable',
+    hint: 'Customer follow-up',
   },
   {
     label: 'Customers',
-    value: customers.value.length,
-    hint: 'Account records',
-  },
-  {
-    label: 'Revenue',
-    value: formatCurrency(orderStats.value.totalRevenue),
-    hint: 'All orders',
-  },
-  {
-    label: 'Notifications',
-    value: notifications.value.total || 0,
-    hint: `${notifications.value.failed || 0} failed`,
-  },
-  {
-    label: 'Shipments',
-    value: orderStats.value.shippedOrders || 0,
-    hint: 'Marked shipped',
-  },
-  {
-    label: 'Delivered',
-    value: orderStats.value.deliveredOrders || 0,
-    hint: 'Fulfilled',
+    value: activity.value.customers?.length ?? 'Unavailable',
+    hint: 'Registered accounts',
   },
 ])
-
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString(undefined, {
-    style: 'currency',
-    currency: 'USD',
-  })
-}
-
-async function loadAdminSession() {
-  try {
-    const response = await fetchApi('/api/auth/me')
-
-    const data = await parseJsonResponse(
-      response,
-      'Unable to validate admin session.',
-    )
-
-    if (response.ok && data.authenticated) {
-      admin.value = data.admin
-    }
-  } catch {
-    admin.value = null
-  }
-}
-
-async function loadDashboardActivity() {
-  const [statsResult, customersResult, notificationsResult] =
-    await Promise.allSettled([
-      fetchAdminOrderStats(),
-      fetchAdminCustomers(),
-      fetchAdminNotifications(),
-    ])
-
-  if (statsResult.status === 'fulfilled') {
-    orderStats.value = statsResult.value || {}
-  }
-
-  if (customersResult.status === 'fulfilled') {
-    customers.value = Array.isArray(customersResult.value)
-      ? customersResult.value
-      : []
-  }
-
-  if (notificationsResult.status === 'fulfilled') {
-    notifications.value = notificationsResult.value || notifications.value
-  }
-}
-
-async function logout() {
-  try {
-    await fetchApi('/api/auth/logout', {
-      method: 'POST',
-    })
-  } finally {
-    admin.value = null
-    router.push('/admin/login')
-  }
-}
-
-onMounted(() => {
-  loadAdminSession()
-  loadDashboardActivity()
-})
+const priorities = computed(() => [
+  {
+    label: 'Orders awaiting review',
+    count: activity.value.stats?.pendingOrders,
+    to: '/admin/orders',
+    icon: 'orders',
+  },
+  {
+    label: 'Order issues requiring action',
+    count: activity.value.support?.counts?.actionRequired,
+    to: '/admin/order-issues',
+    icon: 'support',
+  },
+  {
+    label: 'Failed email deliveries',
+    count: activity.value.notifications?.failed,
+    to: '/admin/notifications',
+    icon: 'notifications',
+  },
+  {
+    label: 'Severe internal issues',
+    count: activity.value.internal?.counts?.severe,
+    to: '/admin/internal-issues',
+    icon: 'issues',
+  },
+])
+const recentOrders = computed(() =>
+  [...(activity.value.orders || [])]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3),
+)
+onMounted(load)
 </script>
+<template>
+  <section class="admin-page">
+    <AdminPageHeader title="Overview" eyebrow="Your workspace"
+      ><button
+        type="button"
+        class="admin-button"
+        :disabled="loading"
+        @click="load"
+      >
+        <AdminIcon name="refresh" />Refresh
+      </button></AdminPageHeader
+    >
+    <p
+      v-for="error in errors"
+      :key="error"
+      role="alert"
+      class="admin-alert admin-alert-error"
+    >
+      {{ error }}
+    </p>
+    <AdminMetrics :items="metrics" :loading="loading" />
+    <h2>Needs attention</h2>
+    <RouterLink
+      v-for="item in priorities"
+      :key="item.to"
+      :to="item.to"
+      class="admin-row"
+      ><AdminIcon :name="item.icon" /><span class="flex-1">{{
+        item.label
+      }}</span
+      ><span class="admin-badge">{{
+        loading ? 'Loading' : (item.count ?? 'Unavailable')
+      }}</span
+      ><AdminIcon name="next"
+    /></RouterLink>
+    <div class="mt-8 flex items-center justify-between gap-3">
+      <h2>Recent orders</h2>
+      <RouterLink to="/admin/orders" class="admin-link"
+        >All orders<AdminIcon name="next"
+      /></RouterLink>
+    </div>
+    <p v-if="loading" class="admin-state" role="status">Loading orders...</p>
+    <template v-else
+      ><RouterLink
+        v-for="order in recentOrders"
+        :key="order.id"
+        :to="`/admin/orders/${order.id}`"
+        class="admin-row"
+        ><span class="flex-1"
+          ><strong>{{
+            order.customerReference || order.orderNumber || order.id
+          }}</strong
+          ><span class="admin-muted mt-1 block"
+            >{{ order.customerName }} &middot;
+            {{ new Date(order.createdAt).toLocaleDateString() }}</span
+          ></span
+        ><span class="admin-badge">{{ order.status }}</span
+        ><strong>{{ formatCurrency(order.total) }}</strong></RouterLink
+      ></template
+    >
+    <p v-if="!loading && !recentOrders.length" class="admin-state">
+      {{
+        activity.orders
+          ? 'No orders yet.'
+          : 'Order activity is unavailable. Try Refresh.'
+      }}
+    </p>
+  </section>
+</template>

@@ -46,12 +46,12 @@ export function validateProfileForm(profile) {
     return 'Last name is required.'
   }
 
-  if (
-    profile.preferredContactMethod
-    && !['EMAIL', 'PHONE', 'TEXT'].includes(profile.preferredContactMethod)
-  ) {
-    return 'Choose a valid preferred contact method.'
-  }
+  return ''
+}
 
+export function validateAccountAddress(address) {
+  for (const [field, label] of [['address1', 'Street address'], ['city', 'City'], ['state', 'State / region'], ['zip', 'Postal code'], ['country', 'Country']]) {
+    if (!String(address?.[field] || '').trim()) return `${label} is required.`
+  }
   return ''
 }

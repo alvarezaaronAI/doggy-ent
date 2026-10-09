@@ -32,10 +32,8 @@ const form = reactive({
   markShipped: true,
 })
 
-const shipment = computed(() =>
-  props.order?.shipment
-  || props.order?.shipments?.[0]
-  || null,
+const shipment = computed(
+  () => props.order?.shipment || props.order?.shipments?.[0] || null,
 )
 
 function syncForm() {
@@ -43,8 +41,12 @@ function syncForm() {
   form.trackingNumber = shipment.value?.trackingNumber || ''
   form.trackingUrl = shipment.value?.trackingUrl || ''
   form.shipmentStatus = shipment.value?.shipmentStatus || 'UNKNOWN'
-  form.markShipped = ['PRE_TRANSIT', 'TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED']
-    .includes(form.shipmentStatus)
+  form.markShipped = [
+    'PRE_TRANSIT',
+    'TRANSIT',
+    'OUT_FOR_DELIVERY',
+    'DELIVERED',
+  ].includes(form.shipmentStatus)
 }
 
 function formatDateTime(value) {
@@ -65,18 +67,16 @@ function saveTracking() {
   })
 }
 
-watch(
-  shipment,
-  syncForm,
-  {
-    immediate: true,
-  },
-)
+watch(shipment, syncForm, {
+  immediate: true,
+})
 </script>
 
 <template>
-  <section class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm">
-    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+  <section class="admin-form-section mt-5">
+    <div
+      class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
+    >
       <div>
         <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Tracking</h2>
         <p class="mt-1 text-sm text-stone-400">
@@ -94,13 +94,34 @@ watch(
       </button>
     </div>
 
-    <div v-if="shipment" class="mt-4 grid gap-3 rounded-xl bg-[var(--brand-5)] p-4 text-sm md:grid-cols-2">
-      <p><span class="font-semibold text-stone-400">Carrier:</span> {{ shipment.carrier }}</p>
-      <p><span class="font-semibold text-stone-400">Status:</span> {{ shipment.shipmentStatus || 'UNKNOWN' }}</p>
-      <p><span class="font-semibold text-stone-400">Tracking #:</span> {{ shipment.trackingNumber }}</p>
-      <p><span class="font-semibold text-stone-400">Estimated:</span> {{ formatDateTime(shipment.estimatedDelivery) }}</p>
-      <p><span class="font-semibold text-stone-400">Shipped:</span> {{ formatDateTime(shipment.shippedAt) }}</p>
-      <p><span class="font-semibold text-stone-400">Delivered:</span> {{ formatDateTime(shipment.deliveredAt) }}</p>
+    <div
+      v-if="shipment"
+      class="mt-4 grid gap-3 rounded-xl bg-[var(--brand-5)] p-4 text-sm md:grid-cols-2"
+    >
+      <p>
+        <span class="font-semibold text-stone-400">Carrier:</span>
+        {{ shipment.carrier }}
+      </p>
+      <p>
+        <span class="font-semibold text-stone-400">Status:</span>
+        {{ shipment.shipmentStatus || 'UNKNOWN' }}
+      </p>
+      <p>
+        <span class="font-semibold text-stone-400">Tracking #:</span>
+        {{ shipment.trackingNumber }}
+      </p>
+      <p>
+        <span class="font-semibold text-stone-400">Estimated:</span>
+        {{ formatDateTime(shipment.estimatedDelivery) }}
+      </p>
+      <p>
+        <span class="font-semibold text-stone-400">Shipped:</span>
+        {{ formatDateTime(shipment.shippedAt) }}
+      </p>
+      <p>
+        <span class="font-semibold text-stone-400">Delivered:</span>
+        {{ formatDateTime(shipment.deliveredAt) }}
+      </p>
       <p class="md:col-span-2">
         <span class="font-semibold text-stone-400">Tracking URL:</span>
         <a
@@ -151,17 +172,15 @@ watch(
           v-model="form.shipmentStatus"
           class="mt-2 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm"
         >
-          <option
-            v-for="status in statusOptions"
-            :key="status"
-            :value="status"
-          >
+          <option v-for="status in statusOptions" :key="status" :value="status">
             {{ status.replaceAll('_', ' ') }}
           </option>
         </select>
       </label>
 
-      <label class="flex items-center gap-3 text-sm font-semibold text-stone-600 md:col-span-2">
+      <label
+        class="flex items-center gap-3 text-sm font-semibold text-stone-600 md:col-span-2"
+      >
         <input
           v-model="form.markShipped"
           type="checkbox"
@@ -181,18 +200,31 @@ watch(
       </div>
     </form>
 
-    <div v-if="shipment?.events?.length" class="mt-5 border-t border-stone-100 pt-4">
-      <h3 class="text-sm font-extrabold uppercase tracking-[0.14em] text-stone-400">Carrier events</h3>
+    <div
+      v-if="shipment?.events?.length"
+      class="mt-5 border-t border-stone-100 pt-4"
+    >
+      <h3
+        class="text-sm font-extrabold uppercase tracking-[0.14em] text-stone-400"
+      >
+        Carrier events
+      </h3>
       <div class="mt-3 space-y-2">
         <div
           v-for="event in shipment.events"
           :key="`${event.status}-${event.occurredAt}-${event.message}`"
           class="rounded-xl border border-stone-100 p-3 text-sm"
         >
-          <p class="font-bold text-[var(--brand-4)]">{{ event.status || 'Update' }}</p>
+          <p class="font-bold text-[var(--brand-4)]">
+            {{ event.status || 'Update' }}
+          </p>
           <p class="text-stone-500">{{ formatDateTime(event.occurredAt) }}</p>
-          <p v-if="event.message" class="mt-1 text-stone-600">{{ event.message }}</p>
-          <p v-if="event.location" class="mt-1 text-stone-400">{{ event.location }}</p>
+          <p v-if="event.message" class="mt-1 text-stone-600">
+            {{ event.message }}
+          </p>
+          <p v-if="event.location" class="mt-1 text-stone-400">
+            {{ event.location }}
+          </p>
         </div>
       </div>
     </div>

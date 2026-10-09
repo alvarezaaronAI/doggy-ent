@@ -15,6 +15,7 @@ import accountRoutes from './domains/account/routes/account.routes.js'
 import adminCustomersRoutes from './domains/customers/routes/adminCustomers.routes.js'
 import adminEmailDeliveryRoutes from './domains/emails/routes/adminEmailDelivery.routes.js'
 import shippingRoutes from './domains/shipping/routes/shipping.routes.js'
+import supportRoutes from './domains/support/routes/support.routes.js'
 import {
   customerAuth,
 } from './domains/auth/services/customerAuth.service.js'
@@ -96,6 +97,7 @@ app.use('/api/admin/customers', adminCustomersRoutes)
 app.use('/api/admin/notifications', adminEmailDeliveryRoutes)
 app.use('/api/account', accountRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api', supportRoutes)
 app.use('/api', shippingRoutes)
 
 app.use(errorMiddleware)

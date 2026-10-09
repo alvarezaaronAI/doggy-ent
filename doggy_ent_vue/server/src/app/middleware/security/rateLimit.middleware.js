@@ -34,6 +34,12 @@ export const customerAuthRateLimiter = createRateLimiter({
   message: 'Too many account requests. Please try again shortly.',
 })
 
+export const issueRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many support requests. Please try again shortly.',
+})
+
 export const webhookRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 200,

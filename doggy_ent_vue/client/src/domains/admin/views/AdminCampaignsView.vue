@@ -1,12 +1,13 @@
 <script setup>
 import { onMounted } from 'vue'
 import AdminCampaignForm from '../components/AdminCampaignForm.vue'
-import AdminCampaignAnalyticsModal from '../components/AdminCampaignAnalyticsModal.vue'
-import AdminCampaignsHeader from '../components/AdminCampaignsHeader.vue'
 import AdminCampaignsLibrary from '../components/AdminCampaignsLibrary.vue'
-import AdminCampaignsStats from '../components/AdminCampaignsStats.vue'
+import AdminCampaignImpact from '../components/AdminCampaignImpact.vue'
+import AdminPageHeader from '../components/AdminPageHeader.vue'
+import AdminMetrics from '../components/AdminMetrics.vue'
+import AdminIcon from '../components/AdminIcon.vue'
+import { formatAdminCampaignPrice } from '../utils/adminCampaigns.utils'
 import { useAdminCampaigns } from '../composables/useAdminCampaigns'
-
 const {
   activeCampaigns,
   campaignGroups,
@@ -34,34 +35,72 @@ const {
   totalDonationGenerated,
   totalOrders,
   totalRevenueGenerated,
+  showForm,
+  openCreateForm,
 } = useAdminCampaigns()
-
 onMounted(loadPageData)
 </script>
-
 <template>
-  <section class="mx-auto max-w-7xl px-5 py-8 md:px-6">
-    <AdminCampaignsHeader />
-
-    <AdminCampaignsStats
-      :active-count="activeCampaigns.length"
-      :total-donation-generated="totalDonationGenerated"
-      :total-orders="totalOrders"
-      :total-revenue-generated="totalRevenueGenerated"
+  <section class="admin-page">
+    <AdminPageHeader
+      :title="
+        showForm
+          ? editingCampaignId
+            ? 'Edit campaign'
+            : 'New campaign'
+          : 'Campaigns'
+      "
+      eyebrow="Giving &amp; growth"
+      ><button
+        v-if="!showForm && !selectedCampaignAnalytics"
+        class="admin-button admin-primary"
+        @click="openCreateForm"
+      >
+        <AdminIcon name="plus" /> Create campaign
+      </button></AdminPageHeader
+    >
+    <div
+      v-if="errorMessage && !showForm"
+      class="admin-alert admin-error"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </div>
+    <div v-if="successMessage" class="admin-alert admin-success" role="status">
+      {{ successMessage }}
+    </div>
+    <AdminCampaignForm
+      v-if="showForm"
+      :editing-campaign-id="editingCampaignId"
+      :error-message="errorMessage"
+      :form="form"
+      :is-saving="isSaving"
+      :products="products"
+      @reset="resetForm"
+      @submit="saveCampaign"
     />
-
-    <div class="grid gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
-      <AdminCampaignForm
-        :editing-campaign-id="editingCampaignId"
-        :error-message="errorMessage"
-        :form="form"
-        :is-saving="isSaving"
-        :products="products"
-        :success-message="successMessage"
-        @reset="resetForm"
-        @submit="saveCampaign"
+    <AdminCampaignImpact
+      v-else-if="selectedCampaignAnalytics"
+      :campaign="selectedCampaignAnalytics"
+      :get-campaign-product-names="getCampaignProductNames"
+      @close="closeCampaignAnalytics"
+    />
+    <template v-else>
+      <AdminMetrics
+        :loading="isLoading"
+        :items="[
+          { label: 'Active campaigns', value: activeCampaigns.length },
+          {
+            label: 'Donations generated',
+            value: formatAdminCampaignPrice(totalDonationGenerated),
+          },
+          { label: 'Attributed orders', value: totalOrders },
+          {
+            label: 'Attributed order value',
+            value: formatAdminCampaignPrice(totalRevenueGenerated),
+          },
+        ]"
       />
-
       <AdminCampaignsLibrary
         v-model:campaign-search-query="campaignSearchQuery"
         v-model:campaign-status-filter="campaignStatusFilter"
@@ -76,13 +115,6 @@ onMounted(loadPageData)
         @edit="editCampaign"
         @refresh="loadPageData"
       />
-    </div>
-
-    <AdminCampaignAnalyticsModal
-      v-if="selectedCampaignAnalytics"
-      :campaign="selectedCampaignAnalytics"
-      :get-campaign-product-names="getCampaignProductNames"
-      @close="closeCampaignAnalytics"
-    />
+    </template>
   </section>
 </template>

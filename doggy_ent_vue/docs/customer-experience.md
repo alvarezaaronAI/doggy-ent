@@ -163,3 +163,44 @@ Customer-facing behavior:
 - Checkout preview, PaymentIntent, and order creation must use the same server-verified shipping amount.
 - Persist selected shipping carrier, service, rate metadata, and cost.
 - Show selected shipping method in checkout, order success, customer order detail, and admin order detail.
+
+## Implemented Run 1 Notes
+
+As of the 2026-06-17 product experience pass:
+
+- Account overview removes lifetime spend and shows useful state such as recent order status, email verification, and open order issue count.
+- Account overview recent orders are capped at two.
+- Profile editing supports name, phone, marketing opt-in, and default shipping address.
+- Profile email is fixed account identity; customer-facing email activity and preferred contact method controls were removed.
+- Checkout signed-in prefilling now includes default shipping address when available and only fills empty checkout fields.
+- Orders use a responsive split view with month grouping and selected-order detail.
+- Customer order detail hides internal status history and zero-value promo/donation sections.
+- Need Help creates protected order issue cases from order detail pages and shows case status in account order detail.
+- Delivered-order customer disputes use a seven-calendar-day server-side eligibility check.
+
+Remaining customer work:
+
+- Full in-account support message center.
+- Template-backed optional email send flow for support replies.
+- Browser/manual QA across mobile and desktop.
+
+## Approved Calm Essentials Account UI
+
+Implemented on 2026-10-08 after approval of the complete seven-tab preview.
+
+- Protected account routes share one AccountLayout/AccountShell, the existing storefront header/footer, cart drawer and cart storage, search composable, and Better Auth state.
+- Keep Overview, Orders, Profile, Addresses, Order help, Rewards, Wishlist. Rewards/Wishlist remain under Coming later.
+- Mobile/tablet uses collapsible account navigation. The storefront header switches to its existing compact layout below the desktop breakpoint to avoid tablet overflow.
+- Overview is bounded to two recent orders with order count/latest status/open case count, profile/address summaries, and useful links. No lifetime spend or invented rewards balances.
+- Orders keeps the approved month-grouped master/detail layout, search, status filter, initially eight loaded rows, Load more, selected-order accent, and mobile drill-in/back.
+- Orders retains search/selection/expanded months/loaded count when switching account tabs. Refresh retrieves the list and selected detail again. Leaving the account layout destroys this cache.
+- Load more is display pagination of the existing full-history response, not server-side pagination.
+- Profile/Addresses use Summary & Edit dialogs with explicit Save/Cancel, focus trapping/restoration, Escape/backdrop dismissal when idle, and errors that keep the editor open.
+- Personal details, marketing/notification preferences, and one default address use existing APIs. Full replacement payloads preserve unedited fields. Address changes affect future checkout prefilling, not existing order snapshots.
+- Email stays read-only account identity. Preferred contact controls and email activity are not reintroduced.
+- Order help lists real cases, customer-visible messages, and resolutions through existing ownership-protected endpoints. New cases start from an eligible order; categories/deadlines remain server-owned.
+- General messaging, customer case replies, multiple addresses, billing address, reviews, reorder, rewards, referrals, and wishlist remain explicitly future-phase work. No simulated customer balances/favorites/transactions.
+- Order details display server-returned totals only; donation impact is not an extra charge. Internal status history remains hidden.
+- Header/sidebar sign-out leaves protected account content and destroys the cached order view.
+
+Browser fixture QA passed at 1440, 1280, 1024, 768, and 390 pixel widths. Real-account persistence, Safari sessions, production deployment, and end-to-end checkout still require manual QA; fixtures do not verify those external systems.

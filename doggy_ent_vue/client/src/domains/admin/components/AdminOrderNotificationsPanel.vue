@@ -48,10 +48,14 @@ function formatDateTime(value) {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm">
-    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+  <section class="admin-form-section mt-5">
+    <div
+      class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
+    >
       <div>
-        <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Notifications</h2>
+        <h2 class="text-lg font-extrabold text-[var(--brand-4)]">
+          Notifications
+        </h2>
         <p class="mt-1 text-sm text-stone-400">
           Review order email history and resend customer messages.
         </p>
@@ -79,17 +83,24 @@ function formatDateTime(value) {
       >
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-black text-[var(--brand-4)]">{{ formatEvent(delivery.event) }}</p>
+            <p class="font-black text-[var(--brand-4)]">
+              {{ formatEvent(delivery.event) }}
+            </p>
             <p class="mt-1 text-stone-500">{{ delivery.subject }}</p>
           </div>
-          <span class="rounded-full bg-white px-2 py-1 text-xs font-black uppercase text-stone-500">
+          <span
+            class="rounded-full bg-white px-2 py-1 text-xs font-black uppercase text-stone-500"
+          >
             {{ delivery.status }}
           </span>
         </div>
         <p class="mt-2 text-xs text-stone-400">
           {{ formatDateTime(delivery.sentAt || delivery.createdAt) }}
         </p>
-        <p v-if="delivery.errorMessage" class="mt-2 text-xs font-semibold text-red-600">
+        <p
+          v-if="delivery.errorMessage"
+          class="mt-2 text-xs font-semibold text-red-600"
+        >
           {{ delivery.errorMessage }}
         </p>
       </div>

@@ -296,6 +296,57 @@ sequenceDiagram
   API-->>Client: Updated status and history
 ```
 
+## Customer Order Issue Flow
+
+```mermaid
+sequenceDiagram
+  participant Customer as Customer order detail
+  participant AccountApi as Account API
+  participant SupportService as support.service.js
+  participant AccountRepo as account.repository.js
+  participant SupportRepo as support.repository.js
+  participant DB as PostgreSQL
+  participant Admin as Admin Order Issues
+
+  Customer->>AccountApi: POST /api/account/orders/:reference/issues
+  AccountApi->>SupportService: createOrderIssueForCustomer(user, reference, input)
+  SupportService->>AccountRepo: Find order owned by user or verified-email match
+  AccountRepo->>DB: Read order, shipments, support requests
+  SupportService->>SupportService: Check delivered seven-day eligibility
+  SupportService->>SupportRepo: Create support request, first message, event
+  SupportRepo->>DB: Insert CustomerSupportRequest and related rows
+  SupportRepo-->>AccountApi: Customer-safe issue
+  AccountApi-->>Customer: Friendly case number and status
+  Admin->>AccountApi: GET /api/admin/order-issues
+  AccountApi->>SupportRepo: Admin issue list with internal context
+  SupportRepo-->>Admin: Cases, messages, events
+```
+
+Support replies and status changes are account-first. Saving a support message or status does not automatically send email; email requires a separate future admin template/send action.
+
+## Internal Issue Capture Flow
+
+```mermaid
+sequenceDiagram
+  participant Request as API request
+  participant ErrorMiddleware as error.middleware.js
+  participant SupportService as support.service.js
+  participant SupportRepo as support.repository.js
+  participant DB as PostgreSQL
+  participant Admin as Admin Internal Issues
+
+  Request->>ErrorMiddleware: Unexpected 500
+  ErrorMiddleware->>SupportService: recordInternalIssue(safe context)
+  SupportService->>SupportService: Build fingerprint and friendly case number
+  SupportService->>SupportRepo: Upsert InternalIssue
+  SupportRepo->>DB: Create or increment issue and event
+  ErrorMiddleware-->>Request: Customer-safe error plus issue reference
+  Admin->>SupportRepo: GET /api/admin/internal-issues
+  SupportRepo-->>Admin: Sanitized operational issue list
+```
+
+Internal issue records must not store request bodies, cookies, auth/session tokens, provider secrets, database URLs, reset tokens, verification tokens, or raw sensitive provider payloads.
+
 ## Campaign Attribution Flow
 
 1. Checkout preview returns campaign donation preview rows with `campaignId`, `matchedSubtotal`, `donationAmount`, and `matchedProductIds`.
@@ -347,4 +398,19 @@ sequenceDiagram
   Domain-->>Client: Account/admin/customer data
 ```
 
-Future Better Auth work should replace the custom auth/session layer, add roles such as `ADMIN` and `CUSTOMER`, and preserve the existing admin dashboard routes as the UI surface.
+Better Auth customer accounts are already implemented. A future, explicitly approved admin-auth migration may replace custom admin sessions while preserving the dashboard. Loyalty, referrals, and expanded permissions remain future work.
+
+## Calm Essentials Account UI Flow
+
+The protected `/account` parent route mounts `AccountLayout.vue` once. Children render inside the shared storefront-aware `AccountShell.vue`. Public sign-in/create/reset pages use the shell without the sidebar.
+
+| Screen | Data / Action | Source Of Truth |
+| --- | --- | --- |
+| Overview | GET /api/account | Account summary mapper; maximum two recent orders |
+| Orders | GET /api/account/orders, GET /api/account/orders/:reference | Server ownership queries and order snapshots; local eight-row display window |
+| Profile / Addresses | GET and PUT /api/account/profile | Profile/preferences; full payload mapper preserves unedited fields |
+| Order help | GET /api/account/issues, GET /api/account/issues/:caseNumber | Customer-scoped support queries and customer-visible message mapping |
+| Eligible help dialog | POST /api/account/orders/:reference/issues | Server category, delivery-window, ownership, and rate-limit checks |
+| Rewards / Wishlist | No feature writes | Explicit future-phase UI, no mock customer data |
+
+KeepAlive retains only the Orders child between account tabs. Sequenced detail requests prevent a slow earlier response from replacing the latest selection. Refresh reloads the list and selected detail. Sign-out exits the layout and clears cached account content. Address edits do not change existing orders. This UI pass adds no backend endpoints, schema changes, provider sends, or environment variables.

@@ -1,6 +1,7 @@
 # Doggy Ent Project Handoff
 
 Generated: 2026-06-05
+Latest update: 2026-10-08 - Approved Calm Essentials account UI implementation.
 Workspace: `/Users/nazxylix/Developer/vue-projects/doggy_ent/doggy_ent_vue`
 Current branch observed: `dev-main`
 
@@ -4644,3 +4645,363 @@ Do not send automatic order/tracking/support/review/promo emails. Keep manual-fi
 
 Run required verification, update PROJECT_HANDOFF.md and relevant docs, and provide files changed, commands/results, remaining risks, manual QA, and whether the tree is safe for commit review.
 ```
+
+## 2026-06-17 Product Experience Run 1 / Order Issues Foundation
+
+This pass implemented the first customer-facing product experience slice plus support-case foundations. It preserved guest checkout, Better Auth customer accounts, custom admin auth, checkout totals, Stripe behavior, and manual-first email policy.
+
+### Implemented
+
+- Customer account dashboard now caps recent orders at two and removes customer-facing lifetime spend.
+- Dashboard now emphasizes useful state: order count, latest order status, email verification, and open order issue count.
+- Profile page removes customer-facing email activity and preferred contact method controls.
+- Profile page adds editable default shipping address using `CustomerProfile.defaultAddress`.
+- Signed-in checkout prefills name, fixed account email, phone, marketing opt-in, and default shipping address only where checkout fields are empty.
+- Customer orders page now uses a responsive split-view/order-list pattern with month grouping and in-page selected order detail.
+- Customer order detail hides internal status history, hides zero discount/donation rows, shows product images when stored snapshots exist, and adds a protected Need Help flow.
+- Need Help flow creates customer-visible order issue cases with category, affected-item context, description, friendly case number, and confirmation.
+- Customer order issues enforce ownership through Better Auth customer account routes.
+- Delivered-order issue eligibility uses server-side delivery data. If an order has a shipment `deliveredAt`, that timestamp is trusted. If no shipment timestamp exists but the order status is `DELIVERED`, the code falls back to the order `updatedAt`; this fallback is documented as a remaining precision limitation.
+- Pre-delivery orders only expose delivery, tracking, billing, and general help categories.
+- Admin dashboard links to new Order Issues and Internal Issues tools.
+- Admin Order Issues supports search/filter, status/priority updates, resolution summary, internal notes, and customer-visible account replies.
+- Saving an issue or note does not send email. A checkbox can mark email follow-up requested, but sending remains a separate future template action.
+- Internal Issues model/API/admin page added for safe operational issue review. Unexpected Express 500s are recorded with sanitized route/source/summary context and a fingerprint.
+- Support and internal issue endpoints follow route -> controller -> service -> repository -> Prisma.
+
+### Prisma Models And Migration
+
+Migration added locally and applied to the local database:
+
+- `server/prisma/migrations/20260617000000_add_order_and_internal_issues/migration.sql`
+
+Schema additions/changes:
+
+- Extended `CustomerSupportRequest` with `caseNumber`, `category`, `priority`, `resolutionSummary`, `deliveryEligibilityEndsAt`, `resolvedAt`, and `closedAt`.
+- Added `CustomerSupportMessage`.
+- Added `CustomerSupportEvent`.
+- Added `InternalIssue`.
+- Added `InternalIssueEvent`.
+- Added `Order.supportRequests` relation.
+
+Railway/deployed database step remaining:
+
+```bash
+cd server
+npx prisma migrate deploy
+```
+
+Run only after confirming the Railway `DATABASE_URL` target is correct. Do not use `prisma migrate reset`.
+
+### API Endpoints Added
+
+Customer, Better Auth protected:
+
+- `GET /api/account/issues`
+- `GET /api/account/issues/:caseNumber`
+- `POST /api/account/orders/:reference/issues`
+
+Admin, custom admin-auth protected:
+
+- `GET /api/admin/order-issues`
+- `PATCH /api/admin/order-issues/:caseNumber`
+- `POST /api/admin/order-issues/:caseNumber/messages`
+- `GET /api/admin/internal-issues`
+- `PATCH /api/admin/internal-issues/:caseNumber`
+
+### Automatic Email Events
+
+No new automatic order, tracking, support, issue-resolution, apology, promo, review, or marketing emails were added.
+
+Removed automatic profile-update email queueing from account profile saves. Essential account/security emails remain governed by Better Auth/email provider behavior.
+
+### Verification Results
+
+Commands run:
+
+```bash
+cd server && npx prisma format
+cd server && npx prisma generate
+cd client && npm run build
+cd server && npm run test
+cd client && npm run test
+cd server && npm run build
+cd server && npx prisma migrate status
+cd server && npx prisma migrate dev --name add_order_and_internal_issues
+cd server && npx prisma migrate status
+git diff --check
+```
+
+Results:
+
+- `npx prisma format`: passed.
+- `npx prisma generate`: passed.
+- Client build: passed.
+- Server tests: passed, 11 files and 34 tests after adding order issue tests.
+- Client tests: passed, 5 files and 14 tests.
+- Server build: passed and regenerated Prisma Client.
+- Initial `npx prisma migrate status`: failed only because the new migration was unapplied locally.
+- `npx prisma migrate dev --name add_order_and_internal_issues`: applied the migration locally and regenerated Prisma Client.
+- Final `npx prisma migrate status`: passed, local database schema is up to date.
+- `git diff --check`: passed.
+
+### Remaining Risks And Partial Work
+
+- Browser manual QA is still required for the new customer order issue modal, profile address editor, orders split-view, admin Order Issues page, and admin Internal Issues page.
+- Railway migration is not applied by this pass.
+- Internal issue capture currently covers unexpected Express error middleware paths only; provider-specific dedupe capture for Shippo/Resend/checkout failures should be expanded in the next run.
+- Email Template Center, promo email workflow, and explicit Send customer update actions remain future work.
+- Admin dashboard was extended with issue links and metrics but not fully reorganized into the suggested operational sections.
+- Order issue admin email follow-up is marked only; no template preview/send flow exists yet.
+- Delivered eligibility precision depends on `OrderShipment.deliveredAt` when available. Older delivered orders without shipment timestamps fall back to `Order.updatedAt`.
+
+### Manual QA Checklist
+
+- Sign in as a customer and open `/account`.
+- Confirm dashboard shows no lifetime spend and only two recent orders.
+- Edit profile name, phone, marketing opt-in, and default shipping address.
+- Confirm checkout prefills saved address only into empty fields and does not overwrite saved profile on checkout-only edits.
+- Open `/account/orders`, use search/filter, expand older month groups, and select orders without a full page reload.
+- Open an order detail, confirm product images/pricing rows render correctly and internal status history is absent.
+- Submit a Need Help issue on an eligible order and confirm the case number appears.
+- Confirm expired delivered-order issues are rejected after the seven-day window.
+- Open `/admin/order-issues`, filter/search, update status/priority, add an internal note, and add a customer-visible reply.
+- Confirm no email is sent automatically when saving issue changes.
+- Open `/admin/internal-issues` and review filters/status/resolution notes.
+
+### Safe For Commit Review
+
+Yes, with the caveat that the new Prisma migration must be reviewed and deployed to Railway separately before deployed code requiring these tables is released.
+
+## 2026-10-08 Approved Calm Essentials Account UI
+
+### Scope And Repository State
+
+Applied the user-approved complete account preview. All seven tabs are retained. The original month-grouped split Orders design is preserved rather than the later simplified draft.
+
+Started with a dirty tree containing prior accepted customer/support/admin/server/schema edits; inspected status, diff statistics, and changed paths before editing. Preserved those unrelated edits. This pass changes client UI and documentation only: no auth replacement, checkout rebuild, admin rebuild, server changes, schema/migrations, provider sends, env files, commits, or pushes.
+
+### Connected Features
+
+- One protected parent AccountLayout with the existing storefront header/footer/search/cart and shared Better Auth state.
+- Overview: two recent orders maximum, real order/latest status/open case stats, profile/address summary, shopping/account links.
+- Orders: reference/product search, status filter, month groups, eight-row display window, Load more, persistent selection/filter/expanded-month state between tabs, explicit refresh, responsive selected-order details.
+- Inline and standalone order details share one component: server totals, items/variant/quantity/unit and line price, shipping snapshots/method, safe carrier link, tracking updates, support eligibility/cases. Zero discount/donation rows remain hidden; donation impact is not an extra charge.
+- Profile: focused personal-details and preference editors, marketing opt-in/out, read-only email/verification state, existing password reset entry.
+- Addresses: current default shipping address editor using the existing profile API. Additional addresses/billing are future-phase sections.
+- Order help: real case list, selected case, customer-visible replies/resolutions; eligible order requests use the existing protected API with server-owned categories/deadlines.
+- Rewards and Wishlist: dedicated sidebar routes with clearly labeled future-phase content; no fake balances, favorites, review/reorder actions, or transactions.
+- Dialogs: Save/Cancel, input focus, focus trap/restore, scroll lock, idle Escape/backdrop close, retained form/error on failed save.
+- Sign-out from either header or sidebar leaves protected content and destroys the Orders cache.
+- Verified tablet header overflow fixed by changing existing desktop/compact breakpoints only.
+
+### Files Created
+
+Under `client/src/domains/account/`:
+
+- Components: `AccountLayout.vue`, `AccountDialog.vue`, `AccountStatusBadge.vue`, `AccountOrderDetails.vue`, `AccountOrderIssueDialog.vue`, `AccountProfileEditor.vue`, `AccountCaseDetail.vue`.
+- Composables: `useAccountDashboard.js`, `useAccountOrderHistory.js`, `useAccountOrderIssue.js`, `useAccountProfileEditor.js`, `useAccountHelp.js`.
+- Views: `AccountAddressesView.vue`, `AccountHelpView.vue`, `AccountFutureView.vue`.
+- `constants/account.constants.js`, `mappers/accountProfile.mapper.js`, `utils/accountFormatting.js`, `utils/orderHistory.js`, `styles/account.css`.
+- Tests: `client/tests/tier2/account/account-profile-mapper.test.js`, `client/tests/tier3/account/account-history.test.js`.
+
+### Files Modified In This Pass
+
+- `client/src/app/router/index.js`: protected nested account routes, including addresses/help/rewards/wishlist; existing route names and standalone order detail preserved.
+- `client/src/app/layouts/SiteHeader.vue`: tablet-safe breakpoints only.
+- Account `api/account.api.js`: existing single-case endpoint wrapper.
+- Account components `AccountShell.vue`, `AccountNav.vue`, `AccountOrderCard.vue`.
+- Account `composables/useAccountOrders.js`: isolated sequenced detail loading; removed unused duplicate list/submission logic.
+- Account `validators/account.validators.js`: default address completeness check.
+- Account views `AccountDashboardView.vue`, `AccountOrdersView.vue`, `AccountOrderDetailView.vue`, `AccountProfileView.vue`.
+- This handoff and [customer experience](docs/customer-experience.md), [data flow](docs/architecture/data-flow.md), [file map](docs/architecture/file-map.md).
+
+### Safety And Sources Of Truth
+
+The existing profile PUT replaces fields, so each focused save sends the complete mapped profile/preferences/address and preserves untouched values. Fresh profile data is loaded when opening an editor. Concurrent editing in another browser can still conflict because the API has no version/patch contract.
+
+The new view does not calculate checkout/order totals. APIs remain credentialed through the existing helper. Server ownership, verified-email matching, support category/eligibility/rate limits, and manual-first communications remain unchanged. Customer replies, a general message center, multiple addresses, separate billing address, rewards, referrals, wishlist, reviews, and reorder are not implemented by this UI pass.
+
+Orders uses client display pagination; the server still returns the entire history. Cached state lasts only within the account layout and is keyed to shared customer identity. Refresh orders retrieves current list/detail snapshots. Existing server payment-status mapping is displayed as provided; this pass does not improve refund/payment reconciliation.
+
+### Verification Commands And Results
+
+- Initial `git status --short --branch`, `git diff --stat`, `git diff --name-status`: prior local changes identified and preserved.
+- `cd client && npm run build`: initial default Node 22.15.0 attempt stalled before compilation and was stopped (exit 143). Rerun with the bundled Node 24.19.0 on PATH passed; final Vite 8.0.9 build transformed 257 modules with no build warnings.
+- `cd client && npm test`: passed, 7 files / 21 tests (tier 1: 7, tier 2: 8, tier 3: 6). Seven new assertions/tests cover preservation, marketing opt-out, address validation, search/groups, quantity counting, invalid dates, and safe tracking URLs.
+- `cd server && npm test`: regression suite passed, 11 files / 34 tests (28 + 3 + 3). No server build/generate/migration needed because this pass does not change server or Prisma files.
+- Temporary Playwright harness `node /tmp/doggy-account-ui-qa.cjs` with bundled Playwright and headless Chrome: passed using intercepted fixture APIs, not real customer/database/provider writes. Browser screenshots inspected at 1440, 1280, 1024, 768, and 390 widths.
+- `npm run dev -- --port 5174 --strictPort` with the bundled runtime provided a temporary QA server, stopped after verification. The user's existing frontend on port 5173 and backend were not stopped or reconfigured.
+- Browser verified: all seven tabs; one header; 20-order load-more/search/status/empty states; selection persistence; slow-response protection; mobile list/detail/back; profile/address save/cancel/error retry; marketing opt-out; focus trap/Escape; support submission/case replies/internal-message exclusion; ineligible order support; direct detail route; sidebar/header sign-out/cache clearing; unauthenticated redirect/sign-in return; cart retained; no Vue/runtime errors or horizontal overflow. Expected fixture 500/401/404 responses exercised error handling.
+- A formatting-induced Vue template error was caught and fixed before final checks. Verification harness selector/route-matching issues were corrected and the complete harness rerun successfully.
+- Existing lint script: none; none added. No application dependency or lockfile changes. Prettier was used as a temporary formatter only.
+- Documentation fence/relative-link check: passed for all four touched Markdown files with zero issues. Final `git diff --check`: passed.
+- Targeted secret-pattern scan returned no matches; no `.env.example` files found. No env values were read, changed, or documented.
+
+### Remaining Risks And Manual QA
+
+1. Sign in with a real account; navigate every tab on desktop/mobile/Safari; verify cookies and refresh persistence.
+2. Edit name/phone, cancel, save, reload; confirm header identity and that address/preferences remain unchanged.
+3. Edit default address; verify only empty checkout fields are prefilled and existing orders retain their snapshots.
+4. Opt out/in of marketing, reload, verify preferences. Saving must not send an email.
+5. Use real order history (including more than eight orders), search/filter/load/refresh/select older orders; verify product images and monetary snapshots.
+6. Submit one approved test support request on an eligible order; verify admin receives it, customer-visible reply/resolution appears, internal notes do not appear, and expired/foreign orders are rejected. No automatic provider email.
+7. Verify guest and signed-in checkout, promo/campaign combinations, success page, and existing admin pages in the real environment. This pass did not rerun live Stripe payments or deploy.
+8. Rewards/Wishlist and other future sections must remain honest placeholders without accidental writes.
+9. Review the earlier support migration `20260617000000_add_order_and_internal_issues` and Railway status before deploying the combined dirty tree. This pass did not apply or inspect Railway migrations.
+
+Safe for focused commit review after the documented checks, but not a claim that the combined prior server/migration edits are deployed or launch-verified. No commit/push performed. Next phase: real-account/Safari/checkout/support QA before expanding the address book or customer messaging.
+
+## 2026-10-08 Approved Calm Workspace Admin UI
+
+### Scope And Repository State
+
+Applied the approved Calm Workspace across all eleven existing admin tabs, with connected existing APIs rather than demo records. Preserved custom admin auth, customer Better Auth, server authorization, startup data-target configuration, existing API contracts/mappers/validators, storefront/account/checkout, and all prior local edits.
+
+Before editing, inspected AGENTS.md, this handoff, product/UX/admin/communications/operations/roadmap/architecture/QA docs and ran git status, diff statistics, and changed-path inventory. The tree already contained accepted account/support/server/schema work. This phase changes client UI, one icon dependency, focused tests, and documentation only. No server/schema/env changes, migrations, deployments, real provider actions, commits, or pushes.
+
+### Connected Experience
+
+- Shared AdminLayout: one header and grouped sidebar, eleven route links, mobile navigation, active-route state, skip link, View store/sign-out, signed-in identity, read-only Data routing with the existing backend-derived badge.
+- Overview: three concise metrics, priority links for pending orders/issues/email/internal failures, three recent orders. Sources load independently; failures are unavailable, not invented zeroes.
+- Products: status/category/SKU search, one responsive table, real variant prices/stock, create/edit/cancel/save/delete. Editor has Details, Variants & Stock, Storefront Content, and Publishing. Inventory attention is restricted to inventory-limited products and stored low-stock thresholds.
+- Promos: searchable/type/status library, focused rules/limits/schedule editor, explicit Save/Cancel, code generation, tester, in-page analytics/redemptions and order links. Tester requires normalized customer email, clears stale results after changes, and displays the server-returned discount.
+- Campaigns: searchable/status library, beneficiary/rule/product/schedule editor, explicit Save/Cancel/delete, and in-page impact/attributed-order links. Generated donations are not described as payouts.
+- Orders: reference/customer/email/phone/city search and status table including refunded orders; focused detail with items, server-owned totals, contact/shipping, promo/campaign snapshots, staged status Save/Cancel/history, tracking save/refresh, and separate existing manual email actions.
+- Customers: account/verification/role/order metrics, linked and verified-email matched guest orders, provider history, deliberate confirmed deactivate/reactivate/security-email requests with busy/error feedback. No passwords/sessions/tokens or new account permissions are exposed.
+- Shipments: provider configuration state, status filters, tracking/carrier/history/order links, and failure/empty/loading states.
+- Notifications: event/status delivery history, explicit mocked/sent/failure distinctions, future Template center tab. No editable templates or bulk sends are implemented.
+- Reports: truthful all-time operational summaries. The existing totalRevenue API sums all stored orders, so the UI calls it Order value, not reconciled paid revenue. Date ranges/charts/exports remain future work.
+- Order/Internal Issues: focused list/detail, staged Save/Cancel, busy/error feedback, failed-write draft retention, filtered-selection repair, and real event history. Internal notes are separate from customer-visible replies. Marking email follow-up does not send email.
+- Future template/promo email/reconciled reports/customer notes/activity/reviews/loyalty sections are visibly unconnected. Existing working resend/tracking/customer actions remain available.
+
+### Verified Issues Fixed
+
+- Promo rule watcher previously returned a fresh watched array then replaced its own form object, causing recursive Vue updates. It now watches individual primitive sources. The new test suite exposed this; the complete suite was rerun cleanly.
+- Admin promo tester previously described email as optional despite server email eligibility rules. It now requires/normalizes email and discards stale test/analytics responses.
+- Older grouped Orders UI omitted REFUNDED records from every group. The new single filtered table includes all returned statuses.
+- Several operational views failed silently or lacked error/busy states; their new composables preserve the last loaded data or unsaved draft and surface failures.
+- Issue selection could remain pointed at a case excluded by new filters. Selection now matches the loaded list, and Cancel restores server values.
+- Shared nested detail routes are keyed by path to prevent stale order/customer data when navigating between IDs.
+- CSS initially lacked a Tailwind reference for @apply; build failure was fixed with @reference.
+- Responsive button utilities were overridden by the shared unlayered button style; desktop/mobile navigation display is now explicit.
+- Select fields now have explicit accessible names matching visible labels.
+- A formatter removed semicolons from a multi-statement Vue schedule handler; compile failure was fixed by extracting the named clearPeriod handler, then rebuilding and rerunning the browser checks.
+
+### Files Created
+
+- `client/src/domains/admin/api/adminSession.api.js`
+- `client/src/domains/admin/components/AdminCampaignImpact.vue`
+- `client/src/domains/admin/components/AdminIcon.vue`
+- `client/src/domains/admin/components/AdminIssueHistory.vue`
+- `client/src/domains/admin/components/AdminLayout.vue`
+- `client/src/domains/admin/components/AdminMetrics.vue`
+- `client/src/domains/admin/components/AdminPageHeader.vue`
+- `client/src/domains/admin/components/AdminProductContentFields.vue`
+- `client/src/domains/admin/components/AdminProductVariantsEditor.vue`
+- `client/src/domains/admin/components/AdminPromoAnalytics.vue`
+- `client/src/domains/admin/components/AdminScheduleFields.vue`
+- `client/src/domains/admin/composables/useAdminActivity.js`
+- `client/src/domains/admin/composables/useAdminIssueWorkspace.js`
+- `client/src/domains/admin/composables/useAdminOrderDetail.js`
+- `client/src/domains/admin/composables/useAdminOrderIssues.js`
+- `client/src/domains/admin/composables/useAdminOverview.js`
+- `client/src/domains/admin/constants/adminNavigation.constants.js`
+- `client/src/domains/admin/constants/adminSupport.constants.js`
+- `client/src/domains/admin/utils/adminWorkspace.formatters.js`
+- `client/tests/tier2/admin/admin-workspace.test.js`
+
+### Files Modified In This Phase
+
+The two issue views existed in the starting tree as untracked earlier work; they are modified here, not claimed as newly created by this phase.
+
+- `client/src/assets/styles/admin.css`
+- `client/src/domains/admin/components/AdminCampaignForm.vue`
+- `client/src/domains/admin/components/AdminCampaignsLibrary.vue`
+- `client/src/domains/admin/components/AdminCampaignsTable.vue`
+- `client/src/domains/admin/components/AdminCustomerNotificationsPanel.vue`
+- `client/src/domains/admin/components/AdminCustomerOrdersPanel.vue`
+- `client/src/domains/admin/components/AdminCustomersTable.vue`
+- `client/src/domains/admin/components/AdminHeader.vue`
+- `client/src/domains/admin/components/AdminOrderNotificationsPanel.vue`
+- `client/src/domains/admin/components/AdminOrderStatusPanel.vue`
+- `client/src/domains/admin/components/AdminOrderTrackingPanel.vue`
+- `client/src/domains/admin/components/AdminProductFormPanel.vue`
+- `client/src/domains/admin/components/AdminProductVariantEditor.vue`
+- `client/src/domains/admin/components/AdminProductsTable.vue`
+- `client/src/domains/admin/components/AdminPromoFormExtraFields.vue`
+- `client/src/domains/admin/components/AdminPromosLibrary.vue`
+- `client/src/domains/admin/components/AdminSidebar.vue`
+- `client/src/domains/admin/composables/useAdminCampaigns.js`
+- `client/src/domains/admin/composables/useAdminOrders.js`
+- `client/src/domains/admin/composables/useAdminProducts.js`
+- `client/src/domains/admin/composables/useAdminPromos.js`
+- `client/src/domains/admin/views/AdminCampaignsView.vue`
+- `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+- `client/src/domains/admin/views/AdminCustomersView.vue`
+- `client/src/domains/admin/views/AdminDashboardView.vue`
+- `client/src/domains/admin/views/AdminNotificationsView.vue`
+- `client/src/domains/admin/views/AdminOrderDetailView.vue`
+- `client/src/domains/admin/views/AdminOrdersView.vue`
+- `client/src/domains/admin/views/AdminProductsView.vue`
+- `client/src/domains/admin/views/AdminPromosView.vue`
+- `client/src/domains/admin/views/AdminReportsView.vue`
+- `client/src/domains/admin/views/AdminShipmentsView.vue`
+- `client/src/domains/promos/components/PromoCodeTester.vue`
+- `client/src/domains/promos/components/PromoForm.vue`
+- `client/src/domains/admin/views/AdminInternalIssuesView.vue`
+- `client/src/domains/admin/views/AdminOrderIssuesView.vue`
+- `client/src/app/router/index.js`
+- `client/package.json`
+- `client/package-lock.json`
+- `PROJECT_HANDOFF.md`
+- `docs/admin-experience.md`
+- `docs/architecture/admin.md`
+- `docs/architecture/file-map.md`
+- `docs/verification-and-qa.md`
+- `docs/implementation-roadmap.md`
+
+### Architecture And Sources Of Truth
+
+Admin navigation is centralized in adminNavigation.constants.js. AdminLayout owns shared identity/data routing, and adminSession.api.js wraps the existing credentialed auth endpoints. The login page and existing route guard remain unchanged; server-side requireAdminAuth remains the security boundary.
+
+Existing product/promo/campaign APIs, mappers, and validators still serialize/validate saves. AdminScheduleFields only edits paired date/time fields; existing datetime/timezone behavior is preserved, not redesigned. Product variant fields use the original size keys and mapper contract.
+
+State additions are focused: useAdminOverview aggregates existing protected reads; useAdminActivity handles delivery/shipment loading; useAdminOrderDetail owns record actions; useAdminIssueWorkspace shares issue selection/staging; useAdminOrderIssues owns reply drafts. Icons are centralized through @lucide/vue. Tailwind remains primary, and admin styling is scoped in admin.css.
+
+No new endpoints, role changes, auth bearer fallback, schema models, migrations, runtime data-target switches, checkout pricing, or provider automation were introduced. The temporary workflow remains local client -> local server -> selected local/Railway database. Badge fallback behavior is unchanged: when its API fails, it falls back to startup client configuration; confirm the backend before a real write.
+
+Some obsolete list/header/stat/group/modal components remain unused by the new route views. Remove those only after a dedicated import audit. Existing list endpoints still return broad/full data sets; client-side filtering is not server pagination.
+
+See [admin experience](docs/admin-experience.md), [admin architecture](docs/architecture/admin.md), [file map](docs/architecture/file-map.md), [verification](docs/verification-and-qa.md), and [roadmap](docs/implementation-roadmap.md).
+
+### Verification Commands And Results
+
+- Initial git status --short --branch, git diff --stat, git diff --name-status: inspected and preserved prior edits; branch dev-main remains ahead by two pre-existing commits.
+- npm install @lucide/vue: succeeded; package/lockfile add the icon dependency only. Deprecated lucide-vue-next was tried and removed; it is not in the final dependency list.
+- cd client && npm run build: final Vite 8.0.9 production build passed, 2142 modules transformed, no build warnings. Initial Tailwind reference and post-format schedule expression errors were repaired before the final pass.
+- cd client && npm test: final pass 8 files / 30 tests (tier 1: 7, tier 2: 17, tier 3: 6). Nine new tests cover navigation boundaries, SKU/category filtering, cancel without writes, email normalization, stale responses, activity failures, selection repair, and failed-save retry. Initial new-test run detected recursive watcher updates; fixed and rerun.
+- cd server && npm test: unchanged-server regression suite passed, 11 files / 34 tests (28 + 3 + 3). No server build/generate/migration required by this client-only phase.
+- npm exec --yes --package=prettier -- prettier --write --single-quote --no-semi [focused changed client files]: passed as temporary tooling only; no formatter or lint dependency/script added.
+- npm audit --omit=dev --json in client: exit 1, 10 existing advisories (2 moderate, 8 high), also reported before the icon dependency. No automatic dependency upgrades/audit fix were attempted.
+- npm run dev:local -- --port 5174 --strictPort: temporary QA server started successfully; stopped at completion. Existing frontend 5173/backend were not stopped or reconfigured.
+- node /tmp/doggy-admin-workspace-qa.cjs using bundled Playwright/headless Chrome: passed. All eleven tabs at 1440/1024/768/390/320 widths; 16 intercepted fixture requests exercising saves/auth/validation, zero real database/provider writes.
+- Browser checked product cancel/update with distinct prices and preserved fields, promo edit/schedule/email requirement/invalidation/analytics link, campaign selection/save/impact link, refunded orders, staged status cancel/save/history, detail ID navigation, tracking save, an explicitly clicked mocked email resend, customer deactivate/reactivate, support failed-save retry/internal note/account reply/filter selection, internal notes, load errors/retry, future sections, both backend target badge labels, mobile navigation, direct-route guard/login return/logout, reduced-motion/dark mode, and return to storefront without admin shell.
+- Final browser run had zero Vue/runtime/console errors and zero horizontal overflow in the tested screens. Earlier harness selector issues and an intentionally blocked eager Stripe loader were corrected in the harness; Stripe.js is stubbed for this admin-only fixture QA, not changed in app code.
+- Screenshots inspected for overview/products/promos/campaigns/issues/editor/order detail and mobile layouts. Product image in screenshots is a local fixture asset, not a claim about live catalog photography.
+- Existing http://localhost:5173/admin returned HTTP 200. This confirms the development page is reachable, not a real authenticated DB verification.
+- Documentation relative-link/fence checks, secret-pattern/environment-example checks, and final git diff --check: see final verification note below.
+
+### Remaining Risks And Manual QA
+
+1. Real admin login/session persistence/logout on Safari and the deployed environment remain unverified. Existing cross-site cookie limitations are unchanged; use local admin -> local server -> Railway DB for the temporary workflow.
+2. Start fully local server/client, verify LOCAL DATA TARGET, and use an approved local test record for product/promo/campaign CRUD; confirm values persist after reload.
+3. Start Railway DB server with the normal local client, verify RAILWAY DB TARGET and network origin before an explicitly approved test write; confirm Vercel storefront receives only intended changes.
+4. Verify product content/analysis, size prices/stock/SKUs/thresholds, selling modes, promo unique/referral limits/date boundaries, campaign eligibility and combined checkout calculations with real test data.
+5. Test order status Cancel/Save/history, tracking save/refresh/provider-disabled behavior, separate email action, issue resolution/account reply/internal note privacy, and customer account actions. Real emails require explicit approval and an approved inbox.
+6. Recheck guest and signed-in checkout, cart variants, Stripe test payment, success page, promo/campaign coexistence, and customer ownership after deployment. No live payment was performed in this phase.
+7. Review earlier support migration 20260617000000_add_order_and_internal_issues and confirm Railway migration status before deploying the combined dirty tree; no Railway migrations were inspected or applied here.
+8. Schedule a focused dependency advisory remediation pass. Large catalog/order/customer histories still need server pagination; reporting still needs payment reconciliation and date-range endpoints.
+9. Existing schedule timezone interpretation, badge fallback on API failure, data-refresh snapshots, and older unused UI components remain follow-up items.
+
+Safe for focused commit review after the documented checks, not a claim that all prior server/schema changes are launch-ready or deployed. No commit or push performed. Recommended next phase: controlled real-admin/Safari and data-target QA, then approved email template/manual-send workflows and dependency security remediation.

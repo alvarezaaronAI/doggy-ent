@@ -99,6 +99,24 @@ Choose checks specific to the touched area:
 
 Always document what was manually verified, what was only code-reviewed, and what remains unverified.
 
+## Calm Workspace Admin QA
+
+The 2026-10-08 connected admin UI was checked with fixture-intercepted browser APIs at 1440, 1024, 768, 390, and 320 px. This is not a live DB/provider or Safari verification.
+
+- Check all eleven sidebar tabs, active route, one shared header, signed-in identity, read-only target badge, mobile open/close, and direct order/customer routes.
+- Products: search by SKU/category/status, create/edit/cancel/save, separate 6 oz/18 oz prices/stock, all content/analysis fields, selling modes, and real threshold alerts.
+- Promos: required tester email, lowercase/trim, input-change invalidation, create/edit/type/limits/schedule, cancel, analytics/redemptions/order links.
+- Campaigns: beneficiary, product selection, donation rule, schedule, cancel/save, generated-impact/order links. Do not call attribution a payout.
+- Orders: refunded status visibility, reference/customer search, next status staged without writes, Save/Cancel/history, tracking save/refresh, and separate explicit email action.
+- Customers: linked and verified-email guest orders, account status, deactivate/reactivate confirmation, verification/reset requests and provider history.
+- Order issues: selected case after filtering, explicit status/priority/resolution saves, retained draft on failure, internal notes versus account replies, no automatic email, real event history.
+- Internal issues: safe context, severity/status/notes, Save/Cancel, retained draft on failure, event history.
+- Shipments/Notifications/Reports: filters, failure/empty/loading states, mock-versus-real deliveries, provider status, truthful all-time totals, disabled/unconnected future tools.
+- Verify temporary modes with the existing commands: fully local backend or Railway DB backend, paired with local client. Confirm the backend badge and network target before any real write.
+- Recheck real guest/signed-in checkout, variant cart prices, promos/campaigns, order success, and customer ownership before deployment.
+
+No automated check may send a real customer email, buy a label, or mutate Railway. Use approved test data and explicit provider approval for live QA. Full command results, known failures fixed, dependency audit findings, and migration caveats are in [PROJECT_HANDOFF.md](../PROJECT_HANDOFF.md).
+
 ## Provider Verification
 
 Do not stop after the first failed provider test.

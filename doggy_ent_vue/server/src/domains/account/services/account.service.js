@@ -13,31 +13,41 @@ import {
   mapCustomerOrder,
 } from '../../orders/mappers/orders.mapper.js'
 import {
-  buildProfileUpdatedEmail,
-} from '../../emails/mappers/emailPayloads.mapper.js'
-import {
-  queueEmail,
-} from '../../emails/services/emailProvider.service.js'
-import {
   fetchCustomerEmailDeliveries,
 } from '../../emails/services/emailDelivery.service.js'
+import {
+  getIssueEligibility,
+} from '../../support/services/support.service.js'
+import {
+  mapOrderIssue,
+} from '../../support/mappers/support.mapper.js'
 
 function canIncludeVerifiedEmailMatches(user) {
   return Boolean(user?.emailVerified && user?.email)
 }
 
-function normalizePreferredContactMethod(value) {
-  const normalized = String(value || '').trim().toUpperCase()
-
-  if ([
-    'EMAIL',
-    'PHONE',
-    'TEXT',
-  ].includes(normalized)) {
-    return normalized
+function normalizeDefaultAddress(value) {
+  if (!value || typeof value !== 'object') {
+    return null
   }
 
-  return null
+  const address = {
+    address1: String(value.address1 || '').trim(),
+    address2: String(value.address2 || '').trim(),
+    city: String(value.city || '').trim(),
+    state: String(value.state || '').trim().toUpperCase(),
+    zip: String(value.zip || '').trim(),
+    country: String(value.country || 'US').trim().toUpperCase(),
+  }
+
+  const hasAddress = [
+    address.address1,
+    address.city,
+    address.state,
+    address.zip,
+  ].some(Boolean)
+
+  return hasAddress ? address : null
 }
 
 export async function getAccountDashboard(user) {
@@ -54,6 +64,19 @@ export async function getAccountDashboard(user) {
   return mapCustomerAccountSummary({
     user: accountUser || user,
     orders: orders.map(mapCustomerOrder),
+    openIssueCount: orders.reduce(
+      (count, order) =>
+        count
+        + (order.supportRequests || []).filter((issue) =>
+          [
+            'OPEN',
+            'REVIEWING',
+            'WAITING_FOR_CUSTOMER',
+            'ACTION_REQUIRED',
+          ].includes(issue.status),
+        ).length,
+      0,
+    ),
   })
 }
 
@@ -72,9 +95,8 @@ export async function updateAccountProfile(user, input = {}) {
         lastName: String(input.lastName || '').trim() || null,
         phone: String(input.phone || '').trim() || null,
         marketingOptIn: Boolean(input.marketingOptIn),
-        preferredContactMethod: normalizePreferredContactMethod(
-          input.preferredContactMethod,
-        ),
+        preferredContactMethod: null,
+        defaultAddress: normalizeDefaultAddress(input.defaultAddress),
       },
     ),
     updateCustomerNotificationPreferenceByUserId(
@@ -104,7 +126,7 @@ export async function updateAccountProfile(user, input = {}) {
       lastName: profile.lastName || '',
       phone: profile.phone || '',
       marketingOptIn: Boolean(profile.marketingOptIn),
-      preferredContactMethod: profile.preferredContactMethod || '',
+      preferredContactMethod: '',
       defaultAddress: profile.defaultAddress || null,
     },
     notificationPreference: {
@@ -123,15 +145,6 @@ export async function updateAccountProfile(user, input = {}) {
       ),
     },
   }
-
-  queueEmail(buildProfileUpdatedEmail({
-    user,
-  })).catch((error) => {
-    console.error(
-      '[account] Failed to queue profile update email.',
-      error?.message || error,
-    )
-  })
 
   return result
 }
@@ -165,8 +178,16 @@ export async function getAccountOrderByReference(user, reference) {
   return {
     ...mapCustomerOrder(order),
     support: {
-      available: false,
-      message: 'Need help with this order? Support requests are prepared for a future phase.',
+      available: getIssueEligibility(order).eligible,
+      eligibility: getIssueEligibility(order),
+      issues: Array.isArray(order.supportRequests)
+        ? order.supportRequests
+            .map((issue) => mapOrderIssue(issue))
+            .filter(Boolean)
+        : [],
+      message: getIssueEligibility(order).eligible
+        ? 'Need help with this order? Start an order issue and we will keep the conversation in your account.'
+        : getIssueEligibility(order).reason,
     },
     tracking: {
       available: false,

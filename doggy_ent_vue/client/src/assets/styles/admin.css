@@ -1,0 +1,376 @@
+@reference "tailwindcss";
+
+/* Scoped to the protected admin layout; storefront styles remain unchanged. */
+.admin-workspace {
+  --admin-bg: #f7f9f8;
+  --admin-surface: #ffffff;
+  --admin-text: #24382f;
+  --admin-muted: #617469;
+  --admin-line: #dce5df;
+  --admin-accent: #176448;
+  --admin-soft: #eaf4ee;
+  --brand-4: var(--admin-text);
+  --brand-5: var(--admin-bg);
+  --brand-3: var(--admin-line);
+  --brand-1: var(--admin-accent);
+  @apply min-h-screen text-sm;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+.admin-workspace * {
+  letter-spacing: 0 !important;
+}
+.admin-workspace h1 {
+  @apply text-3xl font-semibold;
+  color: var(--admin-text);
+}
+.admin-workspace h2 {
+  @apply text-base font-semibold;
+  color: var(--admin-text);
+}
+.admin-workspace h3 {
+  @apply text-sm font-semibold;
+  color: var(--admin-text);
+}
+.admin-workspace button:hover,
+.admin-workspace button:active {
+  transform: none;
+  box-shadow: none;
+}
+.admin-workspace a:hover {
+  opacity: 1;
+}
+.admin-workspace :is(button, a, summary):focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 3px;
+}
+.admin-header {
+  @apply flex flex-wrap items-center justify-between gap-3 border-b bg-white px-5 py-4 md:px-8;
+  border-color: var(--admin-line);
+}
+.admin-context {
+  @apply flex flex-col justify-between gap-3 border-b bg-white px-5 py-3 md:flex-row md:px-8;
+  border-color: var(--admin-line);
+}
+.admin-body {
+  @apply grid min-h-[calc(100vh-12rem)] lg:grid-cols-[208px_minmax(0,1fr)];
+}
+.admin-sidebar {
+  @apply border-b bg-white p-3 lg:border-b-0 lg:border-r lg:p-4 lg:py-6;
+  border-color: var(--admin-line);
+}
+.admin-nav-link {
+  @apply flex min-h-10 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors;
+  color: var(--admin-muted);
+}
+.admin-nav-link:hover,
+.admin-nav-active {
+  background: var(--admin-soft);
+  color: var(--admin-accent);
+}
+.admin-nav-active {
+  @apply font-semibold;
+}
+.admin-content {
+  @apply min-w-0 p-5 md:p-8 xl:p-10;
+}
+.admin-page {
+  @apply mx-auto max-w-[1400px];
+}
+.admin-page-header {
+  @apply mb-6 flex flex-wrap items-center justify-between gap-4;
+}
+.admin-muted {
+  @apply text-xs;
+  color: var(--admin-muted);
+}
+.admin-button,
+.admin-icon-button {
+  @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-md border bg-white px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  border-color: var(--admin-line);
+}
+.admin-icon-button {
+  @apply w-10 shrink-0 px-2;
+}
+.admin-button:hover,
+.admin-icon-button:hover {
+  background: var(--admin-soft);
+}
+.admin-primary {
+  background: var(--admin-accent);
+  color: white;
+  border-color: var(--admin-accent);
+}
+.admin-primary:hover {
+  background: #12553d;
+}
+.admin-link {
+  @apply inline-flex items-center gap-2 font-medium;
+  color: var(--admin-accent);
+}
+.admin-link:hover {
+  @apply underline;
+}
+.admin-alert {
+  @apply mb-5 rounded-md border px-4 py-3 text-sm;
+}
+.admin-alert-error,
+.admin-alert.admin-error {
+  @apply border-red-200 bg-red-50 text-red-800;
+}
+.admin-alert-success,
+.admin-alert.admin-success {
+  @apply border-green-200 bg-green-50 text-green-800;
+}
+.admin-state {
+  @apply py-8 text-sm;
+  color: var(--admin-muted);
+}
+.admin-metrics {
+  @apply my-6 grid grid-cols-2 gap-5 border-y py-5 md:grid-cols-3;
+  border-color: var(--admin-line);
+}
+.admin-metrics dt {
+  @apply text-xs;
+  color: var(--admin-muted);
+}
+.admin-metrics dd {
+  @apply mt-2 text-2xl font-semibold tabular-nums;
+}
+.admin-filters {
+  @apply my-6 grid gap-3 sm:grid-cols-2 xl:flex xl:items-end;
+}
+.admin-filters > label {
+  @apply min-w-0 xl:w-44;
+}
+.admin-filters > label:first-child {
+  @apply xl:flex-1;
+}
+.admin-workspace label {
+  @apply text-xs font-medium;
+}
+.admin-workspace input:not([type='checkbox']):not([type='radio']),
+.admin-workspace select,
+.admin-workspace textarea {
+  @apply min-h-10 w-full min-w-0 rounded-md border bg-white px-3 py-2 text-sm;
+  border-color: var(--admin-line);
+}
+.admin-workspace input:focus,
+.admin-workspace select:focus,
+.admin-workspace textarea:focus {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+}
+.admin-workspace input[type='checkbox'] {
+  accent-color: var(--admin-accent);
+}
+.admin-field {
+  @apply flex min-w-0 flex-col gap-2;
+}
+.admin-form-grid {
+  @apply grid gap-4 sm:grid-cols-2;
+}
+.admin-form-section {
+  @apply mb-6 border-b pb-6;
+  border-color: var(--admin-line);
+}
+.admin-form-section > h2 {
+  @apply mb-5;
+}
+.admin-editor {
+  @apply grid gap-6 xl:grid-cols-[minmax(0,1fr)_240px];
+}
+.admin-editor-aside {
+  @apply border-t pt-5 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0;
+  border-color: var(--admin-line);
+}
+.admin-savebar {
+  @apply mt-6 flex flex-wrap justify-end gap-3 border-t pt-5;
+  border-color: var(--admin-line);
+}
+.admin-segments {
+  @apply mb-6 flex flex-wrap gap-1 border-b pb-3;
+  border-color: var(--admin-line);
+}
+.admin-segments button {
+  @apply min-h-10 rounded-md px-3 py-2 text-sm;
+}
+.admin-segments button[aria-pressed='true'] {
+  background: var(--admin-soft);
+  color: var(--admin-accent);
+  @apply font-semibold;
+}
+.admin-table-wrap {
+  @apply min-w-0 overflow-x-auto;
+}
+.admin-table {
+  @apply w-full text-left text-sm;
+  border-collapse: collapse;
+}
+.admin-table th {
+  @apply border-b px-3 py-3 text-xs font-medium;
+  border-color: var(--admin-line);
+  color: var(--admin-muted);
+}
+.admin-table td {
+  @apply border-b px-3 py-4 align-middle;
+  border-color: var(--admin-line);
+  overflow-wrap: anywhere;
+}
+.admin-table th:first-child,
+.admin-table td:first-child {
+  @apply pl-0;
+}
+.admin-table th:last-child,
+.admin-table td:last-child {
+  @apply pr-0;
+}
+.admin-table small {
+  @apply mt-1 block text-xs;
+  color: var(--admin-muted);
+}
+.admin-badge {
+  @apply inline-flex max-w-full items-center rounded px-2 py-1 text-xs font-medium;
+  background: var(--admin-soft);
+  color: var(--admin-accent);
+}
+.admin-badge.is-warning {
+  @apply bg-amber-50 text-amber-800;
+}
+.admin-badge.is-danger {
+  @apply bg-red-50 text-red-800;
+}
+.admin-badge.is-info {
+  @apply bg-sky-50 text-sky-800;
+}
+.admin-timeline {
+  @apply space-y-5 border-l pl-5;
+  border-color: var(--admin-line);
+}
+.admin-record {
+  @apply block w-full border-b px-3 py-5 text-left;
+  border-color: var(--admin-line);
+}
+.admin-record[aria-pressed='true'] {
+  background: var(--admin-soft);
+  box-shadow: inset 3px 0 var(--admin-accent);
+}
+.admin-record:hover {
+  background: var(--admin-soft);
+}
+.admin-detail {
+  @apply xl:border-l xl:pl-6;
+  border-color: var(--admin-line);
+}
+.admin-nav-toggle {
+  display: flex;
+}
+@media (min-width: 1024px) {
+  .admin-nav-toggle {
+    display: none;
+  }
+}
+@media (min-width: 1280px) {
+  .admin-metrics-four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.admin-row {
+  @apply flex flex-wrap items-center gap-4 border-b py-4;
+  border-color: var(--admin-line);
+}
+.admin-split {
+  @apply grid gap-6 xl:grid-cols-[minmax(240px,0.7fr)_minmax(0,1.3fr)];
+}
+.admin-skip-link {
+  @apply sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-white focus:p-3;
+}
+/* Existing operational panels use the same scoped tokens until their own next feature pass. */
+.admin-workspace .section-panel,
+.admin-workspace .tile {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+}
+.admin-workspace .section-panel > * + * {
+  margin-top: 1.5rem;
+}
+.admin-workspace :is(.text-stone-300, .text-stone-400, .text-stone-500) {
+  color: var(--admin-muted) !important;
+}
+.admin-workspace :is(.rounded-2xl, .rounded-3xl, .rounded-xl) {
+  border-radius: 6px;
+}
+.admin-workspace :is(.font-black, .font-extrabold) {
+  font-weight: 600;
+}
+.admin-workspace .bg-emerald-400,
+.admin-workspace .bg-emerald-600 {
+  background: var(--admin-accent) !important;
+  color: white;
+}
+.admin-workspace .text-emerald-400 {
+  color: var(--admin-accent) !important;
+}
+.admin-workspace .shadow-sm {
+  box-shadow: none;
+}
+.admin-workspace section.section-panel {
+  @apply border-t pt-5;
+  border-color: var(--admin-line);
+}
+@media (max-width: 640px) {
+  .admin-workspace input:not([type='checkbox']),
+  .admin-workspace select,
+  .admin-workspace textarea {
+    font-size: 16px;
+  }
+  .admin-workspace button,
+  .admin-nav-link {
+    min-height: 44px;
+  }
+  .admin-table {
+    table-layout: fixed;
+  }
+  .admin-table thead {
+    display: none;
+  }
+  .admin-table,
+  .admin-table tbody {
+    display: block;
+  }
+  .admin-table tr {
+    @apply grid grid-cols-2 gap-3 border-b py-5;
+    border-color: var(--admin-line);
+  }
+  .admin-table td,
+  .admin-table td:first-child,
+  .admin-table td:last-child {
+    display: block;
+    width: auto;
+    border: 0;
+    padding: 0;
+  }
+  .admin-table td:first-child {
+    grid-column: 1 / -1;
+  }
+  .admin-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--admin-muted);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-workspace *,
+  .admin-workspace *::before,
+  .admin-workspace *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

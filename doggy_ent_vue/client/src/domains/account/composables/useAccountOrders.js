@@ -1,51 +1,27 @@
-import { ref } from 'vue'
-import {
-  fetchAccountOrder,
-  fetchAccountOrders,
-} from '../api/account.api.js'
+import { onBeforeUnmount, ref } from 'vue'
+import { fetchAccountOrder } from '../api/account.api.js'
 
 export function useAccountOrders() {
-  const orders = ref([])
   const order = ref(null)
-  const loading = ref(false)
-  const error = ref('')
-
-  async function loadOrders() {
-    loading.value = true
-    error.value = ''
-
-    try {
-      orders.value = await fetchAccountOrders()
-    }
-    catch (loadError) {
-      error.value = loadError.message || 'Unable to load orders.'
-    }
-    finally {
-      loading.value = false
-    }
-  }
-
+  const loading = ref(false),
+    error = ref('')
+  let request = 0
   async function loadOrder(reference) {
+    const current = ++request
+    order.value = null
     loading.value = true
     error.value = ''
-
     try {
-      order.value = await fetchAccountOrder(reference)
-    }
-    catch (loadError) {
-      error.value = loadError.message || 'Unable to load order.'
-    }
-    finally {
-      loading.value = false
+      const result = await fetchAccountOrder(reference)
+      if (current === request) order.value = result
+    } catch (cause) {
+      if (current === request) error.value = cause.message || 'Unable to load order.'
+    } finally {
+      if (current === request) loading.value = false
     }
   }
-
-  return {
-    error,
-    loadOrder,
-    loadOrders,
-    loading,
-    order,
-    orders,
-  }
+  onBeforeUnmount(() => {
+    request += 1
+  })
+  return { error, loadOrder, loading, order }
 }

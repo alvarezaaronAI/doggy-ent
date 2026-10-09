@@ -118,3 +118,37 @@ Suggested fields:
 - Admins may see internal context only after server-side admin auth.
 - Case numbers are friendly references, not authorization credentials.
 - Customer-visible resolution messages must not include admin notes, raw provider errors, stack traces, SQL details, or internal IDs.
+
+## Implemented Source Of Truth
+
+The 2026-06-17 product experience pass implemented the first production support foundation using existing support concepts instead of a parallel system.
+
+Prisma source of truth:
+
+- `CustomerSupportRequest`
+- `CustomerSupportMessage`
+- `CustomerSupportEvent`
+- `InternalIssue`
+- `InternalIssueEvent`
+
+Server source of truth:
+
+- `server/src/domains/support/routes/support.routes.js`
+- `server/src/domains/support/controllers/support.controller.js`
+- `server/src/domains/support/services/support.service.js`
+- `server/src/domains/support/repositories/support.repository.js`
+- `server/src/domains/support/mappers/support.mapper.js`
+- `server/src/domains/support/constants/support.constants.js`
+
+Client source of truth:
+
+- Customer issue creation: `client/src/domains/account/views/AccountOrderDetailView.vue`
+- Admin order issues: `client/src/domains/admin/views/AdminOrderIssuesView.vue`
+- Admin internal issues: `client/src/domains/admin/views/AdminInternalIssuesView.vue`
+- Admin support API: `client/src/domains/admin/api/adminSupport.api.js`
+
+Current limitations:
+
+- Internal issue capture is connected to unexpected Express 500 responses only.
+- Support reply email sending is not implemented; email remains a separate explicit future action.
+- No attachment, compensation, refund, replacement, or assignment workflow exists yet.

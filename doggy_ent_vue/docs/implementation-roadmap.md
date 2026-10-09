@@ -1,5 +1,11 @@
 # Implementation Roadmap
 
+## 2026-10-08 Calm Workspace UI Status
+
+The approved admin workspace UI is connected across all eleven existing tools. Shared navigation/identity/data routing, focused catalog/promo/campaign editors, order/customer detail, issue histories, delivery/shipment views, and truthful operational reports are in place. Existing custom admin auth and server contracts are preserved.
+
+Next gate: controlled real-admin/Safari and local-versus-Railway DB QA, plus review/deployment of any earlier pending support migration. Email Template Center, approved template previews/manual sends, promo audiences, reconciled reporting, and customer support/activity expansion remain separate future phases. A dependency advisory remediation pass is also recommended before launch.
+
 Each run must continue existing work, inspect uncommitted changes, preserve prior completed phases, and avoid undoing unrelated edits. Do not commit or push unless explicitly asked.
 
 ## Run 1: Product Philosophy, Customer Account Redesign, Checkout UX, Supporting Database Changes
@@ -36,6 +42,13 @@ Goals:
 - Responsive states.
 - Tests.
 - Documentation.
+
+Status after 2026-06-17 pass:
+
+- Completed: account overview cleanup, max two recent orders, profile stored-information cleanup, default shipping address foundation, orders split-view/month grouping, customer-safe order detail cleanup, Need Help/order issue foundation, seven-day eligibility, signed-in checkout address prefilling, support/internal issue Prisma foundations, admin issue routes/pages, tests, and documentation updates.
+- Partial: Shippo carrier-rate root-cause investigation was not expanded beyond preserving existing fallback behavior; provider-specific internal issue capture remains future work.
+- Partial: Admin dashboard was extended with Order Issues/Internal Issues links and metrics but not fully reorganized into all suggested operational sections.
+- Not implemented: Email Template Center, promo email workflow, and explicit template-backed Send customer update actions. These remain Run 2/Run 3 work.
 
 ## Run 2: Admin Redesign, Order Issues, Internal Issues, Email Template Center
 

@@ -213,3 +213,41 @@ Requirements:
 - Saving tracking should not automatically send email.
 - Sending tracking email requires explicit admin action.
 - Preserve audit history for the change and the communication.
+
+## Implemented Run 1 Notes
+
+As of the 2026-06-17 product experience pass:
+
+- `/admin/order-issues` is implemented as a protected admin tool.
+- Order Issues supports search/filter, status changes, priority changes, resolution summary, internal notes, and customer-visible account replies.
+- Customer-visible replies and internal notes are persisted separately through `CustomerSupportMessage.visibility`.
+- Saving order issue changes does not send email.
+- Email follow-up can be marked as requested, but actual template preview/send remains future work.
+- `/admin/internal-issues` is implemented as a protected admin tool for sanitized operational issue records.
+- Unexpected Express 500s are recorded as internal issues with a fingerprint and safe route/source/summary context.
+- The main admin dashboard links to Order Issues and Internal Issues and shows issue counts.
+
+Remaining admin work:
+
+- Admin navigation reorganization is now implemented; see the Calm Workspace section below.
+- Email Template Center and template CRUD.
+- Explicit Send customer update flows for order changes, support replies, tracking, and promo emails.
+- Provider-specific internal issue capture for Shippo, Resend, checkout, payment, and database failures.
+
+## Implemented Calm Workspace
+
+The approved Calm Workspace design is implemented as of 2026-10-08. This is a connected UI pass, not an auth migration or server rewrite.
+
+- One protected shared admin layout owns the header, grouped sidebar, signed-in identity, read-only data routing, and responsive navigation. All eleven existing tools remain accessible.
+- Overview shows a few actionable server-derived metrics, attention links, and three recent orders. Failed data sources are labeled unavailable, not replaced with invented zeroes.
+- Products, Promos, and Campaigns open on their searchable libraries. Create/edit opens a focused editor with explicit Save/Cancel.
+- Product content is separated into Details, Variants & Stock, and Storefront Content. Publishing settings remain alongside the editor; inventory alerts respect inventory-limited mode and stored variant thresholds.
+- Promo testing requires a customer email, normalizes it, and clears/discards results after input changes. Analytics and campaign impact open as in-page record panels with real order links.
+- Orders uses a status-filterable table including refunded orders. Detail retains server totals, customer/shipping snapshots, explicit status Save/Cancel/history, tracking controls, and separate manual email controls.
+- Customers retains account status, verification, linked/verified-email guest orders, lifetime spend, and protected account actions. Security-email requests require deliberate confirmation and never imply delivery success.
+- Shipments and Notifications retain provider/history filters and now expose load errors. Notification template editing remains a clearly labeled future-phase section.
+- Reports labels aggregate order value accurately: the current API includes pending and other stored orders. It is not settled-payment revenue. Donation attribution is not a payout ledger.
+- Order Issues separates customer-visible account replies from internal notes; saves/replies do not automatically send email. Internal Issues shows safe context and event history. Both use staged saves, cancellation, busy/error states, and retained drafts after failed writes.
+- Future templates, bulk promo email, payment-reconciled/date-range reports, customer notes/activity/reviews/loyalty remain unconnected and explicitly labeled.
+
+Live Safari, local/Railway DB-mode, deployed cookie, and real provider QA still require the controlled manual checklist in [verification-and-qa.md](verification-and-qa.md). See [PROJECT_HANDOFF.md](../PROJECT_HANDOFF.md) for exact changed files and check results.

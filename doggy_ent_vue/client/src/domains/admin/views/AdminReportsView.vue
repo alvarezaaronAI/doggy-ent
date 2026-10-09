@@ -1,167 +1,111 @@
-<template>
-  <main class="min-h-screen bg-[var(--brand-5)] text-slate-900">
-    <section class="mx-auto max-w-7xl px-6 py-10 md:py-14">
-      <div class="section-panel p-8 md:p-10">
-        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-stone-400">
-              Admin Reports
-            </p>
-            <h1 class="mt-3 text-4xl font-bold tracking-tight">Operations Report</h1>
-            <p class="mt-3 max-w-2xl text-stone-300">
-              Compact rollups for orders, customers, notifications, shipments, revenue, and donation impact.
-            </p>
-          </div>
-
-          <RouterLink
-            to="/admin"
-            class="inline-flex rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-[var(--brand-4)] transition hover:border-emerald-400"
-          >
-            Back to Dashboard
-          </RouterLink>
-        </div>
-
-        <section class="mt-8 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-          <div
-            v-for="metric in metrics"
-            :key="metric.label"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm"
-          >
-            <p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">
-              {{ metric.label }}
-            </p>
-            <p class="mt-2 text-2xl font-black text-[var(--brand-4)]">
-              {{ metric.value }}
-            </p>
-            <p class="mt-1 text-xs font-semibold text-stone-400">
-              {{ metric.hint }}
-            </p>
-          </div>
-        </section>
-
-        <section class="mt-6 grid gap-4 lg:grid-cols-3">
-          <RouterLink
-            v-for="link in reportLinks"
-            :key="link.to"
-            :to="link.to"
-            class="rounded-2xl border border-[var(--brand-3)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
-          >
-            <p class="text-lg font-black text-[var(--brand-4)]">{{ link.label }}</p>
-            <p class="mt-2 text-sm text-stone-400">{{ link.description }}</p>
-          </RouterLink>
-        </section>
-      </div>
-    </section>
-  </main>
-</template>
-
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
-import {
-  fetchAdminCustomers,
-} from '../api/adminCustomers.api.js'
-import {
-  fetchAdminNotifications,
-} from '../api/adminNotifications.api.js'
-import {
-  fetchAdminOrderStats,
-} from '../api/adminOrders.api.js'
-import {
-  fetchAdminShipments,
-} from '../api/adminShipments.api.js'
-
-const orderStats = ref({})
-const customers = ref([])
-const notifications = ref({})
-const shipments = ref({})
-
-const reportLinks = [
-  {
-    to: '/admin/orders',
-    label: 'Order dashboard',
-    description: 'Open the operational order list and detail workflow.',
-  },
-  {
-    to: '/admin/notifications',
-    label: 'Notification history',
-    description: 'Audit delivery, failed, mocked, and skipped email activity.',
-  },
-  {
-    to: '/admin/shipments',
-    label: 'Shipment tracking',
-    description: 'Review tracking records and delivery timeline state.',
-  },
-]
-
+import { computed, onMounted } from 'vue'
+import AdminPageHeader from '../components/AdminPageHeader.vue'
+import AdminIcon from '../components/AdminIcon.vue'
+import AdminMetrics from '../components/AdminMetrics.vue'
+import { useAdminOverview } from '../composables/useAdminOverview'
+import { formatCurrency } from '@shared/utils/currency'
+const { activity, errors, loading, load } = useAdminOverview()
 const metrics = computed(() => [
   {
+    label: 'Order value',
+    value: activity.value.stats
+      ? formatCurrency(activity.value.stats.totalRevenue)
+      : 'Unavailable',
+    hint: 'All stored orders, including pending',
+  },
+  {
+    label: 'Donations generated',
+    value: activity.value.stats
+      ? formatCurrency(activity.value.stats.totalDonationGenerated)
+      : 'Unavailable',
+    hint: 'Order attribution, not paid-out donations',
+  },
+  {
     label: 'Orders',
-    value: orderStats.value.totalOrders || 0,
-    hint: `${orderStats.value.pendingOrders || 0} pending`,
+    value: activity.value.stats?.totalOrders ?? 'Unavailable',
   },
   {
-    label: 'Revenue',
-    value: formatCurrency(orderStats.value.totalRevenue),
-    hint: 'All orders',
-  },
-  {
-    label: 'Donations',
-    value: formatCurrency(orderStats.value.totalDonationGenerated),
-    hint: 'Campaign impact',
-  },
-  {
-    label: 'Customers',
-    value: customers.value.length,
-    hint: 'Accounts',
-  },
-  {
-    label: 'Notifications',
-    value: notifications.value.total || 0,
-    hint: `${notifications.value.failed || 0} failed`,
-  },
-  {
-    label: 'Shipments',
-    value: shipments.value.total || 0,
-    hint: `${shipments.value.delivered || 0} delivered`,
+    label: 'Customer accounts',
+    value: activity.value.customers?.length ?? 'Unavailable',
   },
 ])
-
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString(undefined, {
-    style: 'currency',
-    currency: 'USD',
-  })
-}
-
-async function loadReports() {
-  const [
-    statsResult,
-    customersResult,
-    notificationsResult,
-    shipmentsResult,
-  ] = await Promise.allSettled([
-    fetchAdminOrderStats(),
-    fetchAdminCustomers(),
-    fetchAdminNotifications({ limit: 10 }),
-    fetchAdminShipments({ limit: 10 }),
-  ])
-
-  if (statsResult.status === 'fulfilled') {
-    orderStats.value = statsResult.value || {}
-  }
-  if (customersResult.status === 'fulfilled') {
-    customers.value = Array.isArray(customersResult.value)
-      ? customersResult.value
-      : []
-  }
-  if (notificationsResult.status === 'fulfilled') {
-    notifications.value = notificationsResult.value || {}
-  }
-  if (shipmentsResult.status === 'fulfilled') {
-    shipments.value = shipmentsResult.value || {}
-  }
-}
-
-onMounted(loadReports)
+onMounted(load)
 </script>
+<template>
+  <section class="admin-page">
+    <AdminPageHeader title="Reports" eyebrow="Business overview"
+      ><button
+        class="admin-icon-button"
+        title="Refresh reports"
+        aria-label="Refresh reports"
+        :disabled="loading"
+        @click="load"
+      >
+        <AdminIcon name="refresh" /></button
+    ></AdminPageHeader>
+    <p
+      v-for="error in errors"
+      :key="error"
+      class="admin-alert admin-error"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+    <p class="admin-muted">All-time operational totals</p>
+    <AdminMetrics :loading="loading" :items="metrics" />
+    <div class="grid gap-8 lg:grid-cols-2">
+      <section class="admin-form-section">
+        <h2>Order operations</h2>
+        <dl class="mt-4 space-y-4">
+          <div
+            v-for="row in [
+              { label: 'Pending orders', key: 'pendingOrders' },
+              { label: 'Paid orders', key: 'paidOrders' },
+              { label: 'Delivered orders', key: 'fulfilledOrders' },
+            ]"
+            :key="row.key"
+            class="admin-row"
+          >
+            <dt class="admin-muted">{{ row.label }}</dt>
+            <dd>{{ activity.stats?.[row.key] ?? 'Unavailable' }}</dd>
+          </div>
+        </dl>
+        <RouterLink class="admin-link mt-6" to="/admin/orders"
+          >Review orders <AdminIcon name="next"
+        /></RouterLink>
+      </section>
+      <section class="admin-form-section">
+        <h2>Delivery health</h2>
+        <dl class="mt-4 space-y-4">
+          <div class="admin-row">
+            <dt class="admin-muted">Failed email records</dt>
+            <dd>{{ activity.notifications?.failed ?? 'Unavailable' }}</dd>
+          </div>
+          <div class="admin-row">
+            <dt class="admin-muted">Mocked email records</dt>
+            <dd>{{ activity.notifications?.mocked ?? 'Unavailable' }}</dd>
+          </div>
+          <div class="admin-row">
+            <dt class="admin-muted">Tracking records needing review</dt>
+            <dd>{{ activity.shipments?.failed ?? 'Unavailable' }}</dd>
+          </div>
+        </dl>
+        <div class="flex flex-wrap gap-5 mt-6">
+          <RouterLink class="admin-link" to="/admin/notifications"
+            >Email activity <AdminIcon name="next" /></RouterLink
+          ><RouterLink class="admin-link" to="/admin/shipments"
+            >Shipments <AdminIcon name="next"
+          /></RouterLink>
+        </div>
+      </section>
+    </div>
+    <section class="admin-form-section mt-8">
+      <h2>Reporting roadmap</h2>
+      <p class="admin-muted mt-3">
+        Date ranges, settled-payment revenue, charts, and exports are coming in
+        a future phase.
+      </p>
+    </section>
+  </section>
+</template>

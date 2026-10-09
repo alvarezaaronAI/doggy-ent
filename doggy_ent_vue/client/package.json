@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@better-auth/infra": "^0.2.14",
+    "@lucide/vue": "^1.53.0",
     "@stripe/stripe-js": "^9.5.0",
     "@tailwindcss/vite": "^4.2.4",
     "better-auth": "^1.6.18",

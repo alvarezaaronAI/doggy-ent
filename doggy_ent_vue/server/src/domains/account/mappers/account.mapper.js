@@ -51,20 +51,18 @@ export function mapCustomerProfile(user) {
 export function mapCustomerAccountSummary({
   user,
   orders = [],
+  openIssueCount = 0,
 }) {
   const totalOrders = orders.length
-  const lifetimeSpend = orders.reduce(
-    (total, order) => total + Number(order.total || 0),
-    0,
-  )
 
   return {
     profile: mapCustomerProfile(user),
     stats: {
       totalOrders,
-      lifetimeSpend,
       latestOrderDate: orders[0]?.createdAt || null,
+      latestOrderStatus: orders[0]?.status || null,
+      openIssueCount,
     },
-    recentOrders: orders.slice(0, 3),
+    recentOrders: orders.slice(0, 2),
   }
 }

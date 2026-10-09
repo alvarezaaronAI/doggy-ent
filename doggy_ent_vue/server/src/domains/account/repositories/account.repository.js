@@ -64,6 +64,23 @@ export async function findCustomerOrdersForAccount({
         },
       },
       shipments: orderShipmentsInclude,
+      supportRequests: {
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+          events: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
+      },
     },
   })
 }
@@ -124,6 +141,23 @@ export async function findCustomerOrderForAccount({
         },
       },
       shipments: orderShipmentsInclude,
+      supportRequests: {
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+          events: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
+      },
     },
   })
 

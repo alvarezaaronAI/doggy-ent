@@ -20,8 +20,10 @@ function formatDateTime(value) {
 </script>
 
 <template>
-  <section class="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-    <h2 class="text-lg font-extrabold text-[var(--brand-4)]">Notification history</h2>
+  <section class="admin-form-section mt-5">
+    <h2 class="text-lg font-extrabold text-[var(--brand-4)]">
+      Notification history
+    </h2>
     <div v-if="deliveries.length" class="mt-4 space-y-3">
       <div
         v-for="delivery in deliveries"
@@ -30,10 +32,14 @@ function formatDateTime(value) {
       >
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="font-black text-[var(--brand-4)]">{{ formatEvent(delivery.event) }}</p>
+            <p class="font-black text-[var(--brand-4)]">
+              {{ formatEvent(delivery.event) }}
+            </p>
             <p class="mt-1 text-stone-500">{{ delivery.subject }}</p>
           </div>
-          <span class="rounded-full bg-white px-2 py-1 text-xs font-black uppercase text-stone-500">
+          <span
+            class="rounded-full bg-white px-2 py-1 text-xs font-black uppercase text-stone-500"
+          >
             {{ delivery.status }}
           </span>
         </div>

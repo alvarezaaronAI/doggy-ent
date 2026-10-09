@@ -120,3 +120,13 @@ Checkout shipping must remain server-owned: the client may select a rate, but se
 ## Excluded Channels
 
 Do not implement Twilio, SMS workflows, SMS preferences, SMS env vars, SMS provider files, or Apple Messages for Business unless the user explicitly requests them later.
+
+## Implemented Run 1 Notes
+
+As of the 2026-06-17 product experience pass:
+
+- Profile saves no longer queue an automatic profile-update email.
+- Customer order issue creation does not send email automatically.
+- Admin issue status saves, internal notes, and customer-visible account replies do not send email automatically.
+- Admin can mark email follow-up requested on an order issue message, but actual template preview/send remains future work.
+- In-account order issue history is the current customer-visible communication channel for support cases.

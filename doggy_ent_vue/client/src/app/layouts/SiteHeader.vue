@@ -90,7 +90,7 @@ onBeforeUnmount(() => {
         <span>Chase &amp; Evie Co.</span>
       </RouterLink>
 
-      <ul class="hidden md:flex items-center gap-6 text-sm text-stone-200">
+      <ul class="hidden xl:flex items-center gap-6 text-sm text-stone-200">
         <li><a class="hover:text-emerald-400" href="/#shop">All Treats</a></li>
         <li><a class="hover:text-emerald-400" href="/#coming-soon">Coming Soon</a></li>
         <li><a class="hover:text-emerald-400" href="/#process">How We Make Them</a></li>
@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
         <li><a class="hover:text-emerald-400" href="/#faq">FAQ</a></li>
       </ul>
 
-      <div class="hidden md:flex items-center gap-4">
+      <div class="hidden xl:flex items-center gap-4">
         <div class="relative">
           <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400"></i>
 
@@ -179,7 +179,7 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <div class="md:hidden flex items-center gap-3">
+      <div class="xl:hidden flex items-center gap-3">
         <RouterLink
           :to="authenticated ? '/account' : '/account/sign-in'"
           class="inline-flex items-center gap-2 rounded-full border border-stone-700 bg-white px-3 py-2 text-sm font-bold text-stone-700 hover:border-emerald-400 hover:text-emerald-700"
