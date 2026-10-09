@@ -1,7 +1,5 @@
 import { prisma } from '../../../db/prisma.js'
-import {
-  CAMPAIGN_STATUS,
-} from '../constants/campaigns.constants.js'
+import { CAMPAIGN_STATUS } from '../constants/campaigns.constants.js'
 
 export async function findAllCampaigns() {
   return prisma.campaign.findMany({
@@ -34,6 +32,22 @@ export async function findCampaignBySlug(slug) {
   return prisma.campaign.findUnique({
     where: {
       slug,
+    },
+  })
+}
+
+export async function findPublicCampaignBySlug(slug) {
+  return prisma.campaign.findFirst({
+    where: {
+      slug,
+      publicPageEnabled: true,
+      status: {
+        in: [
+          CAMPAIGN_STATUS.ACTIVE,
+          CAMPAIGN_STATUS.PAUSED,
+          CAMPAIGN_STATUS.ENDED,
+        ],
+      },
     },
   })
 }
@@ -104,18 +118,17 @@ export async function recordOrderCampaignUsage({
   matchedProductIds = [],
 }) {
   return prisma.$transaction(async (tx) => {
-    const existingUsage =
-      await tx.orderCampaignUsage.findUnique({
-        where: {
-          orderId_campaignId: {
-            orderId,
-            campaignId,
-          },
+    const existingUsage = await tx.orderCampaignUsage.findUnique({
+      where: {
+        orderId_campaignId: {
+          orderId,
+          campaignId,
         },
-        include: {
-          campaign: true,
-        },
-      })
+      },
+      include: {
+        campaign: true,
+      },
+    })
 
     if (existingUsage) {
       return existingUsage

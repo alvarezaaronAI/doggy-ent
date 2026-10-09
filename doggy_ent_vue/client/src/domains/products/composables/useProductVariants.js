@@ -1,6 +1,8 @@
-
-
 import { ref } from 'vue'
+import {
+  getOrderedProductVariants,
+  getProductVariantPrice,
+} from '../utils/productVariants.js'
 import {
   getSellingMode,
   isPurchasable,
@@ -13,21 +15,17 @@ export function useProductVariants() {
   const selectedCardSizes = ref({})
 
   function getVariantPrice(product, size) {
-    return (
-      product.variants?.find((variant) => variant.size === size)?.price ||
-      product.price ||
-      0
-    )
+    return getProductVariantPrice(product, size)
   }
 
   function hasVariant(product, size) {
     return Boolean(
-      product.variants?.find((variant) => variant.size === size)
+      getProductVariants(product).find((variant) => variant.size === size),
     )
   }
 
   function getProductVariants(product) {
-    return Array.isArray(product.variants) ? product.variants : []
+    return getOrderedProductVariants(product)
   }
 
   function getDefaultVariant(product) {
@@ -48,14 +46,15 @@ export function useProductVariants() {
   }
 
   function getSelectedCardSize(product) {
-    return (
-      selectedCardSizes.value[product.id] ||
-      getProductVariants(product)[0]?.size ||
-      '6 oz'
-    )
+    const variants = getProductVariants(product)
+    const selected = selectedCardSizes.value[product?.id]
+    return variants.some((variant) => variant.size === selected)
+      ? selected
+      : variants[0]?.size || ''
   }
 
   function selectCardSize(product, size) {
+    if (!product?.id || !hasVariant(product, size)) return
     selectedCardSizes.value = {
       ...selectedCardSizes.value,
       [product.id]: size,
@@ -68,23 +67,19 @@ export function useProductVariants() {
 
   function getSelectedCardVariant(product) {
     return getProductVariants(product).find(
-      (variant) => variant.size === getSelectedCardSize(product)
+      (variant) => variant.size === getSelectedCardSize(product),
     )
   }
 
   function getVariantBySize(product, size) {
     return (
-      getProductVariants(product).find(
-        (variant) => variant.size === size
-      ) || getDefaultVariant(product)
+      getProductVariants(product).find((variant) => variant.size === size) ||
+      getDefaultVariant(product)
     )
   }
 
   function getSelectedStockLabel(product, variant = null) {
-    return getStockLabel(
-      product,
-      variant || getSelectedCardVariant(product)
-    )
+    return getStockLabel(product, variant || getSelectedCardVariant(product))
   }
 
   return {

@@ -1,6 +1,6 @@
 # Admin Architecture
 
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## Overview
 
@@ -101,6 +101,7 @@ Client/Vercel names:
 - `VITE_API_URL` as backward-compatible API origin alias
 - `VITE_STRIPE_PUBLISHABLE_KEY`
 - `VITE_ADMIN_DATA_TARGET` for local admin badge mode
+- `VITE_STRIPE_DASHBOARD_PAYMENTS_URL` optional public Stripe payments dashboard base; not a Stripe API key
 
 Local-only Railway DB admin override file:
 
@@ -292,7 +293,50 @@ Security constraints:
 - Password hashes, session tokens, and verification token values are not included in admin customer responses.
 - Public customer signup cannot create admin accounts.
 
-## Manual QA Checklist
+## Internal Record Inspection And Stripe Links
+
+`fetchAdminOrderById` explicitly opts into `findOrderById(..., { includeAdminRecord: true })`. The repository reads related support records only for this opt-in and builds `internalRecord` using `adminOrderRecord.mapper.js`. All Order scalar fields are allowlisted, with safe item/usage/status/shipment/event/delivery/support fields. Ordinary checkout/customer reads do not request this payload; customer mapping does not return it. Email history remains limited to the existing most recent twenty records.
+
+`adminCustomers.mapper.js` builds the customer snapshot with `adminCustomerRecord.mapper.js`; email delivery mapping now lives at this mapper boundary rather than in the service assembler. Safe profile/preferences/events/support/review/loyalty fields are shared with existing detail fields rather than duplicated unfiltered JSON. User scalar coverage includes the image field. Linked/verified-email guest orders retain their existing panels and matching rules.
+
+Both existing route groups still use server-side `requireAdminAuth`. Auth Account/Session/Verification tables are not loaded for inspection. Raw shipment status/events, arbitrary account/ledger/email metadata, dedupe keys and email action URLs are deliberately excluded. Related customer PII is admin-only. This is not an unrestricted database export, and nested provider credentials must never be added to these allowlists.
+
+`AdminRecordInspector.vue` / `AdminRecordFields.vue` show read-only expandable fields. Order/customer-specific panels keep frequently useful identifiers visible, preserve null/false/zero distinctions, and wrap long IDs on mobile. `useAdminOrderDetail` re-fetches detail after existing writes to keep the inspection snapshot current; a failed follow-up GET is reported separately from a successful save.
+
+Stripe link setup:
+
+1. Open an admin order with a stored PaymentIntent ID.
+2. Expand Stripe dashboard settings; enter the payments-list base copied from the intended Stripe account, without the final payment ID, query, credentials, or fragment. Use the test payments location for test records or live payments location for live records.
+3. Save link; verify the displayed Test dashboard/Live dashboard label, then open the payment. The order's own `pi_` ID is appended automatically. The supplied account-specific example is not hardcoded into source.
+4. Change that base later with Save/Cancel. It is stored under `doggy-admin-stripe-payments-url` in browser local storage, not in PostgreSQL or an API secret. A browser override takes priority over the optional `VITE_STRIPE_DASHBOARD_PAYMENTS_URL` build-time default; clearing it disables the link in that browser.
+5. For a default shared by new browsers, configure only the public `VITE_STRIPE_DASHBOARD_PAYMENTS_URL` in ignored local client config or Vercel, then restart/rebuild/redeploy the client. No new Railway variable is required by this feature.
+
+The validator permits HTTPS on `dashboard.stripe.com` only, optional account scope, optional test segment, and a payments-list path. It rejects other hosts, embedded credentials, query/fragment/extra paths, non-PaymentIntent IDs and client-secret-shaped strings. New-window links use `noopener noreferrer`. [Stripe's PaymentIntent reference](https://docs.stripe.com/api/payment_intents/object) documents the identifier distinct from its client secret.
+
+Limitation: the current Order schema does not store Stripe live/test mode or Stripe account scope. A configured base applies to all inspected orders in that browser. Switching to a live base cannot make historical test IDs live; select the appropriate dashboard manually. Local storage may be unavailable in private browsing, and no Stripe account login/authorization or live payment was tested automatically.
+
+## Shared Campaign Page Editor
+
+The 2026-10-09 campaign editor keeps AdminLayout/Sidebar and the signed-in/data-routing strip intact. The canvas and public `/campaigns/:slug` route both render `CampaignPageContent.vue`; responsive container styles and immutable storefront palette aliases prevent inherited admin typography/colors from changing that page. Edit-only section handles select the right inspector, with the inspector above the canvas on mobile. No separate preview page implementation is required.
+
+`AdminCampaignSectionFields.vue` owns focused fields; `adminCampaignEditor.constants.js` owns section labels/keys; `adminCampaignForm.mapper.js` owns draft hydration, ISO payload shaping, and canvas projection; `adminCampaign.validator.js` owns client validation. `useAdminCampaigns.js` orchestrates credentialed CRUD through the existing API wrapper. Product selection reads the normalized catalog API, so canvas prices are display currency rather than raw cents.
+
+Server route -> controller -> service -> repository -> Prisma remains intact. Management routes remain `requireAdminAuth`; the new public endpoints use a separate explicit mapper without order/customer attribution. Create/update validate content, enums, bounds, dates, and HTTPS links. Existing slug survives rename. Draft/Archived public reads are rejected. Publishing does not automatically change giving eligibility.
+
+Campaign public content migration is applied on local/Railway databases; no application deployment was performed. No new env variable is required. Continue using local client -> local server -> selected database for temporary admin work. Restart the selected-mode backend after Prisma generation/source changes, deploy reviewed server before the matching frontend, then enable a reviewed campaign page deliberately.
+
+Generated contributions are not a payout ledger. Existing campaign impact/order links stay protected and intact. Browser fixtures verify edits/Save/Cancel/failures; authenticated real-data persistence and deployed Safari remain manual QA.
+
+## Campaign QA
+
+- Edit every section, select from canvas/inspector, verify the same content layout and brand on public route.
+- Cancel without a write; save a permitted test draft; fail a save and confirm draft retention. Check follow-up GET failure separately from write success.
+- Check 6 oz/18 oz canvas prices, inactive product exclusion, active campaign green badges, and no customer/cart action from the admin canvas.
+- Verify publishing off, Draft, Archived, Active, future start, past end, Paused, and Ended visibility/eligibility; rename without breaking the public link.
+- Verify HTTPS partner/image URL validation, missing image description, long text, failed image fallback, local time/ISO persistence, and generated-not-paid wording.
+- Confirm no public response includes revenue, order/customer data, private metadata, or attribution identifiers.
+
+## Existing Manual QA Checklist
 
 - Log into local admin in fully local mode and confirm badge says local target.
 - Create/edit/delete a local test product and confirm local DB only.

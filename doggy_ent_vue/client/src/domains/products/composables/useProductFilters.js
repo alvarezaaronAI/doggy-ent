@@ -1,11 +1,11 @@
-
-
 import { computed, ref } from 'vue'
 import {
-  useStorefrontSearch,
-} from '@storefront/composables/useStorefrontSearch.js'
+  getOrderedProductVariants,
+  getProductVariantPrice,
+} from '../utils/productVariants'
+import { useStorefrontSearch } from '@storefront/composables/useStorefrontSearch.js'
 
-export function useProductFilters(products, getSelectedCardPrice) {
+export function useProductFilters(products) {
   const { searchQuery } = useStorefrontSearch()
   const selectedCategory = ref('all')
   const selectedProtein = ref('all')
@@ -19,16 +19,18 @@ export function useProductFilters(products, getSelectedCardPrice) {
         return false
       }
 
-      const matchesSearch = !normalizedSearch || [
-        product.name,
-        product.category,
-        product.protein,
-        ...(Array.isArray(product.tags) ? product.tags : []),
-      ]
-        .filter(Boolean)
-        .some((value) =>
-          String(value).toLowerCase().includes(normalizedSearch)
-        )
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          product.name,
+          product.category,
+          product.protein,
+          ...(Array.isArray(product.tags) ? product.tags : []),
+        ]
+          .filter(Boolean)
+          .some((value) =>
+            String(value).toLowerCase().includes(normalizedSearch),
+          )
 
       const matchesCategory =
         selectedCategory.value === 'all' ||
@@ -43,19 +45,19 @@ export function useProductFilters(products, getSelectedCardPrice) {
 
     if (selectedSort.value === 'price-low') {
       filteredProducts = [...filteredProducts].sort(
-        (a, b) => getSelectedCardPrice(a) - getSelectedCardPrice(b)
+        (a, b) => startingPrice(a) - startingPrice(b),
       )
     }
 
     if (selectedSort.value === 'price-high') {
       filteredProducts = [...filteredProducts].sort(
-        (a, b) => getSelectedCardPrice(b) - getSelectedCardPrice(a)
+        (a, b) => startingPrice(b) - startingPrice(a),
       )
     }
 
     if (selectedSort.value === 'alphabetical') {
       filteredProducts = [...filteredProducts].sort((a, b) =>
-        a.name.localeCompare(b.name)
+        a.name.localeCompare(b.name),
       )
     }
 
@@ -69,4 +71,11 @@ export function useProductFilters(products, getSelectedCardPrice) {
     selectedSort,
     activeProducts,
   }
+}
+
+function startingPrice(product) {
+  return getProductVariantPrice(
+    product,
+    getOrderedProductVariants(product)[0]?.size,
+  )
 }

@@ -1,4 +1,5 @@
 <script setup>
+import { Eye, ShoppingBag } from '@lucide/vue'
 const props = defineProps({
   product: {
     type: Object,
@@ -10,35 +11,30 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits([
-  'quick-view',
-  'add-to-cart',
-])
+const emit = defineEmits(['quick-view', 'add-to-cart'])
 </script>
 
 <template>
-  <div class="mt-auto flex items-center justify-between gap-2 pt-5">
+  <div class="grid grid-cols-2 gap-2 pt-5">
     <button
-      class="rounded-lg border border-stone-700 px-4 py-2 font-semibold text-stone-700 transition hover:border-emerald-400 hover:text-emerald-400"
+      type="button"
+      class="store-button flex-wrap px-2 text-sm"
       @click.stop="emit('quick-view', props.product)"
     >
-      Quick View
+      <Eye :size="16" aria-hidden="true" /> Quick View
     </button>
 
     <button
       v-if="props.isPurchasable"
-      class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
+      type="button"
+      class="store-button store-button-primary flex-wrap px-2 text-sm"
       @click.stop="emit('add-to-cart', props.product)"
     >
-      Add to Cart
+      <ShoppingBag :size="16" aria-hidden="true" /> Add to Cart
     </button>
 
-    <button
-      v-else
-      class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-      @click.stop="emit('quick-view', props.product)"
-    >
-      Notify Me
+    <button v-else type="button" class="store-button" disabled>
+      Unavailable
     </button>
   </div>
 </template>

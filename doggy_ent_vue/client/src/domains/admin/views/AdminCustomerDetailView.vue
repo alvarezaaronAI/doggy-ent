@@ -7,6 +7,7 @@ import AdminMetrics from '../components/AdminMetrics.vue'
 import AdminCustomerOrdersPanel from '../components/AdminCustomerOrdersPanel.vue'
 import AdminCustomerNotificationsPanel from '../components/AdminCustomerNotificationsPanel.vue'
 import AdminCustomerStatusBadge from '../components/AdminCustomerStatusBadge.vue'
+import AdminCustomerInternalPanel from '../components/AdminCustomerInternalPanel.vue'
 import { useAdminCustomers } from '../composables/useAdminCustomers'
 import { formatCurrency } from '@shared/utils/currency'
 import { formatAdminOrderDate } from '../utils/adminOrders.utils'
@@ -156,6 +157,7 @@ onMounted(() => loadCustomer(id))
               Request password reset
             </button>
           </div>
+          <AdminCustomerInternalPanel :customer="customer" />
           <section class="admin-form-section mt-6">
             <h3>Internal notes</h3>
             <p class="admin-muted mt-2">Coming in a future phase.</p>

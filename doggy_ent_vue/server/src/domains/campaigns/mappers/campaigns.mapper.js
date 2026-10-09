@@ -2,16 +2,12 @@ import {
   normalizeOptionalString,
   slugify,
 } from '../../../shared/utils/string.js'
-import {
-  CAMPAIGN_DEFAULTS,
-} from '../constants/campaigns.constants.js'
+import { CAMPAIGN_DEFAULTS } from '../constants/campaigns.constants.js'
 import {
   calculateDonationAmount,
   normalizeProductIds,
 } from '../utils/campaigns.utils.js'
-import {
-  normalizeCurrencyAmount,
-} from '../../../shared/utils/money.js'
+import { normalizeCurrencyAmount } from '../../../shared/utils/money.js'
 
 const nowISO = () => new Date().toISOString()
 
@@ -22,17 +18,20 @@ export function normalizeCampaignInput(input) {
   return {
     id: input.id,
     name,
-    slug: slugify(name),
+    slug: input.slug || slugify(name),
 
-    description: input.description || '',
-    image: input.image || null,
+    description: String(input.description || '').trim(),
+    image: String(input.image || '').trim() || null,
     featured: Boolean(input.featured),
+    story: String(input.story || '').trim() || null,
+    beneficiaryUrl: String(input.beneficiaryUrl || '').trim() || null,
+    imageAlt: String(input.imageAlt || '').trim() || null,
+    publicPageEnabled: input.publicPageEnabled === true,
 
     status: input.status || CAMPAIGN_DEFAULTS.STATUS,
 
-    donationTarget: input.donationTarget || '',
-    donationType:
-      input.donationType || CAMPAIGN_DEFAULTS.DONATION_TYPE,
+    donationTarget: String(input.donationTarget || '').trim(),
+    donationType: input.donationType || CAMPAIGN_DEFAULTS.DONATION_TYPE,
     donationValue: Number(input.donationValue ?? 0),
 
     productIds: normalizeProductIds(input.productIds),
@@ -57,48 +56,36 @@ export function buildCampaignMutationData(campaign) {
     description: campaign.description,
     image: campaign.image,
     featured: campaign.featured,
+    story: campaign.story,
+    beneficiaryUrl: campaign.beneficiaryUrl,
+    imageAlt: campaign.imageAlt,
+    publicPageEnabled: campaign.publicPageEnabled,
 
-    status: String(
-      campaign.status,
-    ).toUpperCase(),
+    status: String(campaign.status).toUpperCase(),
 
     donationTarget: campaign.donationTarget,
 
-    donationType: String(
-      campaign.donationType,
-    ).toUpperCase(),
+    donationType: String(campaign.donationType).toUpperCase(),
 
     donationValue: campaign.donationValue,
 
     productIds: campaign.productIds,
 
-    startsAt: campaign.startsAt
-      ? new Date(campaign.startsAt)
-      : null,
+    startsAt: campaign.startsAt ? new Date(campaign.startsAt) : null,
 
-    endsAt: campaign.endsAt
-      ? new Date(campaign.endsAt)
-      : null,
+    endsAt: campaign.endsAt ? new Date(campaign.endsAt) : null,
   }
 }
 
-export function mapCampaignDonationPreview({
-  campaign,
-  cartItems,
-}) {
+export function mapCampaignDonationPreview({ campaign, cartItems }) {
   const matchedItems = cartItems.filter((item) =>
-    campaign.productIds.includes(
-      String(item.id || item.productId),
-    ),
+    campaign.productIds.includes(String(item.id || item.productId)),
   )
 
   const matchedSubtotal = normalizeCurrencyAmount(
     matchedItems.reduce(
-      (total, item) => (
-        total
-        + Number(item.price || 0)
-        * Number(item.quantity || 0)
-      ),
+      (total, item) =>
+        total + Number(item.price || 0) * Number(item.quantity || 0),
       0,
     ),
   )
@@ -107,26 +94,17 @@ export function mapCampaignDonationPreview({
     campaignId: campaign.id,
     campaignName: campaign.name,
 
-    donationTarget:
-      campaign.donationTarget,
+    donationTarget: campaign.donationTarget,
 
-    donationType:
-      campaign.donationType,
+    donationType: campaign.donationType,
 
-    donationValue:
-      campaign.donationValue,
+    donationValue: campaign.donationValue,
 
     matchedSubtotal,
 
-    donationAmount:
-      calculateDonationAmount(
-        campaign,
-        matchedSubtotal,
-      ),
+    donationAmount: calculateDonationAmount(campaign, matchedSubtotal),
 
-    matchedProductIds: matchedItems.map(
-      (item) => item.id || item.productId,
-    ),
+    matchedProductIds: matchedItems.map((item) => item.id || item.productId),
   }
 }
 
@@ -163,9 +141,7 @@ export function mapCampaign(campaign) {
     revenueGenerated: Number(campaign.revenueGenerated || 0),
     orderCount: Number(campaign.orderCount || 0),
     orderAttributions: Array.isArray(campaign.orderUsages)
-      ? campaign.orderUsages
-          .map(mapCampaignOrderUsage)
-          .filter(Boolean)
+      ? campaign.orderUsages.map(mapCampaignOrderUsage).filter(Boolean)
       : [],
     orderUsages: undefined,
   }

@@ -1,40 +1,50 @@
-
-
 import {
   createCampaign,
   deleteCampaignById,
   getAllCampaigns,
   getCampaignById,
+  getPublicCampaignPage,
+  getStorefrontCampaigns,
   previewCampaignDonations,
   updateCampaignById,
 } from '../services/campaigns.service.js'
 
-export async function getCampaignsController(
-  req,
-  res,
-  next,
-) {
+export async function getStorefrontCampaignsController(_req, res, next) {
+  try {
+    return res.json({ campaigns: await getStorefrontCampaigns() })
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export async function getPublicCampaignPageController(req, res, next) {
+  try {
+    const campaign = await getPublicCampaignPage(req.params.slug)
+    if (!campaign)
+      return res
+        .status(404)
+        .json({ message: 'This campaign page is not available.' })
+    return res.json({ campaign })
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export async function getCampaignsController(req, res, next) {
   try {
     const campaigns = await getAllCampaigns()
 
     return res.json({
       campaigns,
     })
-  }
-  catch (error) {
+  } catch (error) {
     return next(error)
   }
 }
 
-export async function getCampaignByIdController(
-  req,
-  res,
-  next,
-) {
+export async function getCampaignByIdController(req, res, next) {
   try {
-    const campaign = await getCampaignById(
-      req.params.campaignId,
-    )
+    const campaign = await getCampaignById(req.params.campaignId)
 
     if (!campaign) {
       return res.status(404).json({
@@ -45,81 +55,53 @@ export async function getCampaignByIdController(
     return res.json({
       campaign,
     })
-  }
-  catch (error) {
+  } catch (error) {
     return next(error)
   }
 }
 
-export async function createCampaignController(
-  req,
-  res,
-  next,
-) {
+export async function createCampaignController(req, res, next) {
   try {
     const campaign = await createCampaign(req.body)
 
     return res.status(201).json({
       campaign,
     })
-  }
-  catch (error) {
+  } catch (error) {
     return next(error)
   }
 }
 
-export async function updateCampaignController(
-  req,
-  res,
-  next,
-) {
+export async function updateCampaignController(req, res, next) {
   try {
-    const campaign = await updateCampaignById(
-      req.params.campaignId,
-      req.body,
-    )
+    const campaign = await updateCampaignById(req.params.campaignId, req.body)
 
     return res.json({
       campaign,
     })
-  }
-  catch (error) {
+  } catch (error) {
     return next(error)
   }
 }
 
-export async function deleteCampaignController(
-  req,
-  res,
-  next,
-) {
+export async function deleteCampaignController(req, res, next) {
   try {
-    await deleteCampaignById(
-      req.params.campaignId,
-    )
+    await deleteCampaignById(req.params.campaignId)
 
     return res.status(204).send()
-  }
-  catch (error) {
+  } catch (error) {
     return next(error)
   }
 }
 
-export async function previewCampaignsController(
-  req,
-  res,
-  next,
-) {
+export async function previewCampaignsController(req, res, next) {
   try {
-    const preview = await previewCampaignDonations(
-      req.body.cartItems || [],
-    )
+    const preview = await previewCampaignDonations(req.body.cartItems || [])
 
     return res.json({
       campaigns: preview,
     })
-  }
-  catch (error) {
+  } catch (error) {
     return next(error)
   }
 }

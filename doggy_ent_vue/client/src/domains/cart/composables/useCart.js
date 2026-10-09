@@ -34,7 +34,9 @@ export function useCart({
 
   function loadSavedCart() {
     try {
-      const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]')
+      const savedCart = JSON.parse(
+        localStorage.getItem(CART_STORAGE_KEY) || '[]',
+      )
       cart.value = Array.isArray(savedCart)
         ? savedCart.map(normalizeCartItem)
         : []
@@ -46,9 +48,13 @@ export function useCart({
   watch(
     cart,
     (updatedCart) => {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updatedCart))
+      try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updatedCart))
+      } catch {
+        // The in-memory cart remains usable when browser storage is unavailable.
+      }
     },
-    { deep: true }
+    { deep: true },
   )
 
   function addToCart(product, selectedSize) {
@@ -57,7 +63,7 @@ export function useCart({
     const quantityToAdd = product.quantity || 1
 
     const selectedVariant = product.variants?.find(
-      (variant) => variant.size === size
+      (variant) => variant.size === size,
     )
     if (!selectedVariant && product.variants?.length) return
 
@@ -66,14 +72,14 @@ export function useCart({
     if (!isPurchasable(product, selectedVariant)) return
 
     const price = Number(
-      selectedVariant?.price ||
-      product.price ||
-      product.variants?.[0]?.price ||
-      0
+      selectedVariant?.price ??
+        product.price ??
+        product.variants?.[0]?.price ??
+        0,
     )
 
     const existing = cart.value.find(
-      (item) => item.id === product.id && item.size === size
+      (item) => item.id === product.id && item.size === size,
     )
 
     if (existing) {
@@ -82,7 +88,7 @@ export function useCart({
       existing.quantity = limitQuantity(
         product,
         nextQuantity,
-        availableQuantity
+        availableQuantity,
       )
     } else {
       cart.value.push({
@@ -90,11 +96,7 @@ export function useCart({
         price,
         size,
         variant: selectedVariant || null,
-        quantity: limitQuantity(
-          product,
-          quantityToAdd,
-          availableQuantity
-        ),
+        quantity: limitQuantity(product, quantityToAdd, availableQuantity),
         availableQuantity,
         sellingMode: getSellingMode(product),
       })
@@ -105,22 +107,20 @@ export function useCart({
 
   function increase(id, size) {
     const item = cart.value.find(
-      (cartItem) => cartItem.id === id && cartItem.size === size
+      (cartItem) => cartItem.id === id && cartItem.size === size,
     )
 
     if (!item) return
 
-    const currentProduct = products.value.find(
-      (product) => product.id === id
-    )
+    const currentProduct = products.value.find((product) => product.id === id)
 
     const currentVariant = currentProduct?.variants?.find(
-      (variant) => variant.size === size
+      (variant) => variant.size === size,
     )
 
     const availableQuantity = getAvailableQuantity(
       currentProduct || item,
-      currentVariant
+      currentVariant,
     )
 
     const nextQuantity = item.quantity + 1
@@ -128,13 +128,13 @@ export function useCart({
     item.quantity = limitQuantity(
       currentProduct || item,
       nextQuantity,
-      availableQuantity
+      availableQuantity,
     )
   }
 
   function decrease(id, size) {
     const item = cart.value.find(
-      (cartItem) => cartItem.id === id && cartItem.size === size
+      (cartItem) => cartItem.id === id && cartItem.size === size,
     )
 
     if (!item) return
@@ -148,19 +148,19 @@ export function useCart({
 
   function remove(id, size) {
     cart.value = cart.value.filter(
-      (cartItem) => !(cartItem.id === id && cartItem.size === size)
+      (cartItem) => !(cartItem.id === id && cartItem.size === size),
     )
   }
 
   const subtotal = computed(() =>
     cart.value.reduce(
       (sum, item) => sum + Number(item.price) * item.quantity,
-      0
-    )
+      0,
+    ),
   )
 
   const itemCount = computed(() =>
-    cart.value.reduce((sum, item) => sum + item.quantity, 0)
+    cart.value.reduce((sum, item) => sum + item.quantity, 0),
   )
 
   return {

@@ -3,10 +3,12 @@ import { onMounted } from 'vue'
 import AdminPageHeader from '../components/AdminPageHeader.vue'
 import AdminMetrics from '../components/AdminMetrics.vue'
 import AdminIcon from '../components/AdminIcon.vue'
+import AdminOrderValueBadge from '../components/AdminOrderValueBadge.vue'
 import { ORDER_STATUSES } from '../constants/adminOrders.constants'
 import {
   formatAdminOrderDate,
   formatAdminOrderPrice,
+  getOrderValueTier,
 } from '../utils/adminOrders.utils'
 import { useAdminOrders } from '../composables/useAdminOrders'
 const {
@@ -105,7 +107,12 @@ onMounted(loadPageData)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in filteredOrders" :key="order.id">
+          <tr
+            v-for="order in filteredOrders"
+            :key="order.id"
+            class="admin-order-tier"
+            :style="{ '--order-tier-color': getOrderValueTier(order).color }"
+          >
             <td data-label="Order">
               <RouterLink
                 class="admin-link font-semibold"
@@ -135,8 +142,14 @@ onMounted(loadPageData)
                 >{{ order.status }}</span
               >
             </td>
-            <td data-label="Total" class="font-semibold">
-              {{ formatAdminOrderPrice(order.total) }}
+            <td data-label="Total">
+              <p
+                class="font-semibold"
+                :style="{ color: getOrderValueTier(order).color }"
+              >
+                {{ formatAdminOrderPrice(order.total) }}
+              </p>
+              <AdminOrderValueBadge :order="order" class="mt-2" />
             </td>
             <td data-label="Placed">
               {{ formatAdminOrderDate(order.createdAt) }}

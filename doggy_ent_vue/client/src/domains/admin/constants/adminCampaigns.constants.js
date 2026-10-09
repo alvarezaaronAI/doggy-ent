@@ -5,6 +5,7 @@ export const CAMPAIGN_STATUSES = Object.freeze({
   DRAFT: 'DRAFT',
   PAUSED: 'PAUSED',
   ENDED: 'ENDED',
+  ARCHIVED: 'ARCHIVED',
 })
 
 export const DONATION_TYPES = Object.freeze({
@@ -13,6 +14,7 @@ export const DONATION_TYPES = Object.freeze({
 })
 
 export const CAMPAIGN_STATUS_OPTIONS = Object.freeze([
+  { value: CAMPAIGN_STATUSES.ARCHIVED, label: 'Archived' },
   {
     value: CAMPAIGN_STATUSES.DRAFT,
     label: 'Draft',

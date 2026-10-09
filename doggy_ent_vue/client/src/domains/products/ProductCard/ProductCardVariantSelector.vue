@@ -14,23 +14,27 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits([
-  'select-size',
-])
+const emit = defineEmits(['select-size'])
 </script>
 
 <template>
-  <div class="flex items-center gap-2">
-    <button
-      v-for="variant in props.variants"
-      :key="variant.size"
-      class="rounded-full border px-3 py-1 text-xs font-extrabold transition"
-      :class="props.selectedSize === variant.size
-        ? 'border-emerald-400 bg-emerald-400 text-[var(--brand-4)]'
-        : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400'"
-      @click.stop="emit('select-size', variant.size)"
+  <div>
+    <p class="mb-2 text-xs store-muted">Bag size</p>
+    <div
+      class="flex flex-wrap items-center gap-2"
+      role="group"
+      :aria-label="`${product.name} bag size`"
     >
-      {{ variant.size }}
-    </button>
+      <button
+        v-for="variant in props.variants"
+        :key="variant.size"
+        type="button"
+        class="store-size"
+        :aria-pressed="props.selectedSize === variant.size"
+        @click.stop="emit('select-size', variant.size)"
+      >
+        {{ variant.size }}
+      </button>
+    </div>
   </div>
 </template>

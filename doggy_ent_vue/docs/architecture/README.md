@@ -1,6 +1,6 @@
 # Doggy Ent Architecture
 
-Last updated: 2026-06-15
+Last updated: 2026-10-09
 
 This directory documents how the Doggy Ent Vue storefront, admin dashboard, Express API, Prisma database, Stripe integration, and temporary local admin workflows fit together. It is evidence-based from the repository; future plans are labeled as future work.
 
@@ -35,12 +35,16 @@ flowchart LR
 
 - Product variants and storefront selected card size state: `client/src/domains/products/composables/useProductVariants.js`
 - Cart item creation and local cart state: `client/src/domains/cart/composables/useCart.js`
-- Product API mapping: `server/src/domains/products/mappers/products.mapper.js`
+- Product API mapping: `server/src/domains/products/mappers/products.mapper.js` (server response); `client/src/domains/products/mappers/product.mapper.js` (variant cents-to-display-currency boundary)
+- Product variant ordering: `client/src/domains/products/utils/productVariants.js`; selection/availability: `useProductVariants.js`
 - Checkout pricing: `server/src/domains/checkout/utils/checkoutPricing.js`
 - Checkout orchestration: `server/src/domains/checkout/services/checkout.service.js`
 - Promo statuses and rules: `server/src/domains/promos/constants/promos.constants.js`, `client/src/domains/promos/constants/promo.constants.js`
 - Promo server normalization and validation: `server/src/domains/promos/services/promos.service.js`, `server/src/domains/promos/validators/promos.validator.js`
 - Campaign statuses and donation rules: `server/src/domains/campaigns/constants/campaigns.constants.js`, `server/src/domains/campaigns/services/campaigns.service.js`
+- Public campaign privacy/visibility: `server/src/domains/campaigns/mappers/publicCampaign.mapper.js`, `repositories/campaigns.repository.js`
+- Public campaign page and admin visual editor: one `client/src/domains/campaigns/components/CampaignPageContent.vue` renderer, composed by `CampaignView.vue` and `AdminCampaignForm.vue`
+- Public brand story: `client/src/domains/storefront/constants/brandContent.js` owns `/meet-chase-evie`, existing story copy, names, template images, and values. `BrandView.vue` composes shared storefront/cart components; `utils/socialLinks.js` owns safe footer destinations/placeholders.
 - Order statuses, admin labels, and persisted status history: `client/src/domains/admin/constants/adminOrders.constants.js`, `server/src/domains/orders/constants/orders.constants.js`, `server/prisma/schema.prisma`
 - Admin auth/session: `server/src/domains/auth/services/auth.service.js`, `server/src/domains/auth/routes/auth.routes.js`
 - Customer auth/session and Better Auth Infrastructure dashboard connection: `server/src/domains/auth/services/customerAuth.service.js`, `client/src/domains/account/api/authClient.js`, `server/src/domains/account/*`, `client/src/domains/account/*`
@@ -60,6 +64,12 @@ flowchart LR
 | Vercel storefront | Vercel build/deploy | Deployed API origin from `VITE_API_BASE_URL` or `VITE_API_URL` | Railway DB | Production storefront/checkout |
 
 No real environment values should be committed or documented. See [admin.md](./admin.md) and [auth-roadmap.md](./auth-roadmap.md) for variable names only.
+
+## Calm Giving Deployment State
+
+The fluid storefront and campaign page/editor implementation is local source work, not deployed code. The additive campaign public-page migration is applied on both local and Railway databases as of 2026-10-09, with explicit user authorization for Railway. Existing campaigns default to private public-page visibility; contribution eligibility is unchanged. See [database.md](./database.md) and the latest section of [PROJECT_HANDOFF.md](../../PROJECT_HANDOFF.md). No new environment variables, dependencies, or auth/payment flows were introduced.
+
+The later homepage/story follow-up and approved baseline implementation add no API/schema/auth/payment changes or dependencies. The approved unframed hero now uses a neutral gray readability tint; the Add to Cart interaction remains a right-side drawer, with explicit onward checkout navigation. Optional public social profile variables are documented in the latest [handoff](../../PROJECT_HANDOFF.md). Real imagery/content and deployed device/Safari checks still need manual review.
 
 ## Mermaid Verification
 

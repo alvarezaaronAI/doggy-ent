@@ -117,7 +117,56 @@ The 2026-10-08 connected admin UI was checked with fixture-intercepted browser A
 
 No automated check may send a real customer email, buy a label, or mutate Railway. Use approved test data and explicit provider approval for live QA. Full command results, known failures fixed, dependency audit findings, and migration caveats are in [PROJECT_HANDOFF.md](../PROJECT_HANDOFF.md).
 
-## Provider Verification
+## Calm Workspace Investigation QA
+
+- Confirm actionable account/admin controls have resting gray borders/backgrounds, visible hover/focus, working disabled states, and no horizontal overflow at 320/390/768/1024/1440 px. Static stats/placeholders must not imply click behavior.
+- Orders: verify Standard/Gold/Platinum/Diamond/Gem boundaries, labels, row accents, amount/badge colors; these are order-value tiers, not customer loyalty.
+- Order detail: inspect saved timestamps/IDs/items/usage/shipment/history/delivery/support data. Save a permitted test status/tracking change and ensure the protected read refreshes the inspector. If GET fails after Save, do not retry the completed write blindly.
+- Configure a Stripe payments base using an approved account; verify dynamic `pi_` IDs, test/live labeling, Save/Cancel/reload persistence, invalid-host rejection, missing ID behavior, and the correct Stripe account after opening the link. Do not use API keys/client secrets as link settings.
+- Customers: same-name records must remain distinguishable by full email/ID. Search by ID, click a non-name cell, Tab/Enter the real link, and confirm the correct customer. Selecting email/ID text should not navigate.
+- Confirm customer account pages never show internal record inspectors or Stripe IDs. Confirm unauthenticated/customer-only sessions receive 401 on admin detail endpoints. No credentials/token/raw provider metadata may be returned.
+- Real database persistence, Safari/private-storage behavior, and authenticated Stripe dashboard navigation remain manual checks; browser fixtures do not establish those results.
+
+## Calm Giving QA
+
+Automated tests cover deterministic active variant ordering, zero-price handling, selected-size cart payloads, campaign payload/ISO precision, public field allowlisting, active windows/featured priority, stable slugs, invalid publication content/URLs/dates/rules, and unauthenticated public versus admin routes.
+
+Fixture browser checks exercise home/campaign/editor at 1440/1280/1024/768/390/320 widths, all homepage areas, 6 oz/18 oz add-to-cart and quick view, stable featured content, non-clickable featured image/title, retained cart into a stubbed checkout preview, mobile navigation, account hover buffer, same public/editor typography/colors, explicit Save/Cancel, failed-save draft retention, unavailable/paused campaigns, and campaign hero images. Existing eleven-tab admin, seven-tab account, and internal-record regression harnesses also run with intercepted APIs. These are not live session/payment/provider tests.
+
+Manual next checks:
+
+1. Restart the chosen local backend mode, confirm the data-target badge and network origin, then use approved test data. Never switch DB target in the running UI.
+2. Enable a reviewed campaign page with introduction, beneficiary, optional story/image/HTTPS link, and required image description. Save/reload every field and inspect the public route on actual desktop/mobile/Safari.
+3. Check Draft/Archived privacy, disabled page with continued eligible giving, Active schedule boundaries, Paused/Ended wording, stable link after rename, and multiple matched campaigns. Confirm generated contribution is not described as paid out.
+4. Check real product imagery/ingredients/storage, 6 oz/18 oz price/availability/cart/checkout, product filter choices, featured behavior, Next Drops, every retained section, keyboard focus and reduced motion. Approve actual brand/product assets and verified review content separately.
+5. Run one approved Stripe test checkout as guest and signed-in, including promo plus eligible campaign. Verify server totals, a single order, once-only inventory/usage, success page, and account ownership. No live payment is required.
+6. Deploy reviewed server then matching frontend, check direct `/campaigns/:slug` route on Vercel and public API on deployed Railway. Migration completion alone does not deploy application code.
+
+Campaign schema migration was explicitly approved and applied to Railway in this phase, after preflight; automated browser/tests did not write Railway business records. No real emails, labels, or payments were performed. See the latest [handoff](../PROJECT_HANDOFF.md) section for commands and precise results.
+
+## Homepage And Brand Follow-Up QA
+
+Automated checks use the actual Vue section components in SSR tests plus isolated browser fixture APIs. They verify hero escaping/actions and actual featured-product content, upcoming loading/error/empty/product branches, safe social destinations, both cart variants, persisted cart/search across the brand route, stubbed checkout preview, all nine home anchors, footer links/placeholders, image-error fallbacks, mobile navigation, and header auth state. Existing campaign/editor/variant regression checks are rerun. No real email/payment/subscription/customer/DB mutation occurs.
+
+Manual next checks:
+
+1. Compare the approved photo-led hero with its neutral gray tint, footer, generous seasonal cards, and all retained home sections on actual desktop/mobile/Safari. The baseline preview was approved; real-device visual/content QA remains separate.
+2. Click hero shopping/ingredient/story links, desktop/mobile Meet the Brand, footer story link, and upcoming Preview. Confirm targets match the actual featured product and notices do not offer purchase/subscription before launch.
+3. Add 6 oz/18 oz, navigate home -> story -> shop -> checkout, and confirm selected prices/cart/preview remain correct. Recheck signed-in header and the actual Safari session separately.
+4. Review the preserved short brand narrative; replace illustrative portraits with real approved photos and test image-failure states. Do not present template photos as actual Chase/Evie or customer proof.
+5. Confirm approved Instagram destination/new-tab behavior. TikTok/YouTube placeholders must not jump to `#` or pretend to have real profiles. Optional public social variables need a new Vite build after changes.
+6. After reviewed deployment, load `/meet-chase-evie` directly on Vercel and run one approved guest/signed-in Stripe test checkout with promo plus campaign. This UI follow-up requires no new migration or backend variables.
+
+Exact commands/results and remaining deployment risks are in the latest [handoff](../PROJECT_HANDOFF.md). Standard Stripe local-HTTP development warnings are recorded separately from actual Vue/runtime errors.
+
+### Approved Baseline And Cart Regression Checks
+
+- Client SSR tests verify actual selected-size/unit/line prices, SKU and unique action labels, disabled inventory-limit increase, the separate `/checkout` link, labelled open dialog/inert closed drawer, and honestly identified gallery templates.
+- Isolated dialog tests cover scroll locking/restoration, initial/opener focus, Tab in both directions, hidden-control exclusion, outside focus containment, Escape, removal focus recovery, and unmount cleanup. These are not full browser accessibility certification.
+- Local browser QA should check all nine home anchors and actual 6 oz/18 oz prices/availability, featured Add to Cart, Quick View handoff, quantity/removal, close/backdrop/Continue Shopping, desktop 420 px and mobile full-width drawer, short-height landscape footer scrolling, retained bag across story/account routes, and short-screen hero content. Never clear a user's saved bag for QA; restore only temporary items/quantities added by the check.
+- Recheck campaign-green cards with an eligible campaign, signed-in customer headers, Safari touch/keyboard behavior, screen readers/reduced motion, and approved guest/signed-in Stripe test checkout after reviewed deployment. Local UI checks and unit tests do not establish those live results. No provider sends, real payments, DB writes, or migrations are required by this styling pass.
+
+## Provider Verification Rules
 
 Do not stop after the first failed provider test.
 

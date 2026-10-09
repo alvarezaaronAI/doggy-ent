@@ -1,6 +1,6 @@
 # Data Flow Maps
 
-Last updated: 2026-06-15
+Last updated: 2026-10-09
 
 ## Overall Request Flow
 
@@ -25,7 +25,7 @@ flowchart TB
 3. `client/src/shared/api/http.js` builds the API URL from `VITE_API_BASE_URL` or `VITE_API_URL`, sends credentials, and rejects non-JSON deployment errors clearly.
 4. `server/src/domains/products/routes/products.routes.js` routes to `products.controller.js`.
 5. `products.service.js` reads Prisma products and variants.
-6. `products.mapper.js` returns storefront-safe product objects with variant prices normalized from cents to display currency.
+6. The server `products.mapper.js` returns product objects; variant prices remain stored/API cents (only the legacy root price is converted there). The client `products/mappers/product.mapper.js` converts variant cents to display currency exactly once and derives the starting price from the first ordered active variant. `products/utils/productVariants.js` orders 6 oz then 18 oz deterministically without mutating API rows. This keeps database return order from changing size selection or price presentation.
 
 ## Product Card Add To Cart
 
@@ -39,7 +39,7 @@ flowchart TB
 
 ## Quick View Add To Cart
 
-1. `ProductQuickView.vue` owns its `selectedSize` and `quantity` refs.
+1. `ProductQuickView.vue` owns local `selectedSize` and `quantity` refs, initialized from the card's selected size when valid, otherwise the first ordered active variant.
 2. Its `selectedVariant` comes from `useProductVariants().getVariantBySize(product, selectedSize)`.
 3. `addProductToCart()` emits a shaped payload with `size`, selected variant `price`, `sku`, `quantity`, and available quantity.
 4. `HomeView.vue` calls `addToCart($event, $event.size)`.
@@ -47,10 +47,10 @@ flowchart TB
 
 ## Featured Product Add To Cart
 
-1. `ProductSpotlightSection.vue` owns `selectedSize`.
-2. Size buttons update `selectedSize`.
-3. Price and stock label derive from `selectedVariant`.
-4. Add to Cart emits a shaped payload with selected size and price.
+1. `HomeView.vue` selects the featured item from the unfiltered active catalog, independent of search/sort.
+2. `ProductSpotlightSection.vue` receives the same per-product selected size used by the product card; size buttons emit to the parent `useProductVariants` source of truth.
+3. Price and stock label derive from the selected variant, using nullish defaults so zero is not replaced by another size's price.
+4. Add to Cart emits the product and explicit selected size; `useCart` resolves the corresponding variant. Cart persistence failures keep in-memory shopping usable.
 5. The featured image and title are not navigation click targets; only size controls and Add to Cart are intended controls.
 
 ## Checkout And Payment
@@ -113,12 +113,14 @@ Key files:
 
 ## Campaign Flow
 
-1. Campaigns are read from `client/src/domains/campaigns/api/campaigns.api.js`.
-2. Server campaign routes are mounted at `/api/campaigns` and `/api/admin/campaigns`.
-3. Campaign service/repository code manages active/paused/ended lifecycle, product links, donation calculations, and admin CRUD.
-4. Checkout preview includes campaign donation impact when cart items match active campaign product IDs.
-5. Order creation records campaign usage server-side with `OrderCampaignUsage` rows tied to the created order.
-6. Campaign admin responses include recent attributed orders when attribution rows exist.
+1. `publicCampaigns.api.js` calls `GET /api/campaigns/public` for active/scheduled-eligible badge summaries and `GET /api/campaigns/public/:slug` for a public page. Public routes precede the admin `/:campaignId` route. All management routes still require admin auth.
+2. The public service filters schedule/status and prioritizes featured campaigns. `publicCampaign.mapper.js` allowlists customer-safe fields; it does not return internal revenue, order count, usage/attribution records, emails, or arbitrary private fields.
+3. Active giving is independent of public-page visibility. Legacy campaigns can tint an eligible product and show a plain badge without a page link. Slug page reads require `publicPageEnabled` and Active/Paused/Ended status; Draft/Archived are excluded by the repository. Renames retain the slug.
+4. `useStorefrontCampaigns` supplies product-matched badges without blocking catalog loads on error. `useCampaignPage` sequences slug requests so a stale response cannot replace the latest page.
+5. `CampaignView.vue` composes the existing header/auth/search/cart/quick view and `CampaignPageContent.vue`. The renderer shows introduction/image, beneficiary, optional story, giving/schedule/generated impact, and active eligible products. Paused/ended pages explain that purchases do not currently contribute. Generated impact is not proof of payout.
+6. `AdminCampaignForm.vue` uses the same renderer with section edit handles and inert product actions. `AdminCampaignSectionFields.vue` updates a draft; mappers create the canvas model and ISO request payload; validators check before an explicit Save. Server validation applies on both create and update. No automatic persistence or separate preview implementation exists.
+7. Checkout still uses the existing campaign API/service. Eligible fixed contributions apply once per order; percentage contributions use eligible subtotal before promo discounts. Giving is business-funded, not an added customer charge, and can coexist with promos. These financial calculations were not changed by the UI phase.
+8. Verified order creation records campaign usage server-side with `OrderCampaignUsage` rows and its existing order/campaign uniqueness. Admin responses continue to include protected recent attributed orders. The new public content fields do not alter attribution or inventory logic.
 
 ## Order Flow
 
@@ -399,6 +401,20 @@ sequenceDiagram
 ```
 
 Better Auth customer accounts are already implemented. A future, explicitly approved admin-auth migration may replace custom admin sessions while preserving the dashboard. Loyalty, referrals, and expanded permissions remain future work.
+
+## Public Brand Story And Homepage Presentation
+
+The public `/meet-chase-evie` route lazily loads `BrandView.vue`. Router, desktop/mobile header, home teaser/hero, and footer consume `BRAND_STORY_PATH`; no duplicate URL literal is needed in UI components. `brandContent.js` supplies existing narrative, names, values, and explicitly illustrative photographs to both teaser and story page.
+
+The page reads the catalog through `useProducts()` for the existing variant/inventory-aware cart helpers. It hydrates the same browser cart storage as home/account/campaign views, uses the shared search composable and customer auth header, and has no brand-specific backend API. Cart display is not authoritative checkout pricing; navigating onward uses the existing server-owned checkout preview.
+
+Home passes its actual featured product into HeroSection and ProductSpotlightSection. Hero introduction/tags/shop link therefore follow the featured product, not a hardcoded protein. NextDropsSection consumes the existing coming-soon list/loading/error props and emits Preview/Retry to Home; it does not fetch products or save subscriptions itself. ComingSoonCard reuses ProductCardInfo rather than duplicating category/tag/description/protein rendering. Notify Me remains disabled, with no provider write.
+
+The approved baseline adds bundled illustrative JPEGs via `brandContent.js` for the hero/story teaser/gallery only. It does not replace admin-managed catalog images with sample assets or copy the preview's mock cart/prices into Vue. `home.css` controls homepage bands/short-screen spacing; shared storefront styles add individual-card depth without changing campaign matching.
+
+The existing `useCart.addToCart(product, selectedSize)` opens CartDrawer in place. `useCartDrawerDialog.js` owns only dialog focus/keyboard/scroll lifecycle, including recovery when a removed item destroys its focused button. It has no API, storage, quantity, price, or payment responsibility. CartItemCard emits existing quantity/removal events; CartSummary displays the existing subtotal and sends the customer to `/checkout` only on the explicit checkout link. Closing/restoring focus or navigating away releases scroll locking. Auth/customer ownership and server-owned checkout calculations are unchanged.
+
+Footer reads optional public social variables through a platform/HTTPS validator. The user-approved Instagram destination is the default; TikTok/YouTube remain disabled unless valid profile destinations are supplied. None of these edits change Stripe, promo/campaign attribution, order creation, auth guards, DB target selection, or database schema.
 
 ## Calm Essentials Account UI Flow
 

@@ -140,6 +140,7 @@ export function getOrderValueTier(order) {
       label: '💎 Gem order',
       className: 'bg-fuchsia-100 text-fuchsia-700',
       amountClassName: 'text-fuchsia-700',
+      color: '#a21caf',
     }
   }
 
@@ -148,6 +149,7 @@ export function getOrderValueTier(order) {
       label: '♦ Diamond order',
       className: 'bg-cyan-100 text-cyan-700',
       amountClassName: 'text-cyan-700',
+      color: '#0e7490',
     }
   }
 
@@ -156,6 +158,7 @@ export function getOrderValueTier(order) {
       label: '✦ Platinum order',
       className: 'bg-slate-200 text-slate-700',
       amountClassName: 'text-slate-700',
+      color: '#475569',
     }
   }
 
@@ -164,6 +167,7 @@ export function getOrderValueTier(order) {
       label: '★ Gold order',
       className: 'bg-yellow-100 text-yellow-700',
       amountClassName: 'text-yellow-700',
+      color: '#854d0e',
     }
   }
 
@@ -171,5 +175,6 @@ export function getOrderValueTier(order) {
     label: 'Standard order',
     className: 'bg-stone-100 text-stone-600',
     amountClassName: 'text-[var(--brand-4)]',
+    color: '#57534e',
   }
 }

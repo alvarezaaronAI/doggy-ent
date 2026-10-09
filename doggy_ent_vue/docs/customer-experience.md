@@ -2,6 +2,35 @@
 
 This document governs customer account, profile, order, checkout, shipping, and support experiences. Preserve guest checkout and the storefront’s existing brand feel.
 
+## Calm Giving Storefront
+
+Implemented 2026-10-09. Home retains the hero, featured product, collection, Next Drops, Happy Pups/social proof area, Made With Care, Ingredient Promise, Meet the Brand, and shopping help. Sections are fluid full-width bands with a constrained inner layout; yellow, blue, brown, and oat brand accents remain. Emerald tints identify products in currently eligible campaigns, not every product.
+
+- Header, cart, search, and customer auth are shared with account and campaign routes. Desktop account hover has a buffered path and delayed close; clicking pins the menu. Mobile navigation supports Escape and closes after navigation.
+- Product sizes use deterministic 6 oz then 18 oz ordering. Product cards and featured content share per-product selection; quick view starts from that selection. Price and cart payload come from the selected variant, while final totals remain server-owned. Featured content is independent of catalog search/sort and its image/title are not click targets.
+- Campaign badges link to `/campaigns/:slug` only when the public page is enabled. Legacy giving can remain active without a public page. Campaign data failure is separate from catalog failure and does not prevent shopping.
+- Campaign pages lead with an introduction, beneficiary, story, contribution explanation, and eligible treats. Generated contributions are not confirmed payouts. Business-funded giving is not an extra donation charged to the customer. Paused/ended pages explain that ordinary purchases do not currently contribute.
+- Ingredients/storage copy uses stored product content. No invented nutrition analysis, free-shipping threshold, verified reviews, notification subscription, or social destinations are presented as working features. Happy Pups retains the gallery and explicitly labels verified reviews as future work; business-approved product/brand photos are still a content QA requirement.
+
+See [data flow](architecture/data-flow.md) and [verification](verification-and-qa.md) for source-of-truth boundaries and real-data QA.
+
+### Homepage And Brand Follow-Up
+
+The approved 2026-10-09 baseline implementation retains recognizable section boundaries, larger headings, blue rules, warm/white reading bands, and the original seven-link footer navigation. All nine homepage anchors remain. The photo-led hero uses unframed white text, a neutral gray readability tint, stored product tags, a yellow shopping action, outlined ingredient action, and supporting shopping links. This supersedes the earlier frosted treatment after approval of the interactive preview. Its layout grows with content rather than cropping controls inside a fixed-height container.
+
+- `/meet-chase-evie` is a public story page, not an FAQ or account page. Home teaser/hero, desktop/mobile header, and footer link there. Origin copy and the two names reuse existing repository content; template photography is identified, without invented dog biographies or verified-customer claims.
+- The page reuses SiteHeader, SiteFooter, shared search/auth state, cart persistence, and catalog-aware cart helpers. Shopping links return to the real collection/ingredient section. No backend endpoint or customer identity flow was added.
+- Hero product copy/tags/primary destination read the same featured product as the featured section. It does not hardcode Chicken Jerky when another product is featured. Loading/empty catalog fallback remains ordinary shopping.
+- Next Drops distinguishes loading, failure/retry, and an actually empty list. Upcoming cards again show stored category, tags, description, protein/cut, a Coming Soon notice, and functional Preview. Notify Me is disabled with future-phase copy; it does not open Preview or claim to subscribe a customer.
+- Footer uses the user-approved Instagram profile. TikTok/YouTube are disabled, labeled placeholders until real destinations are supplied. Optional public `VITE_INSTAGRAM_URL`, `VITE_TIKTOK_URL`, and `VITE_YOUTUBE_URL` can override destinations; only valid HTTPS links on the intended platforms are enabled.
+- No unsupported human-grade certification, free-shipping threshold, delivery guarantee, return promise, or nutrition analysis was restored from reference images. Campaign green accents, selected variant/cart behavior, checkout totals, auth, and admin remain unchanged.
+
+Next Drops now has a full-width introduction followed by two generous product columns on larger screens and one column on mobile. Soft shadows distinguish individual product items, featured media, gallery images, and care steps; entire page sections are not floating cards. Hero/gallery template JPEGs are bundled locally through `brandContent.js`; product images, variants, prices, stock, and campaign eligibility remain API-owned. Template photos are not actual portraits or customer reviews.
+
+Add to Cart continues to open a right-side drawer over the current page, not a cart or checkout route. It is 420 px wide on desktop and fits the viewport on mobile. Quantity/removal/selected price remain driven by the existing cart composable. The drawer has a labelled dialog, Escape/backdrop close, contained keyboard focus, opener restoration, background scroll locking, and focus recovery after removing a row. On short landscape screens, the entire drawer content scrolls under a sticky close/header so footer actions cannot be clipped. Secure Checkout alone navigates to the existing `/checkout` page; the drawer never calculates finalized tax/shipping/discount/payment totals.
+
+Real Chase/Evie portraits and business-approved expanded story content remain a manual content phase. These UI edits are not deployed automatically. The user approved the unframed baseline preview; final real-device/Safari and business imagery review still remain.
+
 ## Customer Account Overview
 
 Redesign the account home as a clear navigation hub when customer account work is in scope.
@@ -204,3 +233,7 @@ Implemented on 2026-10-08 after approval of the complete seven-tab preview.
 - Header/sidebar sign-out leaves protected account content and destroys the cached order view.
 
 Browser fixture QA passed at 1440, 1280, 1024, 768, and 390 pixel widths. Real-account persistence, Safari sessions, production deployment, and end-to-end checkout still require manual QA; fixtures do not verify those external systems.
+
+### 2026-10-09 Action Visibility Refinement
+
+Account navigation, links, edit buttons, order/month selections, recent-order links, and dialog controls now have restrained gray surfaces/borders even before hover. Green selected/primary states and focus outlines remain. The approved layout, shared storefront cart/auth/search, customer-safe order details, and Save/Cancel flows are unchanged. Internal record inspectors and Stripe links exist only in admin, never in customer account pages.

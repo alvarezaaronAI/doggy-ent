@@ -1,11 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --brand-1: #2F57B7; /* Blue ring - primary */
-  --brand-2: #F2DE5C; /* Yellow label - secondary */
-  --brand-3: #CDAA7E; /* Kraft bag - accent */
-  --brand-4: #6A3C2B; /* Cacao center - heading color */
-  --brand-5: #F3E8D2; /* Oat - neutral base */
+  --storefront-brand-1: #2F57B7;
+  --storefront-brand-2: #F2DE5C;
+  --storefront-brand-3: #CDAA7E;
+  --storefront-brand-4: #6A3C2B;
+  --storefront-brand-5: #F3E8D2;
+  --brand-1: var(--storefront-brand-1); /* Blue ring - primary */
+  --brand-2: var(--storefront-brand-2); /* Yellow label - secondary */
+  --brand-3: var(--storefront-brand-3); /* Kraft bag - accent */
+  --brand-4: var(--storefront-brand-4); /* Cacao center - heading color */
+  --brand-5: var(--storefront-brand-5); /* Oat - neutral base */
 
   --section-panel-radius: 1.5rem;
   --section-panel-padding: clamp(1rem, 1.8vw, 1.5rem);

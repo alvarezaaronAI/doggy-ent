@@ -1,92 +1,84 @@
 <script setup>
+import ProductCardImage from './ProductCardImage.vue'
+import ProductCardInfo from './ProductCardInfo.vue'
+import { Eye, Bell } from '@lucide/vue'
 const props = defineProps({
-  product: {
-    type: Object,
-    required: true,
-  },
-  getDisplayTags: {
-    type: Function,
-    required: true,
-  },
+  product: { type: Object, required: true },
+  getDisplayTags: { type: Function, default: () => [] },
 })
-
 const emit = defineEmits(['preview'])
 </script>
-
 <template>
-  <article
-    class="tile-strong flex h-full min-h-[450px] cursor-pointer flex-col overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-2xl"
-    role="button"
-    tabindex="0"
-    @click="emit('preview', props.product)"
-    @keydown.enter="emit('preview', props.product)"
-    @keydown.space.prevent="emit('preview', props.product)"
-  >
-    <img
-      class="h-44 w-full flex-shrink-0 object-cover transition hover:opacity-90"
-      :src="props.product.image"
-      :alt="props.product.name"
+  <article class="store-product store-upcoming flex h-full flex-col">
+    <ProductCardImage
+      :product="product"
+      @quick-view="emit('preview', product)"
     />
-
-    <div class="flex flex-1 flex-col p-4">
-      <div>
-        <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
-          {{ props.product.category }}
-        </p>
-
-        <h3 class="mt-2 text-xl font-semibold transition hover:text-emerald-400">
-          {{ props.product.name }}
-        </h3>
-      </div>
-
-      <div class="mt-3 flex min-h-[28px] flex-wrap gap-2">
-        <span
-          v-for="tag in props.getDisplayTags(props.product).slice(0, 2)"
-          :key="tag"
-          class="rounded-full bg-[color-mix(in_srgb,var(--brand-2)_88%,white)] px-3 py-1 text-[11px] font-extrabold text-[var(--brand-4)] shadow-sm"
-        >
-          {{ tag }}
-        </span>
-      </div>
-
-      <p class="mt-3 min-h-[48px] text-sm text-stone-300">
-        {{ props.product.shortDescription }}
-      </p>
-
-      <p class="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">
-        {{ props.product.protein }}
-        <span v-if="props.product.cut"> • {{ props.product.cut }}</span>
-      </p>
-
-      <div class="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--brand-3)_35%,white)] bg-[color-mix(in_srgb,var(--brand-5)_62%,white)] p-3">
-        <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-emerald-400">
-          Coming Soon
-        </p>
-
-        <h4 class="mt-1 text-base font-extrabold text-[var(--brand-4)]">
-          This product is not available yet
-        </h4>
-
-        <p class="mt-1 text-sm leading-relaxed text-stone-300">
-          Pricing, sizes, and launch details will be announced when this treat goes live.
+    <div class="flex flex-1 flex-col p-5">
+      <ProductCardInfo
+        :product="product"
+        :tags="props.getDisplayTags(product)"
+      />
+      <div class="upcoming-notice mt-5">
+        <p class="store-eyebrow">Coming Soon</p>
+        <h4 class="mt-2 font-bold">This product is not available yet</h4>
+        <p class="store-muted mt-2 text-sm leading-relaxed">
+          Pricing, sizes, and launch details will be announced when this treat
+          goes live.
         </p>
       </div>
-
-      <div class="mt-auto flex items-center justify-between gap-2 pt-5">
+      <div
+        class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5"
+      >
         <button
-          class="rounded-lg border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-400 hover:bg-stone-900"
-          @click.stop="emit('preview', props.product)"
+          type="button"
+          class="store-button upcoming-preview"
+          :aria-label="'View upcoming treat: ' + product.name"
+          @click="emit('preview', product)"
         >
-          Preview
+          <Eye :size="18" /> Preview
         </button>
-
         <button
-          class="focus-ring rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-          @click.stop="emit('preview', props.product)"
+          type="button"
+          class="store-button store-button-primary"
+          disabled
+          :aria-describedby="'notify-help-' + product.id"
         >
-          Notify Me
+          <Bell :size="18" /> Notify Me
         </button>
       </div>
+      <p :id="'notify-help-' + product.id" class="store-muted mt-3 text-xs">
+        Launch notifications: coming in a future phase.
+      </p>
     </div>
   </article>
 </template>
+
+<style scoped>
+.store-upcoming {
+  border-color: #d8c6ab;
+  box-shadow: 0 10px 28px rgba(67, 46, 27, 0.11);
+}
+.store-upcoming :deep(.store-eyebrow) {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.store-upcoming :deep(.store-product-tag) {
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--brand-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+.upcoming-notice {
+  margin-inline: -20px;
+  padding: 18px 20px;
+  border-block: 1px solid #e6d9c3;
+  background: #fbf5e6;
+}
+.upcoming-preview {
+  border-color: var(--brand-1);
+  color: var(--brand-1);
+  background: white;
+}
+</style>

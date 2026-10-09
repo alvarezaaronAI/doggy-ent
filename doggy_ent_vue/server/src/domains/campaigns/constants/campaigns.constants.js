@@ -3,6 +3,7 @@ export const CAMPAIGN_STATUS = {
   ACTIVE: 'ACTIVE',
   PAUSED: 'PAUSED',
   ENDED: 'ENDED',
+  ARCHIVED: 'ARCHIVED',
 }
 
 export const CAMPAIGN_DONATION_TYPE = {

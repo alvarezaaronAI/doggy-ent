@@ -1,3 +1,6 @@
+import { mapAdminCustomerRecord } from './adminCustomerRecord.mapper.js'
+import { mapEmailDelivery } from '../../emails/mappers/emailDelivery.mapper.js'
+
 function toNumber(value) {
   return Number(value || 0)
 }
@@ -41,18 +44,20 @@ export function mapAdminCustomerDetail(user) {
   }
 
   const listItem = mapAdminCustomerListItem(user)
+  const internalRecord = mapAdminCustomerRecord(user)
 
   return {
     ...listItem,
-    profile: user.profile || null,
-    notificationPreference: user.notificationPreference || null,
+    internalRecord,
+    profile: internalRecord.profile,
+    notificationPreference: internalRecord.notificationPreference,
     orders: user.orders || [],
     matchedGuestOrders: user.matchedGuestOrders || [],
-    emailDeliveries: user.emailDeliveries || [],
-    events: user.events || [],
-    supportRequests: user.supportRequests || [],
-    reviews: user.reviews || [],
-    loyaltyLedger: user.loyaltyLedger || [],
+    emailDeliveries: (user.emailDeliveries || []).map(mapEmailDelivery).filter(Boolean),
+    events: internalRecord.accountEvents,
+    supportRequests: internalRecord.supportRequests,
+    reviews: internalRecord.reviews,
+    loyaltyLedger: internalRecord.loyaltyLedger,
     readiness: {
       deactivateReactivate: true,
       resendVerification: 'Email provider abstraction is ready; delivery provider is not configured.',

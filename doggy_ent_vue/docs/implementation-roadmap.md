@@ -1,5 +1,13 @@
 # Implementation Roadmap
 
+## 2026-10-09 Calm Giving Status
+
+The approved fluid storefront, deterministic variant display/selection, emerald giving cards, public campaign page, and shared visual campaign editor are connected. All original homepage content areas remain; unsupported reviews, nutrition values, notification actions, social links, and free-shipping claims were removed or labeled honestly.
+
+Campaign migration `20261009000000_campaign_public_page` is applied on local and Railway databases. Railway application was explicitly authorized by the user; preflight verified it was the only pending migration, with no failed migrations or checksum drift. All eighteen repository migrations now match Railway. Older notes saying support/Better Auth migrations are unconfirmed are historical, superseded by this check.
+
+Next gate: review the combined dirty tree, deploy server/client code through the normal approved process, enable only reviewed campaign pages, then run real-admin/Safari and guest/signed-in checkout QA with approved test data. Database migration does not deploy code. No commit/push, email, label, or payment was performed. Dependency security remediation, business-approved imagery/reviews, provider QA, pagination, reconciled reports, and manual email-template work remain separate phases.
+
 ## 2026-10-08 Calm Workspace UI Status
 
 The approved admin workspace UI is connected across all eleven existing tools. Shared navigation/identity/data routing, focused catalog/promo/campaign editors, order/customer detail, issue histories, delivery/shipment views, and truthful operational reports are in place. Existing custom admin auth and server contracts are preserved.

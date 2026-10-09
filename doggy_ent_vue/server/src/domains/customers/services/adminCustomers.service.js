@@ -8,9 +8,6 @@ import {
   findRecentEmailDeliveries,
 } from '../../emails/repositories/emailDelivery.repository.js'
 import {
-  mapEmailDelivery,
-} from '../../emails/mappers/emailDelivery.mapper.js'
-import {
   mapAdminCustomerDetail,
   mapAdminCustomerListItem,
 } from '../mappers/adminCustomers.mapper.js'
@@ -45,8 +42,7 @@ async function buildCustomerDetail(user) {
   return mapAdminCustomerDetail({
     ...user,
     matchedGuestOrders,
-    emailDeliveries:
-      emailDeliveries.map(mapEmailDelivery).filter(Boolean),
+    emailDeliveries,
   })
 }
 

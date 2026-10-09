@@ -10,7 +10,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['add-to-cart', 'notify'])
+const emit = defineEmits(['add-to-cart'])
 </script>
 
 <template>
@@ -25,10 +25,9 @@ const emit = defineEmits(['add-to-cart', 'notify'])
 
   <button
     v-else
+    disabled
     class="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
-    @click="emit('notify')"
   >
-    <i class="fa-solid fa-bell"></i>
-    Notify Me When Available
+    Unavailable
   </button>
 </template>

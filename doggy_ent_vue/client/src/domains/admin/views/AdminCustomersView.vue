@@ -54,7 +54,7 @@ onMounted(loadCustomers)
         >Search customers<input
           v-model="searchQuery"
           type="search"
-          placeholder="Name, email, role or account status"
+          placeholder="Name, email, customer ID, role or account status"
       /></label>
     </div>
     <p class="admin-muted my-4">

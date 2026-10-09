@@ -1,0 +1,67 @@
+.store-brand .store-section {
+  border-bottom-color: #dacdb8;
+}
+.store-brand .store-eyebrow {
+  font-size: 14px;
+  font-weight: 700;
+}
+.store-brand .brand-heading {
+  margin-top: 12px;
+  font-size: 32px;
+  line-height: 1.25;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+.store-brand .brand-origin,
+.store-brand .brand-values {
+  background: #fff;
+}
+.store-brand .brand-pair {
+  background: #f0f4fc;
+}
+.store-brand .brand-story-copy {
+  max-width: 600px;
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--store-muted);
+}
+.store-brand .brand-story-copy p + p {
+  margin-top: 20px;
+}
+.store-brand .brand-portrait {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #e7e9e2;
+  color: var(--brand-1);
+  border-radius: 8px;
+}
+.store-brand .brand-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.store-brand .brand-photo-label {
+  font-size: 12px;
+  color: #59655e;
+}
+.store-brand .brand-value {
+  border-top: 3px solid var(--brand-1);
+  padding-top: 24px;
+}
+.store-brand .brand-value > svg {
+  color: var(--brand-1);
+}
+.store-brand .brand-invitation {
+  background: #fff6d9;
+}
+@media (max-width: 639px) {
+  .store-brand .brand-heading {
+    font-size: 28px;
+  }
+  .store-brand .brand-story-copy {
+    font-size: 16px;
+  }
+}

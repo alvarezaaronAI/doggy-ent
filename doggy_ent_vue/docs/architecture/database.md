@@ -1,6 +1,6 @@
 # Database Architecture
 
-Last updated: 2026-06-12
+Last updated: 2026-10-09
 
 ## Source Of Truth
 
@@ -35,7 +35,7 @@ Primary flow participation:
 
 ### ProductVariant
 
-Variant row for a product size/SKU/price/inventory status. `price` is stored in cents in Prisma and mapped to currency units in response mappers.
+Variant row for a product size/SKU/price/inventory status. `price` is stored in cents in Prisma and returned as cents in the product API variant array. The client product mapper converts it to display currency once; trusted checkout separately reads database cents.
 
 Primary flow participation:
 
@@ -170,7 +170,16 @@ Primary flow participation:
 
 ### Campaign
 
-Donation campaign with product ID links stored as JSON, status, donation type/value, goal, schedule dates, and generated usage stats.
+Donation campaign with product ID links stored as JSON, status, donation type/value, schedule dates, image, featured flag, description, beneficiary, and generated usage stats. There is no campaign goal or payout ledger field in the current schema.
+
+Public content added on 2026-10-09:
+
+- `story`: optional plain-text story, rendered as escaped paragraphs.
+- `beneficiaryUrl`: optional validated HTTPS partner link, without embedded credentials.
+- `imageAlt`: optional image description, required when publishing with an image.
+- `publicPageEnabled`: Boolean default false. Existing campaigns are not automatically published; this does not disable their existing giving rule.
+
+Existing slugs remain stable after rename. Public queries require page visibility and Active/Paused/Ended status; giving still requires active status and its schedule. Internal revenue/order/attribution information is not exposed by the public mapper.
 
 Primary flow participation:
 
@@ -212,6 +221,7 @@ Important migrations:
 - `20260615000000_add_order_shipping_method`: Nullable `Order.shippingMethod` for preserving the selected checkout delivery method.
 - `20260615001000_add_order_shipping_rate_fields`: Nullable `Order.shippingCarrier`, `shippingService`, `shippingRateId`, and `shippingRateProvider` fields for Shippo/static shipping rate traceability.
 - `20260617000000_add_order_and_internal_issues`: Extends `CustomerSupportRequest`, adds support messages/events, adds internal issue tracking, and relates support requests to orders.
+- `20261009000000_campaign_public_page`: Additive Campaign story, partner URL, image description, and public-page visibility columns. No table resets, seed operations, or destructive changes.
 
 Deployment rule:
 
@@ -238,8 +248,9 @@ Deployment rule:
 | Campaign rules and usage | Server campaigns domain and `OrderCampaignUsage` |
 | Admin sessions | Server auth domain, custom temporary implementation |
 
-Railway deployment note:
+Migration status verified 2026-10-09:
 
-- The Better Auth customer account migration must be applied on Railway with `cd server && npx prisma migrate deploy` after confirming the target database is correct.
-- The order/internal issues migration `20260617000000_add_order_and_internal_issues` must also be applied to Railway with `cd server && npx prisma migrate deploy` after review.
-- Do not run destructive reset commands on Railway.
+- Normal local env was confirmed as LOCAL with a loopback database and no Railway override; the new campaign migration was applied, and `prisma migrate status` reports up to date.
+- The user explicitly asked to apply the update to Railway. A secret-safe preflight loaded the existing ignored Railway DB override, confirmed the target, compared migration checksums, checked for failed migrations/partial columns, and found only the reviewed campaign migration pending.
+- `prisma migrate deploy` succeeded; all four columns and the migration record were verified. All eighteen repository migrations now match Railway, with no remaining pending migration, failed migration, or checksum mismatch. Campaign record count was unchanged. No business records were updated, and no provider action occurred.
+- This updates schema only, not deployed server/frontend code. Rebuild/redeploy reviewed code normally; do not run reset/seed commands. Future shared-database migrations still require explicit approval and preflight.

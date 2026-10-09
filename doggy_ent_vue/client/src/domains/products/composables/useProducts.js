@@ -22,6 +22,7 @@ export function useProducts() {
 
   const availableCategories = computed(() => {
     const categories = products.value
+      .filter((product) => product.status === 'active')
       .map((product) => product.category)
       .filter(Boolean)
 
@@ -30,6 +31,7 @@ export function useProducts() {
 
   const availableProteins = computed(() => {
     const proteins = products.value
+      .filter((product) => product.status === 'active')
       .map((product) => product.protein)
       .filter(Boolean)
 
@@ -37,11 +39,11 @@ export function useProducts() {
   })
 
   const comingSoonProducts = computed(() =>
-    products.value.filter((product) => product.status === 'coming-soon')
+    products.value.filter((product) => product.status === 'coming-soon'),
   )
 
   const storefrontProducts = computed(() =>
-    products.value.filter((product) => product.status !== 'coming-soon')
+    products.value.filter((product) => product.status !== 'coming-soon'),
   )
 
   return {

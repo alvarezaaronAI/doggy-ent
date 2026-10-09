@@ -1,4 +1,5 @@
 import { prisma } from '../../../db/prisma.js'
+import { mapAdminOrderRecord } from '../mappers/adminOrderRecord.mapper.js'
 import {
   getOrderDonationAmount,
   mapCustomerOrder,
@@ -52,7 +53,7 @@ export async function findAllOrders() {
   return orders.map(mapOrder)
 }
 
-export async function findOrderById(orderId) {
+export async function findOrderById(orderId, { includeAdminRecord = false } = {}) {
   const [order, promoUsage] = await Promise.all([
     prisma.order.findUnique({
       where: {
@@ -72,6 +73,7 @@ export async function findOrderById(orderId) {
         },
         shipments: orderShipmentsInclude,
         emailDeliveries: orderEmailDeliveriesInclude,
+        ...(includeAdminRecord ? { supportRequests: { orderBy: { createdAt: 'desc' } } } : {}),
       },
     }),
     prisma.promoUsage.findFirst({
@@ -84,7 +86,11 @@ export async function findOrderById(orderId) {
     }),
   ])
 
-  return mapOrder(order ? { ...order, promoUsage } : null)
+  const mappedOrder = mapOrder(order ? { ...order, promoUsage } : null)
+  if (mappedOrder && includeAdminRecord) {
+    mappedOrder.internalRecord = mapAdminOrderRecord({ ...order, promoUsage })
+  }
+  return mappedOrder
 }
 
 export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {

@@ -1,0 +1,236 @@
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+  color: #27342d;
+  border-bottom: 1px solid #deded6;
+  box-shadow: 0 3px 16px rgba(67, 46, 27, 0.07);
+}
+.site-header-top {
+  max-width: 1280px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 24px;
+}
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 21px;
+  font-weight: 800;
+  text-decoration: none;
+  min-width: 0;
+}
+.site-mark {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--brand-2);
+  border: 2px solid var(--brand-1);
+}
+.site-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.site-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #d8ddd5;
+  background: #f5f6f3;
+  color: #27342d;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.site-header button:hover {
+  transform: none;
+  box-shadow: none;
+  background: #eaf0e9;
+}
+.site-header a:focus-visible,
+.site-header button:focus-visible,
+.site-header input:focus-visible {
+  outline: 2px solid var(--brand-1);
+  outline-offset: 3px;
+}
+.site-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid #d8ddd5;
+  border-radius: 6px;
+  padding: 0 10px;
+  height: 44px;
+  background: #fafbf9;
+}
+.site-search-desktop {
+  margin-left: auto;
+  width: 340px;
+}
+.site-search input {
+  background: transparent;
+  min-width: 0;
+  width: 100%;
+  outline: none;
+  font-size: 14px;
+}
+.site-search button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+.site-desktop-nav {
+  max-width: 1280px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px 12px;
+}
+.site-desktop-nav a {
+  padding: 8px 12px;
+  color: #536056;
+  font-size: 14px;
+  border-radius: 4px;
+  text-decoration: none;
+}
+.site-desktop-nav a:hover {
+  background: #f0f3ee;
+  color: #17634c;
+}
+.site-account {
+  position: relative;
+}
+.site-account-buffer {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  padding-top: 8px;
+  width: 240px;
+}
+.site-account-menu {
+  padding: 8px;
+  border: 1px solid #d8ddd5;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 8px 24px #27342d18;
+}
+.site-account-menu a,
+.site-account-menu button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  font-size: 14px;
+  border-radius: 4px;
+  text-decoration: none;
+}
+.site-account-menu a:hover {
+  background: #edf6f0;
+}
+.site-initials {
+  color: #17634c;
+  font-weight: 700;
+}
+.site-cart {
+  position: relative;
+}
+.site-count {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 4px;
+  border-radius: 50%;
+  background: var(--brand-2);
+  font-size: 11px;
+  color: var(--brand-4);
+}
+.site-menu-toggle {
+  display: none;
+}
+.site-mobile-menu {
+  padding: 0 16px 16px;
+  max-height: 70svh;
+  overflow-y: auto;
+}
+.site-mobile-menu nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.site-mobile-menu nav a {
+  padding: 12px;
+  background: #f5f6f3;
+  border: 1px solid #e1e5df;
+  border-radius: 4px;
+  font-size: 14px;
+}
+@media (max-width: 899px) {
+  .site-search-desktop,
+  .site-desktop-nav {
+    display: none;
+  }
+  .site-menu-toggle {
+    display: inline-flex;
+  }
+  .site-header-top {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+}
+@media (max-width: 479px) {
+  .site-brand {
+    font-size: 15px;
+    gap: 8px;
+    max-width: 160px;
+  }
+  .site-mark {
+    width: 32px;
+    height: 32px;
+  }
+  .site-actions {
+    gap: 5px;
+  }
+  .site-control {
+    padding: 7px;
+  }
+  .site-account-label {
+    display: none;
+  }
+  .site-cart {
+    gap: 4px;
+  }
+  .site-count {
+    min-width: 18px;
+    height: 18px;
+  }
+}
+@media (max-width: 359px) {
+  .site-brand {
+    max-width: 120px;
+  }
+  .site-mark {
+    display: none;
+  }
+}

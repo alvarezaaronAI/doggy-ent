@@ -13,6 +13,20 @@ The admin should feel like an organized operations workspace, not a crowded deve
 - Avoid showing every metric on the main dashboard.
 - Preserve server-side admin authorization for every admin action.
 
+## Calm Giving Campaign Editor
+
+Implemented 2026-10-09 inside the existing workspace. The left side remains normal admin navigation, signed-in identity, and startup data routing. The middle renders the actual public campaign component at the available width. A right-hand inspector edits the selected section; on narrow screens it moves above the canvas.
+
+- Sections: Introduction & image, Who it supports, The story, Giving & schedule, Eligible treats, Publishing.
+- Edit buttons on the page and the inspector section selector address the same draft. There is no separate preview renderer or preview step. Product/cart/external-navigation controls in the canvas cannot perform customer actions.
+- Save is explicit. Cancel confirms discarded changes; failed saves keep the draft. A successful write followed by a failed list refresh is reported as a refresh failure, not an invitation to repeat the save.
+- Donation rule labels distinguish a fixed contribution once per eligible order from a percentage of eligible product sales. Dates use the device time zone and serialize to ISO; untouched timestamps preserve their precision.
+- Publishing is independent of giving. An enabled public page may be Active, Paused, or Ended; Draft/Archived pages stay private. Active status and schedule determine contribution eligibility. Featured campaigns are prioritized in public badges. A renamed campaign keeps its existing slug/link.
+- Optional story, partner HTTPS URL, image description, and public-page visibility are persisted campaign fields. Existing image, featured flag, schedule, and product selection are retained. Public publishing requires an introduction/beneficiary and an image description when an image is present. No upload button or provider action was added.
+- Public APIs use explicit field allowlists, never the internal campaign mapper. Revenue, customer data, attributed orders, and internal order IDs must stay in protected admin impact tools.
+
+See [admin architecture](architecture/admin.md), [database](architecture/database.md), and [handoff](../PROJECT_HANDOFF.md) for migration/deployment status.
+
 Suggested groups:
 
 - Overview.
@@ -251,3 +265,14 @@ The approved Calm Workspace design is implemented as of 2026-10-08. This is a co
 - Future templates, bulk promo email, payment-reconciled/date-range reports, customer notes/activity/reviews/loyalty remain unconnected and explicitly labeled.
 
 Live Safari, local/Railway DB-mode, deployed cookie, and real provider QA still require the controlled manual checklist in [verification-and-qa.md](verification-and-qa.md). See [PROJECT_HANDOFF.md](../PROJECT_HANDOFF.md) for exact changed files and check results.
+
+## 2026-10-09 Internal Investigation Refinement
+
+- Actionable links, navigation, buttons, records, fields, and expandable sections have gray translucent surfaces/stronger borders. Static statistics/future tools are not disguised as buttons.
+- Orders restores the existing order-value tiers: Standard below 100, Gold from 100, Platinum from 200, Diamond from 350, Gem from 500 (existing USD totals). Colored row accents, amount text, and labeled badges provide more than a color-only cue. These are order-value categories, not persisted customer loyalty tiers.
+- Order detail keeps normal fulfillment controls and adds a read-only sidebar inspector for every Order scalar column, item snapshots/foreign IDs/timestamps, promo/campaign usage, status history, safe shipments/events, recent email records, and support case records.
+- Customer rows show full email and full customer ID for same-name disambiguation, support ID search, and open from the whole row. The real anchor remains keyboard accessible and supports normal link behavior; selecting text does not navigate.
+- Customer detail shows User/profile/default-address/preferences/account-event/support/review/loyalty record data when stored. Empty foundations remain empty; viewing ledger/review rows does not implement reward or review management.
+- Never expose credentials, auth accounts, session/reset/verification tokens, raw provider payloads, arbitrary event metadata, or email action URLs. Inspection is allowlisted server-side and admin-only; it is not a generic DB browser or DB editing tool.
+- Stripe PaymentIntent IDs are operational identifiers, not API keys. Each order's valid stored `pi_` ID is appended to a validated HTTPS Stripe payments dashboard base. Admin can save/cancel that non-secret base under Stripe dashboard settings, persisted only in the current browser. Optional build-time default: `VITE_STRIPE_DASHBOARD_PAYMENTS_URL`. No automatic account or test/live inference; see [admin architecture](architecture/admin.md).
+- Explicit order saves refresh the protected full detail. If refresh fails after a successful write, retain the saved result, remove the stale internal snapshot, and explain the refresh failure without inviting a duplicate write.

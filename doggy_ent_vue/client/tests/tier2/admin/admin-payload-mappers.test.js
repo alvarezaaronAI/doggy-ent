@@ -77,7 +77,7 @@ describe('admin payload mappers', () => {
       donationType: 'PERCENT',
       donationValue: 10,
       productIds: ['chicken', 'beef'],
-      startsAt: '2026-06-07T10:30',
+      startsAt: new Date('2026-06-07T10:30').toISOString(),
       endsAt: null,
     })
   })
