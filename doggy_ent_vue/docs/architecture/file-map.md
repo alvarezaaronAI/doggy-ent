@@ -1,8 +1,28 @@
 # File Map
 
-Last updated: 2026-06-13
+Last updated: 2026-10-09
 
 This file maps important files and folders. It is not a complete line-by-line inventory of every Vue component, but it accounts for the source files that own major behavior and data flow.
+
+## Homepage And Brand Follow-Up Files
+
+These files add presentation/navigation only; existing pricing, APIs, auth, cart, and campaign editor sources remain authoritative.
+
+| File | Responsibility | Dependencies / flow |
+| --- | --- | --- |
+| `client/src/domains/storefront/constants/brandContent.js` | Public brand route path, existing origin copy, names, template images, values | Router, home teaser, brand page, approach links; one content source |
+| `client/src/domains/storefront/components/StorefrontHero.vue` | Content-safe photo/heading/action layout, light/immersive treatments, image-failure fallback | Vue state, supplied props/slots; no API calls |
+| `client/src/domains/storefront/components/BrandStoryContent.vue` | Origin, illustrative pair portraits, values, shop/ingredient links | Brand constants, Lucide, Vue Router; no invented biographies |
+| `client/src/domains/storefront/views/BrandView.vue` | Lazy public `/meet-chase-evie` page and storefront/cart composition | Existing header/footer/strip, search, products, variants, cart helpers; no new service |
+| `client/src/domains/storefront/Home/sections/BrandPromiseStrip.vue` | Three actual section links under the hero | Brand values, Lucide; no fabricated guarantees |
+| `client/src/domains/storefront/Home/sections/NextDropsSection.vue` | Upcoming catalog layout plus loading/error/empty states | Supplied product/loading/error props; emits preview/retry |
+| `client/src/domains/storefront/styles/{home,brand}.css` | Scoped section boundaries, hero actions, responsive drop/story layout | Existing storefront tokens/Tailwind; does not restyle campaign canvas |
+| `client/src/domains/storefront/utils/socialLinks.js` | Approved Instagram default, HTTPS platform validation, missing/invalid placeholders | Optional public footer config; never creates active dummy links |
+| `client/src/domains/products/ProductCard/ComingSoonCard.vue` | Rich upcoming content, Coming Soon band, working Preview, disabled Notify Me | Shared ProductCardImage/ProductCardInfo; no subscription API or purchase action |
+| `client/src/app/layouts/{SiteHeader,SiteFooter}.vue`, `client/src/app/router/index.js` | Story destinations and warm reference-style footer | Shared brand route constant, existing navigation/auth; public social config |
+| `client/tests/tier2/storefront/{storefront-sections,social-links}.test.js` | Actual Vue SSR component/content branches and safe social destination tests | Existing Vitest, Vue server renderer, memory router; no new dependency |
+
+The homepage still composes the existing featured product, collection, Happy Pups, process, ingredients, about teaser, and shopping-help sections. Section headings/styles changed, not their API ownership or financial behavior.
 
 ## Root And Config
 
@@ -250,3 +270,69 @@ Added or focused during the approved 2026-10-08 admin UI pass. Existing API/payl
 Other touched sources: `client/src/assets/styles/admin.css`, `client/src/app/router/index.js`, `client/package.json` / lockfile, existing admin CRUD/list/detail views and components, `client/src/domains/promos/components/PromoForm.vue` / `PromoCodeTester.vue`, and `client/tests/tier2/admin/admin-workspace.test.js`.
 
 Some older header/stat/group/modal components remain in the repository but are no longer composed by these new route views. They are not new sources of truth; remove them only after a dedicated usage audit, not by deleting unrelated accepted work.
+
+## 2026-10-09 Internal Records And Action Visibility
+
+| File | Responsibility / flow |
+| --- | --- |
+| `client/src/domains/admin/components/AdminOrderInternalPanel.vue`, `AdminCustomerInternalPanel.vue` | Admin-only sidebar identifiers, linked account, timestamps, safe record inspector; order panel contains Stripe link/settings. |
+| `client/src/domains/admin/components/AdminRecordInspector.vue`, `AdminRecordFields.vue` | Read-only recursive disclosure of the server-allowlisted snapshot; explicit missing/false/zero values, long-ID wrapping. |
+| `client/src/domains/admin/components/AdminStripeDashboardSettings.vue`, `composables/useAdminStripeDashboard.js` | Save/Cancel of a public dashboard base; shared reactive browser setting, optional Vite default, no API key/DB write. |
+| `client/src/domains/admin/utils/stripeDashboard.js` | Strict HTTPS host/path validation and safe dynamic PaymentIntent link construction. |
+| `client/src/domains/admin/components/AdminOrderValueBadge.vue`, `utils/adminOrders.utils.js` | Restored existing value thresholds plus centralized identifying colors. |
+| `client/src/domains/admin/components/AdminCustomersTable.vue`, `composables/useAdminCustomers.js` | Whole-row mouse navigation with real keyboard link; full email/ID visibility and ID search. |
+| `client/src/domains/admin/composables/useAdminOrderDetail.js` | Existing writes followed by protected detail refresh; clears unavailable/stale inspection payload. |
+| `server/src/domains/orders/mappers/adminOrderRecord.mapper.js` | Explicit Order and safe related-record allowlists. Repository opt-in used by admin service only. |
+| `server/src/domains/customers/mappers/adminCustomerRecord.mapper.js` | Explicit User/profile/address/preferences/events/support/reviews/loyalty/delivery allowlists. Used by admin customer mapper. |
+| `server/src/shared/utils/recordFields.js` | Shared allowlist picker, safe support/delivery field lists; no arbitrary auth/provider JSON pass-through. |
+| `client/src/assets/styles/admin.css`, `client/src/domains/account/styles/account.css`, `AccountOrderCard.vue` | Scoped action borders/gray surfaces; approved layout and customer data flow unchanged. |
+| `client/tests/tier2/admin/admin-internal-records.test.js` | Stripe validation/storage, value thresholds, unique customer lookup, post-save detail freshness/failure. |
+| `server/tests/tier2/admin/internal-records.test.js`, `internal-record-auth.test.js` | Schema scalar coverage, secret-canary exclusions, explicit admin-only opt-in, existing HTTP auth boundary. |
+
+No Prisma model, migration, customer endpoint, checkout pricing, provider send, or auth implementation changed in this focused pass.
+
+## 2026-10-09 Calm Giving Files
+
+The preceding investigation section describes prior accepted local edits. This section covers the subsequent storefront/campaign implementation. Existing checkout/auth/order/provider modules were not rewritten.
+
+| File(s) | Responsibility | Dependencies / flow |
+| --- | --- | --- |
+| `client/src/domains/storefront/Home/HomeView.vue` | All homepage sections, catalog/giving load errors, stable featured product, shared per-product size source | Product/filter/cart/campaign composables and existing header/footer |
+| `client/src/domains/storefront/Home/sections/{HeroSection,ProductSpotlightSection,ProcessSection,IngredientsAnalysisSection,ReviewsPreviewSection,AboutBrandSection,ShopHelpSection}.vue` | Hero, featured purchase, care, stored ingredients/storage, gallery/future reviews, brand story, real shopping help | Supplied product content, variant helpers, RouterLink; no payment/API calls |
+| `client/src/domains/storefront/styles/{storefront,siteHeader}.css`, `client/src/assets/styles/main.css` | Scoped fluid storefront/header layout; immutable original brand aliases | Tailwind utilities, shared storefront components and admin canvas |
+| `client/src/app/layouts/{SiteHeader,SiteFooter,PromoStrip}.vue` | Shared customer identity, menu/hover/search/cart controls, real footer links and honest strip | Existing auth/router/search/cart; no duplicate account header |
+| `client/src/domains/products/utils/productVariants.js`, `mappers/product.mapper.js`, `api/products.api.js` | Non-mutating size order/active variants; cents conversion; API mapping boundary | Existing shared HTTP helper; no server price trust moved to client |
+| `client/src/domains/products/composables/{useProducts,useProductVariants,useProductFilters}.js` | Active filter choices, selected size/availability, stable starting-price sort | Product mapper/utils and shared storefront search |
+| `client/src/domains/products/ProductCard/{ProductCard,ProductCardImage,ProductCardInfo,ProductCardVariantSelector,ProductCardPriceStatus,ProductCardActions,ProductCampaignBadge,ComingSoonCard}.vue` | Explicit image/Quick View targets, size/buttons, real availability, green campaign badges and coming-soon viewing | Parent state/callbacks, Lucide, safe public campaign link; no form/API logic |
+| `client/src/domains/products/ProductQuickView/{ProductQuickView,ProductQuickViewActions}.vue` | Selected-variant modal, quantity, keyboard focus, honest unavailable action | Product variant helpers; emits cart payload only |
+| `client/src/domains/cart/{composables/useCart.js,CartDrawer/CartDrawer.vue}` | Null-safe selected price/persistence resilience, inert closed drawer with actual controlled ID | Existing shared browser cart, inventory helpers and checkout navigation |
+| `client/src/domains/campaigns/api/publicCampaigns.api.js`, `composables/{useStorefrontCampaigns,useCampaignPage}.js`, `utils/campaignPresentation.js` | Public reads, product matching, separate failures, sequenced slug loads, safe links and contribution labels | Shared HTTP helper, no admin payload or business-total recalculation |
+| `client/src/domains/campaigns/components/{CampaignPageContent,CampaignPageSection}.vue`, `styles/campaignPage.css` | One public/admin renderer, selected section/edit handles, story/giving/eligible product presentation | Existing ProductCard/currency/variant utilities; edit handles only in editor |
+| `client/src/domains/campaigns/views/CampaignView.vue`, `client/src/app/router/index.js` | Public campaign route and shared customer shell, errors/retry, navigation scroll | Campaign/product/cart composables, unchanged auth guards |
+| `client/src/domains/admin/components/{AdminCampaignForm,AdminCampaignSectionFields}.vue`, `constants/adminCampaignEditor.constants.js` | Canvas/inspector Save/Cancel and six focused sections | Shared renderer, existing admin layout/icons/schedule fields |
+| `client/src/domains/admin/{api/adminCampaigns.api.js,composables/useAdminCampaigns.js,constants/adminCampaigns.constants.js,mappers/adminCampaignForm.mapper.js,validators/adminCampaign.validator.js}` | Credentialed campaign actions, normalized products, archived option, ISO/canvas mapping, validation | Existing admin CRUD contracts; unchanged impact/library tools |
+| `server/src/domains/campaigns/{routes/campaigns.routes.js,controllers/campaigns.controller.js,services/campaigns.service.js,repositories/campaigns.repository.js}` | Public read endpoints/visibility, featured active summaries, stable slug updates | Separate safe mapper, validation, Prisma; management remains admin-authorized |
+| `server/src/domains/campaigns/{mappers/publicCampaign.mapper.js,mappers/campaigns.mapper.js,validators/campaigns.validator.js,constants/campaigns.constants.js}` | Public allowlist, content mutation mapping, create/update publication/URL/date/rule validation, archived constant | Existing donation utils and Prisma enums; financial algorithms unchanged |
+| `server/prisma/schema.prisma`, `migrations/20261009000000_campaign_public_page/migration.sql` | Four additive public-content fields | Prisma; migration applied on local and explicitly approved Railway target |
+| `client/tests/tier1/cart/product-variant-ordering.test.js`, `client/tests/tier2/admin/{campaign-page-editor,admin-payload-mappers}.test.js` | Size/price/payload precision/content and validator checks | Existing Vitest tiers |
+| `server/tests/tier2/admin/{public-campaigns,public-campaign-repository}.test.js` | Public allowlist/auth boundaries, schedules/featured priority, slug/update validation, repository visibility | Existing Vitest tiers and fixture repositories; no provider/database writes |
+
+The new API/composable/mapper/validator/component boundaries are separate; no new giant view/service was introduced. The existing Quick View remains a focused modal (roughly 325 lines). CSS is in scoped domain files rather than expanding the shared header/campaign renderer. Smaller presentation files are still grouped here instead of duplicated as separate documentation entries.
+
+## Approved Storefront Baseline And Cart Drawer
+
+These changes continue the accepted local work; they do not replace API/auth/payment modules.
+
+| File(s) | Responsibility | Dependencies / flow |
+| --- | --- | --- |
+| `client/src/assets/images/storefront-hero-template.jpg`, `storefront-seasonal-template.jpg` | Compressed illustrative preview assets; not real brand portraits, product records, or verified-customer evidence | Imported by brand content; emitted as hashed Vite assets |
+| `client/src/domains/storefront/constants/brandContent.js` | Shared hero/teaser/gallery assets, captions, existing story/values/path | Home/story presentation; does not own catalog content |
+| `client/src/domains/storefront/components/StorefrontHero.vue`, `Home/sections/HeroSection.vue` | Unframed photo hero, optional lead, real featured-product copy/actions, image-failure fallback | Brand constants and slots; no API/business totals |
+| `client/src/domains/storefront/styles/{home,storefront,siteHeader}.css` | Warm bands, generous drop grid, neutral hero tint, restrained item/media/header shadows, small-screen constraints | Existing immutable brand tokens and Tailwind |
+| `client/src/domains/storefront/Home/sections/{ProductSpotlightSection,ReviewsPreviewSection,AboutBrandSection}.vue` | Non-clickable featured media/title, purchase icon, explicitly illustrative gallery, real story entry | Existing variant/cart events, brand content, router |
+| `client/src/domains/products/ProductCard/{ProductCardActions,ComingSoonCard}.vue` | Responsive icon commands and upcoming-item depth | Existing emits/stock checks, shared card content; Notify Me remains disabled |
+| `client/src/domains/cart/composables/useCartDrawerDialog.js` | Open/close keyboard focus, Tab containment, Escape, scroll lock, removal focus recovery, lifecycle cleanup | Vue lifecycle/refs and dialog DOM only; no API/pricing/storage |
+| `client/src/domains/cart/CartDrawer/{CartDrawer,CartItemCard,CartSummary,CartEmptyState}.vue` | 420 px responsive dialog, separated rows, accessible quantity/removal, existing subtotal and explicit checkout navigation | Dialog composable, Lucide, existing cart events/inventory helpers, RouterLink |
+| `client/tests/tier2/storefront/{cart-drawer,cart-drawer-dialog}.test.js` | Vue SSR presentation and isolated dialog lifecycle regressions | Existing Vitest tiers; no DB/provider calls |
+
+HomeView, useCart pricing/storage, checkout, auth, server, schema, dependencies, and deployment/env configuration were not changed in this baseline implementation. Source files remain focused; drawer-only interaction behavior is not mixed into the view or pricing composable.

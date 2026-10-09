@@ -1,7 +1,7 @@
 # Doggy Ent Project Handoff
 
 Generated: 2026-06-05
-Latest update: 2026-10-08 - Approved Calm Essentials account UI implementation.
+Latest update: 2026-10-09 - Approved storefront baseline applied, neutral gray hero readability tint, raised product/media styling, generous Next Drops, and preserved right-side Add to Cart drawer with keyboard/focus fixes.
 Workspace: `/Users/nazxylix/Developer/vue-projects/doggy_ent/doggy_ent_vue`
 Current branch observed: `dev-main`
 
@@ -5005,3 +5005,377 @@ See [admin experience](docs/admin-experience.md), [admin architecture](docs/arch
 9. Existing schedule timezone interpretation, badge fallback on API failure, data-refresh snapshots, and older unused UI components remain follow-up items.
 
 Safe for focused commit review after the documented checks, not a claim that all prior server/schema changes are launch-ready or deployed. No commit or push performed. Recommended next phase: controlled real-admin/Safari and data-target QA, then approved email template/manual-send workflows and dependency security remediation.
+
+
+## 2026-10-09 Calm Workspace Action Visibility And Admin Investigation
+
+### Scope And Starting State
+
+Read AGENTS.md, the current handoff, product/UX/customer/admin/communications/operations/roadmap/architecture/QA instructions. Initial git status was clean on dev-main; diff statistics and name-status were empty. This is a focused follow-up to the accepted Calm workspaces, not a dashboard, checkout, or auth rebuild.
+
+Preserved storefront layout, cart/auth/search state, Better Auth customer ownership, custom admin authorization, existing catalog/promo/campaign/order actions, staged Save/Cancel, server-owned pricing and payment behavior, signed-in identity, and startup data routing. No commits/pushes, live DB/provider writes, email sends, migrations, environment file changes, new packages, or deployment actions.
+
+### Implemented Changes
+
+- Gray translucent surfaces and clearer borders for account/admin navigation, links, edit buttons, fields, disclosures, record choices, recent/linked-order links, and mobile account navigation. Primary/selected green and keyboard/disabled states remain. Read-only statistics/future content do not receive false button affordances.
+- Whole customer rows navigate on ordinary clicks, while the real link remains accessible by Tab/Enter and supports native link behavior. Text selection does not trigger row navigation. Full email and full customer ID are visible, and customer search now includes ID, so same-name records remain distinguishable.
+- Restored existing order-value thresholds: Standard below 100, Gold from 100, Platinum from 200, Diamond from 350, Gem from 500, using current USD order totals. Added row accents, amount colors, labeled tinted badges, and a matching detail badge. These are per-order value categories, not persisted customer loyalty tiers.
+- Order sidebar exposes the saved PaymentIntent ID, order ID, linked customer account, currency, updated time, and expandable saved record fields. Server snapshot covers every Order scalar plus safe item/usage/status/shipment/event/delivery/support records.
+- Customer sidebar exposes customer ID, updated time, phone, consent, and expandable User/profile/address/preferences/account-event/support/review/loyalty/delivery records. Related foundation records are read-only when present; no new loyalty/review/support management functionality is implied.
+- Explicit existing order writes are followed by the protected detail GET. If refresh fails after a successful write, the saved result stays visible, the stale internal snapshot is removed, and the message distinguishes the failed read from the completed write.
+- Existing order/customer admin routes still use requireAdminAuth. Inspection uses server allowlists, not arbitrary object/DB export. Authentication Account/Session/Verification rows, passwords, tokens, raw shipment provider payloads, arbitrary account/ledger/email metadata, dedupe keys, and email action URLs are excluded.
+
+### Stripe Dashboard Setup
+
+Admin order detail includes Stripe dashboard settings with Save/Cancel. Store only the public payments-list base from the intended Stripe account, without the final payment ID, credentials, query or fragment. The current order's valid stored pi_ identifier is appended automatically. The supplied account-specific URL/payment ID was not hardcoded or copied into source/docs.
+
+Accepted configuration is HTTPS on dashboard.stripe.com, optionally account-scoped, with test or live payments paths. Other origins/paths and client-secret-shaped IDs are rejected. External links use noopener noreferrer. The UI shows Test dashboard or Live dashboard based on the selected base.
+
+The non-secret setting persists per browser under doggy-admin-stripe-payments-url. Browser settings override the optional public Vite default, VITE_STRIPE_DASHBOARD_PAYMENTS_URL. Clearing the saved setting disables links in that browser. Storage failure surfaces an error instead of pretending persistence succeeded.
+
+Environment/deployment requirements:
+
+- Optional client/Vercel variable: VITE_STRIPE_DASHBOARD_PAYMENTS_URL, the public Stripe payments-list location. No API secret belongs in it. Use ignored local client config or Vercel; restart/rebuild/redeploy for build-time default changes.
+- No new Railway variable is needed. Existing API, auth, Stripe, and DB variable requirements remain unchanged.
+- Deploy the focused server changes through the normal reviewed Railway deployment to expose the new internalRecord fields, then redeploy the client on Vercel. No new Prisma migration is needed by this pass; do not automatically apply unrelated migrations.
+- Temporary DB workflow stays local client -> local server -> chosen local/Railway DB. Stripe link settings are not a runtime data-target switch.
+
+Limitations: the current Order table does not persist Stripe live/test mode or account scope. One configured base applies to that browser's order links; switching it to live does not turn historical test IDs into live payments. Verify account/mode when switching DB targets. Actual Stripe dashboard login/account access remains unverified.
+
+### Files Created
+
+- `client/src/domains/admin/components/AdminCustomerInternalPanel.vue`
+- `client/src/domains/admin/components/AdminOrderInternalPanel.vue`
+- `client/src/domains/admin/components/AdminOrderValueBadge.vue`
+- `client/src/domains/admin/components/AdminRecordFields.vue`
+- `client/src/domains/admin/components/AdminRecordInspector.vue`
+- `client/src/domains/admin/components/AdminStripeDashboardSettings.vue`
+- `client/src/domains/admin/composables/useAdminStripeDashboard.js`
+- `client/src/domains/admin/utils/stripeDashboard.js`
+- `client/tests/tier2/admin/admin-internal-records.test.js`
+- `server/src/domains/customers/mappers/adminCustomerRecord.mapper.js`
+- `server/src/domains/orders/mappers/adminOrderRecord.mapper.js`
+- `server/src/shared/utils/recordFields.js`
+- `server/tests/tier2/admin/internal-record-auth.test.js`
+- `server/tests/tier2/admin/internal-records.test.js`
+
+### Files Modified
+
+- `PROJECT_HANDOFF.md`
+- `client/src/assets/styles/admin.css`
+- `client/src/domains/account/components/AccountOrderCard.vue`
+- `client/src/domains/account/styles/account.css`
+- `client/src/domains/admin/components/AdminCustomerOrdersPanel.vue`
+- `client/src/domains/admin/components/AdminCustomersTable.vue`
+- `client/src/domains/admin/composables/useAdminCustomers.js`
+- `client/src/domains/admin/composables/useAdminOrderDetail.js`
+- `client/src/domains/admin/utils/adminOrders.utils.js`
+- `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+- `client/src/domains/admin/views/AdminCustomersView.vue`
+- `client/src/domains/admin/views/AdminOrderDetailView.vue`
+- `client/src/domains/admin/views/AdminOrdersView.vue`
+- `docs/admin-experience.md`
+- `docs/architecture/admin.md`
+- `docs/architecture/file-map.md`
+- `docs/customer-experience.md`
+- `docs/ux-ui-standards.md`
+- `docs/verification-and-qa.md`
+- `server/src/domains/customers/mappers/adminCustomers.mapper.js`
+- `server/src/domains/customers/services/adminCustomers.service.js`
+- `server/src/domains/orders/repositories/orders.repository.js`
+- `server/src/domains/orders/services/orders.service.js`
+
+### Verification Commands And Results
+
+- Initial git status --short --branch, git diff --stat, git diff --name-status: clean starting tree, no prior uncommitted work to revert.
+- cd client && npm run build: final production build passed, Vite 8.0.9, 2150 modules transformed, no build warnings.
+- cd client && npm test: default Node 22.15.0 attempt stalled before test execution and was stopped (exit 130). Rerun with the bundled Node 24 runtime on PATH passed: 9 files / 38 tests (7 + 25 + 6). Eight new tests cover validated links, public setting persistence, tier thresholds/contrast, unique customer lookup, and post-save record refresh/failure.
+- cd server && npm run build: passed; generated Prisma Client 6.16.2 from the unchanged schema. No DB/migration command ran.
+- cd server && npm test: passed, 13 files / 40 tests (28 + 9 + 3). Six new tests cover complete Order/User scalar coverage against Prisma DMMF, secret-canary omission, admin-only repository opt-in, and actual Express route middleware with simulated admin/customer sessions.
+- node --check on all nine touched/new server JS/test files: passed. This checks syntax without starting the production app or exposing env values.
+- Temporary Prettier formatting of focused new files and touched Vue/CSS files: passed; no dependency or lint script added. Existing lint scripts: none.
+- Temporary npm run dev:local -- --port 5175 --strictPort: started for fixture-only QA; stopped at completion. Existing user frontend/backend processes were not stopped or reconfigured. Existing localhost:5173/admin returned HTTP 200, which confirms page availability, not live DB/session verification.
+- node /tmp/doggy-admin-current-qa.cjs: existing eleven-tab admin regression harness passed at 1440/1024/768/390/320 widths, 16 intercepted fixture mutations, zero real writes. CRUD/status/tracking/email/customer/issue errors, mobile navigation, routing/auth redirect/logout, and storefront exit remained working.
+- node /tmp/doggy-account-current-qa.cjs: existing seven-tab account harness passed. Cart/order state, 20-order search/load-more, detail races, profile/address Save/Cancel/failure retention, support visibility, dialogs/focus, mobile navigation, sign-out and auth return retained. Expected intercepted 500/401/404 responses exercised errors.
+- node /tmp/doggy-calm-refinements-qa.cjs: focused browser harness passed at 1440/1024/768/390/320 widths. Verified tier colors, safe test/live URL edits, Save/Cancel/reload persistence, dynamic IDs, read-only fields, refreshed status record, full-row/non-name-cell and keyboard navigation, duplicate-name disambiguation, customer/internal UI separation, action backgrounds, and no horizontal overflow. One intercepted status mutation, zero real DB/provider writes.
+- Final focused run had zero Vue/runtime/console errors or warnings. Stripe.js was stubbed with its expected version for admin/account fixture QA; no real payment was tested and no Stripe application code changed.
+- Visually inspected desktop order tiers, order/customer inspector, customer list, and mobile account/admin screenshots. Screenshot names/emails/IDs/order amounts are fixtures, not real records.
+- Browser QA caught and repaired a details toggle timing bug that could clear a quickly entered Stripe draft; reset now occurs on the explicit summary click. It also caught unlayered shared badge CSS overriding tier utility colors; a dedicated tier style restores distinct tints. Nested record disclosure and Stripe stub selectors were repaired in the harness and the full focused run repeated successfully.
+- Badge foreground contrast was calculated against its tinted surface; Standard/Gold/Platinum shades were darkened and all five now meet the tested 4.5 minimum. This is not a claim of complete WCAG certification.
+- Documentation link/fence and targeted source/doc secret-pattern checks: seven docs / thirty source-test files passed with zero issues. Three historical handoff secret-scan command examples were recognized as patterns, not real credentials. Mermaid content was not changed.
+- No .env.example files found; no env values read, copied, edited, or documented. Final git diff --check passed.
+
+### Remaining Risks And Manual QA
+
+1. Sign in with a real admin and a real customer on desktop/mobile/Safari; inspect action visibility, disabled/focus states, and that shared cart/auth state remains intact.
+2. On a permitted test order, inspect every record category, confirm the linked customer, save/cancel a status change, reload, and verify DB history/inspector consistency. Follow-up reads are current snapshots, not live polling.
+3. Paste the approved Stripe payments-list base in the admin setting, save/reload, and open two different orders. Confirm the correct Stripe account and test/live mode; do not paste API keys or client secrets.
+4. Test browser private-storage restrictions and a rejected URL. Changes are browser-local; different browsers/administrators may require their own setting.
+5. Verify same-name customers by email/ID, whole-row click, keyboard link, and ID search. Review safe profile/preferences/events/support records against permitted DB data.
+6. Inspect real guest/customer endpoints/network responses and ensure the new internalRecord never appears. Auth/session cryptography and deployed cookies were not retested by fixture sessions.
+7. Real Railway DB reads/writes, Safari cookies, deployment, Stripe payment/dashboard access, checkout payments, inventory and real provider sends remain unverified here. Existing payment/checkout unit regressions pass; no live transaction was made.
+8. Record inspection is intentionally not every database byte: raw provider/credential metadata is excluded, delivery history keeps the existing twenty-record limit, support message/event details remain in the dedicated issue tool, and linked orders retain existing panels. Large histories still need server pagination.
+9. Previous dependency advisories and any pre-existing deployment/migration gaps remain separate launch work. No dependencies/schema/migrations changed in this pass.
+
+Safe for focused commit review after the documented automated checks, not an assertion of production launch readiness. No commit/push performed. Next recommended step: controlled real-admin/Safari/Stripe-link and data-target QA, then dependency remediation and approved manual email-template work.
+
+## 2026-10-09 Calm Giving Storefront And Campaign Editor
+
+### Scope And Reconciliation
+
+Implemented the user's approved Calm Giving direction, retaining every original homepage content area and the fundamental blue/yellow/brown/oat palette, with subtle emerald backgrounds for campaign-eligible products. The public campaign page is a readable story/contribution/shopping page, not an FAQ panel. The editor keeps existing admin navigation/identity/data routing on the left, the actual shared page renderer in the middle, and selected-section fields plus Save/Cancel on the right.
+
+Initial git status/diff statistics/name-status were inspected. The tree already contained 23 modified and 14 new files from the accepted action-visibility/internal-record phase above; those edits were preserved. This is not an account/admin/checkout/auth rebuild or a broad refactor. No commit or push performed. No new dependency, package script, environment file, provider send, payment, shipment, runtime upload, or data-target switch was introduced.
+
+The user's follow-up explicitly requested applying the update to Railway. The reviewed additive campaign migration was applied after a secret-safe target/checksum/pending-migration preflight. **Database changes are applied; server and Vercel application code are not deployed.** This section supersedes older uncertain migration notes: all eighteen repository migrations now match Railway, including the earlier support/Better Auth migrations. It does not establish deployed auth/provider/payment correctness.
+
+### Storefront Fixes And Content
+
+- Fluid full-width homepage sections: hero, featured product, collection, Next Drops, Happy Pups/social proof area, Made With Care, Ingredient Promise, Meet the Brand, and actual shopping help. Empty Next Drops remains visible honestly. Gray secondary controls/borders and stable product media/action sizes improve click visibility and responsive boundaries.
+- Shared responsive header avoids cramped navigation/search/account/cart, retains existing Better Auth/cart/search state, supports mobile menu/Escape/route close, and keeps desktop account hover buffered. Browser QA caught hover opening followed by a click immediately closing the menu; a separate pinned-click state fixes that. Outside-click detection uses composed paths so clicking a replaced SVG menu icon does not close the menu accidentally.
+- Raw database variant order caused 6 oz/18 oz display and default-price inconsistency. `productVariants.js` now sorts active variants deterministically without mutation. The client product mapper converts variant cents exactly once; card/featured price and cart size come from the same per-product selection. Invalid size changes are ignored; zero prices use nullish defaults. Price sorting uses starting variant price, so selecting a size does not move the card.
+- Featured product comes from the unfiltered active catalog, not current search/sort results. Featured image/title remain non-clickable. Quick view initializes from the selected card size, maintains its own quantity/size, closes when adding, traps keyboard focus, supports Escape, and restores focus. Explicit image/Quick View controls replace whole-card keyboard/click bubbling.
+- Category/protein filter options reflect active products. Product image error fallback is honest. Closed cart is inert and has the actual controlled ID. Blocked local storage does not crash in-memory shopping.
+- Removed unsupported free-shipping threshold, invented nutrition analysis, fake verified-review quotes, fake social destinations, and active-looking Notify Me actions without a subscription service. Happy Pups gallery remains; verified customer stories/reviews are explicitly future work. Ingredient/storage display reads actual selected product content. Existing stock photography is retained, not represented as proof of actual customers/products/Chase and Evie.
+
+### Campaign Page And Visual Editor
+
+- New public route `/campaigns/:slug`, safe public summary/detail APIs, separate catalog/giving error recovery, and sequenced slug loads. Active campaign summaries match product IDs and prioritize featured campaigns. A legacy eligible campaign without an enabled page still gets a plain green badge; missing public page content does not disable existing giving.
+- Public content leads with campaign introduction/optional image, beneficiary/link, optional escaped story paragraphs, giving rule/schedule/generated contribution, and eligible active treats. Fixed giving is labeled once per eligible order; percentage giving uses eligible product sales. There is no extra donation charge in checkout. Generated amounts are explicitly not confirmation of funds paid out.
+- Enabled Active/Paused/Ended pages are readable; Draft/Archived are excluded. Paused/ended purchases remain available as ordinary purchases with a clear no-current-contribution notice. Active pages outside their schedule explain the window. Existing slug is stable after rename.
+- `CampaignPageContent.vue` is the single public/editor renderer, with responsive scoped styles and immutable storefront brand aliases. This fixes inherited admin colors/heading sizes in the canvas. Editor-only handles select Introduction & image, Who it supports, The story, Giving & schedule, Eligible treats, or Publishing. Product/customer/external-link actions cannot run in the canvas.
+- Focused inspector fields use the same draft shown on the canvas. Save is explicit, Cancel confirms discarded edits, saving disables fields/actions, and failed Save retains the draft. List-refresh errors after successful writes are distinguished from save failures. Existing campaign library/impact/order links remain intact.
+- Client mappers hydrate forms, project the canvas, and serialize local date/time to ISO while preserving untouched timestamp precision. Validators are separate. Server create/update validation covers enums, dates, rule bounds, bounded content, publishing requirements, and HTTPS URLs without embedded credentials. Existing image/featured flags are preserved and now editable.
+- Public responses are explicitly allowlisted and never return campaign revenue, internal order count, attribution rows, emails, arbitrary private fields, or admin records. Every management action remains behind custom server-side admin auth. Checkout pricing, campaign attribution/idempotency, Stripe, inventory, promos, customer ownership, and Better Auth were not rebuilt.
+
+### Files Created
+
+Paths below are relative to the repository; grouped braces enumerate files, not literal directory names.
+
+- `client/src/domains/products/utils/productVariants.js`, `mappers/product.mapper.js`, `ProductCard/ProductCampaignBadge.vue`.
+- `client/src/domains/storefront/styles/{storefront,siteHeader}.css`, `Home/sections/ShopHelpSection.vue`.
+- `client/src/domains/campaigns/api/publicCampaigns.api.js`, `components/{CampaignPageContent,CampaignPageSection}.vue`, `composables/{useStorefrontCampaigns,useCampaignPage}.js`, `utils/campaignPresentation.js`, `styles/campaignPage.css`, `views/CampaignView.vue`.
+- `client/src/domains/admin/components/AdminCampaignSectionFields.vue`, `constants/adminCampaignEditor.constants.js`, `validators/adminCampaign.validator.js`.
+- `server/src/domains/campaigns/mappers/publicCampaign.mapper.js`.
+- `server/prisma/migrations/20261009000000_campaign_public_page/migration.sql`.
+- `client/tests/tier1/cart/product-variant-ordering.test.js`, `client/tests/tier2/admin/campaign-page-editor.test.js`, `server/tests/tier2/admin/{public-campaigns,public-campaign-repository}.test.js`.
+
+### Files Modified In This Phase
+
+- `client/src/app/layouts/{SiteHeader,SiteFooter,PromoStrip}.vue`, `client/src/app/router/index.js`, `client/src/assets/styles/main.css`.
+- `client/src/domains/storefront/Home/HomeView.vue`, `Home/sections/{HeroSection,ProductSpotlightSection,ProcessSection,IngredientsAnalysisSection,ReviewsPreviewSection,AboutBrandSection}.vue`.
+- `client/src/domains/products/ProductCard/{ProductCard,ProductCardImage,ProductCardInfo,ProductCardVariantSelector,ProductCardPriceStatus,ProductCardActions,ComingSoonCard}.vue`, `ProductFilters/ProductFilters.vue`, `ProductQuickView/{ProductQuickView,ProductQuickViewActions}.vue`, `api/products.api.js`, `composables/{useProducts,useProductVariants,useProductFilters}.js`.
+- `client/src/domains/cart/CartDrawer/CartDrawer.vue`, `composables/useCart.js`.
+- `client/src/domains/admin/components/AdminCampaignForm.vue`, `api/adminCampaigns.api.js`, `composables/useAdminCampaigns.js`, `constants/adminCampaigns.constants.js`, `mappers/adminCampaignForm.mapper.js`.
+- `server/src/domains/campaigns/{constants/campaigns.constants.js,controllers/campaigns.controller.js,mappers/campaigns.mapper.js,repositories/campaigns.repository.js,routes/campaigns.routes.js,services/campaigns.service.js,validators/campaigns.validator.js}`, `server/prisma/schema.prisma`.
+- `client/tests/tier2/admin/admin-payload-mappers.test.js` (existing expectation now reflects ISO serialization).
+- `PROJECT_HANDOFF.md`, `docs/{customer-experience,admin-experience,ux-ui-standards,implementation-roadmap,verification-and-qa}.md`, `docs/architecture/{README,data-flow,database,admin,file-map}.md`.
+
+File responsibilities and dependencies are recorded in the [file map](docs/architecture/file-map.md). The shared header is 231 lines, campaign renderer 283, campaign form 171, and section fields 198. Existing Quick View remains a focused 325-line modal. No new giant view/service or duplicate public/editor renderer was introduced; style files carry responsive rules rather than expanding component logic.
+
+### Database And Railway Results
+
+Campaign schema adds optional `story`, `beneficiaryUrl`, `imageAlt`, and Boolean `publicPageEnabled` default false. The migration is a single additive ALTER TABLE, without reset/delete/seed. Existing campaigns are not automatically published. There is no new donation goal, payout ledger, or review schema in this phase.
+
+- Local target preflight: normal `server/.env`, LOCAL classification, loopback database, no Railway override. `prisma migrate deploy` applied only the new campaign migration. Final `prisma migrate status`: exit 0, eighteen migrations, database schema up to date.
+- Railway target preflight: existing ignored `server/.env.railway.local` loaded through the established loader; target confirmed as RAILWAY_DB with a recognized Railway host. No URLs/credentials printed. Only the new campaign migration was pending; no failed migrations/checksum mismatches/partial new columns.
+- Approved Railway `prisma migrate deploy`: exit 0. All four columns and successful migration record verified; campaign count unchanged, remaining pending migrations empty. Final read-only preflight also reports no failed migration/checksum drift. This changed schema/migration bookkeeping only, not campaign/product/order/customer business records.
+- A local instance of the actual API against Railway DB returned public campaign summaries HTTP 200 (one campaign), without attribution records; unauthenticated protected campaign read returned 401. This verifies local code with Railway DB, not deployed Railway code or a real authenticated browser session.
+
+No new environment variable is needed. Preserve existing deployment configuration: client `VITE_API_BASE_URL` (or compatibility `VITE_API_URL`) and `VITE_STRIPE_PUBLISHABLE_KEY`; server `DATABASE_URL`, `PORT`, `NODE_ENV`, `CLIENT_URL`/`FRONTEND_URL`, current admin/Better Auth/provider variable names documented above. Values remain in ignored local files/dashboards only. `server/.env` was not repurposed; Railway DB mode still uses its ignored override and a local browser API origin.
+
+### Commands And Verification
+
+- Required initial git status/diff-stat/name-status: inspected; prior edits preserved. Final `git diff --check`: passed.
+- `cd client && npm run build` with bundled Node 24: exit 0, Vite 8.0.9, 2173 modules transformed, no warnings. One retry using the shell's Node 22 stalled before transformation and was terminated (exit 143); Node 24 completed successfully. Earlier temporary dev-server startup stalls were stopped; no source/runtime requirement was changed to hide them.
+- `cd server && npm run build`: exit 0, generates Prisma Client 6.16.2. `npx prisma validate`: exit 0, schema valid. Server build is generation, not a separate compiled application bundle.
+- `cd client && npm test` with bundled Node 24: exit 0, eleven files / 44 tests (tiers: 10, 28, 6).
+- `cd server && npm test` with bundled Node 24: exit 0, fifteen files / 46 tests (tiers: 28, 15, 3).
+- Existing lint scripts: none. Temporary focused Prettier formatting used `--single-quote --no-semi`; no dependency/script added. Router changes were kept narrowly scoped without unrelated formatting churn.
+- `node --check` over all non-generated JavaScript sources: exit 0 for 96 server files and 89 client files. Server startup/import and client production build also resolve actual imports.
+- Temporary production preview on 5175 and actual local API on 3001 were used for QA. Existing frontend on 5173 was not reconfigured. The expected user backend on 3000 was not listening; own 3001 startup/import and real read-only public 200/admin 401 succeeded. Restart the chosen backend mode before using the local app.
+- `node /tmp/doggy-calm-giving-qa.cjs`: exit 0 with fixture APIs; widths 1440/1280/1024/768/390/320, no horizontal overflow/Vue errors/warnings. All homepage sections, selected 6 oz/18 oz prices/cart, Quick View, stable/non-clickable featured content, mobile menus, hover buffer, public unavailable/paused/image cases, same public/editor typography/color, explicit Save/Cancel, failed-save draft retention, and stable slug checked. Two intercepted saves (one intentional failure), one intercepted checkout preview, zero real business/provider writes.
+- Existing admin/account/internal-record Playwright regression harnesses: all exit 0. Admin covers eleven tabs/five widths and sixteen intercepted fixture mutations; account covers seven tabs, 20-order history, detail races, profile/address/support/auth-return/cart state; internal investigation covers tiers/Stripe settings/safe records/same-name customers. Fixtures stub Stripe.js and sessions; they do not verify real payments/cookies/providers. The admin harness needed a stub for the newly added public campaign read before its final pass. Screenshots of home/campaign/editor desktop/mobile were inspected. Catalog screenshot photos are reference fixtures, not claims about live catalog photography.
+- Early browser test retries used an old preview build or an HTTP image fixture rejected by the deliberate HTTPS validator. Rebuilt and corrected the fixture to HTTPS; the final run passed. Those fixture errors did not require weakening application URL validation.
+- Docs relative-link/fence and targeted secret-pattern checks: eleven documents and 65 current-phase source/test/schema/migration files, zero issues. Historical secret-search examples were recognized as patterns, not credentials. Mermaid diagrams were not changed or rerendered in this phase. No `.env.example` files found, no env file changes or secret values documented.
+- Existing frontend/backend became unavailable during the final checks. Fresh Node 24 `cd client && npm run dev:local -- --port 5173 --strictPort` and `cd server && npm run dev:local` both started successfully. Frontend HTTP 200, public campaign API 200, unauthenticated admin campaign API 401. These fully local review servers are intentionally left running; separate QA preview/3001 servers are stopped. Actual local read-only browser results are recorded in the completion note.
+
+### Manual Redeploy And QA
+
+1. Review the combined dirty tree, including accepted prior edits. No commit/push was made automatically. Deploy reviewed server code with Prisma generation through the normal Railway process, then deploy the matching Vercel client build. All current migrations are already applied; never reset/reseed.
+2. Fully local: `cd server && npm run dev:local`, `cd client && npm run dev:local`. Railway DB admin: `cd server && npm run dev:railway`, same local client command. Confirm badge/backend network target before an approved write. Both temporary modes keep browser admin CRUD local.
+3. In admin Campaigns, edit all six sections, use approved content/products, require image description for an image, enable public page deliberately, Save/reload. Compare `/campaigns/:slug` on actual desktop/mobile. Verify rename preserves the link, Cancel does not write, and failures retain edits.
+4. Check Active schedule boundaries, public disabled with continued eligible giving, Draft/Archived privacy, Paused/Ended no-contribution message, green product badges, multiple matched campaigns, and generated-not-paid impact.
+5. Check real 6 oz/18 oz selection/price/cart/checkout, Quick View focus/Escape, shared header/cart/auth, desktop hover, mobile menu, every original content section, reduced motion, actual image/ingredient accuracy, and direct Vercel campaign links.
+6. Perform approved guest and signed-in Stripe test checkout with promo plus campaign. Verify trusted totals, once-only order/inventory/usage, order success/history/ownership, and all retained admin tools. No live payment, real email, or label is necessary for this QA.
+
+### Remaining Risks And Next Phase
+
+- Railway/Vercel code deployment is not done. Schema readiness alone will not show the new UI or public endpoint in deployment. The running review app is fully local, not Railway DB mode; restart the backend with `dev:railway` only when intentionally managing Railway data.
+- Real Safari sessions, deployed cookies, authenticated campaign CRUD/persistence, actual Stripe payments, provider sends/tracking, and real production imagery/content still need controlled manual QA. Read-only Railway smoke does not substitute for these.
+- Generated donation aggregates are not payout/refund-reconciliation proof; older aggregates may not have full order attribution. No goal/payout ledger was invented.
+- Product admin analysis/notIncluded inputs are not persisted in the current Product schema. This pass avoids fabricated storefront analysis; persisting those product metadata fields is separate scoped work.
+- Catalog/order/customer list pagination and previously reported dependency advisories remain launch work. No audit fix/automatic package upgrade occurred here.
+- Public campaign URLs stay stable after rename; editing slugs/redirects, actual verified review submissions, customer notification subscriptions, and real social destinations remain future work.
+
+Ready for focused commit review after the documented checks, not a production-launch certification. Recommended next phase: reviewed server/client deployment, approved real-data campaign/Safari/checkout QA, then dependency remediation and business content/media readiness. Communications/auth/account/loyalty policy is unchanged.
+
+### Completion Verification
+
+Actual local read-only browser check passed at 1440/390 px: catalog HTTP 200, three active product cards, correct size ordering, all nine homepage anchors, no horizontal overflow, no Vue/runtime errors, and zero real mutation requests. The first strict run classified Stripe's standard local-HTTP development warning as a failure; the final run records that exact expected warning separately rather than suppressing unrelated errors. Live integrations require HTTPS. No payment/auth credentials or provider response bodies were printed.
+
+Final client build remains exit 0; tests remain 44 client / 46 server passed. Syntax checks pass for 89 client and 96 server JavaScript files; eleven docs / 65 current-phase source/test/schema/migration files pass link/fence/targeted secret checks. No `.env.example` files or env changes. Separate QA preview 5175/API 3001 stopped; intentionally retained fully local frontend 5173/backend 3000 are available for review. No commit/push/code deployment performed. Final diff whitespace check passed.
+
+## 2026-10-09 Homepage, Story, Footer, And Upcoming Card Follow-Up
+
+### Scope And Confirmed Causes
+
+Continued the accepted dirty tree; did not revert admin/account/campaign/cart/variant/server work. Read the operating guide, handoff, relevant product/UX/customer/roadmap/architecture/QA documents, and inspected git status/diff-stat/name-status before edits.
+
+- Home still contained all nine anchors. The approved Calm Giving pass had flattened visual boundaries/headings and reduced some content cues, which made sections appear missing. Full-width band separation and recognizable section titles are restored, not a speculative rewrite of data loading.
+- Original hero used a 56%-wide white overlay with a visible seam and a fixed/max-height/overflow-hidden layout. The small baseline tested did not actually clip; cropping was a responsive risk, not a demonstrated checkout/content failure. The shared hero now grows with content and has image-failure handling.
+- Meet the Brand originally had only a short home teaser; its button went back to shopping. Added a real public story route and connected all story destinations.
+- User subsequently requested the older warm footer, richer seasonal card, and original hero presentation. Footer/card content/style are restored with working existing interactions. Homepage hero restores the product-focused heading/action/supporting hierarchy and light frosted treatment, but remains **unframed**, not an exact recreation of the requested rounded glass card. This difference was disclosed; final visual approval remains open.
+- Prior minimal ComingSoonCard had removed actual category/tags/protein/cut and the unavailable notice. Those fields now render through the existing ProductCardInfo source. Old Notify Me incorrectly opened Preview; restored as disabled future-phase UI instead of claiming a subscription exists.
+
+### Delivered Behavior
+
+- All nine home anchors remain: hero, spotlight, shop, coming-soon, reviews, process, ingredients, about, faq. Larger headings, blue rules, and white/warm/light-blue bands distinguish them. Made With Care uses individual repeated step items; Next Drops uses an introduction plus responsive product area instead of stretching a few items across the entire page.
+- Hero uses the actual featured product's stored description/tags/shop destination. It cannot claim Chicken Jerky when another product is featured. Primary goes to the featured section, with collection fallback; ingredient and story actions remain real. Unsupported human-grade certification, fast/free-shipping, 30-day promise, and unpersisted nutrition analysis are not restored from the screenshots. Supporting links describe actual guest checkout, care, and ingredient content.
+- New `/meet-chase-evie` page: existing origin story, two explicitly illustrative pair portraits, shared brand values, and collection/ingredient actions. User approved templates for now. No personal biography, medical claim, age, or verified review was invented.
+- Teaser, hero, shared desktop/mobile header, and footer all consume the same brand route constant. Header/cart/search/auth are reused. New page hydrates existing cart storage and loads products for variant/inventory-aware cart controls; it adds no account or brand backend API.
+- Upcoming cards show real category/tags/name/description/protein/cut, clear Coming Soon text, functional image/Preview, and disabled Notify Me with future-phase explanation. Next Drops now separates loading, failed catalog/retry, and genuinely empty states. No automatic email/subscription/provider calls.
+- Footer restores warm oat, yellow/blue paw mark, larger brand title, seven original navigation destinations, centered mobile socials, and separated copyright/tagline. Instagram uses the public profile supplied by the user. TikTok/YouTube appear disabled, not as active `#` dummy links. Year remains dynamic, not hardcoded to 2025.
+- Social helper rejects non-HTTPS, credentials, unexpected host/port, missing or platform-root destinations. Optional public variables allow later profile configuration. Footer uses immutable storefront colors in account context.
+- Existing selected 6 oz/18 oz, non-clickable featured image/title, campaign green accents, shared editor, trusted checkout totals, auth, and admin behavior remain intact. No server/schema/env/dependency/deployment files changed in this follow-up.
+
+### Files Created
+
+Paths are relative to the repository. Grouped braces enumerate files.
+
+- `client/src/domains/storefront/constants/brandContent.js`.
+- `client/src/domains/storefront/components/{StorefrontHero,BrandStoryContent}.vue`.
+- `client/src/domains/storefront/views/BrandView.vue`.
+- `client/src/domains/storefront/Home/sections/{BrandPromiseStrip,NextDropsSection}.vue`.
+- `client/src/domains/storefront/styles/{home,brand}.css`.
+- `client/src/domains/storefront/utils/socialLinks.js`.
+- `client/tests/tier2/storefront/{storefront-sections,social-links}.test.js`.
+
+### Files Modified In This Follow-Up
+
+- `client/src/domains/storefront/Home/HomeView.vue`, `Home/sections/{HeroSection,AboutBrandSection,ProcessSection,IngredientsAnalysisSection,ReviewsPreviewSection}.vue`.
+- `client/src/domains/products/ProductCard/ComingSoonCard.vue`.
+- `client/src/app/layouts/{SiteHeader,SiteFooter}.vue`, `client/src/app/router/index.js`.
+- `PROJECT_HANDOFF.md`, `docs/{customer-experience,ux-ui-standards,verification-and-qa}.md`, `docs/architecture/{README,data-flow,file-map}.md`.
+
+BrandView is 76 lines; ComingSoonCard 84; StorefrontHero 182. Views compose existing state/helpers; story and section components are presentational. No duplicate header, API, account auth, public campaign renderer, or product variant selection implementation was created. See [file map](docs/architecture/file-map.md) and [data flow](docs/architecture/data-flow.md).
+
+### Commands And Verification
+
+- Initial and follow-up git status/diff-stat/name-status inspected. Existing changes preserved. `git diff --check` passed.
+- `cd client && npm run build` with bundled Node 24: exit 0, Vite 8.0.9, 2183 modules, no warnings. Rebuilt after the final hero/footer/card revisions.
+- `cd client && npm test` with bundled Node 24: final exit 0, thirteen files / 53 tests (tiers: 10, 37, 6). Nine new tests exercise actual Vue SSR sections, featured hero content, loading/error/empty/upcoming state, and safe social config. One intermediate run stalled before tier 3 started and was stopped (exit 130); the full unchanged suite then completed successfully. Do not treat that interruption as an additional passed test run.
+- Existing lint script: none. Focused temporary Prettier formatting used existing single-quote/no-semicolon conventions, with no dependency/script added. Router formatting was not broadened.
+- `node --check` over client JavaScript sources: exit 0, 91 files. Client build resolves Vue imports. Server/Prisma commands were not rerun because this follow-up changes no server/schema source; the prior phase's 46 server tests/build/migration results remain historical, not a new server verification claim.
+- Temporary built-client preview used `127.0.0.1:5176`. An initial own preview bound 127.0.0.1:5175 while another process owned the wildcard port; stopped the own preview (exit 130) and moved QA to 5176. Did not terminate or reconfigure the unrelated listener.
+- `node /tmp/doggy-home-brand-qa.cjs`: exit 0 against the built client with intercepted APIs. Widths/heights 1440x1000, 1024x768, 768x900, 390x844, 320x650, 800x600. No overflow/clipped hero content/Vue warnings/runtime errors. Retained sections, final hero colors/destination, footer social/disabled states, upcoming Preview, story links/direct reload, cart count/both variants/search persistence, signed-in header, mobile navigation, actual image loading/error fallbacks, and upcoming loading/error/empty branches passed. One intercepted checkout preview; zero real mutation requests. Screenshots inspected on desktop/mobile.
+- `QA_BASE_URL=http://127.0.0.1:5176 node /tmp/doggy-calm-giving-qa.cjs`: exit 0 after final hero changes. Home/campaign/editor widths 1440/1280/1024/768/390/320, variant/Quick View/featured behavior, same public/editor styles, Save/Cancel/failure retention, giving badges, account hover, and stubbed checkout passed. Two intercepted saves and one intercepted preview; no real campaign/payment/provider writes.
+- `QA_BASE_URL=http://127.0.0.1:5176 node /tmp/doggy-account-current-qa.cjs`: exit 0. Seven tabs, 20-order navigation, profile/address/support fixture actions, cart retention, auth-return/sign-out, desktop/mobile and error states passed. Console HTTP failures were intentionally intercepted failure/authorization fixtures, not new Vue/runtime errors. Does not verify real cookies or DB persistence.
+- `node /tmp/doggy-calm-local-readonly-qa.cjs`: exit 0 with the actual fully local API/front end at 5173, widths 1440/390. Catalog HTTP 200, all home anchors, correct variant ordering, new brand route rendered, no overflow/runtime errors, zero real API mutations. Standard Stripe local-HTTP warnings were recorded separately. No real checkout payment/customer signup/admin write/email/label was performed.
+- `node /tmp/doggy-calm-docs-check.cjs` with the 21 follow-up source/test files: exit 0, eleven documents checked, zero relative-link/fence/targeted secret-pattern issues. Mermaid diagrams were not changed/rerendered. `.env.example` inventory returned no files (expected rg exit 1); final diff whitespace check passed. Own 5176 QA preview stopped after verification; fully local review servers were not reconfigured.
+
+### Configuration And Deployment
+
+No required server/Railway variable changes and no migration in this follow-up. The prior explicitly authorized campaign migration remains applied locally and on Railway; this does not mean the prior server/client code has been deployed.
+
+Optional public client/Vercel variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_INSTAGRAM_URL` | Override the user-approved public Instagram profile with a valid HTTPS Instagram profile URL. |
+| `VITE_TIKTOK_URL` | Supply a real HTTPS TikTok profile URL to replace the disabled placeholder. |
+| `VITE_YOUTUBE_URL` | Supply a real HTTPS YouTube profile/channel URL to replace the disabled placeholder. |
+
+All are public profile configuration, not provider keys. No env file was created/modified, no `.env.example` created, no secret values copied or documented. These Vite settings require a rebuilt frontend. Existing API/Stripe/auth variable names and temporary local/Railway DB mode instructions remain unchanged. No commit/push/deployment was performed.
+
+### Manual QA, Risks, And Next Step
+
+1. Review the latest hero against the requested original card: content hierarchy/action styling are restored, but rounded inset framing is deliberately not an exact match. Obtain visual approval before treating that design request as fully complete.
+2. Check all homepage sections, seasonal Preview/unavailable notices, story/footer destinations, keyboard focus, desktop/mobile/Safari, image failures, and reduced-motion behavior. Default photo assets are templates; approve real catalog/brand photographs and expanded story separately.
+3. Verify 6 oz/18 oz on real products, shared cart/search/header state across home/story/account/checkout, signed-in and guest sessions, then one approved Stripe test checkout including promo plus campaign. Fixture/read-only QA is not deployed Safari/payment/provider proof.
+4. Configure real TikTok/YouTube destinations later; keep placeholders disabled until then. Launch notifications and verified reviews remain future work, not working buttons or fabricated testimonials.
+5. Review the combined dirty tree including prior server/schema/admin edits. Deploy reviewed prior server code and the matching current Vercel build through normal processes; test direct `/meet-chase-evie` after deploy. No new database migration is required for this follow-up.
+
+Current focused client edits are ready for commit review after the recorded checks, not a production-launch certification. No automatic commit/push. Existing fully local review frontend 5173/backend 3000 remain available; separate own QA preview is stopped after verification. Recommended next step: final visual/content approval, then reviewed deployment and controlled real-session/checkout QA.
+
+## 2026-10-09 Approved Storefront Baseline Implementation
+
+### Scope And Approval
+
+The user approved the interactive storefront baseline preview after clarifying that Add to Cart, not the payment checkout page, should slide out from the right. Applied that presentation to the existing Vue app and added the subsequently requested neutral gray hero readability tint. This section supersedes the earlier frosted-hero/visual-approval-open notes above. The hero remains an unframed photo-led layout; no rounded hero text card was added.
+
+Continued the accepted dirty tree after reading the operating guide/handoff/relevant product, UX, customer, roadmap, architecture, and QA rules, and inspecting git status/diff-stat/name-status. Existing server/admin/account/campaign/schema changes belong to prior accepted work and were not reverted or edited in this pass. No commit, push, code deployment, migration, DB mutation, payment, provider send, or env-file change was performed.
+
+### Delivered Changes And Confirmed Issues
+
+- Preserved all nine home anchors and their actual content: hero, featured treat, collection, Next Drops, Happy Pups, care, ingredients, brand teaser, and shopping help. Shared header/footer/search/auth/cart and the public brand story route remain connected.
+- Applied the approved bright template photo, unframed white hero copy, neutral gray photo tint, yellow primary action, readable secondary action/story/supporting links, warm/white bands, and restrained product/media/header/care shadows. Small-screen spacing grows safely with content and leaves a hint of following content even at the tested 320 x 568 viewport.
+- Next Drops previously devoted one-third of desktop space to an introduction, squeezing the richer cards. It now uses a full-width introduction followed by two generous columns, then one column on small screens. Category/tags/description/protein/cut/notice/Preview remain. Notifications stay disabled future work.
+- Bundled the approved illustrative JPEGs locally for hero/teaser/gallery, with explicit template/gallery labeling. Actual product photos/prices/variants/stock remain catalog-owned; the standalone preview's mock products/cart/calculations were not copied into the app. No fabricated testimonials or product/shipping guarantees were added.
+- Kept the existing 420 px right-side drawer (mobile viewport width), but replaced lifting nested item cards with static separated rows, icon commands, clear quantity controls, selected size/unit/line price, existing stock/SKU context, and a warm summary. Only Secure Checkout navigates to `/checkout`; Add to Cart stays on the current route.
+- The existing drawer lacked modal keyboard/scroll lifecycle. Added a focused composable for initial/contained/restored focus, Tab/Shift-Tab, Escape, scroll lock/restoration, and unmount cleanup. During actual browser QA, removing a row left focus on the body; fixed that confirmed issue by recovering focus after drawer updates and added a regression test.
+- An additional 844 x 390 landscape check confirmed the fixed footer exceeded the drawer height, clipping Continue Shopping. Short-height layouts now scroll the whole drawer beneath a sticky header/close control. Retest confirmed both footer actions are reachable, with Continue Shopping ending at 374 px inside the 390 px viewport.
+- Existing useCart selected-variant pricing/storage/inventory behavior, checkout totals/payment flow, backend APIs, auth, campaigns, admin, schema, package dependencies, and deployment configuration were not changed.
+
+### Files Created In This Pass
+
+- `client/src/assets/images/storefront-hero-template.jpg`
+- `client/src/assets/images/storefront-seasonal-template.jpg` (illustrative gallery asset, not an override of the Seasonal Drop product image)
+- `client/src/domains/cart/composables/useCartDrawerDialog.js`
+- `client/tests/tier2/storefront/cart-drawer.test.js`
+- `client/tests/tier2/storefront/cart-drawer-dialog.test.js`
+
+### Existing Files Modified In This Pass
+
+Some of these existed as untracked accepted files at the start; they were not newly created by this pass.
+
+- `client/src/domains/cart/CartDrawer/{CartDrawer,CartItemCard,CartSummary,CartEmptyState}.vue`
+- `client/src/domains/storefront/components/StorefrontHero.vue`
+- `client/src/domains/storefront/constants/brandContent.js`
+- `client/src/domains/storefront/Home/sections/{HeroSection,ProductSpotlightSection,ReviewsPreviewSection,AboutBrandSection}.vue`
+- `client/src/domains/storefront/styles/{home,storefront,siteHeader}.css`
+- `client/src/domains/products/ProductCard/{ProductCardActions,ComingSoonCard}.vue`
+- `PROJECT_HANDOFF.md`, `docs/customer-experience.md`, `docs/ux-ui-standards.md`, `docs/verification-and-qa.md`, and `docs/architecture/{README,data-flow,file-map}.md`
+
+### Commands And Verification
+
+Build/test commands used bundled Node v24.19.0 on PATH; no package installation/upgrade occurred.
+
+| Check | Result |
+| --- | --- |
+| `git status --short --branch`, `git diff --stat`, `git diff --name-status` | Inspected accepted dirty `dev-main` tree before editing: 69 tracked modified files plus untracked prior work |
+| Client `npm run build` | Exit 0; Vite 8.0.9 transformed 2187 modules |
+| Client `npm test` | Exit 0; 15 files / 63 tests passed (tier 1: 10, tier 2: 47, tier 3: 6) |
+| New tests | Ten additional SSR/dialog regression tests; existing variant, promo, checkout totals, campaign/editor, admin, account, and formatting tiers still pass |
+| `git diff --check` | Exit 0, no whitespace errors |
+| `.env.example` inventory with `rg --files --hidden --no-ignore` excluding dependencies/Git/build output | No matches, expected exit 1; none created |
+| `node --check` for `useCartDrawerDialog.js` and `brandContent.js` | Both exit 0; Vue imports/templates additionally resolved by Vite build |
+| `node /tmp/doggy-calm-docs-check.cjs` with the 18 changed/new text source/test files in `CHECK_FILES` | Exit 0; eleven docs checked, no relative-link/fence/targeted secret-pattern issues |
+
+Actual local in-app browser checks at 1440 x 900, 1024 x 768, 768 x 1024, 390 x 844, and 320 x 568 found all nine anchors, no horizontal overflow, contained card controls, header cart within bounds, and responsive upcoming columns. Inspected actual hero, seasonal cards, gallery, care, and ingredient layout/screenshots; bundled hero/gallery images render. Featured image/title remain non-clickable by DOM inspection.
+
+Actual catalog/cart checks passed: Beef 6 oz adds its stored price; Chicken 18 oz adds its distinct stored price; Quick View adds both selected Chicken sizes; featured purchase still works; quantities/subtotals update; selected unavailable Beef 18 oz correctly shows Out of stock/Unavailable rather than allowing purchase. This is real availability, not a broken button. Drawer opens over the same route, is 420 px at desktop / 390 px at mobile, focuses Close cart, wraps Tab in both directions, restores focus/scroll on Escape/backdrop/Continue Shopping, and recovers focus after removal. Bag persists through the story page; account sign-in entry renders. Temporary QA quantities/rows were restored, retaining the pre-existing saved bag.
+
+Console inspection found no Vue/runtime errors; only the existing Stripe.js local-HTTP warning (live integration requires HTTPS). No sign-in credentials, customer mutations, payment confirmation, checkout submission, or provider action was used. Secure Checkout's existing `/checkout` target is verified by SSR/source and DOM; payment/checkout preview was not exercised live in this UI pass. Server/Prisma checks were not rerun because no server/schema files changed here. No lint script exists; none was invented.
+
+### Documentation And Remaining QA
+
+Current behavior/source boundaries are updated in [customer experience](docs/customer-experience.md), [UX standards](docs/ux-ui-standards.md), [data flow](docs/architecture/data-flow.md), [file map](docs/architecture/file-map.md), [architecture index](docs/architecture/README.md), and [QA](docs/verification-and-qa.md). Existing Mermaid diagrams were not altered.
+
+1. Review final visuals on real desktop/mobile/Safari, including touch scroll, screen-reader focus, reduced motion, long real content, and many cart rows. Browser screenshots/isolated lifecycle tests are not accessibility certification.
+2. Replace illustrative imagery with approved real brand/customer photographs when ready, and review actual catalog copy/tags/photos. No verified-review/subscription capability is implied by the gallery or Notify Me.
+3. Recheck eligible campaign-green cards and shared campaign/admin canvas after reviewed deployment. The current local catalog did not display an eligible campaign badge during this browser check; existing matching conditions and test tiers remain intact, but that live visual state was not proved here.
+4. Verify signed-in headers/Safari sessions and one approved guest/signed-in Stripe test checkout including promo plus campaign, trusted preview totals, success/history, and once-only order/inventory/usage. Those deployment/payment behaviors were not re-certified by this styling pass.
+5. Review the combined dirty tree before commit/deployment; prior server/schema/admin edits remain present. This focused client pass requires no new env variables or migration. No Railway/Vercel deployment was performed.
+
+The focused changes are ready for commit review after recorded checks, not an automatic release or full launch certification. Recommended next phase: real-device/content approval, review the combined diff, then controlled deployment and checkout/session/campaign QA. Existing local frontend at 5173 and backend at 3000 were reused without changing startup modes or secrets.

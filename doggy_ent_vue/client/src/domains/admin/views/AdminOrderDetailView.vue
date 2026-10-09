@@ -3,6 +3,8 @@ import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminPageHeader from '../components/AdminPageHeader.vue'
 import AdminIcon from '../components/AdminIcon.vue'
+import AdminOrderInternalPanel from '../components/AdminOrderInternalPanel.vue'
+import AdminOrderValueBadge from '../components/AdminOrderValueBadge.vue'
 import AdminOrderStatusPanel from '../components/AdminOrderStatusPanel.vue'
 import AdminOrderNotificationsPanel from '../components/AdminOrderNotificationsPanel.vue'
 import AdminOrderTrackingPanel from '../components/AdminOrderTrackingPanel.vue'
@@ -47,6 +49,7 @@ onMounted(loadOrder)
     <template v-else>
       <div class="flex flex-wrap gap-4 admin-muted mb-6">
         <p>Placed {{ formatDate(order.createdAt) }}</p>
+        <AdminOrderValueBadge :order="order" />
         <span class="admin-badge" :class="statusClass(order.status)">{{
           order.status
         }}</span>
@@ -192,22 +195,7 @@ onMounted(loadOrder)
               {{ order.deliveryNotes }}
             </p>
           </section>
-          <details class="admin-form-section">
-            <summary class="cursor-pointer font-medium">Payment record</summary>
-            <p class="admin-muted mt-3">
-              {{
-                order.stripePaymentIntentId
-                  ? 'Stripe payment ID recorded'
-                  : 'No Stripe payment ID stored'
-              }}
-            </p>
-            <p class="break-all text-xs mt-2">
-              {{ order.stripePaymentIntentId || 'Unavailable' }}
-            </p>
-            <p class="break-all admin-muted text-xs mt-2">
-              Internal order ID: {{ order.id }}
-            </p>
-          </details>
+          <AdminOrderInternalPanel :order="order" />
         </aside>
       </div>
       <section class="admin-form-section">

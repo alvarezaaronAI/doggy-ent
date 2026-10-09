@@ -9,7 +9,7 @@
         v-for="order in orders"
         :key="order.id || order.orderNumber"
         :to="`/admin/orders/${order.id}`"
-        class="flex items-center justify-between gap-4 py-3 text-sm transition hover:text-emerald-700"
+        class="admin-row justify-between py-3 text-sm"
       >
         <div>
           <p class="font-bold">

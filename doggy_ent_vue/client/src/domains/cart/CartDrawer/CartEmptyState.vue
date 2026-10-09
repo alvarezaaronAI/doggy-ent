@@ -1,4 +1,5 @@
 <script setup>
+import { ShoppingBag } from '@lucide/vue'
 const emit = defineEmits([
   'continue-shopping',
 ])
@@ -7,17 +8,18 @@ const emit = defineEmits([
 <template>
   <div class="flex flex-1 flex-col items-center justify-center px-6 text-center">
     <div class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-2)_50%,white)] text-2xl text-[var(--brand-4)] shadow-sm">
-      🛍️
+      <ShoppingBag :size="28" aria-hidden="true" />
     </div>
 
     <h3 class="text-xl font-bold">Your cart is empty</h3>
 
     <p class="mt-2 max-w-xs text-sm text-stone-300">
-      Add a treat to see your order slide in from the right side.
+      Find something good for your pup.
     </p>
 
     <button
-      class="focus-ring mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-5 py-3 font-semibold text-[var(--brand-4)] hover:bg-emerald-300"
+      type="button"
+      class="mt-5 inline-flex min-h-11 items-center gap-2 rounded-md bg-[var(--brand-2)] px-5 py-3 font-semibold text-[var(--brand-4)] shadow-sm hover:bg-[#e8d350]"
       @click="emit('continue-shopping')"
     >
       Shop Treats

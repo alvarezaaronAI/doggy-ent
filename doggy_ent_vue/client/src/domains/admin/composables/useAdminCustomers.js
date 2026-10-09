@@ -25,6 +25,7 @@ export function useAdminCustomers() {
 
     return customers.value.filter((item) => [
       item.name,
+      item.id,
       item.email,
       item.role,
       item.status,

@@ -1,132 +1,171 @@
 <script setup>
-import {
-  CAMPAIGN_STATUS_OPTIONS,
-  DONATION_TYPE_OPTIONS,
-} from '../constants/adminCampaigns.constants'
-import AdminScheduleFields from './AdminScheduleFields.vue'
-defineProps({
+import { computed, nextTick, ref } from 'vue'
+import CampaignPageContent from '@campaigns/components/CampaignPageContent.vue'
+import AdminCampaignSectionFields from './AdminCampaignSectionFields.vue'
+import AdminIcon from './AdminIcon.vue'
+import { CAMPAIGN_EDITOR_SECTIONS } from '../constants/adminCampaignEditor.constants.js'
+import { mapAdminCampaignCanvas } from '../mappers/adminCampaignForm.mapper.js'
+const props = defineProps({
   editingCampaignId: [String, Number],
   errorMessage: String,
   form: { type: Object, required: true },
   isSaving: Boolean,
   products: { type: Array, required: true },
-  successMessage: String,
 })
 const emit = defineEmits(['reset', 'submit'])
+const section = ref('hero')
+const inspector = ref(null)
+const initial = JSON.stringify(props.form)
+const campaign = computed(() => mapAdminCampaignCanvas(props.form))
+async function selectSection(key) {
+  section.value = key
+  await nextTick()
+  inspector.value
+    ?.querySelector('input, textarea, select')
+    ?.focus({ preventScroll: true })
+}
+function cancel() {
+  if (
+    JSON.stringify(props.form) !== initial &&
+    !window.confirm('Discard unsaved campaign changes?')
+  )
+    return
+  emit('reset')
+}
 </script>
 <template>
-  <form @submit.prevent="emit('submit')">
+  <form class="campaign-editor" @submit.prevent="emit('submit')">
     <div v-if="errorMessage" class="admin-alert admin-error" role="alert">
       {{ errorMessage }}
     </div>
-    <div class="admin-editor">
-      <div class="min-w-0">
-        <section class="admin-form-section">
-          <h2>Campaign &amp; beneficiary</h2>
-          <div class="admin-form-grid">
-            <label class="admin-field"
-              >Campaign name<input v-model="form.name" required
-            /></label>
-            <label class="admin-field"
-              >Shelter / donation target<input
-                v-model="form.donationTarget"
-                required
-            /></label>
-            <label class="admin-field md:col-span-2"
-              >Description<textarea
-                v-model="form.description"
-                rows="3"
-              ></textarea>
-            </label>
-            <label class="admin-field"
-              >Donation type<select
-                aria-label="Donation type"
-                v-model="form.donationType"
-              >
-                <option
-                  v-for="o in DONATION_TYPE_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                >
-                  {{ o.label }}
-                </option>
-              </select></label
-            >
-            <label class="admin-field"
-              >Donation value<input
-                v-model.number="form.donationValue"
-                type="number"
-                min="0"
-                step="0.01"
-            /></label>
-          </div>
-        </section>
-        <section class="admin-form-section">
-          <h2>Included products</h2>
-          <div
-            class="max-h-72 overflow-auto mt-4 divide-y divide-[var(--admin-line)]"
-          >
-            <label
-              v-for="product in products"
-              :key="product.id"
-              class="flex items-center gap-3 py-3"
-              ><input
-                v-model="form.productIds"
-                type="checkbox"
-                :value="product.id"
-              /><span
-                ><span class="block font-medium">{{ product.name }}</span
-                ><span class="admin-muted text-xs"
-                  >{{ product.category }} · {{ product.status }}</span
-                ></span
-              ></label
-            >
-            <p v-if="!products.length" class="admin-muted py-3">
-              No products available. Refresh the campaign list to retry.
-            </p>
-          </div>
-        </section>
-        <AdminScheduleFields :form="form" />
+    <div class="campaign-editor-grid">
+      <div class="campaign-canvas">
+        <div class="campaign-canvas-toolbar">
+          <span
+            >{{
+              form.publicPageEnabled
+                ? 'Public page enabled'
+                : 'Public page disabled'
+            }}
+            · {{ form.status }}</span
+          ><span>{{ isSaving ? 'Saving...' : 'Unsaved editor' }}</span>
+        </div>
+        <CampaignPageContent
+          :campaign="campaign"
+          :products="products"
+          editable
+          :active-section="section"
+          @select-section="selectSection"
+        />
       </div>
-      <aside class="admin-editor-aside">
-        <h2>Availability</h2>
-        <label class="admin-field mt-5"
-          >Status<select aria-label="Status" v-model="form.status">
-            <option
-              v-for="o in CAMPAIGN_STATUS_OPTIONS"
-              :key="o.value"
-              :value="o.value"
-            >
-              {{ o.label }}
-            </option>
-          </select></label
-        >
-        <p class="admin-muted mt-5">
-          Donations are calculated by the server from eligible products.
-        </p>
-        <section class="admin-form-section mt-6">
-          <h3>Giving impact</h3>
-          <p class="admin-muted mt-2">
-            Generated donations are order attributions, not confirmed payouts.
-          </p>
-        </section>
+      <aside
+        ref="inspector"
+        class="campaign-inspector"
+        aria-label="Campaign editing controls"
+      >
+        <fieldset :disabled="isSaving">
+          <label class="admin-field mb-6"
+            >Edit section<select v-model="section" aria-label="Edit section">
+              <option
+                v-for="item in CAMPAIGN_EDITOR_SECTIONS"
+                :key="item.key"
+                :value="item.key"
+              >
+                {{ item.label }}
+              </option>
+            </select></label
+          >
+          <AdminCampaignSectionFields
+            :section="section"
+            :form="form"
+            :products="products"
+          />
+        </fieldset>
+        <div class="campaign-editor-savebar">
+          <button
+            type="submit"
+            class="admin-button admin-primary"
+            :disabled="isSaving"
+          >
+            <AdminIcon name="save" />{{
+              isSaving ? 'Saving...' : 'Save campaign'
+            }}
+          </button>
+          <button
+            type="button"
+            class="admin-button"
+            :disabled="isSaving"
+            @click="cancel"
+          >
+            Cancel
+          </button>
+        </div>
       </aside>
-    </div>
-    <div class="admin-savebar">
-      <button
-        type="submit"
-        class="admin-button admin-primary"
-        :disabled="isSaving"
-      >
-        {{ isSaving ? 'Saving...' : 'Save campaign' }}</button
-      ><button
-        type="button"
-        class="admin-button"
-        :disabled="isSaving"
-        @click="emit('reset')"
-      >
-        Cancel
-      </button>
     </div>
   </form>
 </template>
+<style scoped>
+.campaign-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+.campaign-canvas {
+  min-width: 0;
+  border: 1px solid var(--admin-line);
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.campaign-canvas-toolbar {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--admin-line);
+  background: var(--admin-soft);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  color: var(--admin-muted);
+}
+.campaign-inspector {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  max-height: calc(100svh - 48px);
+  overflow: auto;
+}
+.campaign-editor-savebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--admin-line);
+  margin-top: 24px;
+  padding-top: 20px;
+  background: #fff;
+  position: sticky;
+  bottom: -20px;
+  padding-bottom: 20px;
+}
+@media (max-width: 1199px) {
+  .campaign-editor-grid {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 16px;
+  }
+}
+@media (max-width: 999px) {
+  .campaign-editor-grid {
+    grid-template-columns: 1fr;
+  }
+  .campaign-inspector {
+    position: static;
+    max-height: none;
+    order: -1;
+  }
+}
+</style>

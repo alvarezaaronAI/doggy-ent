@@ -37,6 +37,26 @@ Keep the interface calm, premium, and practical.
 - Admin colors: use restrained identifying colors by operational group.
 - Gradients: keep minimal and purposeful.
 
+## Calm Workspace Action Visibility
+
+As of 2026-10-09, customer account and admin workspaces use subtle gray translucent backgrounds and defined borders for actionable links, buttons, sidebar entries, editable fields, record choices, and disclosure summaries. Preserve green primary/selected states, keyboard focus, disabled states, and readable text. Do not apply button-like surfaces to read-only metrics or future placeholders; visual affordances must match actual interactions. Scope these styles to the account/admin workspace rather than changing storefront/checkout globally.
+
+## Calm Giving Storefront And Campaign Canvas
+
+As of 2026-10-09, storefront sections use full-width bands rather than stacked floating section cards. Preserve the original blue/yellow/brown/oat palette, white/neutral reading surfaces, gray secondary controls, and subtle emerald giving accents. Product media and size/action controls have stable dimensions; long text wraps without overlap. No viewport-scaled typography or negative tracking was added.
+
+The immutable `--storefront-brand-*` aliases in `client/src/assets/styles/main.css` preserve the storefront palette inside the admin editor, where ordinary `--brand-*` variables otherwise inherit admin overrides. `CampaignPageContent.vue` and its scoped styles are the same renderer for public pages and the editable canvas; do not create a second visual implementation. Editor handles appear only in edit mode, and product actions are inert there. Existing Tailwind utilities remain in use; no styling framework was added.
+
+## Homepage Reference-Style Follow-Up
+
+Keep section boundaries recognizable: constrained content inside alternating full-width bands, clear headings, and restrained blue rules. Homepage-only rules live in `home.css`; they must not recolor the campaign canvas. Restore richer individual upcoming product cards without making the whole card a nested button. The Coming Soon notice is a reading band within the product item, not another floating card. Only image/Preview actions open Quick View; unavailable notifications explain the future phase.
+
+`StorefrontHero.vue` provides one content-safe photo/heading/action layout for home and the story page. The approved baseline replaces the earlier frosted variant with unframed white text over photography and a neutral gray tint for readability. Avoid fixed/max heights plus hidden overflow that crop hero controls. Keep brown/yellow/blue accents and actual product/anchor actions; do not restore unsupported product/shipping promises. Retain a hint of following content at standard desktop/mobile/short-screen viewports.
+
+Use restrained shadows on individual product items and media, not on section containers. Next Drops uses the full content width rather than a narrow sidebar layout. The right-side cart uses static, separated item rows instead of nested floating/lifting cards. Controls use Lucide icons, visible focus, and 44 px touch targets. Drawer motion respects reduced-motion preferences; its immutable storefront color aliases also work when opened from account pages.
+
+Footer restores warm oat, a yellow/blue brand mark, centered wrapping navigation/social controls on mobile, and a separated copyright area. It uses immutable storefront colors even in account pages. Missing social destinations are disabled placeholders rather than `href="#"` links.
+
 ## Animation And Motion
 
 Use subtle motion where it improves feedback or comprehension:

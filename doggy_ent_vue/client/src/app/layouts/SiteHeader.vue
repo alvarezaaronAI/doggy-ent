@@ -1,216 +1,235 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
-  useAccountAuth,
-} from '@domains/account/composables/useAccountAuth.js'
-
+  PawPrint,
+  Search,
+  User,
+  ShoppingBag,
+  Menu,
+  X,
+  ChevronDown,
+} from '@lucide/vue'
+import { useAccountAuth } from '@domains/account/composables/useAccountAuth.js'
+import { BRAND_STORY_PATH } from '@storefront/constants/brandContent.js'
 const props = defineProps({
-  cartCount: {
-    type: Number,
-    default: 0,
-  },
-  searchQuery: {
-    type: String,
-    default: '',
-  },
+  cartCount: { type: Number, default: 0 },
+  searchQuery: { type: String, default: '' },
 })
-
 const emit = defineEmits(['open-cart', 'update:search-query'])
+const route = useRoute()
+const router = useRouter()
+const mobileMenuOpen = ref(false)
 const accountMenuOpen = ref(false)
+const accountMenuPinned = ref(false)
+const headerRef = ref(null)
 const accountMenuRef = ref(null)
-const {
-  authenticated,
-  loadSession,
-  signOut,
-  user,
-} = useAccountAuth()
-
-function getFirstName() {
-  return String(user.value?.name || user.value?.email || 'Friend')
+const { authenticated, loadSession, signOut, user } = useAccountAuth()
+const links = [
+  ['All Treats', 'shop'],
+  ['Next Drops', 'coming-soon'],
+  ['Made With Care', 'process'],
+  ['Ingredients', 'ingredients'],
+  ['Happy Pups', 'reviews'],
+  ['Meet the Brand', 'about'],
+  ['FAQ', 'faq'],
+]
+let closeTimer
+function destination(id) {
+  return id === 'about' ? BRAND_STORY_PATH : { path: '/', hash: '#' + id }
+}
+function firstName() {
+  return String(user.value?.name || 'Friend')
     .trim()
     .split(/\s+/)[0]
 }
-
-function getInitials() {
-  const source = String(user.value?.name || user.value?.email || 'CE')
+function initials() {
+  return String(user.value?.name || 'CE')
     .trim()
-
-  const parts = source
-    .replace(/@.*/, '')
-    .split(/[\s._-]+/)
-    .filter(Boolean)
-
-  return (parts[0]?.[0] || 'C') + (parts[1]?.[0] || parts[0]?.[1] || 'E')
+    .split(/\s+/)
+    .map((word) => word[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
 }
-
-async function logout() {
+function openAccount() {
+  clearTimeout(closeTimer)
+  accountMenuOpen.value = true
+}
+function closeAccount() {
+  clearTimeout(closeTimer)
   accountMenuOpen.value = false
+  accountMenuPinned.value = false
+}
+function toggleAccount() {
+  if (accountMenuPinned.value) closeAccount()
+  else {
+    openAccount()
+    accountMenuPinned.value = true
+  }
+}
+function scheduleClose(fromFocus = false) {
+  clearTimeout(closeTimer)
+  if (accountMenuPinned.value && !fromFocus) return
+  closeTimer = setTimeout(() => {
+    if (!accountMenuRef.value?.contains(document.activeElement)) closeAccount()
+  }, 200)
+}
+function closeMenus() {
+  closeAccount()
+  mobileMenuOpen.value = false
+}
+async function logout() {
+  closeMenus()
   await signOut()
 }
-
-function toggleAccountMenu() {
-  accountMenuOpen.value = !accountMenuOpen.value
+function outside(event) {
+  if (!event.composedPath().includes(headerRef.value)) closeMenus()
 }
-
-function closeAccountMenu() {
-  accountMenuOpen.value = false
+function escape(event) {
+  if (event.key === 'Escape') closeMenus()
 }
-
-function handleDocumentClick(event) {
-  if (!accountMenuRef.value?.contains(event.target)) {
-    closeAccountMenu()
-  }
+function search() {
+  closeMenus()
+  router.push({ path: '/', hash: '#shop' })
 }
-
-function handleEscape(event) {
-  if (event.key === 'Escape') {
-    closeAccountMenu()
-  }
-}
-
+watch(() => route.fullPath, closeMenus)
 onMounted(() => {
   loadSession()
-  document.addEventListener('click', handleDocumentClick)
-  document.addEventListener('keydown', handleEscape)
+  document.addEventListener('click', outside)
+  document.addEventListener('keydown', escape)
 })
-
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick)
-  document.removeEventListener('keydown', handleEscape)
+  clearTimeout(closeTimer)
+  document.removeEventListener('click', outside)
+  document.removeEventListener('keydown', escape)
 })
 </script>
-
 <template>
-  <header class="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-[color-mix(in_srgb,var(--brand-1)_22%,white)]">
-    <nav class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between" aria-label="Primary">
-      <RouterLink to="/" class="flex items-center gap-3 font-black tracking-tight text-xl">
-        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400 text-stone-900 chip-blue-ring">
-          <i class="fa-solid fa-paw"></i>
-        </span>
-        <span>Chase &amp; Evie Co.</span>
-      </RouterLink>
-
-      <ul class="hidden xl:flex items-center gap-6 text-sm text-stone-200">
-        <li><a class="hover:text-emerald-400" href="/#shop">All Treats</a></li>
-        <li><a class="hover:text-emerald-400" href="/#coming-soon">Coming Soon</a></li>
-        <li><a class="hover:text-emerald-400" href="/#process">How We Make Them</a></li>
-        <li><a class="hover:text-emerald-400" href="/#ingredients">Ingredients</a></li>
-        <li><a class="hover:text-emerald-400" href="/#reviews">Happy Pups</a></li>
-        <li><a class="hover:text-emerald-400" href="/#about">Meet Chase &amp; Evie</a></li>
-        <li><a class="hover:text-emerald-400" href="/#faq">FAQ</a></li>
-      </ul>
-
-      <div class="hidden xl:flex items-center gap-4">
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400"></i>
-
-          <input
-            :value="props.searchQuery"
-            type="text"
-            placeholder="Search treats, proteins, tags..."
-            class="w-56 rounded-xl border border-stone-700 bg-white py-2 pl-9 pr-3 text-sm text-stone-700 outline-none transition focus:border-emerald-400"
-            @input="emit('update:search-query', $event.target.value)"
-          />
-        </div>
-
-        <div ref="accountMenuRef" class="relative">
+  <header ref="headerRef" class="site-header">
+    <div class="site-header-top">
+      <RouterLink to="/" class="site-brand"
+        ><span class="site-mark"><PawPrint :size="23" /></span
+        ><span>Chase &amp; Evie Co.</span></RouterLink
+      >
+      <form
+        class="site-search site-search-desktop"
+        role="search"
+        @submit.prevent="search"
+      >
+        <Search :size="18" aria-hidden="true" />
+        <input
+          aria-label="Search treats"
+          :value="props.searchQuery"
+          placeholder="Search treats, proteins, tags..."
+          @input="emit('update:search-query', $event.target.value)"
+        />
+        <button type="submit" aria-label="Search collection">
+          <Search :size="16" />
+        </button>
+      </form>
+      <div class="site-actions">
+        <div
+          ref="accountMenuRef"
+          class="site-account"
+          @mouseenter="openAccount"
+          @mouseleave="scheduleClose()"
+          @focusout="scheduleClose(true)"
+        >
           <RouterLink
             v-if="!authenticated"
             to="/account/sign-in"
-            class="inline-flex items-center gap-2 rounded-full border border-stone-700 bg-white px-3 py-2 text-sm font-bold text-stone-700 transition hover:border-emerald-400 hover:text-emerald-700"
+            class="site-control"
             aria-label="Sign in to account"
+            ><User :size="18" /><span class="site-account-label"
+              >Sign in</span
+            ></RouterLink
           >
-            <i class="fa-regular fa-user"></i>
-            <span>Sign in</span>
-          </RouterLink>
-
           <button
             v-else
-            class="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 transition hover:border-emerald-500"
             type="button"
-            :aria-label="`Account menu for ${user?.email}`"
+            class="site-control"
+            :aria-label="'Account menu for ' + user?.email"
             :aria-expanded="accountMenuOpen"
-            aria-haspopup="menu"
-            @click.stop="toggleAccountMenu"
+            aria-controls="site-account-menu"
+            @click.stop="toggleAccount"
           >
-            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-400 text-xs font-black uppercase text-stone-900">
-              {{ getInitials() }}
-            </span>
-            <span>{{ getFirstName() }}</span>
-            <i class="fa-solid fa-chevron-down text-xs"></i>
+            <span class="site-initials">{{ initials() }}</span
+            ><span class="site-account-label">{{ firstName() }}</span
+            ><ChevronDown :size="14" />
           </button>
-
           <div
-            v-if="authenticated"
-            class="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-[color-mix(in_srgb,var(--brand-3)_40%,white)] bg-white p-2 text-sm text-stone-700 shadow-xl transition duration-150"
-            :class="accountMenuOpen ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-1 opacity-0'"
-            role="menu"
+            v-if="authenticated && accountMenuOpen"
+            id="site-account-menu"
+            class="site-account-buffer"
+            @mouseenter="openAccount"
           >
-            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/account" role="menuitem" @click="closeAccountMenu">
-              Account overview
-            </RouterLink>
-            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/account/orders" role="menuitem" @click="closeAccountMenu">
-              Orders
-            </RouterLink>
-            <RouterLink class="block rounded-lg px-3 py-2 font-bold hover:bg-emerald-50 hover:text-emerald-700" to="/account/profile" role="menuitem" @click="closeAccountMenu">
-              Profile
-            </RouterLink>
-            <button
-              class="mt-1 block w-full rounded-lg px-3 py-2 text-left font-bold text-red-600 hover:bg-red-50"
-              type="button"
-              role="menuitem"
-              @click="logout"
-            >
-              Sign out
-            </button>
+            <nav class="site-account-menu" aria-label="Account">
+              <RouterLink to="/account" @click="closeMenus"
+                >Account overview</RouterLink
+              >
+              <RouterLink to="/account/orders" @click="closeMenus"
+                >Orders</RouterLink
+              >
+              <RouterLink to="/account/profile" @click="closeMenus"
+                >Profile</RouterLink
+              >
+              <button type="button" @click="logout">Sign out</button>
+            </nav>
           </div>
         </div>
-
         <button
-          class="relative text-stone-300 hover:text-white"
+          type="button"
+          class="site-control site-cart"
           aria-label="Open cart"
           aria-controls="cart-drawer"
           @click="emit('open-cart')"
         >
-          <i class="fa-solid fa-bag-shopping"></i>
-          <span class="absolute -top-2 -right-2 h-5 min-w-[1.25rem] px-1 rounded-full bg-emerald-400 text-stone-900 text-[10px] font-bold flex items-center justify-center">
-            {{ cartCount }}
-          </span>
+          <ShoppingBag :size="20" /><span class="site-count">{{
+            cartCount
+          }}</span>
         </button>
-      </div>
-
-      <div class="xl:hidden flex items-center gap-3">
-        <RouterLink
-          :to="authenticated ? '/account' : '/account/sign-in'"
-          class="inline-flex items-center gap-2 rounded-full border border-stone-700 bg-white px-3 py-2 text-sm font-bold text-stone-700 hover:border-emerald-400 hover:text-emerald-700"
-          :aria-label="authenticated ? 'Open account' : 'Sign in to account'"
-        >
-          <span
-            v-if="authenticated"
-            class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400 text-[10px] font-black uppercase text-stone-900"
-          >
-            {{ getInitials() }}
-          </span>
-          <i v-else class="fa-regular fa-user text-sm"></i>
-          <span>{{ authenticated ? 'Account' : 'Sign in' }}</span>
-        </RouterLink>
-
         <button
-          class="relative text-stone-300 hover:text-white"
-          aria-label="Open cart"
-          aria-controls="cart-drawer"
-          @click="emit('open-cart')"
+          type="button"
+          class="site-control site-menu-toggle"
+          :aria-label="mobileMenuOpen ? 'Close menu' : 'Open menu'"
+          :aria-expanded="mobileMenuOpen"
+          aria-controls="site-mobile-menu"
+          @click="mobileMenuOpen = !mobileMenuOpen"
         >
-          <i class="fa-solid fa-bag-shopping text-lg"></i>
-          <span class="absolute -top-2 -right-2 h-5 min-w-[1.25rem] px-1 rounded-full bg-emerald-400 text-stone-900 text-[10px] font-bold flex items-center justify-center">
-            {{ cartCount }}
-          </span>
-        </button>
-
-        <button class="text-stone-300 hover:text-white" aria-label="Open menu">
-          <i class="fa-solid fa-bars text-xl"></i>
+          <X v-if="mobileMenuOpen" :size="20" /><Menu v-else :size="20" />
         </button>
       </div>
+    </div>
+    <nav class="site-desktop-nav" aria-label="Primary">
+      <RouterLink
+        v-for="[label, id] in links"
+        :key="id"
+        :to="destination(id)"
+        >{{ label }}</RouterLink
+      >
     </nav>
+    <div v-if="mobileMenuOpen" id="site-mobile-menu" class="site-mobile-menu">
+      <form class="site-search" role="search" @submit.prevent="search">
+        <Search :size="18" aria-hidden="true" /><input
+          aria-label="Search treats"
+          :value="props.searchQuery"
+          placeholder="Search treats..."
+          @input="emit('update:search-query', $event.target.value)"
+        /><button type="submit" aria-label="Search collection">
+          <Search :size="16" />
+        </button>
+      </form>
+      <nav aria-label="Primary mobile">
+        <RouterLink
+          v-for="[label, id] in links"
+          :key="id"
+          :to="destination(id)"
+          @click="closeMenus"
+          >{{ label }}</RouterLink
+        >
+      </nav>
+    </div>
   </header>
 </template>
+<style scoped src="@storefront/styles/siteHeader.css"></style>

@@ -24,16 +24,19 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="mt-3 flex items-end justify-between gap-3">
-    <p class="text-lg font-extrabold text-[var(--brand-4)]">
+  <div
+    class="mt-4 flex flex-wrap items-end justify-between gap-3"
+    aria-live="polite"
+  >
+    <p class="text-xl font-bold text-[var(--brand-4)]">
       {{ props.formatPrice(props.price) }}
     </p>
 
     <p
-      class="text-xs font-bold uppercase tracking-[0.12em]"
-      :class="props.isPurchasable
-        ? 'text-[color:var(--success-1)]'
-        : 'text-amber-700'"
+      class="text-xs font-semibold"
+      :class="
+        props.isPurchasable ? 'text-[color:var(--success-1)]' : 'text-amber-700'
+      "
     >
       {{ props.stockLabel }}
     </p>

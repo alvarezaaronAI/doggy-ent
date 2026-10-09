@@ -17,6 +17,7 @@ import {
   mapCampaignToAdminCampaignForm,
 } from '../mappers/adminCampaignForm.mapper'
 import { normalizeCampaignStatus } from '../utils/adminCampaigns.utils'
+import { validateAdminCampaignPayload } from '../validators/adminCampaign.validator.js'
 
 export function useAdminCampaigns() {
   const campaigns = ref([])
@@ -168,6 +169,8 @@ export function useAdminCampaigns() {
 
     try {
       const payload = buildAdminCampaignPayload(form.value)
+      const validationError = validateAdminCampaignPayload(payload)
+      if (validationError) throw new Error(validationError)
 
       if (editingCampaignId.value) {
         await updateCampaign(editingCampaignId.value, payload)
@@ -180,7 +183,12 @@ export function useAdminCampaigns() {
         : 'Campaign created successfully.'
 
       resetForm()
-      await loadCampaigns()
+      try {
+        await loadCampaigns()
+      } catch {
+        errorMessage.value =
+          'Campaign saved. The list could not be refreshed; reload before editing again.'
+      }
     } catch (error) {
       errorMessage.value = error.message || 'Unable to save campaign.'
     } finally {

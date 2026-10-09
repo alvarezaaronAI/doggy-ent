@@ -1,6 +1,8 @@
 
 
 <script setup>
+import { ref, watch } from 'vue'
+import { Minus, Plus, Trash2, Package } from '@lucide/vue'
 const props = defineProps({
   item: {
     type: Object,
@@ -33,20 +35,27 @@ const emit = defineEmits([
   'decrease',
   'remove',
 ])
+const imageFailed = ref(false)
+watch(() => props.item.image, () => { imageFailed.value = false })
 </script>
 
 <template>
-  <article class="tile rounded-2xl p-4 transition hover:-translate-y-1 hover:shadow-2xl hover:scale-[1.01]">
-    <div class="flex gap-4">
-      <img
-        class="h-20 w-20 flex-shrink-0 rounded-2xl border border-stone-800 object-cover shadow-sm"
-        :src="props.item.image"
-        :alt="props.item.name"
-      />
+  <article class="border-b border-stone-800 py-5 last:border-b-0">
+    <div class="flex gap-3">
+      <div class="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-md border border-stone-800 bg-[#f6f3ed]">
+        <img
+          v-if="props.item.image && !imageFailed"
+          class="h-full w-full object-cover"
+          :src="props.item.image"
+          :alt="props.item.name"
+          @error="imageFailed = true"
+        />
+        <Package v-else :size="28" class="text-[var(--brand-1)]" aria-hidden="true" />
+      </div>
 
       <div class="min-w-0 flex-1">
         <div class="flex items-start justify-between gap-3">
-          <div>
+          <div class="min-w-0">
             <h3 class="font-semibold leading-tight">{{ props.item.name }}</h3>
 
             <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-stone-300">
@@ -54,7 +63,7 @@ const emit = defineEmits([
 
               <span
                 v-if="props.item.variant?.sku"
-                class="rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold tracking-[0.08em] text-stone-500"
+                class="break-all text-[10px] text-stone-500"
               >
                 {{ props.item.variant.sku }}
               </span>
@@ -66,23 +75,26 @@ const emit = defineEmits([
           </div>
 
           <button
-            class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition"
-            :aria-label="`Remove ${props.item.name}`"
+            type="button"
+            class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#e3d7cd] bg-[#f5f4f1] text-[#6a3c2b] hover:bg-[#ece5df]"
+            :aria-label="`Remove ${props.item.name}, ${props.item.size}`"
+            title="Remove item"
             @click="emit('remove')"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M6 18L18 6" />
-            </svg>
+            <Trash2 :size="16" aria-hidden="true" />
           </button>
         </div>
 
-        <div class="mt-4 flex items-center justify-between gap-3">
-          <div class="inline-flex items-center overflow-hidden rounded-full border border-stone-700 bg-white shadow-sm">
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="inline-flex items-center overflow-hidden rounded-md border border-stone-700 bg-[#f5f4f1]">
             <button
-              class="inline-flex h-9 w-9 items-center justify-center text-stone-400 hover:text-emerald-400"
+              type="button"
+              class="inline-flex h-11 w-11 items-center justify-center text-stone-400 hover:bg-white"
+              :aria-label="`Decrease quantity of ${props.item.name}, ${props.item.size}`"
+              title="Decrease quantity"
               @click="emit('decrease')"
             >
-              -
+              <Minus :size="16" aria-hidden="true" />
             </button>
 
             <span class="min-w-[2.5rem] text-center text-sm font-semibold">
@@ -90,12 +102,15 @@ const emit = defineEmits([
             </span>
 
             <button
-              class="inline-flex h-9 w-9 items-center justify-center"
+              type="button"
+              class="inline-flex h-11 w-11 items-center justify-center hover:bg-white"
+              :aria-label="`Increase quantity of ${props.item.name}, ${props.item.size}`"
+              title="Increase quantity"
               :class="props.isAtMax(props.item) ? 'text-stone-300 cursor-not-allowed' : 'text-stone-400 hover:text-emerald-400'"
               :disabled="props.isAtMax(props.item)"
               @click="emit('increase')"
             >
-              +
+              <Plus :size="16" aria-hidden="true" />
             </button>
           </div>
 
@@ -107,7 +122,7 @@ const emit = defineEmits([
 
         <p
           v-if="props.isAtMax(props.item)"
-          class="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700"
+          class="mt-2 text-xs font-semibold text-amber-700"
         >
           Maximum available quantity reached
         </p>

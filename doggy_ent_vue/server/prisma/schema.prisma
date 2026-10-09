@@ -170,9 +170,13 @@ model Campaign {
   name String
   slug String @unique
 
-  description String?
-  image       String?
-  featured    Boolean @default(false)
+  description       String?
+  image             String?
+  featured          Boolean @default(false)
+  story             String?
+  beneficiaryUrl    String?
+  imageAlt          String?
+  publicPageEnabled Boolean @default(false)
 
   status CampaignStatus @default(DRAFT)
 

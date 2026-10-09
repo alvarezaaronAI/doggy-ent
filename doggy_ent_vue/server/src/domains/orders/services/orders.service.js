@@ -124,7 +124,7 @@ export async function fetchAdminOrders() {
 }
 
 export async function fetchAdminOrderById(orderId) {
-  const order = await findOrderById(orderId)
+  const order = await findOrderById(orderId, { includeAdminRecord: true })
 
   if (!order?.customerEmail) {
     return order

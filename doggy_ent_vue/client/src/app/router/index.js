@@ -4,6 +4,7 @@ import {
   parseJsonResponse,
 } from '@shared/api/http.js'
 import HomeView from '../../domains/storefront/Home/HomeView.vue'
+import { BRAND_STORY_PATH } from '../../domains/storefront/constants/brandContent.js'
 import AdminDashboardView from '../../domains/admin/views/AdminDashboardView.vue'
 import AdminProductsView from '../../domains/admin/views/AdminProductsView.vue'
 import AdminOrdersView from '../../domains/admin/views/AdminOrdersView.vue'
@@ -24,6 +25,16 @@ const routes = [
     path: '/',
     name: 'home',
     component: HomeView,
+  },
+  {
+    path: BRAND_STORY_PATH,
+    name: 'meet-brand',
+    component: () => import('../../domains/storefront/views/BrandView.vue'),
+  },
+  {
+    path: '/campaigns/:slug',
+    name: 'campaign-detail',
+    component: () => import('../../domains/campaigns/views/CampaignView.vue'),
   },
   {
     path: '/admin/login',
@@ -168,6 +179,15 @@ applicationRoutes.push({
 const router = createRouter({
   history: createWebHistory(),
   routes: applicationRoutes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) {
+      return new Promise((resolve) =>
+        setTimeout(() => resolve({ el: to.hash, top: 145 }), 100),
+      )
+    }
+    return { top: 0 }
+  },
 })
 
 router.beforeEach(async (to) => {

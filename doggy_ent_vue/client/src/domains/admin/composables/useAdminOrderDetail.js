@@ -17,6 +17,16 @@ export function useAdminOrderDetail(orderId) {
   const error = ref('')
   const statusMessage = ref('')
 
+  async function applyOrderUpdate(savedOrder, message) {
+    order.value = { ...savedOrder, internalRecord: null }
+    try {
+      order.value = await fetchAdminOrderById(orderId)
+      statusMessage.value = message
+    } catch {
+      statusMessage.value = `${message} Internal details could not be refreshed; reload this page to retry.`
+    }
+  }
+
   const orderReference = computed(
     () =>
       order.value?.customerReference || order.value?.orderNumber || 'Pending',
@@ -83,11 +93,11 @@ export function useAdminOrderDetail(orderId) {
     statusMessage.value = 'Updating order...'
 
     try {
-      order.value = await updateAdminOrderStatus(order.value.id, {
+      const savedOrder = await updateAdminOrderStatus(order.value.id, {
         status,
         note,
       })
-      statusMessage.value = 'Order updated.'
+      await applyOrderUpdate(savedOrder, 'Order updated.')
     } catch (error) {
       statusMessage.value = error.message || 'Unable to update order.'
     } finally {
@@ -104,8 +114,7 @@ export function useAdminOrderDetail(orderId) {
     try {
       const result = await updateAdminOrderTracking(order.value.id, payload)
 
-      order.value = result.order || result
-      statusMessage.value = 'Tracking saved.'
+      await applyOrderUpdate(result.order || result, 'Tracking saved.')
     } catch (error) {
       statusMessage.value = error.message || 'Unable to save tracking.'
     } finally {
@@ -122,8 +131,7 @@ export function useAdminOrderDetail(orderId) {
     try {
       const result = await refreshAdminOrderTracking(order.value.id)
 
-      order.value = result.order || result
-      statusMessage.value = 'Tracking refreshed.'
+      await applyOrderUpdate(result.order || result, 'Tracking refreshed.')
     } catch (error) {
       statusMessage.value = error.message || 'Unable to refresh tracking.'
     } finally {
@@ -140,8 +148,7 @@ export function useAdminOrderDetail(orderId) {
     try {
       const result = await resendAdminOrderEmail(order.value.id, event)
 
-      order.value = result.order || order.value
-      statusMessage.value = 'Notification queued.'
+      await applyOrderUpdate(result.order || order.value, 'Notification queued.')
     } catch (error) {
       statusMessage.value = error.message || 'Unable to resend notification.'
     } finally {
@@ -151,6 +158,7 @@ export function useAdminOrderDetail(orderId) {
 
   async function loadOrder() {
     loading.value = true
+    error.value = ''
     statusMessage.value = ''
 
     try {

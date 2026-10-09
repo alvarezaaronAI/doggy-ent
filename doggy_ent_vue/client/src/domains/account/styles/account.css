@@ -4,6 +4,8 @@
   --account-line: #dce5df;
   --account-green: #17664e;
   --account-soft: #edf6f0;
+  --account-action: rgb(36 51 45 / 5%);
+  --account-action-line: #cad5ce;
   color: var(--account-ink);
   font-size: 15px;
   line-height: 1.6;
@@ -81,7 +83,9 @@
   gap: 14px;
   padding: 13px 12px;
   border-radius: 6px;
-  color: var(--account-muted);
+  color: var(--account-ink);
+  background: var(--account-action);
+  border: 1px solid transparent;
 }
 .account-nav-link i {
   width: 20px;
@@ -108,6 +112,11 @@
   color: var(--account-muted);
   font-size: 13px;
   margin: 28px 12px 0;
+  padding: 8px 12px;
+  min-height: 40px;
+  border: 1px solid var(--account-action-line);
+  border-radius: 6px;
+  background: var(--account-action);
 }
 .account-content {
   min-width: 0;
@@ -145,9 +154,9 @@
   gap: 10px;
   padding: 10px 16px;
   min-height: 44px;
-  border: 1px solid var(--account-line);
+  border: 1px solid var(--account-action-line);
   border-radius: 6px;
-  background: white;
+  background: var(--account-action);
   color: var(--account-ink);
   font-weight: 550;
   font-size: 14px;
@@ -170,12 +179,23 @@
   opacity: 0.55;
 }
 .account-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--account-action-line);
+  border-radius: 4px;
+  background: var(--account-action);
   color: var(--account-green);
   font-weight: 550;
   text-underline-offset: 4px;
 }
 .account-link:hover {
   text-decoration: underline;
+  background: var(--account-soft);
+  border-color: var(--account-green);
 }
 .account-field {
   display: block;
@@ -188,7 +208,7 @@
   min-height: 46px;
   margin-top: 8px;
   padding: 10px 14px;
-  border: 1px solid var(--account-line);
+  border: 1px solid var(--account-action-line);
   border-radius: 6px;
   background: white;
   color: var(--account-ink);
@@ -261,7 +281,11 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 18px 0;
+  padding: 14px 12px;
+  margin: 12px 0 6px;
+  border: 1px solid var(--account-action-line);
+  border-radius: 6px;
+  background: var(--account-action);
   gap: 10px;
   font-size: 14px;
   font-weight: 650;
@@ -269,10 +293,12 @@
 .account-order-option {
   width: 100%;
   text-align: left;
-  border-bottom: 1px solid var(--account-line);
+  margin-bottom: 6px;
+  border: 1px solid var(--account-action-line);
   border-left: 3px solid transparent;
   padding: 18px;
   border-radius: 0 6px 6px 0;
+  background: var(--account-action);
 }
 .account-order-option:hover {
   background: #eff3f0;
@@ -311,6 +337,21 @@
   flex-shrink: 0;
   border-radius: 4px;
   color: var(--account-muted);
+  border: 1px solid var(--account-action-line);
+  background: var(--account-action);
+}
+.account-order-card {
+  display: block;
+  padding: 16px;
+  margin-top: 12px;
+  border: 1px solid var(--account-action-line);
+  border-radius: 6px;
+  background: var(--account-action);
+}
+.account-order-card:hover,
+.account-signout:hover,
+.account-month-toggle:hover {
+  background: var(--account-soft);
 }
 .account-icon-button:hover {
   background: var(--account-soft);
@@ -349,6 +390,11 @@
     min-height: 52px;
     padding: 14px 22px;
     font-size: 14px;
+    background: var(--account-action);
+    border-bottom: 1px solid var(--account-action-line);
+  }
+  .account-mobile-toggle:hover {
+    background: var(--account-soft);
   }
   .account-content {
     padding: 26px 22px;

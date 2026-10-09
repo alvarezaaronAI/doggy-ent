@@ -5,15 +5,20 @@ import PromoStrip from '@app/layouts/PromoStrip.vue'
 import SiteHeader from '@app/layouts/SiteHeader.vue'
 import SiteFooter from '@app/layouts/SiteFooter.vue'
 import HeroSection from '@storefront/Home/sections/HeroSection.vue'
+import BrandPromiseStrip from '@storefront/Home/sections/BrandPromiseStrip.vue'
+import NextDropsSection from '@storefront/Home/sections/NextDropsSection.vue'
 import ProductSpotlightSection from '@storefront/Home/sections/ProductSpotlightSection.vue'
 import ProcessSection from '@storefront/Home/sections/ProcessSection.vue'
 import IngredientsAnalysisSection from '@storefront/Home/sections/IngredientsAnalysisSection.vue'
 import ReviewsPreviewSection from '@storefront/Home/sections/ReviewsPreviewSection.vue'
 import AboutBrandSection from '@storefront/Home/sections/AboutBrandSection.vue'
+import ShopHelpSection from '@storefront/Home/sections/ShopHelpSection.vue'
+import '@storefront/styles/storefront.css'
+import '@storefront/styles/home.css'
+import { useStorefrontCampaigns } from '@campaigns/composables/useStorefrontCampaigns'
 import ProductQuickView from '@products/ProductQuickView/ProductQuickView.vue'
 import ProductCard from '@products/ProductCard/ProductCard.vue'
 import ProductFilters from '@products/ProductFilters/ProductFilters.vue'
-import ComingSoonCard from '@products/ProductCard/ComingSoonCard.vue'
 import { useProducts } from '@products/composables/useProducts'
 import { useProductFilters } from '@products/composables/useProductFilters'
 import { useProductVariants } from '@products/composables/useProductVariants'
@@ -22,6 +27,11 @@ import { formatCurrency } from '@shared/utils/currency'
 
 const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
+const {
+  loadCampaigns,
+  campaignsForProduct,
+  error: campaignError,
+} = useStorefrontCampaigns()
 
 const {
   products,
@@ -38,6 +48,7 @@ onMounted(async () => {
   loadSavedCart()
 
   await loadProducts()
+  await loadCampaigns()
 })
 
 const {
@@ -59,12 +70,15 @@ const {
   selectedProtein,
   selectedSort,
   activeProducts,
-} = useProductFilters(storefrontProducts, getSelectedCardPrice)
+} = useProductFilters(storefrontProducts)
 
-const featuredProduct = computed(() =>
-  activeProducts.value.find((product) => product.featured) ||
-  activeProducts.value[0] ||
-  null
+const featuredProduct = computed(
+  () =>
+    storefrontProducts.value.find(
+      (product) => product.status === 'active' && product.featured,
+    ) ||
+    storefrontProducts.value.find((product) => product.status === 'active') ||
+    null,
 )
 
 const {
@@ -86,7 +100,10 @@ const {
 })
 
 function openQuickView(product) {
-  selectedProduct.value = product
+  selectedProduct.value = {
+    ...product,
+    selectedSize: getSelectedCardSize(product),
+  }
   isQuickViewOpen.value = true
 }
 
@@ -96,20 +113,16 @@ function closeQuickView() {
 }
 
 function getDisplayTags(product) {
-  if (
-    Array.isArray(product.tags)
-    && product.tags.length
-  ) {
+  if (Array.isArray(product.tags) && product.tags.length) {
     return product.tags
   }
 
   return []
 }
-
 </script>
 
 <template>
-  <div class="min-h-screen bg-[var(--brand-5)] text-stone-900">
+  <div class="storefront-ui store-home min-h-screen">
     <PromoStrip />
 
     <SiteHeader
@@ -119,104 +132,111 @@ function getDisplayTags(product) {
       @update:search-query="searchQuery = $event"
     />
 
-    <HeroSection />
+    <HeroSection :product="featuredProduct" />
+    <BrandPromiseStrip />
 
-    <main class="space-y-8 pb-12">
+    <main>
       <ProductSpotlightSection
         :featured-product="featuredProduct"
+        :selected-size="getSelectedCardSize(featuredProduct)"
+        :campaigns="campaignsForProduct(featuredProduct)"
+        @select-size="selectCardSize(featuredProduct, $event)"
         @add-to-cart="addToCart"
       />
 
+      <section id="shop" class="store-section">
+        <div class="store-inner">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="store-eyebrow">The collection</p>
+              <h2 class="mt-3 text-3xl font-bold">All Treats</h2>
+            </div>
+          </div>
 
-      <section id="shop" class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">
-              Product feed
-            </p>
-            <h2 class="u-underline-blue mt-2 text-3xl font-bold">All Treats</h2>
+          <ProductFilters
+            :available-categories="availableCategories"
+            :available-proteins="availableProteins"
+            :selected-category="selectedCategory"
+            :selected-protein="selectedProtein"
+            :selected-sort="selectedSort"
+            @update:selected-category="selectedCategory = $event"
+            @update:selected-protein="selectedProtein = $event"
+            @update:selected-sort="selectedSort = $event"
+          />
+          <p
+            v-if="campaignError"
+            class="store-muted mt-4 text-sm"
+            role="status"
+          >
+            Giving details are temporarily unavailable.
+            <button
+              type="button"
+              class="store-button ml-2"
+              @click="loadCampaigns"
+            >
+              Reload giving details
+            </button>
+          </p>
+
+          <div v-if="isLoading" class="store-muted mt-8" role="status">
+            Loading treats...
+          </div>
+
+          <div
+            v-else-if="errorMessage"
+            class="mt-8 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
+            role="alert"
+          >
+            {{ errorMessage }}
+            <button
+              type="button"
+              class="store-button ml-3"
+              @click="loadProducts"
+            >
+              Try again
+            </button>
+          </div>
+
+          <div v-else-if="!activeProducts.length" class="store-muted py-8">
+            No matching treats. Try a different search or filter.
+          </div>
+
+          <div v-else class="store-product-grid mt-6">
+            <ProductCard
+              v-for="product in activeProducts"
+              :key="product.id"
+              :product="product"
+              :campaigns="campaignsForProduct(product)"
+              :format-price="formatCurrency"
+              :get-display-tags="getDisplayTags"
+              :get-product-variants="getProductVariants"
+              :get-selected-card-size="getSelectedCardSize"
+              :select-card-size="selectCardSize"
+              :get-selected-card-price="getSelectedCardPrice"
+              :get-selected-card-variant="getSelectedCardVariant"
+              :get-selected-stock-label="getSelectedStockLabel"
+              :is-purchasable="isPurchasable"
+              @quick-view="openQuickView"
+              @add-to-cart="addToCart($event, getSelectedCardSize($event))"
+            />
           </div>
         </div>
-
-        <ProductFilters
-          :available-categories="availableCategories"
-          :available-proteins="availableProteins"
-          :selected-category="selectedCategory"
-          :selected-protein="selectedProtein"
-          :selected-sort="selectedSort"
-          @update:selected-category="selectedCategory = $event"
-          @update:selected-protein="selectedProtein = $event"
-          @update:selected-sort="selectedSort = $event"
-        />
-
-        <div v-if="isLoading" class="mt-8 text-stone-300">
-          Loading treats...
-        </div>
-
-        <div v-else-if="errorMessage" class="mt-8 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-          {{ errorMessage }}
-        </div>
-
-        <div v-else-if="!activeProducts.length" class="mt-8 rounded-2xl border border-stone-800 bg-white p-6 text-stone-300">
-          No matching products found. Try a different search term or add more products from the admin dashboard.
-        </div>
-
-        <div v-else class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <ProductCard
-            v-for="product in activeProducts"
-            :key="product.id"
-            :product="product"
-            :format-price="formatCurrency"
-            :get-display-tags="getDisplayTags"
-            :get-product-variants="getProductVariants"
-            :get-selected-card-size="getSelectedCardSize"
-            :select-card-size="selectCardSize"
-            :get-selected-card-price="getSelectedCardPrice"
-            :get-selected-card-variant="getSelectedCardVariant"
-            :get-selected-stock-label="getSelectedStockLabel"
-            :is-purchasable="isPurchasable"
-            @quick-view="openQuickView"
-            @add-to-cart="addToCart($event, getSelectedCardSize($event))"
-          />
-        </div>
       </section>
 
-      <section
-        v-if="comingSoonProducts.length"
-        id="coming-soon"
-        class="section-panel mx-auto max-w-7xl px-5 py-9 md:px-6"
-      >
-        <div class="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">
-              Coming soon
-            </p>
-            <h2 class="u-underline-blue mt-2 text-3xl font-bold">Next Drops</h2>
-            <p class="mt-3 max-w-2xl text-stone-300">
-              These treats are in development or planned for future seasonal drops. Join the list to get notified when they launch.
-            </p>
-          </div>
-        </div>
+      <NextDropsSection
+        :products="comingSoonProducts"
+        :get-display-tags="getDisplayTags"
+        :loading="isLoading"
+        :error="errorMessage"
+        @preview="openQuickView"
+        @retry="loadProducts"
+      />
 
-        <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <ComingSoonCard
-            v-for="product in comingSoonProducts"
-            :key="product.id"
-            :product="product"
-            :get-display-tags="getDisplayTags"
-            @preview="openQuickView"
-          />
-        </div>
-      </section>
-
-      <section class="mx-auto max-w-7xl px-5 py-2 md:px-6">
-        <div class="space-y-8">
-          <ReviewsPreviewSection />
-          <ProcessSection />
-          <IngredientsAnalysisSection />
-          <AboutBrandSection />
-        </div>
-      </section>
+      <ReviewsPreviewSection />
+      <ProcessSection />
+      <IngredientsAnalysisSection :product="featuredProduct" />
+      <AboutBrandSection />
+      <ShopHelpSection />
     </main>
 
     <SiteFooter />

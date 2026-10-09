@@ -11,6 +11,7 @@ import {
   findAllCampaigns,
   findCampaignById,
   findCampaignBySlug,
+  findPublicCampaignBySlug,
   incrementCampaignUsageStats,
   recordOrderCampaignUsage,
   updateCampaignRecord,
@@ -19,12 +20,25 @@ import {
   calculateDonationAmount,
   isCampaignActive,
 } from '../utils/campaigns.utils.js'
+import { normalizeCurrencyAmount } from '../../../shared/utils/money.js'
+import { validateCampaignInput } from '../validators/campaigns.validator.js'
 import {
-  normalizeCurrencyAmount,
-} from '../../../shared/utils/money.js'
-import {
-  validateCampaignInput,
-} from '../validators/campaigns.validator.js'
+  mapPublicCampaignPage,
+  mapPublicCampaignSummary,
+} from '../mappers/publicCampaign.mapper.js'
+
+export async function getStorefrontCampaigns() {
+  const campaigns = await findActiveCampaigns()
+  return campaigns
+    .filter(isCampaignActive)
+    .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)))
+    .map(mapPublicCampaignSummary)
+}
+
+export async function getPublicCampaignPage(slug) {
+  const campaign = await findPublicCampaignBySlug(slug)
+  return campaign ? mapPublicCampaignPage(campaign) : null
+}
 
 export async function getAllCampaigns() {
   const campaigns = await findAllCampaigns()
@@ -37,7 +51,7 @@ export async function getCampaignById(campaignId) {
 }
 
 export async function createCampaign(input) {
-  const campaign = normalizeCampaignInput(input)
+  const campaign = normalizeCampaignInput({ ...input, slug: null })
 
   const validationError = validateCampaignInput(campaign)
 
@@ -45,28 +59,19 @@ export async function createCampaign(input) {
     throw validationError
   }
 
-  const existingCampaign = await findCampaignBySlug(
-    campaign.slug,
-  )
+  const existingCampaign = await findCampaignBySlug(campaign.slug)
 
   if (existingCampaign) {
-    const error = new Error(
-      'A campaign with this name already exists.',
-    )
+    const error = new Error('A campaign with this name already exists.')
 
     error.statusCode = 409
     throw error
   }
 
-  return createCampaignRecord(
-    buildCampaignMutationData(campaign),
-  )
+  return createCampaignRecord(buildCampaignMutationData(campaign))
 }
 
-export async function updateCampaignById(
-  campaignId,
-  input,
-) {
+export async function updateCampaignById(campaignId, input) {
   const existingCampaign = await findCampaignById(campaignId)
 
   if (!existingCampaign) {
@@ -79,7 +84,11 @@ export async function updateCampaignById(
     ...existingCampaign,
     ...input,
     id: campaignId,
+    slug: existingCampaign.slug,
   })
+
+  const validationError = validateCampaignInput(updatedCampaign)
+  if (validationError) throw validationError
 
   return updateCampaignRecord(
     campaignId,
@@ -99,13 +108,9 @@ export async function deleteCampaignById(campaignId) {
   return deleteCampaignRecord(campaignId)
 }
 
-export async function getActiveCampaignsForCart(
-  cartItems = [],
-) {
+export async function getActiveCampaignsForCart(cartItems = []) {
   const itemProductIds = cartItems
-    .map((item) =>
-      String(item.id || item.productId || '').trim(),
-    )
+    .map((item) => String(item.id || item.productId || '').trim())
     .filter(Boolean)
 
   const campaigns = await findActiveCampaigns()
@@ -123,17 +128,12 @@ export async function getActiveCampaignsForCart(
       return false
     }
 
-    return productIds.some((productId) =>
-      itemProductIds.includes(productId),
-    )
+    return productIds.some((productId) => itemProductIds.includes(productId))
   })
 }
 
-export async function previewCampaignDonations(
-  cartItems = [],
-) {
-  const activeCampaigns =
-    await getActiveCampaignsForCart(cartItems)
+export async function previewCampaignDonations(cartItems = []) {
+  const activeCampaigns = await getActiveCampaignsForCart(cartItems)
 
   return activeCampaigns.map((campaign) =>
     mapCampaignDonationPreview({
@@ -156,15 +156,10 @@ export async function recordCampaignDonationUsage({
     return null
   }
 
-  const normalizedSubtotal = normalizeCurrencyAmount(
-    subtotal || 0,
-  )
+  const normalizedSubtotal = normalizeCurrencyAmount(subtotal || 0)
 
   const normalizedDonationAmount = normalizeCurrencyAmount(
-    donationAmount ?? calculateDonationAmount(
-      campaign,
-      normalizedSubtotal,
-    ),
+    donationAmount ?? calculateDonationAmount(campaign, normalizedSubtotal),
   )
 
   if (orderId) {

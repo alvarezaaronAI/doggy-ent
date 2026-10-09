@@ -30,20 +30,19 @@ const emit = defineEmits([
 </script>
 
 <template>
-  <div class="mt-6 flex flex-col gap-4 rounded-2xl border border-stone-800 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
+  <div
+    class="mt-6 flex flex-col gap-5 border-y border-[#deded6] py-5 lg:flex-row lg:items-center lg:justify-between"
+  >
     <div>
-      <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
-        Categories
-      </p>
+      <p class="store-eyebrow">Categories</p>
 
       <div class="mt-2 flex flex-wrap gap-2">
         <button
           v-for="category in props.availableCategories"
           :key="category"
-          class="rounded-full border px-3 py-1 text-sm font-semibold transition"
-          :class="props.selectedCategory === category
-            ? 'border-emerald-400 bg-emerald-400 text-[var(--brand-4)]'
-            : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400'"
+          type="button"
+          class="store-size"
+          :aria-pressed="props.selectedCategory === category"
           @click="emit('update:selected-category', category)"
         >
           {{ category === 'all' ? 'All' : category }}
@@ -53,13 +52,16 @@ const emit = defineEmits([
 
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
       <div>
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
+        <p
+          class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400"
+        >
           Protein
         </p>
 
         <select
+          aria-label="Protein"
           :value="props.selectedProtein"
-          class="mt-2 rounded-xl border border-stone-700 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-emerald-400"
+          class="mt-2 min-h-11 w-full rounded-md border border-[#cbd0c8] bg-[#f8faf8] px-3 py-2 text-sm text-[#27342d]"
           @change="emit('update:selected-protein', $event.target.value)"
         >
           <option
@@ -73,13 +75,16 @@ const emit = defineEmits([
       </div>
 
       <div>
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
+        <p
+          class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400"
+        >
           Sort By
         </p>
 
         <select
+          aria-label="Sort by"
           :value="props.selectedSort"
-          class="mt-2 rounded-xl border border-stone-700 bg-white px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-emerald-400"
+          class="mt-2 min-h-11 w-full rounded-md border border-[#cbd0c8] bg-[#f8faf8] px-3 py-2 text-sm text-[#27342d]"
           @change="emit('update:selected-sort', $event.target.value)"
         >
           <option value="featured">Featured</option>
