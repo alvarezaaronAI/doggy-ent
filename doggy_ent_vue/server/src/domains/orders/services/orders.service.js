@@ -21,6 +21,70 @@ import {
 import {
   validateOrderStatus,
 } from '../validators/orders.validator.js'
+import {
+  EMAIL_EVENTS,
+} from '../../emails/constants/emailEvents.constants.js'
+import {
+  buildAdminOrderEmailPayload,
+  buildOrderEmailPayload,
+} from '../../emails/mappers/emailPayloads.mapper.js'
+import {
+  queueEmail,
+} from '../../emails/services/emailProvider.service.js'
+
+function getStatusEmailEvent(status) {
+  if (status === ORDER_STATUS.SHIPPED) {
+    return EMAIL_EVENTS.ORDER_SHIPPED
+  }
+
+  if (status === ORDER_STATUS.DELIVERED) {
+    return EMAIL_EVENTS.ORDER_DELIVERED
+  }
+
+  if (status === ORDER_STATUS.CANCELLED) {
+    return EMAIL_EVENTS.ORDER_CANCELLED
+  }
+
+  if (status === ORDER_STATUS.REFUNDED) {
+    return EMAIL_EVENTS.REFUND_ISSUED
+  }
+
+  return EMAIL_EVENTS.ORDER_STATUS_UPDATE
+}
+
+async function queueOrderStatusEmails({
+  order,
+  status,
+  note = null,
+}) {
+  if (!order?.id) {
+    return
+  }
+
+  const emailTasks = [
+    queueEmail(
+      buildOrderEmailPayload({
+        event: getStatusEmailEvent(status),
+        order,
+        message: note,
+      }),
+    ),
+  ]
+
+  if ([ORDER_STATUS.CANCELLED, ORDER_STATUS.REFUNDED].includes(status)) {
+    emailTasks.push(
+      queueEmail(
+        buildAdminOrderEmailPayload({
+          event: EMAIL_EVENTS.ADMIN_REFUND_SUPPORT_NOTIFICATION,
+          order,
+          message: note || `Order moved to ${status}.`,
+        }),
+      ),
+    )
+  }
+
+  await Promise.allSettled(emailTasks)
+}
 
 async function rollbackInventoryReservation({
   items = [],
@@ -96,7 +160,7 @@ export async function updateAdminOrderStatus(
   const normalizedNote = String(note || '').trim() || null
 
   try {
-    return await updateOrderStatusById(
+    const order = await updateOrderStatusById(
       orderId,
       normalizedStatus,
       {
@@ -105,6 +169,19 @@ export async function updateAdminOrderStatus(
         changedBy: 'ADMIN_ENV',
       },
     )
+
+    queueOrderStatusEmails({
+      order,
+      status: normalizedStatus,
+      note: normalizedNote,
+    }).catch((error) => {
+      console.error(
+        '[orders] Failed order status email dispatch.',
+        error,
+      )
+    })
+
+    return order
   }
   catch (error) {
     if (error.code === 'P2025') {
@@ -114,6 +191,66 @@ export async function updateAdminOrderStatus(
     }
 
     throw error
+  }
+}
+
+function withAdminResendDedupe(payload) {
+  return {
+    ...payload,
+    dedupeKey: `${payload.event}:${payload.orderId || payload.orderReference}:admin-resend:${Date.now()}`,
+  }
+}
+
+export async function resendAdminOrderEmail(
+  orderId,
+  {
+    event,
+  },
+) {
+  const order = await findOrderById(orderId)
+
+  if (!order) {
+    const error = new Error('Order not found.')
+    error.statusCode = 404
+    throw error
+  }
+
+  const allowedEvents = new Set([
+    EMAIL_EVENTS.ORDER_CONFIRMATION,
+    EMAIL_EVENTS.ORDER_SHIPPED,
+    EMAIL_EVENTS.TRACKING_UPDATE,
+    EMAIL_EVENTS.ORDER_DELIVERED,
+    EMAIL_EVENTS.REVIEW_REQUEST,
+  ])
+
+  if (!allowedEvents.has(event)) {
+    const error = new Error('Unsupported resend email event.')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (
+    event === EMAIL_EVENTS.REVIEW_REQUEST
+    && order.status !== ORDER_STATUS.DELIVERED
+  ) {
+    const error = new Error('Review requests can only be sent for delivered orders.')
+    error.statusCode = 400
+    throw error
+  }
+
+  const result = await queueEmail(
+    withAdminResendDedupe(
+      buildOrderEmailPayload({
+        event,
+        order,
+        message: 'This message was resent by admin request.',
+      }),
+    ),
+  )
+
+  return {
+    result,
+    order: await findOrderById(orderId),
   }
 }
 
@@ -142,6 +279,9 @@ export async function createNewOrder(orderInput) {
   const shippingAmount = normalizeCurrencyAmount(
     orderInput.shippingAmount || 0,
   )
+  const shippingMethod = String(
+    orderInput.shippingMethod || '',
+  ).trim() || null
 
   const discountAmount = normalizeCurrencyAmount(
     orderInput.discountAmount || 0,
@@ -200,6 +340,7 @@ export async function createNewOrder(orderInput) {
       subtotal,
       total,
       currency: orderInput.currency || 'usd',
+      shippingMethod,
       shippingAmount,
       discountAmount,
       taxAmount,

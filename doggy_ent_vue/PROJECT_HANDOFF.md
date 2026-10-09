@@ -1,6 +1,7 @@
 # Doggy Ent Project Handoff
 
 Generated: 2026-06-05
+Latest update: 2026-10-08 - Approved Calm Essentials account UI implementation.
 Workspace: `/Users/nazxylix/Developer/vue-projects/doggy_ent/doggy_ent_vue`
 Current branch observed: `dev-main`
 
@@ -3747,3 +3748,1260 @@ No `.env.example` files were created.
 ### Next Recommended Phase
 
 Configure `BETTER_AUTH_API_KEY` in Railway, deploy the server, deploy the client, then run deployed browser QA for customer signup/signin/session persistence, Better Auth Infrastructure dashboard visibility, guest checkout, logged-in Stripe checkout, account order history, and admin customers. After deployed QA passes, add Playwright E2E tests for the customer journey.
+
+## 2026-06-13 Customer Accounts UX Refinement Pass
+
+### Objective
+
+Focused UX repair pass for customer accounts after Better Auth infrastructure work. This pass did not rebuild auth, checkout, admin, or storefront. It preserved the existing Vue domain structure and server route/controller/service/repository/Prisma pattern.
+
+### Previous Phase Verification
+
+Verified from repository state:
+
+- Better Auth customer account files exist under `client/src/domains/account`, `server/src/domains/account`, and `server/src/domains/auth/services/customerAuth.service.js`.
+- `@better-auth/infra` remains installed in both client and server packages.
+- Server Better Auth uses `dash({ apiKey: process.env.BETTER_AUTH_API_KEY })`.
+- Client Better Auth uses `dashClient()`.
+- Customer auth remains mounted at `/api/customer-auth`.
+- Custom admin auth remains mounted at `/api/auth`.
+
+Incomplete or rough items confirmed from the previous pass:
+
+- `AccountShell` rendered `SiteHeader` without binding cart/search state, causing account pages to show a detached cart count.
+- Desktop account dropdown was hover-based and could close across the button/menu gap.
+- Account dropdown still included redundant `Checkout`.
+- Checkout guest sign-in/create-account links left checkout instead of preserving in-progress form state.
+- Profile had basic editable fields but no preferred contact method or clear saved address/default shipping/default billing placeholders.
+- Orders page displayed all fetched orders without search/filter/load-more scalability.
+
+### Files Changed
+
+Client:
+
+- `client/src/app/layouts/SiteHeader.vue`
+  - Replaced hover-only account menu with click/outside-click/Escape behavior.
+  - Removed redundant Checkout menu item.
+  - Added Profile menu item.
+  - Updated main nav links to storefront-root anchors such as `/#shop` so account pages do not dead-end on local hashes.
+- `client/src/domains/account/components/AccountShell.vue`
+  - Binds `SiteHeader` to shared cart count/search state.
+  - Adds the real `CartDrawer` on account pages using the same local cart storage.
+- `client/src/domains/storefront/composables/useStorefrontSearch.js`
+  - New tiny shared search-state composable for storefront/account header continuity.
+- `client/src/domains/products/composables/useProductFilters.js`
+  - Uses the shared storefront search ref.
+- `client/src/domains/cart/composables/useCart.js`
+  - Adds safe defaults so account shell can use stored cart/drawer behavior without product catalog context.
+- `client/src/domains/checkout/Checkout/CheckoutContactSection.vue`
+  - Guest Sign in/Create account actions now emit quick-auth events instead of navigating away.
+- `client/src/domains/checkout/Checkout/CheckoutAuthModal.vue`
+  - New lightweight checkout sign-in/create-account modal using existing Better Auth composable and validators.
+- `client/src/domains/checkout/views/CheckoutView.vue`
+  - Opens checkout auth modal and reloads signed-in profile after modal auth success without losing checkout progress.
+- `client/src/domains/account/views/AccountSignInView.vue`
+  - Preserves safe internal `redirect` query when linking to create account and after sign-in.
+- `client/src/domains/account/views/AccountCreateView.vue`
+  - Preserves safe internal `redirect` query when linking to sign-in and after account creation.
+- `client/src/domains/account/views/AccountProfileView.vue`
+  - Adds explicit marketing opt-in/opt-out controls, preferred contact method, and saved-address/default-shipping/default-billing future placeholders.
+- `client/src/domains/account/validators/account.validators.js`
+  - Validates preferred contact method values.
+- `client/src/domains/account/views/AccountDashboardView.vue`
+  - Adds welcome section, compact recent orders, View All Orders link, and future-phase loyalty/wishlist/review/tracking placeholders.
+- `client/src/domains/account/views/AccountOrdersView.vue`
+  - Adds order search, status filter, and Load More pagination.
+- `client/src/domains/account/components/AccountOrderCard.vue`
+  - Adds friendlier status labels/classes and clearer order metadata.
+- `client/src/domains/account/views/AccountOrderDetailView.vue`
+  - Adds a status timeline section using existing `statusHistory`.
+
+Server/database:
+
+- `server/prisma/schema.prisma`
+  - Adds nullable `CustomerProfile.preferredContactMethod`.
+- `server/prisma/migrations/20260613000000_add_customer_preferred_contact/migration.sql`
+  - Adds the local/production migration for the preferred contact field.
+- `server/src/domains/account/services/account.service.js`
+  - Normalizes and saves preferred contact method through the existing account service.
+- `server/src/domains/account/mappers/account.mapper.js`
+  - Returns preferred contact method in customer-safe profile responses.
+
+Docs:
+
+- `docs/architecture/auth-roadmap.md`
+  - Adds verified Better Auth Dashboard Base URL/Base Path guidance.
+
+### UX Issues Fixed
+
+- Account pages now share live storefront cart count and cart drawer behavior through the same `SiteHeader` and local cart storage.
+- Account header search state uses a shared storefront search ref rather than a detached account-only ref.
+- Desktop account dropdown no longer depends on fragile hover; it opens by click, closes on outside click/Escape/menu selection, and can be used without a hover gap.
+- Checkout was removed from the account dropdown because the cart/checkout path already exists elsewhere.
+- Profile now has real editable controls for first name, last name, phone, marketing opt-in/out, and preferred contact method.
+- Saved addresses, default shipping address, default billing address, and preferred shipping profile are presented as intentional future-phase placeholders.
+- Checkout guest auth now has an inline sign-in/create-account modal that preserves cart and entered checkout form state.
+- Standalone sign-in/create-account pages preserve safe internal redirect targets such as `redirect=/checkout`.
+- Account overview stays compact and shows only recent orders with a View All Orders path.
+- Orders page now supports search, status filter, and load more.
+- Order detail now has a timeline/status-history section.
+
+### Better Auth Dashboard Configuration
+
+Verified from code:
+
+- Server Better Auth config: `server/src/domains/auth/services/customerAuth.service.js`
+- Server base path: `basePath: '/api/customer-auth'`
+- Express mount: `app.all('/api/customer-auth/*splat', toNodeHandler(customerAuth))`
+- Client Better Auth config: `client/src/domains/account/api/authClient.js`
+- Client base path: `/api/customer-auth`
+- Custom admin auth remains separate at `/api/auth`.
+
+Dashboard values:
+
+- Project Name: use `Chase & Evie Co.` or `Doggy Ent`.
+- Base URL: the public backend/server origin where Better Auth runs. For production, copy the Railway backend public domain from Railway service networking. Do not use the Vercel storefront URL unless the auth server is actually hosted there.
+- Base Path: `/api/customer-auth`
+- Required Railway/server variable: `BETTER_AUTH_API_KEY`
+- Vercel/client env change: none for the API key.
+- Verification endpoint: `<BackendBaseUrl>/api/customer-auth/get-session`
+
+Local endpoint verification:
+
+```bash
+curl -i http://localhost:3000/api/customer-auth/get-session
+```
+
+Result: `200 OK` with unauthenticated `null`, proving the route exists locally.
+
+Official docs referenced:
+
+- Better Auth Infrastructure Getting Started.
+- Better Auth Infrastructure Dashboard plugin docs.
+
+### Migration Notes
+
+Local:
+
+- `npx prisma migrate status` initially reported pending `20260613000000_add_customer_preferred_contact`.
+- `npx prisma migrate dev` applied it locally and regenerated Prisma Client.
+- Final `npx prisma migrate status` reported the local database schema is up to date.
+
+Railway:
+
+- Do not apply automatically from Codex.
+- Required after review/deploy planning: run Railway-safe `npx prisma migrate deploy` for the new migration.
+
+### Verification Results
+
+Commands run:
+
+```bash
+cd client
+npm run build
+npm test
+```
+
+Result: passed. Vite built 227 modules. Client tests passed: 5 files, 14 tests.
+
+```bash
+cd server
+npm run build
+npm test
+npx prisma migrate status
+npx prisma migrate dev
+npx prisma migrate status
+```
+
+Result: server build passed and generated Prisma Client. Server tests passed: 9 files, 26 tests. Local migration applied. Final local migration status: database schema is up to date.
+
+Targeted syntax checks:
+
+```bash
+node --check src/domains/account/services/account.service.js
+node --check src/domains/account/mappers/account.mapper.js
+node --check src/domains/account/repositories/account.repository.js
+node --check src/domains/auth/services/customerAuth.service.js
+```
+
+Result: passed.
+
+Browser/manual checks:
+
+- Homepage rendered with header/cart/account controls.
+- Added a real product to cart through storefront UI; header cart count updated to `1`.
+- Account sign-in page showed the same cart count and account shell cart drawer opened with the same stored item.
+- Checkout guest auth card opened inline Sign in/Create account modal without leaving `/checkout`.
+- Created a temporary local customer through the checkout modal; checkout remained on `/checkout`, modal closed, guest card disappeared, and signed-in card appeared.
+- Desktop signed-in account dropdown opened by click, contained Account overview, Orders, Profile, Sign out, and did not contain Checkout.
+- Orders page rendered search, status filter, empty/list state, and Load More-ready structure.
+- Profile page rendered marketing opt-in/out, preferred contact method, saved-address placeholders, and future-phase copy.
+- Profile save persisted preferred contact method after killing stale local server watcher processes and restarting a single fresh server.
+- Mobile viewport check verified account header state, cart count, account overview, and orders controls.
+- Browser logs showed only the expected local Stripe warning about testing Stripe.js over HTTP; no new Vue/runtime errors were observed.
+- Temporary local browser test customer was removed from the local DB.
+- No `.env.example` files were created.
+
+### Important Verification Note
+
+During profile-save verification, an old `node --watch src/server.js` process was still serving port `3000` with a stale Prisma Client. Killing all old local server watcher/child processes and starting one fresh server fixed the false stale-client error. Reviewers should restart the local server after applying the migration and regenerating Prisma Client.
+
+### Remaining Risks
+
+- Railway still needs `20260613000000_add_customer_preferred_contact` applied with `npx prisma migrate deploy` after review.
+- Deployed Vercel/Railway customer account QA was not run in this local pass.
+- Checkout quick-auth was verified through local UI state and account session, but not through a full Stripe payment after sign-in.
+- Search state is shared in-memory across storefront/account routes during the same SPA session; it is not yet URL-backed or persisted across reloads.
+- No automated E2E tests cover the account dropdown, checkout quick-auth modal, or profile save.
+
+### Next Recommended Phase
+
+After code review, apply the new Prisma migration on Railway, redeploy server and client, then run deployed QA for account dropdown, checkout quick-auth, profile save, order history, and Better Auth Dashboard connection. After deployed QA passes, add Playwright E2E coverage for the customer account and checkout identity journey.
+
+## 2026-06-14 Communication, Fulfillment, and Security Pass
+
+### Objective
+
+Focused infrastructure pass for transactional email, tracking/fulfillment visibility, and security hardening. This pass did not implement Twilio/SMS, did not replace Better Auth, did not rebuild checkout/admin/account UX, and did not commit or push.
+
+### Communication Infrastructure
+
+Resend email support was implemented behind the existing email domain:
+
+- `server/src/domains/emails/services/emailProvider.service.js`
+  - Sends through Resend when server env provides `RESEND_API_KEY` and `EMAIL_FROM` or `RESEND_FROM_EMAIL`.
+  - Falls back to mock mode in tests, explicit mock/test modes, or when required provider env is missing.
+  - Records delivery attempts in `EmailDelivery`.
+  - Uses dedupe keys so normal retries do not resend one-time lifecycle/order emails.
+  - Does not throw provider failures back into checkout/status workflows.
+- `server/src/domains/emails/repositories/emailDelivery.repository.js`
+  - Prisma access for email delivery records.
+- `server/src/domains/emails/mappers/emailTemplates.mapper.js`
+  - Builds HTML/text transactional templates from structured payloads.
+- `server/src/domains/emails/mappers/emailPayloads.mapper.js`
+  - Builds account, order, admin alert, support, password reset, verification, and profile-update payloads.
+- `server/src/domains/emails/constants/emailEvents.constants.js`
+  - Source of truth for email event names/status labels.
+
+Email lifecycle hooks now verified from code:
+
+- Account verification email: Better Auth `emailVerification.sendVerificationEmail`.
+- Password reset email: Better Auth `emailAndPassword.sendResetPassword`.
+- Welcome/account-created emails: Better Auth user create database hook.
+- Profile updated email: account profile update service.
+- Order confirmation email: checkout service after order creation and promo/campaign persistence.
+- Admin new-order email: checkout service after order creation.
+- Order shipped/delivered/cancelled/status update/refund emails: admin order status service.
+- Admin refund/support notification: admin order status service for cancelled/refunded orders.
+- Admin failed-payment notification: payment intent creation controller catch path.
+
+Uncertainty:
+
+- Password-changed email template/event is prepared, but a concrete Better Auth password-changed lifecycle hook was not verified from source in this pass.
+- Client-side Stripe declines after PaymentIntent creation still require future Stripe webhook coverage if the business wants complete failed-payment notifications.
+
+### Fulfillment and Shippo Tracking
+
+Shipping/tracking support was added through a new server shipping domain:
+
+- `server/src/domains/shipping/routes/shipping.routes.js`
+  - `PUT /api/admin/orders/:orderId/tracking`
+  - `POST /api/admin/orders/:orderId/tracking/refresh`
+  - `POST /api/webhooks/shippo`
+- `server/src/domains/shipping/controllers/shipping.controller.js`
+  - Admin tracking update/refresh handlers and Shippo webhook receipt handler.
+- `server/src/domains/shipping/services/shipping.service.js`
+  - Validates tracking payloads.
+  - Syncs current tracking status with Shippo when configured.
+  - Stores tracking snapshots/events.
+  - Updates order status to shipped/delivered when tracking status proves it.
+  - Queues tracking/order lifecycle emails.
+- `server/src/domains/shipping/services/shippo.service.js`
+  - Calls Shippo tracking API when `SHIPPO_API_KEY` or `SHIPPO_API_TOKEN` is configured.
+- `server/src/domains/shipping/repositories/shipping.repository.js`
+  - Prisma access for shipment upserts and carrier events.
+- `server/src/domains/shipping/mappers/shipping.mapper.js`
+  - Maps Shippo tracking responses to app shipment shape.
+- `server/src/domains/shipping/validators/shipping.validator.js`
+  - Normalizes carrier/tracking/status fields and rejects invalid tracking payloads.
+
+Order repository/mapping updates:
+
+- `server/src/domains/orders/repositories/orders.repository.js`
+  - Includes shipments/events on admin order lists, detail, customer order lookup, Stripe idempotency lookup, and status updates.
+- `server/src/domains/account/repositories/account.repository.js`
+  - Includes shipments/events on customer account order history/detail.
+- `server/src/domains/orders/mappers/orders.mapper.js`
+  - Admin order responses include shipment ids/source/internal fields.
+  - Customer-safe order responses expose carrier, tracking number, URL, shipment status, dates, and event status/message/location/timestamps, but omit internal shipment/event ids and Stripe PaymentIntent ids.
+
+Admin UI:
+
+- `client/src/domains/admin/api/adminOrders.api.js`
+  - Adds tracking update and refresh API calls.
+- `client/src/domains/admin/components/AdminOrderTrackingPanel.vue`
+  - Adds a focused tracking panel to admin order detail.
+  - Allows carrier, tracking number, optional tracking URL, shipment status, and mark-shipped behavior.
+- `client/src/domains/admin/views/AdminOrderDetailView.vue`
+  - Renders the tracking panel and updates the local order after save/refresh.
+
+Customer UI:
+
+- `client/src/domains/account/components/AccountOrderCard.vue`
+  - Shows concise tracking status when present.
+- `client/src/domains/account/views/AccountOrderDetailView.vue`
+  - Shows customer-safe tracking details and carrier events.
+- `client/src/domains/checkout/views/OrderSuccessView.vue`
+  - Shows tracking details if already attached to the order; otherwise keeps the existing fulfillment expectation.
+
+Webhook note:
+
+- `POST /api/webhooks/shippo` verifies optional `SHIPPO_WEBHOOK_SECRET` header values and acknowledges receipt.
+- Automatic webhook payload matching/update is intentionally not enabled yet because this pass did not verify the exact deployed Shippo webhook payload shape against live data.
+
+### Database Changes
+
+New Prisma migration:
+
+- `server/prisma/migrations/20260614000000_email_and_shipping_tracking/migration.sql`
+
+New Prisma models:
+
+- `OrderShipment`
+  - Tracks order-level carrier/tracking number/status/URLs/dates/source/raw status.
+  - Unique by `(orderId, trackingNumber)`.
+- `OrderShipmentEvent`
+  - Tracks carrier timeline events.
+  - Unique by `(shipmentId, status, occurredAt)` to prevent duplicate events on refresh.
+- `EmailDelivery`
+  - Tracks transactional email event, recipient, subject, provider/status, dedupe key, order/user ids, metadata, and delivery error/provider id.
+
+Local migration status:
+
+```bash
+cd server
+npx prisma migrate dev --name email_and_shipping_tracking
+npx prisma migrate status
+```
+
+Result: local migration applied and local database schema is up to date.
+
+Railway migration status:
+
+- Not applied automatically by Codex.
+- Required after code review: run Railway-safe `npx prisma migrate deploy` on the Railway/server environment.
+
+### Security Hardening
+
+Files:
+
+- `server/src/app/middleware/security/securityHeaders.middleware.js`
+  - Adds `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and production HSTS.
+- `server/src/app/middleware/security/rateLimit.middleware.js`
+  - Adds checkout, payment, customer-auth, webhook rate limiters.
+- `server/src/app.js`
+  - Applies security headers globally.
+  - Limits JSON payload size to `100kb`.
+  - Applies customer-auth limiter before Better Auth handler.
+  - Mounts shipping routes at `/api`.
+- `server/src/domains/checkout/routes/checkout.routes.js`
+  - Applies checkout limiter to preview and create checkout.
+- `server/src/domains/payments/routes/payment.routes.js`
+  - Applies payment limiter to PaymentIntent creation.
+- `server/src/domains/shipping/routes/shipping.routes.js`
+  - Applies webhook limiter.
+- `server/src/app/middleware/error.middleware.js`
+  - Keeps expected 4xx messages but returns a generic message for unexpected 5xx errors.
+
+### Environment Variables
+
+Server/Railway variables to configure by name only:
+
+- `RESEND_API_KEY`: Resend API key for transactional email.
+- `EMAIL_FROM`: preferred from address for Resend transactional email.
+- `EMAIL_REPLY_TO`: optional reply-to address.
+- `RESEND_FROM_EMAIL`: backward-compatible from-address alias supported by code.
+- `RESEND_REPLY_TO_EMAIL`: backward-compatible reply-to alias supported by code.
+- `ADMIN_NOTIFICATION_EMAIL`: optional admin alert recipient; falls back to `ADMIN_EMAIL`.
+- `SUPPORT_EMAIL`: optional support recipient; falls back to `ADMIN_EMAIL`.
+- `SHIPPO_API_KEY`: Shippo API key for tracking sync.
+- `SHIPPO_API_TOKEN`: backward-compatible Shippo token alias supported by code.
+- `SHIPPO_WEBHOOK_SECRET`: optional shared secret checked on Shippo webhook requests.
+- Existing required server vars remain required: `DATABASE_URL`, `STRIPE_SECRET_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `BETTER_AUTH_API_KEY`, `CLIENT_URL`, `FRONTEND_URL`, `NODE_ENV`, `PORT`.
+
+Client/Vercel:
+
+- No Resend or Shippo variables belong in client/Vercel public env.
+- Existing public vars remain: `VITE_API_BASE_URL`, `VITE_API_URL` if still supported as alias, and Stripe publishable key.
+
+No secret values were copied into this handoff.
+
+### Verification Results
+
+Commands run:
+
+```bash
+cd client
+npm run build
+npm run test
+```
+
+Result: client build passed. Client tests passed: 5 files, 14 tests.
+
+```bash
+cd server
+node --check src/app.js
+node --check src/domains/shipping/services/shipping.service.js
+node --check src/domains/emails/services/emailProvider.service.js
+node --check src/domains/orders/repositories/orders.repository.js
+npm run build
+npm run test
+npx prisma migrate dev --name email_and_shipping_tracking
+npx prisma migrate status
+node -e "import('./src/app.js').then(() => console.log('app import ok'))"
+npm run dev:local
+curl -s -o /tmp/tracking_status.txt -w '%{http_code}' -X PUT http://localhost:3000/api/admin/orders/test-order/tracking -H 'Content-Type: application/json' -d '{"carrier":"usps","trackingNumber":"TRACK123"}'
+curl -s -o /tmp/shippo_webhook_status.txt -w '%{http_code}' -X POST http://localhost:3000/api/webhooks/shippo -H 'Content-Type: application/json' -d '{}'
+```
+
+Results:
+
+- Syntax checks passed.
+- Server build passed and generated Prisma Client.
+- Server tests passed: 10 files, 28 tests.
+- Local migration applied successfully.
+- Final local migration status: database schema is up to date.
+- App import smoke check printed `app import ok`.
+- Local unauthenticated admin tracking update returned `401`, proving the new admin tracking endpoint is not public.
+- Local Shippo webhook receipt endpoint returned `200` when no `SHIPPO_WEBHOOK_SECRET` is configured.
+
+One command mistake:
+
+```bash
+cd server
+npm run tiertest1 -- --runInBand
+```
+
+Result: failed because Vitest does not support Jest's `--runInBand` option. The real project script `npm run tiertest1` was rerun and passed.
+
+Secret/env checks:
+
+```bash
+find . -name '.env.example' -o -name '*.env.example'
+rg -n "RESEND_API_KEY|SHIPPO_API_KEY|SHIPPO_API_TOKEN|EMAIL_FROM|RESEND_FROM_EMAIL|sk_|shippo_|re_[A-Za-z0-9]" --glob '!node_modules/**' --glob '!client/dist/**' .
+```
+
+Result: no `.env.example` files found. Search found only variable names/documentation/source references, not real provider secrets.
+
+### Tests Added/Updated
+
+- `server/tests/tier1/shipping/shipping-tracking.test.js`
+  - Verifies tracking payload normalization.
+  - Verifies Shippo response mapping.
+- `server/tests/tier2/orders/customer-safe-order.test.js`
+  - Verifies customer-safe order mapping exposes tracking data but omits internal shipment/event ids and Stripe PaymentIntent id.
+
+### Manual QA Checklist
+
+After code review and Railway migration/deploy:
+
+- Configure server env names above in Railway, without putting keys in Vercel public env.
+- Run Railway `npx prisma migrate deploy`.
+- Redeploy server and client.
+- Place a guest checkout order and confirm:
+  - Order confirmation email is sent or mocked according to env.
+  - Admin new-order email is sent.
+  - Checkout still creates one order for one Stripe PaymentIntent.
+- Place/log in as a customer and confirm:
+  - Welcome/account-created emails queue on sign-up.
+  - Password reset email queues from forgot-password flow.
+  - Profile update email queues after profile save.
+- In admin order detail:
+  - Add valid carrier/tracking number.
+  - Confirm the order status moves to shipped when requested.
+  - Confirm tracking appears on admin order detail.
+  - Confirm tracking appears on customer account order card/detail.
+  - Confirm refresh uses Shippo when `SHIPPO_API_KEY` or `SHIPPO_API_TOKEN` is configured.
+- Verify `/api/webhooks/shippo` rejects/accepts according to `SHIPPO_WEBHOOK_SECRET` configuration.
+- Confirm no Resend/Shippo secrets appear in browser bundles or API responses.
+- Confirm admin products/promos/campaigns/orders/customer pages still require auth.
+
+### Remaining Risks
+
+- Railway migration for `20260614000000_email_and_shipping_tracking` must be deployed before live email/tracking persistence can work.
+- Shippo webhook automatic tracking updates are not enabled until a real deployed webhook payload is verified.
+- Password-changed email is template-ready but not confirmed as a live Better Auth lifecycle trigger.
+- Failed-payment admin notification currently covers server PaymentIntent creation failures; full Stripe failure/refund automation still needs Stripe webhooks.
+- No browser E2E automation was added for admin tracking save/refresh or customer tracking display.
+- Resend deliverability/domain verification must be completed outside the repo in Resend/DNS.
+
+### Next Recommended Phase
+
+After review, apply the Railway migration, configure Resend/Shippo env vars, redeploy, and run deployed QA for email delivery, tracking save/refresh, customer tracking visibility, and checkout/order idempotency. Then add Stripe webhooks for payment failure/refund events and Shippo webhook auto-processing once live webhook payloads are captured and verified.
+
+## 2026-06-15 Reality Verification And Completion Pass
+
+### Objective
+
+The previous handoff claimed Resend, Shippo, notification persistence, admin tracking endpoints, security hardening, shipment models, `EmailDelivery`, and customer tracking UI. This pass verified those claims against source, classified incomplete areas, then built missing end-to-end links without committing or pushing.
+
+### Reality Matrix
+
+| Area | Status before this pass | Evidence before this pass | Work completed now |
+| --- | --- | --- | --- |
+| Welcome email | Partial | Better Auth user create hook queued welcome/account-created emails through `emailProvider.service.js`; `EmailDelivery` model existed. | Added customer/admin delivery history surfaces so sent/mocked/skipped state is visible. |
+| Verification email | Partial | Better Auth `sendVerificationEmail` hook existed; admin customer action previously built a null-url payload. | Admin resend verification now calls Better Auth `sendVerificationEmail`, which generates a real verification URL. |
+| Resend verification email | Falsely complete | Admin UI button existed, but server passed `url: null`. | Rewired to Better Auth API. |
+| Forgot/password reset email | Partial | Customer forgot-password UI called Better Auth request reset; admin reset used null-url payload. | Admin reset now calls Better Auth `requestPasswordReset`, producing a real reset URL. |
+| Profile update email | Partial | Account service queued profile update email. | Added customer notification history and preference controls. |
+| Order confirmation email | Partial | Checkout service queued email after order creation. | Added admin order resend confirmation control and email delivery history. |
+| Order status email | Partial | Status service queued status emails. | Added admin notification history visibility. |
+| Tracking shipped email | Partial | Shipping service queued tracking/shipped email. | Added order resend tracking controls and visible delivery history. |
+| Delivered email | Partial | Status/tracking service queued delivered email. | Added delivered resend control. |
+| Review request email | Missing | Event/template existed, but no trigger/API/UI. | Added admin order review request send control, gated to delivered orders server-side. |
+| Shippo provider integration | Complete backend, unverified live | `shippo.service.js` called Shippo Tracking API; tests covered mapper. | Verified env presence only, no label purchase; documented test-mode limitation. |
+| Shipment persistence | Complete | `OrderShipment`, repository, service, mapper existed. | Preserved and surfaced in dashboard/order/customer docs. |
+| Shipment event persistence | Complete | `OrderShipmentEvent` unique event rows existed. | Included in docs and dashboard tracking summary. |
+| Tracking refresh | Complete | `POST /api/admin/orders/:id/tracking/refresh` existed. | Verified protected endpoint shape. |
+| Tracking timeline | Partial | Admin/customer order detail showed events; dashboard did not summarize. | Added dashboard shipment activity summary. |
+| Customer tracking visibility | Complete for order detail/card | Account order card/detail and success page displayed tracking. | Added shipping method visibility. |
+| Admin tracking visibility | Complete for order detail | Admin tracking panel existed. | Added dashboard shipment summary. |
+| Admin dashboard visibility | Partial | Only navigation cards existed. | Added metrics for orders, customers, revenue, notifications, shipments, delivered orders, and recent notification activity. |
+| Admin notification visibility | Missing | `EmailDelivery` persisted but no admin route/UI. | Added `GET /api/admin/notifications`, dashboard panel, order panel, customer panel. |
+| Notification resend controls | Partial | Customer verification/reset buttons existed; order resends missing. | Added order confirmation/tracking/delivered/review resend controls. |
+| Customer notification preferences | Partial | Prisma model existed and profile had marketing opt-in only. | Added profile controls for order, tracking, review, loyalty/referral, marketing categories; provider records `SKIPPED` when preferences block eligible events. |
+| Email status feedback | Missing | Email rows existed but were not surfaced. | Added customer profile recent email activity. |
+| Checkout shipping methods | Partial | Client had fixed options and server recalculated price by method; order did not store method. | Added `GET /api/checkout/shipping-options`, server-provided labels/descriptions, and nullable `Order.shippingMethod`. |
+
+### Files Created
+
+- `client/src/domains/admin/api/adminNotifications.api.js`
+- `client/src/domains/admin/components/AdminCustomerNotificationsPanel.vue`
+- `client/src/domains/admin/components/AdminOrderNotificationsPanel.vue`
+- `server/prisma/migrations/20260615000000_add_order_shipping_method/migration.sql`
+- `server/src/domains/emails/controllers/emailDelivery.controller.js`
+- `server/src/domains/emails/mappers/emailDelivery.mapper.js`
+- `server/src/domains/emails/routes/adminEmailDelivery.routes.js`
+- `server/src/domains/emails/services/emailDelivery.service.js`
+
+### Files Modified
+
+- `client/src/domains/account/api/account.api.js`
+- `client/src/domains/account/views/AccountProfileView.vue`
+- `client/src/domains/account/views/AccountOrderDetailView.vue`
+- `client/src/domains/admin/views/AdminDashboardView.vue`
+- `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+- `client/src/domains/admin/views/AdminOrderDetailView.vue`
+- `client/src/domains/admin/api/adminOrders.api.js`
+- `client/src/domains/checkout/api/checkout.api.js`
+- `client/src/domains/checkout/views/CheckoutView.vue`
+- `client/src/domains/checkout/views/OrderSuccessView.vue`
+- `docs/architecture/admin.md`
+- `docs/architecture/data-flow.md`
+- `docs/architecture/diagram.md`
+- `docs/architecture/mockdiagram.md`
+- `server/prisma/schema.prisma`
+- `server/src/app.js`
+- `server/src/domains/account/controllers/account.controller.js`
+- `server/src/domains/account/mappers/account.mapper.js`
+- `server/src/domains/account/repositories/account.repository.js`
+- `server/src/domains/account/routes/account.routes.js`
+- `server/src/domains/account/services/account.service.js`
+- `server/src/domains/checkout/constants/checkout.constants.js`
+- `server/src/domains/checkout/controllers/checkout.controller.js`
+- `server/src/domains/checkout/routes/checkout.routes.js`
+- `server/src/domains/checkout/services/checkout.service.js`
+- `server/src/domains/customers/mappers/adminCustomers.mapper.js`
+- `server/src/domains/customers/services/adminCustomers.service.js`
+- `server/src/domains/emails/repositories/emailDelivery.repository.js`
+- `server/src/domains/emails/services/emailProvider.service.js`
+- `server/src/domains/orders/controllers/orders.controller.js`
+- `server/src/domains/orders/mappers/orders.mapper.js`
+- `server/src/domains/orders/repositories/orders.repository.js`
+- `server/src/domains/orders/routes/orders.routes.js`
+- `server/src/domains/orders/services/orders.service.js`
+
+### API Routes Added
+
+- `GET /api/admin/notifications`
+- `GET /api/account/notifications`
+- `POST /api/admin/orders/:orderId/emails/resend`
+- `GET /api/checkout/shipping-options`
+
+Existing tracking routes verified/preserved:
+
+- `PUT /api/admin/orders/:orderId/tracking`
+- `POST /api/admin/orders/:orderId/tracking/refresh`
+- `POST /api/webhooks/shippo`
+
+### Prisma Changes
+
+- Added nullable `Order.shippingMethod`.
+- Added migration `20260615000000_add_order_shipping_method`.
+- Local migration applied with `npx prisma migrate dev`.
+- Final local `npx prisma migrate status`: database schema is up to date with 15 migrations.
+
+### Provider Checks
+
+Local env presence was checked without printing values:
+
+- `RESEND_API_KEY`: present
+- `EMAIL_FROM`: missing
+- `EMAIL_REPLY_TO`: present
+- `RESEND_FROM_EMAIL`: missing
+- `RESEND_REPLY_TO_EMAIL`: missing
+- `SHIPPO_API_KEY`: present
+- `SHIPPO_API_TOKEN`: missing
+
+Resend live email verification:
+
+- Blocked. The app requires `EMAIL_FROM` or `RESEND_FROM_EMAIL` in addition to `RESEND_API_KEY`; neither from-address variable was present locally.
+- Emails sent count: `0`.
+- Apple Mail verification was not performed because no real emails were sent.
+
+Shippo verification:
+
+- Env presence confirmed for `SHIPPO_API_KEY`.
+- No labels were purchased.
+- No production shipment was created.
+- Shippo documentation notes test mode does not create usable shipped labels and test tracking has limitations, so verification stayed to provider wiring, endpoint protection, normalization tests, and mapper tests.
+
+### Verification Commands
+
+```bash
+git status --short
+git diff --stat
+git diff --name-status
+node --check src/app.js
+node --check src/domains/account/services/account.service.js
+node --check src/domains/customers/services/adminCustomers.service.js
+node --check src/domains/emails/services/emailProvider.service.js
+node --check src/domains/orders/services/orders.service.js
+node --check src/domains/checkout/controllers/checkout.controller.js
+cd client && npm run build
+cd server && npm run build
+cd server && npx prisma migrate dev
+cd client && npm run test
+cd server && npm run test
+cd server && npx prisma migrate status
+node -e "import('./src/app.js').then(() => console.log('app import ok'))"
+find . -name '.env.example' -o -name '*.env.example'
+rg -n "sk_live|rk_live|whsec_|postgres://|postgresql://|RESEND_API_KEY=|SHIPPO_API_KEY=|SHIPPO_API_TOKEN=|EMAIL_FROM=|STRIPE_SECRET_KEY=|ADMIN_PASSWORD_HASH=" --glob '!node_modules/**' --glob '!client/dist/**' .
+```
+
+Results:
+
+- Client build passed.
+- Server build passed and generated Prisma Client.
+- Client tests passed: 5 files, 14 tests.
+- Server tests passed: 10 files, 28 tests.
+- Server syntax checks passed.
+- App import smoke check printed `app import ok`.
+- No `.env.example` files found.
+- Secret scan found only command text in this handoff, not committed secret values.
+
+Local endpoint smoke checks:
+
+- `GET /api/admin/notifications` unauthenticated: `401`.
+- `PUT /api/admin/orders/test-order/tracking` unauthenticated: `401`.
+- `GET /api/account/notifications` unauthenticated: `401`.
+- `GET /api/checkout/shipping-options`: `200` with standard/priority server-owned methods.
+
+Mermaid/doc checks:
+
+- `mmdc` was not installed locally.
+- Markdown fence balance check passed for `diagram.md`, `mockdiagram.md`, `data-flow.md`, and `admin.md`.
+
+### Remaining Blockers
+
+- Configure `EMAIL_FROM` or `RESEND_FROM_EMAIL` locally before live Resend testing.
+- After setting the from address, perform the approved Resend tests to `alvarez.a.aaron@gmail.com`, max 10 emails, starting with forgot password.
+- Railway must run `npx prisma migrate deploy` after review for `20260615000000_add_order_shipping_method` and any unapplied prior migrations.
+- Shippo live tracking refresh still needs a real or predefined valid tracking test strategy; no label purchase should happen in Codex.
+- Shippo webhook auto-processing remains intentionally receipt-only until real deployed payloads are verified.
+- No browser E2E automation was added for admin notification panels or customer notification preferences.
+
+### Safe-To-Review Status
+
+Local code builds and tests pass. The implementation is safe for code review, but not ready for deployed launch until the Resend from-address env is configured, the Railway migration is deployed, and manual QA confirms live email delivery and admin/customer notification visibility.
+
+## 2026-06-15 Admin Pages, Shippo Rate Shopping, And Email Verification Pass
+
+This section supersedes the earlier same-day provider note that said `EMAIL_FROM` was missing. The current local `server/.env` variable-name audit found `RESEND_API_KEY`, `EMAIL_FROM`, `RESEND_FROM_EMAIL`, `EMAIL_REPLY_TO`, and `RESEND_REPLY_TO_EMAIL` present. Values were not printed or copied.
+
+### Completed Code Changes
+
+- Added dedicated admin pages:
+  - `/admin/notifications` via `client/src/domains/admin/views/AdminNotificationsView.vue`.
+  - `/admin/shipments` via `client/src/domains/admin/views/AdminShipmentsView.vue`.
+  - `/admin/reports` via `client/src/domains/admin/views/AdminReportsView.vue`.
+- Kept `/admin` compact by moving large notification/shipment blocks into the dedicated pages.
+- Added client API `client/src/domains/admin/api/adminShipments.api.js`.
+- Expanded notification API filtering in `client/src/domains/admin/api/adminNotifications.api.js`, `server/src/domains/emails/controllers/emailDelivery.controller.js`, `server/src/domains/emails/services/emailDelivery.service.js`, and `server/src/domains/emails/repositories/emailDelivery.repository.js`.
+- Added protected `GET /api/admin/shipments` backed by the shipping route/controller/service/repository stack.
+- Added checkout rate shopping endpoint `POST /api/checkout/shipping-rates`.
+- Added Shippo rate mapping and rate-only shipment creation for checkout rate shopping. Checkout never buys labels.
+- Preserved static Standard/Priority shipping fallback when Shippo config, sender address env, address data, or provider calls are unavailable.
+- Updated checkout UI to request shipping rates after the address is present, display loading/fallback messages, and submit selected shipping `rateId`, carrier, service, provider, and method.
+- Server checkout re-resolves the selected rate before PaymentIntent creation and order creation, so shipping price remains server-owned.
+- Added nullable order fields:
+  - `shippingCarrier`
+  - `shippingService`
+  - `shippingRateId`
+  - `shippingRateProvider`
+- Added migration `20260615001000_add_order_shipping_rate_fields`.
+- Admin order detail, customer order detail, and order success now display carrier/service/rate source when present.
+- Added tests for Shippo rate mapping, static shipping fallback metadata, and customer-safe shipping-rate fields.
+
+### API Routes Added Or Updated
+
+- `GET /api/admin/notifications?event=&status=&limit=`
+- `GET /api/admin/shipments?status=&limit=`
+- `POST /api/checkout/shipping-rates`
+
+Protected route checks performed locally:
+
+- `GET /api/admin/notifications` without admin session returned `401 Authentication required`.
+- `GET /api/admin/shipments` without admin session returned `401 Authentication required`.
+- `POST /api/webhooks/shippo` without the configured webhook secret returned `401 Invalid webhook secret`.
+
+### Shippo Verification
+
+Local env-name audit found `SHIPPO_API_KEY` present, but `SHIPPO_FROM_STREET1`, `SHIPPO_FROM_CITY`, `SHIPPO_FROM_STATE`, and `SHIPPO_FROM_ZIP` missing. Because sender address variables are required for rate shopping, `POST /api/checkout/shipping-rates` returned the static fallback with message `Carrier rates are unavailable. Store shipping rates are shown.`
+
+No labels were purchased. No production shipment was created.
+
+Required server variable names for live/test Shippo rate shopping:
+
+- `SHIPPO_API_KEY` or `SHIPPO_API_TOKEN`
+- `SHIPPO_FROM_NAME`
+- `SHIPPO_FROM_STREET1`
+- `SHIPPO_FROM_CITY`
+- `SHIPPO_FROM_STATE`
+- `SHIPPO_FROM_ZIP`
+- `SHIPPO_FROM_COUNTRY`
+- Optional: `SHIPPO_FROM_STREET2`, `SHIPPO_FROM_PHONE`, `SHIPPO_FROM_EMAIL`
+- Optional parcel defaults: `SHIPPO_PARCEL_LENGTH`, `SHIPPO_PARCEL_WIDTH`, `SHIPPO_PARCEL_HEIGHT`, `SHIPPO_PARCEL_DISTANCE_UNIT`, `SHIPPO_PARCEL_WEIGHT`, `SHIPPO_PARCEL_MASS_UNIT`
+
+### Resend Verification
+
+Approved inbox used: `alvarez.a.aaron@gmail.com`.
+
+Live emails sent in this pass: `6`, below the requested budget of `10`.
+
+Recorded live `EmailDelivery` rows with provider `RESEND` and status `SENT`:
+
+- `PASSWORD_RESET`: `Reset your Chase & Evie Co. password`.
+- `ACCOUNT_VERIFICATION`: `Verify your Chase & Evie Co. email`.
+- `ORDER_CONFIRMATION`: `Order DGE-1781505157834 confirmation`.
+- `ORDER_SHIPPED`: `Order DGE-1781501526357 has shipped`.
+- `TRACKING_UPDATE`: `Tracking update for order DGE-1781501526357`.
+- `PROFILE_UPDATED`: `Your Chase & Evie Co. profile was updated`.
+
+What was not fully end-to-end verified:
+
+- Profile update was verified through the account service and email provider path, not browser/customer session API, because the test account password was not available.
+- Order resend emails were verified through the order service/email provider path, not admin UI/API, because no plaintext admin password was available in code and secrets were not exposed.
+- Review request was not sent because no approved-inbox local order was already `DELIVERED`; the service correctly gates review requests to delivered orders.
+- Apple Mail inbox search was not automated from this workspace. The database and Resend provider acknowledgements show sent delivery records; inbox receipt still requires user confirmation.
+
+### Shipping Spoofing Verification
+
+Local smoke request sent `shipping.price: 999` with method `priority` to `POST /api/checkout/preview`. Server response used trusted `shippingAmount: 11.99`, proving client-submitted shipping price was ignored for totals.
+
+### Verification Commands
+
+```bash
+git status --short --branch
+git diff --stat
+git diff --name-status
+node --check src/domains/checkout/services/checkout.service.js
+node --check src/domains/checkout/controllers/checkout.controller.js
+node --check src/domains/shipping/services/shippo.service.js
+node --check src/domains/shipping/services/shipping.service.js
+node --check src/domains/shipping/controllers/shipping.controller.js
+node --check src/domains/emails/services/emailDelivery.service.js
+cd server && npx prisma generate
+cd server && npx prisma migrate dev --name add_order_shipping_rate_fields
+cd client && npm run build
+cd client && npm run test
+cd server && npm run build
+cd server && npm run test
+cd server && npx prisma migrate status
+cd server && node -e "import('./src/app.js').then(()=>console.log('app import ok'))"
+curl http://localhost:3000/api/checkout/shipping-rates
+curl http://localhost:3000/api/checkout/preview
+curl http://localhost:3000/api/admin/notifications
+curl http://localhost:3000/api/admin/shipments
+curl http://localhost:3000/api/webhooks/shippo
+```
+
+Results:
+
+- Client build passed.
+- Client tests passed: 5 files, 14 tests.
+- Server build passed and generated Prisma Client.
+- Server tests passed: 10 files, 30 tests.
+- Prisma migrate status passed with 16 local migrations and database schema up to date.
+- Server app import passed with `app import ok`; Better Auth emitted a warning that `BETTER_AUTH_SECRET` should be at least 32 characters.
+
+### Remaining Risks
+
+- Railway must run `npx prisma migrate deploy` for `20260615001000_add_order_shipping_rate_fields` after review.
+- Shippo rate shopping needs sender address env variables before live/test carrier rates can be returned.
+- Admin pages need browser manual QA after deploying/restarting because terminal smoke checks only verified route protection and API responses.
+- Review request email remains unverified for the approved inbox until a delivered order exists.
+- Better Auth secret length warning should be resolved in environment configuration with a stronger secret value.
+
+## 2026-06-17 Documentation Operating Model Restructure
+
+This docs-only pass reorganized the oversized project instructions into a concise operating hub plus focused durable documents. No application code was intentionally changed in this pass.
+
+### New Documentation Structure
+
+- `AGENTS.md`: concise permanent entry point, required reading order, core architecture/security/deployment/database/verification rules, and links to focused docs.
+- `docs/product-philosophy.md`: premium product philosophy, progressive disclosure, customer/admin usefulness, and feature-design checklist.
+- `docs/ux-ui-standards.md`: Tailwind-first styling, visual-system expectations, motion rules, and UI completeness requirements.
+- `docs/customer-experience.md`: customer account, profile, orders, order-help, checkout, Apple Pay/Google Pay disabled-state, and shipping-rate UX requirements.
+- `docs/admin-experience.md`: admin workspace philosophy, dashboard rules, Order Issues, Internal Issues, Email Template Center, promo email tooling, and save/send separation for order updates.
+- `docs/communications.md`: manual-first email policy, account-first communications, send controls, template/provider rules, Resend/Shippo rules, and excluded SMS/Apple Messages channels.
+- `docs/operations-and-issues.md`: suggested OrderIssue, OrderIssueMessage, OrderIssueEvent, InternalIssue, and InternalIssueEvent architecture and ownership/audit rules.
+- `docs/implementation-roadmap.md`: three-run implementation roadmap and the exact recommended Run 1 prompt.
+- `docs/verification-and-qa.md`: repair/launch-readiness priorities, interrupted-work verification, provider verification, docs checks, and final-report requirements.
+- `docs/architecture/*`: remains the current architecture/file-flow/database/admin/auth reference set.
+
+### Rules Moved
+
+- Product and feature philosophy moved out of `AGENTS.md` into `docs/product-philosophy.md`.
+- Tailwind, visual system, animation, responsive, state, and accessibility standards moved into `docs/ux-ui-standards.md`.
+- Customer account/profile/order/checkout/order-help requirements moved into `docs/customer-experience.md`.
+- Admin dashboard/tooling/email-template/order-update requirements moved into `docs/admin-experience.md`.
+- Resend, Shippo, manual-send, provider, template, dry-run, approved-inbox, no-bulk, no-secret, no-SMS rules moved into `docs/communications.md`.
+- Order issue and internal issue model direction moved into `docs/operations-and-issues.md`.
+- Repair, verification, provider retry, docs validation, and final-report rules moved into `docs/verification-and-qa.md`.
+- Three-run product/admin/final-integration plan moved into `docs/implementation-roadmap.md`.
+
+### Important Policy Changes
+
+- Manual-first email policy is now explicit: automatic emails are limited to essential account/security messages and intentionally retained order confirmation. Order updates, tracking, delivered, support replies, issue resolutions, review requests, apology, promo, and marketing emails require explicit admin action unless the user changes this policy later.
+- In-account communication is the default direction for customer issues and order updates.
+- Customer-facing email activity history and preferred communication method controls should be removed in the next customer UX implementation pass.
+- Twilio/SMS and Apple Messages for Business remain excluded unless the user explicitly requests them.
+- Apple Pay and Google Pay should remain disabled/future-only, with copy such as `Coming Fall 2026`, until a complete payment-sheet flow is intentionally built.
+- Admin tracking/order status save flows should be separated from customer-send flows.
+
+### Current Three-Run Roadmap
+
+Run 1: Product philosophy, customer account redesign, checkout UX, and supporting database changes.
+
+Run 2: Admin redesign, Order Issues, Internal Issues, and Email Template Center.
+
+Run 3: Final integration, Shippo/email workflows, polish, animations, QA, docs, and launch-readiness report.
+
+### Validation Notes
+
+This pass should be validated with docs-only checks:
+
+- Internal Markdown links for new docs.
+- Markdown fence balance.
+- Mermaid fence checks if Mermaid blocks are touched.
+- Search for outdated automatic-email guidance.
+- Search for old Twilio/SMS requirements.
+- Search for duplicated product philosophy.
+- Search for references to deleted/moved sections.
+- Confirm no secret values were copied.
+- `git diff --check`.
+
+Client/server builds are not required for this docs-only phase.
+
+### Recommended Run 1 Prompt
+
+```text
+Read AGENTS.md, PROJECT_HANDOFF.md, docs/product-philosophy.md, docs/ux-ui-standards.md, docs/customer-experience.md, docs/communications.md, docs/operations-and-issues.md, docs/implementation-roadmap.md, docs/verification-and-qa.md, and relevant docs/architecture files first.
+
+Start Run 1 from docs/implementation-roadmap.md.
+
+Do not start a broad refactor. Do not commit or push. Preserve guest checkout, Better Auth customer accounts, existing admin dashboard behavior, checkout payment correctness, server-owned totals, and current architecture patterns.
+
+First run git status, git diff --stat, and git diff --name-status. Audit current account, profile, orders, checkout, shipping, and support-related files. Preserve existing uncommitted work.
+
+Implement the customer-facing Run 1 scope end-to-end:
+- account navigation hub
+- account overview cleanup with max two recent orders
+- useful empty states with featured products where appropriate
+- profile redesign with stored-information card, verified email state, resend verification UX, no customer email activity, and no preferred communication controls
+- default shipping address foundation/editing when supported safely
+- orders split-view or mobile-friendly drill-in pattern with month grouping
+- conditional order detail sections with product images and selected shipping method visibility
+- removal of customer-facing internal timeline
+- Need Help/order issue foundation with seven-day delivery eligibility and customer-safe case direction
+- signed-in checkout prefilling without silently overwriting saved profile data
+- Apple Pay/Google Pay disabled or future-only messaging such as Coming Fall 2026
+- Shippo carrier-rate root-cause investigation and customer-safe fallback rate UX
+- server-owned shipping verification preserved across preview, PaymentIntent, and order creation
+- Tailwind-first polish, subtle motion, responsive states, accessibility, and tests
+
+Do not send automatic order/tracking/support/review/promo emails. Keep manual-first communication policy intact.
+
+Run required verification, update PROJECT_HANDOFF.md and relevant docs, and provide files changed, commands/results, remaining risks, manual QA, and whether the tree is safe for commit review.
+```
+
+## 2026-06-17 Product Experience Run 1 / Order Issues Foundation
+
+This pass implemented the first customer-facing product experience slice plus support-case foundations. It preserved guest checkout, Better Auth customer accounts, custom admin auth, checkout totals, Stripe behavior, and manual-first email policy.
+
+### Implemented
+
+- Customer account dashboard now caps recent orders at two and removes customer-facing lifetime spend.
+- Dashboard now emphasizes useful state: order count, latest order status, email verification, and open order issue count.
+- Profile page removes customer-facing email activity and preferred contact method controls.
+- Profile page adds editable default shipping address using `CustomerProfile.defaultAddress`.
+- Signed-in checkout prefills name, fixed account email, phone, marketing opt-in, and default shipping address only where checkout fields are empty.
+- Customer orders page now uses a responsive split-view/order-list pattern with month grouping and in-page selected order detail.
+- Customer order detail hides internal status history, hides zero discount/donation rows, shows product images when stored snapshots exist, and adds a protected Need Help flow.
+- Need Help flow creates customer-visible order issue cases with category, affected-item context, description, friendly case number, and confirmation.
+- Customer order issues enforce ownership through Better Auth customer account routes.
+- Delivered-order issue eligibility uses server-side delivery data. If an order has a shipment `deliveredAt`, that timestamp is trusted. If no shipment timestamp exists but the order status is `DELIVERED`, the code falls back to the order `updatedAt`; this fallback is documented as a remaining precision limitation.
+- Pre-delivery orders only expose delivery, tracking, billing, and general help categories.
+- Admin dashboard links to new Order Issues and Internal Issues tools.
+- Admin Order Issues supports search/filter, status/priority updates, resolution summary, internal notes, and customer-visible account replies.
+- Saving an issue or note does not send email. A checkbox can mark email follow-up requested, but sending remains a separate future template action.
+- Internal Issues model/API/admin page added for safe operational issue review. Unexpected Express 500s are recorded with sanitized route/source/summary context and a fingerprint.
+- Support and internal issue endpoints follow route -> controller -> service -> repository -> Prisma.
+
+### Prisma Models And Migration
+
+Migration added locally and applied to the local database:
+
+- `server/prisma/migrations/20260617000000_add_order_and_internal_issues/migration.sql`
+
+Schema additions/changes:
+
+- Extended `CustomerSupportRequest` with `caseNumber`, `category`, `priority`, `resolutionSummary`, `deliveryEligibilityEndsAt`, `resolvedAt`, and `closedAt`.
+- Added `CustomerSupportMessage`.
+- Added `CustomerSupportEvent`.
+- Added `InternalIssue`.
+- Added `InternalIssueEvent`.
+- Added `Order.supportRequests` relation.
+
+Railway/deployed database step remaining:
+
+```bash
+cd server
+npx prisma migrate deploy
+```
+
+Run only after confirming the Railway `DATABASE_URL` target is correct. Do not use `prisma migrate reset`.
+
+### API Endpoints Added
+
+Customer, Better Auth protected:
+
+- `GET /api/account/issues`
+- `GET /api/account/issues/:caseNumber`
+- `POST /api/account/orders/:reference/issues`
+
+Admin, custom admin-auth protected:
+
+- `GET /api/admin/order-issues`
+- `PATCH /api/admin/order-issues/:caseNumber`
+- `POST /api/admin/order-issues/:caseNumber/messages`
+- `GET /api/admin/internal-issues`
+- `PATCH /api/admin/internal-issues/:caseNumber`
+
+### Automatic Email Events
+
+No new automatic order, tracking, support, issue-resolution, apology, promo, review, or marketing emails were added.
+
+Removed automatic profile-update email queueing from account profile saves. Essential account/security emails remain governed by Better Auth/email provider behavior.
+
+### Verification Results
+
+Commands run:
+
+```bash
+cd server && npx prisma format
+cd server && npx prisma generate
+cd client && npm run build
+cd server && npm run test
+cd client && npm run test
+cd server && npm run build
+cd server && npx prisma migrate status
+cd server && npx prisma migrate dev --name add_order_and_internal_issues
+cd server && npx prisma migrate status
+git diff --check
+```
+
+Results:
+
+- `npx prisma format`: passed.
+- `npx prisma generate`: passed.
+- Client build: passed.
+- Server tests: passed, 11 files and 34 tests after adding order issue tests.
+- Client tests: passed, 5 files and 14 tests.
+- Server build: passed and regenerated Prisma Client.
+- Initial `npx prisma migrate status`: failed only because the new migration was unapplied locally.
+- `npx prisma migrate dev --name add_order_and_internal_issues`: applied the migration locally and regenerated Prisma Client.
+- Final `npx prisma migrate status`: passed, local database schema is up to date.
+- `git diff --check`: passed.
+
+### Remaining Risks And Partial Work
+
+- Browser manual QA is still required for the new customer order issue modal, profile address editor, orders split-view, admin Order Issues page, and admin Internal Issues page.
+- Railway migration is not applied by this pass.
+- Internal issue capture currently covers unexpected Express error middleware paths only; provider-specific dedupe capture for Shippo/Resend/checkout failures should be expanded in the next run.
+- Email Template Center, promo email workflow, and explicit Send customer update actions remain future work.
+- Admin dashboard was extended with issue links and metrics but not fully reorganized into the suggested operational sections.
+- Order issue admin email follow-up is marked only; no template preview/send flow exists yet.
+- Delivered eligibility precision depends on `OrderShipment.deliveredAt` when available. Older delivered orders without shipment timestamps fall back to `Order.updatedAt`.
+
+### Manual QA Checklist
+
+- Sign in as a customer and open `/account`.
+- Confirm dashboard shows no lifetime spend and only two recent orders.
+- Edit profile name, phone, marketing opt-in, and default shipping address.
+- Confirm checkout prefills saved address only into empty fields and does not overwrite saved profile on checkout-only edits.
+- Open `/account/orders`, use search/filter, expand older month groups, and select orders without a full page reload.
+- Open an order detail, confirm product images/pricing rows render correctly and internal status history is absent.
+- Submit a Need Help issue on an eligible order and confirm the case number appears.
+- Confirm expired delivered-order issues are rejected after the seven-day window.
+- Open `/admin/order-issues`, filter/search, update status/priority, add an internal note, and add a customer-visible reply.
+- Confirm no email is sent automatically when saving issue changes.
+- Open `/admin/internal-issues` and review filters/status/resolution notes.
+
+### Safe For Commit Review
+
+Yes, with the caveat that the new Prisma migration must be reviewed and deployed to Railway separately before deployed code requiring these tables is released.
+
+## 2026-10-08 Approved Calm Essentials Account UI
+
+### Scope And Repository State
+
+Applied the user-approved complete account preview. All seven tabs are retained. The original month-grouped split Orders design is preserved rather than the later simplified draft.
+
+Started with a dirty tree containing prior accepted customer/support/admin/server/schema edits; inspected status, diff statistics, and changed paths before editing. Preserved those unrelated edits. This pass changes client UI and documentation only: no auth replacement, checkout rebuild, admin rebuild, server changes, schema/migrations, provider sends, env files, commits, or pushes.
+
+### Connected Features
+
+- One protected parent AccountLayout with the existing storefront header/footer/search/cart and shared Better Auth state.
+- Overview: two recent orders maximum, real order/latest status/open case stats, profile/address summary, shopping/account links.
+- Orders: reference/product search, status filter, month groups, eight-row display window, Load more, persistent selection/filter/expanded-month state between tabs, explicit refresh, responsive selected-order details.
+- Inline and standalone order details share one component: server totals, items/variant/quantity/unit and line price, shipping snapshots/method, safe carrier link, tracking updates, support eligibility/cases. Zero discount/donation rows remain hidden; donation impact is not an extra charge.
+- Profile: focused personal-details and preference editors, marketing opt-in/out, read-only email/verification state, existing password reset entry.
+- Addresses: current default shipping address editor using the existing profile API. Additional addresses/billing are future-phase sections.
+- Order help: real case list, selected case, customer-visible replies/resolutions; eligible order requests use the existing protected API with server-owned categories/deadlines.
+- Rewards and Wishlist: dedicated sidebar routes with clearly labeled future-phase content; no fake balances, favorites, review/reorder actions, or transactions.
+- Dialogs: Save/Cancel, input focus, focus trap/restore, scroll lock, idle Escape/backdrop close, retained form/error on failed save.
+- Sign-out from either header or sidebar leaves protected content and destroys the Orders cache.
+- Verified tablet header overflow fixed by changing existing desktop/compact breakpoints only.
+
+### Files Created
+
+Under `client/src/domains/account/`:
+
+- Components: `AccountLayout.vue`, `AccountDialog.vue`, `AccountStatusBadge.vue`, `AccountOrderDetails.vue`, `AccountOrderIssueDialog.vue`, `AccountProfileEditor.vue`, `AccountCaseDetail.vue`.
+- Composables: `useAccountDashboard.js`, `useAccountOrderHistory.js`, `useAccountOrderIssue.js`, `useAccountProfileEditor.js`, `useAccountHelp.js`.
+- Views: `AccountAddressesView.vue`, `AccountHelpView.vue`, `AccountFutureView.vue`.
+- `constants/account.constants.js`, `mappers/accountProfile.mapper.js`, `utils/accountFormatting.js`, `utils/orderHistory.js`, `styles/account.css`.
+- Tests: `client/tests/tier2/account/account-profile-mapper.test.js`, `client/tests/tier3/account/account-history.test.js`.
+
+### Files Modified In This Pass
+
+- `client/src/app/router/index.js`: protected nested account routes, including addresses/help/rewards/wishlist; existing route names and standalone order detail preserved.
+- `client/src/app/layouts/SiteHeader.vue`: tablet-safe breakpoints only.
+- Account `api/account.api.js`: existing single-case endpoint wrapper.
+- Account components `AccountShell.vue`, `AccountNav.vue`, `AccountOrderCard.vue`.
+- Account `composables/useAccountOrders.js`: isolated sequenced detail loading; removed unused duplicate list/submission logic.
+- Account `validators/account.validators.js`: default address completeness check.
+- Account views `AccountDashboardView.vue`, `AccountOrdersView.vue`, `AccountOrderDetailView.vue`, `AccountProfileView.vue`.
+- This handoff and [customer experience](docs/customer-experience.md), [data flow](docs/architecture/data-flow.md), [file map](docs/architecture/file-map.md).
+
+### Safety And Sources Of Truth
+
+The existing profile PUT replaces fields, so each focused save sends the complete mapped profile/preferences/address and preserves untouched values. Fresh profile data is loaded when opening an editor. Concurrent editing in another browser can still conflict because the API has no version/patch contract.
+
+The new view does not calculate checkout/order totals. APIs remain credentialed through the existing helper. Server ownership, verified-email matching, support category/eligibility/rate limits, and manual-first communications remain unchanged. Customer replies, a general message center, multiple addresses, separate billing address, rewards, referrals, wishlist, reviews, and reorder are not implemented by this UI pass.
+
+Orders uses client display pagination; the server still returns the entire history. Cached state lasts only within the account layout and is keyed to shared customer identity. Refresh orders retrieves current list/detail snapshots. Existing server payment-status mapping is displayed as provided; this pass does not improve refund/payment reconciliation.
+
+### Verification Commands And Results
+
+- Initial `git status --short --branch`, `git diff --stat`, `git diff --name-status`: prior local changes identified and preserved.
+- `cd client && npm run build`: initial default Node 22.15.0 attempt stalled before compilation and was stopped (exit 143). Rerun with the bundled Node 24.19.0 on PATH passed; final Vite 8.0.9 build transformed 257 modules with no build warnings.
+- `cd client && npm test`: passed, 7 files / 21 tests (tier 1: 7, tier 2: 8, tier 3: 6). Seven new assertions/tests cover preservation, marketing opt-out, address validation, search/groups, quantity counting, invalid dates, and safe tracking URLs.
+- `cd server && npm test`: regression suite passed, 11 files / 34 tests (28 + 3 + 3). No server build/generate/migration needed because this pass does not change server or Prisma files.
+- Temporary Playwright harness `node /tmp/doggy-account-ui-qa.cjs` with bundled Playwright and headless Chrome: passed using intercepted fixture APIs, not real customer/database/provider writes. Browser screenshots inspected at 1440, 1280, 1024, 768, and 390 widths.
+- `npm run dev -- --port 5174 --strictPort` with the bundled runtime provided a temporary QA server, stopped after verification. The user's existing frontend on port 5173 and backend were not stopped or reconfigured.
+- Browser verified: all seven tabs; one header; 20-order load-more/search/status/empty states; selection persistence; slow-response protection; mobile list/detail/back; profile/address save/cancel/error retry; marketing opt-out; focus trap/Escape; support submission/case replies/internal-message exclusion; ineligible order support; direct detail route; sidebar/header sign-out/cache clearing; unauthenticated redirect/sign-in return; cart retained; no Vue/runtime errors or horizontal overflow. Expected fixture 500/401/404 responses exercised error handling.
+- A formatting-induced Vue template error was caught and fixed before final checks. Verification harness selector/route-matching issues were corrected and the complete harness rerun successfully.
+- Existing lint script: none; none added. No application dependency or lockfile changes. Prettier was used as a temporary formatter only.
+- Documentation fence/relative-link check: passed for all four touched Markdown files with zero issues. Final `git diff --check`: passed.
+- Targeted secret-pattern scan returned no matches; no `.env.example` files found. No env values were read, changed, or documented.
+
+### Remaining Risks And Manual QA
+
+1. Sign in with a real account; navigate every tab on desktop/mobile/Safari; verify cookies and refresh persistence.
+2. Edit name/phone, cancel, save, reload; confirm header identity and that address/preferences remain unchanged.
+3. Edit default address; verify only empty checkout fields are prefilled and existing orders retain their snapshots.
+4. Opt out/in of marketing, reload, verify preferences. Saving must not send an email.
+5. Use real order history (including more than eight orders), search/filter/load/refresh/select older orders; verify product images and monetary snapshots.
+6. Submit one approved test support request on an eligible order; verify admin receives it, customer-visible reply/resolution appears, internal notes do not appear, and expired/foreign orders are rejected. No automatic provider email.
+7. Verify guest and signed-in checkout, promo/campaign combinations, success page, and existing admin pages in the real environment. This pass did not rerun live Stripe payments or deploy.
+8. Rewards/Wishlist and other future sections must remain honest placeholders without accidental writes.
+9. Review the earlier support migration `20260617000000_add_order_and_internal_issues` and Railway status before deploying the combined dirty tree. This pass did not apply or inspect Railway migrations.
+
+Safe for focused commit review after the documented checks, but not a claim that the combined prior server/migration edits are deployed or launch-verified. No commit/push performed. Next phase: real-account/Safari/checkout/support QA before expanding the address book or customer messaging.
+
+## 2026-10-08 Approved Calm Workspace Admin UI
+
+### Scope And Repository State
+
+Applied the approved Calm Workspace across all eleven existing admin tabs, with connected existing APIs rather than demo records. Preserved custom admin auth, customer Better Auth, server authorization, startup data-target configuration, existing API contracts/mappers/validators, storefront/account/checkout, and all prior local edits.
+
+Before editing, inspected AGENTS.md, this handoff, product/UX/admin/communications/operations/roadmap/architecture/QA docs and ran git status, diff statistics, and changed-path inventory. The tree already contained accepted account/support/server/schema work. This phase changes client UI, one icon dependency, focused tests, and documentation only. No server/schema/env changes, migrations, deployments, real provider actions, commits, or pushes.
+
+### Connected Experience
+
+- Shared AdminLayout: one header and grouped sidebar, eleven route links, mobile navigation, active-route state, skip link, View store/sign-out, signed-in identity, read-only Data routing with the existing backend-derived badge.
+- Overview: three concise metrics, priority links for pending orders/issues/email/internal failures, three recent orders. Sources load independently; failures are unavailable, not invented zeroes.
+- Products: status/category/SKU search, one responsive table, real variant prices/stock, create/edit/cancel/save/delete. Editor has Details, Variants & Stock, Storefront Content, and Publishing. Inventory attention is restricted to inventory-limited products and stored low-stock thresholds.
+- Promos: searchable/type/status library, focused rules/limits/schedule editor, explicit Save/Cancel, code generation, tester, in-page analytics/redemptions and order links. Tester requires normalized customer email, clears stale results after changes, and displays the server-returned discount.
+- Campaigns: searchable/status library, beneficiary/rule/product/schedule editor, explicit Save/Cancel/delete, and in-page impact/attributed-order links. Generated donations are not described as payouts.
+- Orders: reference/customer/email/phone/city search and status table including refunded orders; focused detail with items, server-owned totals, contact/shipping, promo/campaign snapshots, staged status Save/Cancel/history, tracking save/refresh, and separate existing manual email actions.
+- Customers: account/verification/role/order metrics, linked and verified-email matched guest orders, provider history, deliberate confirmed deactivate/reactivate/security-email requests with busy/error feedback. No passwords/sessions/tokens or new account permissions are exposed.
+- Shipments: provider configuration state, status filters, tracking/carrier/history/order links, and failure/empty/loading states.
+- Notifications: event/status delivery history, explicit mocked/sent/failure distinctions, future Template center tab. No editable templates or bulk sends are implemented.
+- Reports: truthful all-time operational summaries. The existing totalRevenue API sums all stored orders, so the UI calls it Order value, not reconciled paid revenue. Date ranges/charts/exports remain future work.
+- Order/Internal Issues: focused list/detail, staged Save/Cancel, busy/error feedback, failed-write draft retention, filtered-selection repair, and real event history. Internal notes are separate from customer-visible replies. Marking email follow-up does not send email.
+- Future template/promo email/reconciled reports/customer notes/activity/reviews/loyalty sections are visibly unconnected. Existing working resend/tracking/customer actions remain available.
+
+### Verified Issues Fixed
+
+- Promo rule watcher previously returned a fresh watched array then replaced its own form object, causing recursive Vue updates. It now watches individual primitive sources. The new test suite exposed this; the complete suite was rerun cleanly.
+- Admin promo tester previously described email as optional despite server email eligibility rules. It now requires/normalizes email and discards stale test/analytics responses.
+- Older grouped Orders UI omitted REFUNDED records from every group. The new single filtered table includes all returned statuses.
+- Several operational views failed silently or lacked error/busy states; their new composables preserve the last loaded data or unsaved draft and surface failures.
+- Issue selection could remain pointed at a case excluded by new filters. Selection now matches the loaded list, and Cancel restores server values.
+- Shared nested detail routes are keyed by path to prevent stale order/customer data when navigating between IDs.
+- CSS initially lacked a Tailwind reference for @apply; build failure was fixed with @reference.
+- Responsive button utilities were overridden by the shared unlayered button style; desktop/mobile navigation display is now explicit.
+- Select fields now have explicit accessible names matching visible labels.
+- A formatter removed semicolons from a multi-statement Vue schedule handler; compile failure was fixed by extracting the named clearPeriod handler, then rebuilding and rerunning the browser checks.
+
+### Files Created
+
+- `client/src/domains/admin/api/adminSession.api.js`
+- `client/src/domains/admin/components/AdminCampaignImpact.vue`
+- `client/src/domains/admin/components/AdminIcon.vue`
+- `client/src/domains/admin/components/AdminIssueHistory.vue`
+- `client/src/domains/admin/components/AdminLayout.vue`
+- `client/src/domains/admin/components/AdminMetrics.vue`
+- `client/src/domains/admin/components/AdminPageHeader.vue`
+- `client/src/domains/admin/components/AdminProductContentFields.vue`
+- `client/src/domains/admin/components/AdminProductVariantsEditor.vue`
+- `client/src/domains/admin/components/AdminPromoAnalytics.vue`
+- `client/src/domains/admin/components/AdminScheduleFields.vue`
+- `client/src/domains/admin/composables/useAdminActivity.js`
+- `client/src/domains/admin/composables/useAdminIssueWorkspace.js`
+- `client/src/domains/admin/composables/useAdminOrderDetail.js`
+- `client/src/domains/admin/composables/useAdminOrderIssues.js`
+- `client/src/domains/admin/composables/useAdminOverview.js`
+- `client/src/domains/admin/constants/adminNavigation.constants.js`
+- `client/src/domains/admin/constants/adminSupport.constants.js`
+- `client/src/domains/admin/utils/adminWorkspace.formatters.js`
+- `client/tests/tier2/admin/admin-workspace.test.js`
+
+### Files Modified In This Phase
+
+The two issue views existed in the starting tree as untracked earlier work; they are modified here, not claimed as newly created by this phase.
+
+- `client/src/assets/styles/admin.css`
+- `client/src/domains/admin/components/AdminCampaignForm.vue`
+- `client/src/domains/admin/components/AdminCampaignsLibrary.vue`
+- `client/src/domains/admin/components/AdminCampaignsTable.vue`
+- `client/src/domains/admin/components/AdminCustomerNotificationsPanel.vue`
+- `client/src/domains/admin/components/AdminCustomerOrdersPanel.vue`
+- `client/src/domains/admin/components/AdminCustomersTable.vue`
+- `client/src/domains/admin/components/AdminHeader.vue`
+- `client/src/domains/admin/components/AdminOrderNotificationsPanel.vue`
+- `client/src/domains/admin/components/AdminOrderStatusPanel.vue`
+- `client/src/domains/admin/components/AdminOrderTrackingPanel.vue`
+- `client/src/domains/admin/components/AdminProductFormPanel.vue`
+- `client/src/domains/admin/components/AdminProductVariantEditor.vue`
+- `client/src/domains/admin/components/AdminProductsTable.vue`
+- `client/src/domains/admin/components/AdminPromoFormExtraFields.vue`
+- `client/src/domains/admin/components/AdminPromosLibrary.vue`
+- `client/src/domains/admin/components/AdminSidebar.vue`
+- `client/src/domains/admin/composables/useAdminCampaigns.js`
+- `client/src/domains/admin/composables/useAdminOrders.js`
+- `client/src/domains/admin/composables/useAdminProducts.js`
+- `client/src/domains/admin/composables/useAdminPromos.js`
+- `client/src/domains/admin/views/AdminCampaignsView.vue`
+- `client/src/domains/admin/views/AdminCustomerDetailView.vue`
+- `client/src/domains/admin/views/AdminCustomersView.vue`
+- `client/src/domains/admin/views/AdminDashboardView.vue`
+- `client/src/domains/admin/views/AdminNotificationsView.vue`
+- `client/src/domains/admin/views/AdminOrderDetailView.vue`
+- `client/src/domains/admin/views/AdminOrdersView.vue`
+- `client/src/domains/admin/views/AdminProductsView.vue`
+- `client/src/domains/admin/views/AdminPromosView.vue`
+- `client/src/domains/admin/views/AdminReportsView.vue`
+- `client/src/domains/admin/views/AdminShipmentsView.vue`
+- `client/src/domains/promos/components/PromoCodeTester.vue`
+- `client/src/domains/promos/components/PromoForm.vue`
+- `client/src/domains/admin/views/AdminInternalIssuesView.vue`
+- `client/src/domains/admin/views/AdminOrderIssuesView.vue`
+- `client/src/app/router/index.js`
+- `client/package.json`
+- `client/package-lock.json`
+- `PROJECT_HANDOFF.md`
+- `docs/admin-experience.md`
+- `docs/architecture/admin.md`
+- `docs/architecture/file-map.md`
+- `docs/verification-and-qa.md`
+- `docs/implementation-roadmap.md`
+
+### Architecture And Sources Of Truth
+
+Admin navigation is centralized in adminNavigation.constants.js. AdminLayout owns shared identity/data routing, and adminSession.api.js wraps the existing credentialed auth endpoints. The login page and existing route guard remain unchanged; server-side requireAdminAuth remains the security boundary.
+
+Existing product/promo/campaign APIs, mappers, and validators still serialize/validate saves. AdminScheduleFields only edits paired date/time fields; existing datetime/timezone behavior is preserved, not redesigned. Product variant fields use the original size keys and mapper contract.
+
+State additions are focused: useAdminOverview aggregates existing protected reads; useAdminActivity handles delivery/shipment loading; useAdminOrderDetail owns record actions; useAdminIssueWorkspace shares issue selection/staging; useAdminOrderIssues owns reply drafts. Icons are centralized through @lucide/vue. Tailwind remains primary, and admin styling is scoped in admin.css.
+
+No new endpoints, role changes, auth bearer fallback, schema models, migrations, runtime data-target switches, checkout pricing, or provider automation were introduced. The temporary workflow remains local client -> local server -> selected local/Railway database. Badge fallback behavior is unchanged: when its API fails, it falls back to startup client configuration; confirm the backend before a real write.
+
+Some obsolete list/header/stat/group/modal components remain unused by the new route views. Remove those only after a dedicated import audit. Existing list endpoints still return broad/full data sets; client-side filtering is not server pagination.
+
+See [admin experience](docs/admin-experience.md), [admin architecture](docs/architecture/admin.md), [file map](docs/architecture/file-map.md), [verification](docs/verification-and-qa.md), and [roadmap](docs/implementation-roadmap.md).
+
+### Verification Commands And Results
+
+- Initial git status --short --branch, git diff --stat, git diff --name-status: inspected and preserved prior edits; branch dev-main remains ahead by two pre-existing commits.
+- npm install @lucide/vue: succeeded; package/lockfile add the icon dependency only. Deprecated lucide-vue-next was tried and removed; it is not in the final dependency list.
+- cd client && npm run build: final Vite 8.0.9 production build passed, 2142 modules transformed, no build warnings. Initial Tailwind reference and post-format schedule expression errors were repaired before the final pass.
+- cd client && npm test: final pass 8 files / 30 tests (tier 1: 7, tier 2: 17, tier 3: 6). Nine new tests cover navigation boundaries, SKU/category filtering, cancel without writes, email normalization, stale responses, activity failures, selection repair, and failed-save retry. Initial new-test run detected recursive watcher updates; fixed and rerun.
+- cd server && npm test: unchanged-server regression suite passed, 11 files / 34 tests (28 + 3 + 3). No server build/generate/migration required by this client-only phase.
+- npm exec --yes --package=prettier -- prettier --write --single-quote --no-semi [focused changed client files]: passed as temporary tooling only; no formatter or lint dependency/script added.
+- npm audit --omit=dev --json in client: exit 1, 10 existing advisories (2 moderate, 8 high), also reported before the icon dependency. No automatic dependency upgrades/audit fix were attempted.
+- npm run dev:local -- --port 5174 --strictPort: temporary QA server started successfully; stopped at completion. Existing frontend 5173/backend were not stopped or reconfigured.
+- node /tmp/doggy-admin-workspace-qa.cjs using bundled Playwright/headless Chrome: passed. All eleven tabs at 1440/1024/768/390/320 widths; 16 intercepted fixture requests exercising saves/auth/validation, zero real database/provider writes.
+- Browser checked product cancel/update with distinct prices and preserved fields, promo edit/schedule/email requirement/invalidation/analytics link, campaign selection/save/impact link, refunded orders, staged status cancel/save/history, detail ID navigation, tracking save, an explicitly clicked mocked email resend, customer deactivate/reactivate, support failed-save retry/internal note/account reply/filter selection, internal notes, load errors/retry, future sections, both backend target badge labels, mobile navigation, direct-route guard/login return/logout, reduced-motion/dark mode, and return to storefront without admin shell.
+- Final browser run had zero Vue/runtime/console errors and zero horizontal overflow in the tested screens. Earlier harness selector issues and an intentionally blocked eager Stripe loader were corrected in the harness; Stripe.js is stubbed for this admin-only fixture QA, not changed in app code.
+- Screenshots inspected for overview/products/promos/campaigns/issues/editor/order detail and mobile layouts. Product image in screenshots is a local fixture asset, not a claim about live catalog photography.
+- Existing http://localhost:5173/admin returned HTTP 200. This confirms the development page is reachable, not a real authenticated DB verification.
+- Documentation relative-link/fence checks, secret-pattern/environment-example checks, and final git diff --check: see final verification note below.
+
+### Remaining Risks And Manual QA
+
+1. Real admin login/session persistence/logout on Safari and the deployed environment remain unverified. Existing cross-site cookie limitations are unchanged; use local admin -> local server -> Railway DB for the temporary workflow.
+2. Start fully local server/client, verify LOCAL DATA TARGET, and use an approved local test record for product/promo/campaign CRUD; confirm values persist after reload.
+3. Start Railway DB server with the normal local client, verify RAILWAY DB TARGET and network origin before an explicitly approved test write; confirm Vercel storefront receives only intended changes.
+4. Verify product content/analysis, size prices/stock/SKUs/thresholds, selling modes, promo unique/referral limits/date boundaries, campaign eligibility and combined checkout calculations with real test data.
+5. Test order status Cancel/Save/history, tracking save/refresh/provider-disabled behavior, separate email action, issue resolution/account reply/internal note privacy, and customer account actions. Real emails require explicit approval and an approved inbox.
+6. Recheck guest and signed-in checkout, cart variants, Stripe test payment, success page, promo/campaign coexistence, and customer ownership after deployment. No live payment was performed in this phase.
+7. Review earlier support migration 20260617000000_add_order_and_internal_issues and confirm Railway migration status before deploying the combined dirty tree; no Railway migrations were inspected or applied here.
+8. Schedule a focused dependency advisory remediation pass. Large catalog/order/customer histories still need server pagination; reporting still needs payment reconciliation and date-range endpoints.
+9. Existing schedule timezone interpretation, badge fallback on API failure, data-refresh snapshots, and older unused UI components remain follow-up items.
+
+Safe for focused commit review after the documented checks, not a claim that all prior server/schema changes are launch-ready or deployed. No commit or push performed. Recommended next phase: controlled real-admin/Safari and data-target QA, then approved email template/manual-send workflows and dependency security remediation.

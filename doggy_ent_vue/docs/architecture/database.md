@@ -209,6 +209,9 @@ Important migrations:
 - `20260606000000_add_order_campaign_usage`: Order-level campaign attribution for donation traceability.
 - `20260607000000_add_order_status_history`: Order status transition history for admin fulfillment auditability.
 - `20260612000000_better_auth_customer_accounts`: Better Auth user/session/account/verification tables, customer profile/support/review/loyalty/notification foundations, and nullable `Order.userId`.
+- `20260615000000_add_order_shipping_method`: Nullable `Order.shippingMethod` for preserving the selected checkout delivery method.
+- `20260615001000_add_order_shipping_rate_fields`: Nullable `Order.shippingCarrier`, `shippingService`, `shippingRateId`, and `shippingRateProvider` fields for Shippo/static shipping rate traceability.
+- `20260617000000_add_order_and_internal_issues`: Extends `CustomerSupportRequest`, adds support messages/events, adds internal issue tracking, and relates support requests to orders.
 
 Deployment rule:
 
@@ -226,6 +229,9 @@ Deployment rule:
 | Order status history | Server orders domain and `OrderStatusHistory` |
 | Customer account auth/session | Better Auth tables through `server/src/domains/auth/services/customerAuth.service.js` |
 | Customer account profile/orders | Server account domain and nullable `Order.userId` |
+| Order issue cases | Server support domain and `CustomerSupportRequest` |
+| Order issue messages/events | Server support domain and `CustomerSupportMessage`/`CustomerSupportEvent` |
+| Internal operational issues | Server support domain and `InternalIssue`/`InternalIssueEvent` |
 | Admin customer management | Server customers domain and existing custom admin auth |
 | Email readiness payloads | Server emails domain; no real provider unless configured |
 | Promo rules and usage | Server promos domain |
@@ -235,4 +241,5 @@ Deployment rule:
 Railway deployment note:
 
 - The Better Auth customer account migration must be applied on Railway with `cd server && npx prisma migrate deploy` after confirming the target database is correct.
+- The order/internal issues migration `20260617000000_add_order_and_internal_issues` must also be applied to Railway with `cd server && npx prisma migrate deploy` after review.
 - Do not run destructive reset commands on Railway.

@@ -1,5 +1,18 @@
 import { prisma } from '../../../db/prisma.js'
 
+const orderShipmentsInclude = {
+  orderBy: {
+    createdAt: 'desc',
+  },
+  include: {
+    events: {
+      orderBy: {
+        occurredAt: 'desc',
+      },
+    },
+  },
+}
+
 export async function findAccountUserById(userId) {
   return prisma.user.findUnique({
     where: {
@@ -48,6 +61,24 @@ export async function findCustomerOrdersForAccount({
       statusHistory: {
         orderBy: {
           createdAt: 'desc',
+        },
+      },
+      shipments: orderShipmentsInclude,
+      supportRequests: {
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+          events: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
         },
       },
     },
@@ -109,6 +140,24 @@ export async function findCustomerOrderForAccount({
           createdAt: 'desc',
         },
       },
+      shipments: orderShipmentsInclude,
+      supportRequests: {
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+          events: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
+      },
     },
   })
 
@@ -128,6 +177,19 @@ export async function findCustomerOrderForAccount({
 
 export async function updateCustomerProfileByUserId(userId, data) {
   return prisma.customerProfile.upsert({
+    where: {
+      userId,
+    },
+    create: {
+      userId,
+      ...data,
+    },
+    update: data,
+  })
+}
+
+export async function updateCustomerNotificationPreferenceByUserId(userId, data) {
+  return prisma.customerNotificationPreference.upsert({
     where: {
       userId,
     },

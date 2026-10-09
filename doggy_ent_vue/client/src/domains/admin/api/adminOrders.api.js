@@ -53,3 +53,55 @@ export async function updateAdminOrderStatus(
     'Unable to update order.',
   )
 }
+
+export async function updateAdminOrderTracking(
+  orderId,
+  {
+    carrier,
+    trackingNumber,
+    trackingUrl = '',
+    shipmentStatus = 'UNKNOWN',
+    markShipped = false,
+  },
+) {
+  return parseOrderResponse(
+    await fetchApi(`${ADMIN_ORDERS_API_URL}/${orderId}/tracking`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        carrier,
+        trackingNumber,
+        trackingUrl,
+        shipmentStatus,
+        markShipped,
+      }),
+    }),
+    'Unable to update tracking.',
+  )
+}
+
+export async function refreshAdminOrderTracking(orderId) {
+  return parseOrderResponse(
+    await fetchApi(`${ADMIN_ORDERS_API_URL}/${orderId}/tracking/refresh`, {
+      method: 'POST',
+    }),
+    'Unable to refresh tracking.',
+  )
+}
+
+export async function resendAdminOrderEmail(orderId, event) {
+  return parseOrderResponse(
+    await fetchApi(`${ADMIN_ORDERS_API_URL}/${orderId}/emails/resend`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        event,
+      }),
+    }),
+    'Unable to resend order email.',
+  )
+}

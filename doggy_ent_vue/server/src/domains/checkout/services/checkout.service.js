@@ -8,6 +8,16 @@ import {
 } from '../../campaigns/services/campaigns.service.js'
 import { calculateTax } from '../../../shared/services/tax.service.js'
 import { createNewOrder } from '../../orders/services/orders.service.js'
+import {
+  EMAIL_EVENTS,
+} from '../../emails/constants/emailEvents.constants.js'
+import {
+  buildAdminOrderEmailPayload,
+  buildOrderEmailPayload,
+} from '../../emails/mappers/emailPayloads.mapper.js'
+import {
+  queueEmail,
+} from '../../emails/services/emailProvider.service.js'
 
 import {
   validateStripePaymentIntent,
@@ -26,16 +36,141 @@ import {
   buildCheckoutResponse,
 } from '../mappers/checkout.mapper.js'
 import {
+  buildStaticShippingOption,
   calculateCheckoutDiscountAmount,
   calculateCheckoutDonationAmount,
   calculateShipping,
   calculateSubtotal,
 } from '../utils/checkoutPricing.js'
 import {
+  fetchShippoRates,
+} from '../../shipping/services/shippo.service.js'
+import {
   validateCheckoutSubmissionState,
   validateFinalizedCheckoutPreview,
   validateRequiredCheckoutFields,
 } from '../validators/checkout.validator.js'
+
+async function queueCheckoutEmails(order) {
+  if (!order?.id) {
+    return
+  }
+
+  await Promise.allSettled([
+    queueEmail(
+      buildOrderEmailPayload({
+        event: EMAIL_EVENTS.ORDER_CONFIRMATION,
+        order,
+      }),
+    ),
+    queueEmail(
+      buildAdminOrderEmailPayload({
+        event: EMAIL_EVENTS.ADMIN_NEW_ORDER,
+        order,
+        message: 'A new paid checkout order was created.',
+      }),
+    ),
+  ])
+}
+
+function hasRateAddress(customer = {}) {
+  return [
+    customer.address1,
+    customer.city,
+    customer.state,
+    customer.zip,
+  ].every((value) => String(value || '').trim())
+}
+
+function getStaticShippingOptions() {
+  return [
+    buildStaticShippingOption('standard'),
+    buildStaticShippingOption('priority'),
+  ]
+}
+
+export async function fetchCheckoutShippingRates({
+  customer = {},
+  cartItems = [],
+} = {}) {
+  if (!hasRateAddress(customer)) {
+    return {
+      source: 'STATIC',
+      defaultMethod: 'standard',
+      options: getStaticShippingOptions(),
+      message: 'Complete the shipping address to check live carrier rates.',
+    }
+  }
+
+  try {
+    const shippoResult = await fetchShippoRates({
+      customer,
+      cartItems,
+    })
+
+    if (shippoResult.rates?.length) {
+      return {
+        source: 'SHIPPO',
+        defaultMethod: shippoResult.rates[0].code,
+        options: shippoResult.rates,
+      }
+    }
+  }
+  catch (error) {
+    console.error(
+      '[checkout] Shippo rate shopping failed:',
+      error.safeMessage || error.message,
+    )
+  }
+
+  return {
+    source: 'STATIC',
+    defaultMethod: 'standard',
+    options: getStaticShippingOptions(),
+    message: 'Carrier rates are unavailable. Store shipping rates are shown.',
+  }
+}
+
+async function resolveCheckoutShipping({
+  shipping = {},
+  customer = {},
+  cartItems = [],
+} = {}) {
+  const selectedRateId = String(shipping.rateId || '').trim()
+
+  if (selectedRateId) {
+    const rates = await fetchCheckoutShippingRates({
+      customer,
+      cartItems,
+    })
+    const selectedRate = rates.options.find((option) =>
+      option.rateId === selectedRateId
+      || option.code === shipping.method,
+    )
+
+    if (selectedRate) {
+      return {
+        amount: normalizeCurrencyAmount(selectedRate.price),
+        method: selectedRate.code || selectedRate.method,
+        carrier: selectedRate.carrier || null,
+        service: selectedRate.service || selectedRate.label || null,
+        rateId: selectedRate.rateId || null,
+        provider: selectedRate.provider || rates.source || 'SHIPPO',
+      }
+    }
+  }
+
+  const staticOption = buildStaticShippingOption(shipping.method)
+
+  return {
+    amount: calculateShipping(shipping),
+    method: staticOption.method,
+    carrier: staticOption.carrier,
+    service: staticOption.service,
+    rateId: staticOption.rateId,
+    provider: staticOption.provider,
+  }
+}
 
 export async function previewCheckout(checkoutInput = {}) {
   const {
@@ -56,7 +191,12 @@ export async function previewCheckout(checkoutInput = {}) {
   }
 
   const subtotal = calculateSubtotal(cartItems)
-  const shippingAmount = calculateShipping(shipping)
+  const resolvedShipping = await resolveCheckoutShipping({
+    shipping,
+    customer,
+    cartItems,
+  })
+  const shippingAmount = resolvedShipping.amount
 
   let promoResult = null
   if (promoCode) {
@@ -102,6 +242,7 @@ export async function previewCheckout(checkoutInput = {}) {
     total,
     promoResult,
     campaignPreview,
+    shipping: resolvedShipping,
   })
 }
 
@@ -221,6 +362,13 @@ export async function createCheckout(
     subtotal: checkoutPreview.pricing.subtotal,
     total: checkoutPreview.pricing.total,
     currency: 'usd',
+    shippingMethod: String(
+      checkoutPreview.shipping?.method || shipping.method || '',
+    ).trim() || null,
+    shippingCarrier: checkoutPreview.shipping?.carrier || null,
+    shippingService: checkoutPreview.shipping?.service || null,
+    shippingRateId: checkoutPreview.shipping?.rateId || null,
+    shippingRateProvider: checkoutPreview.shipping?.provider || null,
     shippingAmount: checkoutPreview.pricing.shippingAmount,
     discountAmount: checkoutPreview.pricing.discountAmount,
     taxAmount: checkoutPreview.pricing.taxAmount,
@@ -270,6 +418,13 @@ export async function createCheckout(
       )
     }
   }
+
+  queueCheckoutEmails(order).catch((error) => {
+    console.error(
+      '[checkout] Failed checkout email dispatch.',
+      error,
+    )
+  })
 
   return {
     ...checkoutPreview,

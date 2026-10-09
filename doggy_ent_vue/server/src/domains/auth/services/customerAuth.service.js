@@ -18,6 +18,7 @@ import {
   ACCOUNT_STATUS,
 } from '../constants/authRoles.constants.js'
 import {
+  buildAccountCreatedEmail,
   buildAccountVerificationEmail,
   buildPasswordResetEmail,
   buildWelcomeEmail,
@@ -219,6 +220,7 @@ export const customerAuth = betterAuth({
           })
 
           await queueEmail(buildWelcomeEmail(user))
+          await queueEmail(buildAccountCreatedEmail(user))
         },
       },
     },

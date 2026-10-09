@@ -69,19 +69,27 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `client/src/domains/admin/views/AdminProductsView.vue` | Admin product route orchestration. | `useAdminProducts`, product components/constants/mappers/validators. | Product CRUD. |
 | `client/src/domains/admin/composables/useAdminProducts.js` | Product admin state/actions. | Admin product API. | Loads/saves/deletes products. |
 | `client/src/domains/admin/api/adminProducts.api.js` | Admin product API calls. | `fetchApi`. | Calls `/api/products` admin endpoints. |
-| `client/src/domains/admin/components/AdminProductFormPanel.vue` | Product form UI. | Product constants/mappers/validators. | Large product edit/create panel. |
+| `client/src/domains/admin/components/AdminProductFormPanel.vue` | Focused product editor shell. | Variant/content/analysis field components and supplied options. | Three editor sections plus publishing; unchanged mapper/validator owns the payload. |
 | `client/src/domains/admin/views/AdminPromosView.vue` | Admin promo route orchestration. | `useAdminPromos`, promo components. | Promo CRUD, testing, analytics. |
 | `client/src/domains/admin/composables/useAdminPromos.js` | Promo admin state/actions. | Promo API, form mapper/validator. | Loads/saves/deletes/tests promos. |
 | `client/src/domains/admin/mappers/adminPromoForm.mapper.js` | Promo form to payload and payload to form. | Client promo rules/constants. | Combines date/time fields and normalizes optional values. |
 | `client/src/domains/admin/views/AdminCampaignsView.vue` | Campaign admin route orchestration. | Campaign composable/components. | Campaign CRUD. |
 | `client/src/domains/admin/views/AdminOrdersView.vue` | Admin orders route orchestration. | `useAdminOrders`, order components. | Order list by status. |
-| `client/src/domains/admin/views/AdminOrderDetailView.vue` | Admin order detail route. | Admin orders API/utils. | Order detail, status update flow. |
+| `client/src/domains/admin/views/AdminOrderDetailView.vue` | Admin order detail route. | `useAdminOrderDetail`, status/tracking/notification components. | Record display and explicit update flows, separate from emails. |
 | `client/src/domains/admin/components/AdminOrderStatusPanel.vue` | Staged order status update panel. | Admin order constants and order detail state. | Displays current status, stages next status, saves/cancels, and renders status history. |
 | `client/src/domains/admin/api/adminOrders.api.js` | Admin order API calls. | `fetchApi`. | Calls `/api/admin/orders`. |
 | `client/src/domains/admin/views/AdminCustomersView.vue` | Admin customer list route. | `useAdminCustomers`, customer table. | Displays Better Auth customer accounts and aggregate order stats. |
 | `client/src/domains/admin/views/AdminCustomerDetailView.vue` | Admin customer detail route. | `useAdminCustomers`, orders panel/status badge. | Displays customer profile, linked orders, guest matches, and readiness actions. |
 | `client/src/domains/admin/api/adminCustomers.api.js` | Admin customer API calls. | `fetchApi`. | Calls `/api/admin/customers`. |
 | `client/src/domains/admin/composables/useAdminCustomers.js` | Customer admin state/actions. | Admin customer API. | Loads customer lists/details and status/readiness actions. |
+| `client/src/domains/admin/views/AdminNotificationsView.vue` | Dedicated admin notification history route. | Admin notification API. | Filters and displays `EmailDelivery` rows by event/status, plus provider/delivery totals. |
+| `client/src/domains/admin/api/adminNotifications.api.js` | Admin notification API calls. | `fetchApi`. | Calls `/api/admin/notifications` with optional filters. |
+| `client/src/domains/admin/views/AdminShipmentsView.vue` | Dedicated shipment overview route. | Admin shipment API. | Displays tracking records, provider configured state, shipment status filters, and order links. |
+| `client/src/domains/admin/api/adminShipments.api.js` | Admin shipment API calls. | `fetchApi`. | Calls `/api/admin/shipments` with optional filters. |
+| `client/src/domains/admin/views/AdminReportsView.vue` | Compact operations reporting route. | Orders, customers, notifications, shipments APIs. | Aggregates protected admin API data into overview cards without separate report persistence. |
+| `client/src/domains/admin/views/AdminOrderIssuesView.vue` | Protected admin order issue tool. | Admin support API. | Searches/filters customer order issues, updates status/priority, and separates internal notes from customer-visible replies. |
+| `client/src/domains/admin/views/AdminInternalIssuesView.vue` | Protected admin internal issue tool. | Admin support API. | Searches/filters sanitized operational issues and records review/resolution notes. |
+| `client/src/domains/admin/api/adminSupport.api.js` | Admin support/internal issue API calls. | `fetchApi`. | Calls `/api/admin/order-issues` and `/api/admin/internal-issues`. |
 
 ## Customer Accounts
 
@@ -89,17 +97,17 @@ This file maps important files and folders. It is not a complete line-by-line in
 | --- | --- | --- | --- |
 | `client/src/domains/account/api/authClient.js` | Better Auth Vue client setup. | `better-auth/vue`, `@better-auth/infra/client`, API base URL helper. | Central Better Auth customer client configuration and Infrastructure dashboard client plugin. |
 | `client/src/domains/account/api/accountAuth.api.js` | Customer auth endpoint wrappers. | `fetchApi`, Better Auth client setup. | Sign up, sign in, sign out, session, verification, password reset readiness. |
-| `client/src/domains/account/api/account.api.js` | Protected account API calls. | `fetchApi`. | Calls `/api/account` profile/orders/dashboard endpoints. |
+| `client/src/domains/account/api/account.api.js` | Protected account API calls. | `fetchApi`. | Calls `/api/account` profile/orders/dashboard endpoints and order issue creation endpoints. |
 | `client/src/domains/account/composables/useAccountAuth.js` | Shared customer auth state. | Account auth API. | Session-aware navigation and auth forms. |
 | `client/src/domains/account/composables/useAccountProfile.js` | Profile state/actions. | Account API. | Loads and saves customer profile data. |
-| `client/src/domains/account/composables/useAccountOrders.js` | Customer order state/actions. | Account API. | Loads account order history and detail. |
+| `client/src/domains/account/composables/useAccountOrders.js` | Customer order state/actions. | Account API. | Loads account order history/detail and submits protected order issues. |
 | `client/src/domains/account/validators/account.validators.js` | Account form validation and email normalization. | None. | Sign-in/create/profile validation. |
 | `client/src/domains/account/views/AccountSignInView.vue` | Customer sign-in page. | Auth composable/validators. | Calls Better Auth sign-in endpoint. |
 | `client/src/domains/account/views/AccountCreateView.vue` | Customer create-account page. | Auth composable/validators. | Calls Better Auth sign-up endpoint. |
 | `client/src/domains/account/views/AccountDashboardView.vue` | Protected account overview. | Account API, auth composable. | Shows profile summary, order stats, readiness placeholders. |
 | `client/src/domains/account/views/AccountProfileView.vue` | Protected profile editor. | Profile composable/validator. | Edits `CustomerProfile`. |
-| `client/src/domains/account/views/AccountOrdersView.vue` | Protected account order list. | Account orders composable. | Shows linked and verified-email matched orders. |
-| `client/src/domains/account/views/AccountOrderDetailView.vue` | Protected account order detail. | Account orders composable. | Shows customer-safe order detail plus tracking/review/support placeholders. |
+| `client/src/domains/account/views/AccountOrdersView.vue` | Protected account order split view. | Account orders composable. | Shows linked and verified-email matched orders grouped by month, with selected-order detail. |
+| `client/src/domains/account/views/AccountOrderDetailView.vue` | Protected account order detail. | Account orders composable. | Shows customer-safe order detail, tracking when available, and Need Help order issue creation. |
 | `client/src/domains/account/views/AccountForgotPasswordView.vue` | Password reset request page. | Auth composable. | Queues Better Auth reset email through provider abstraction. |
 | `client/src/domains/account/views/AccountResetPasswordView.vue` | Password reset completion page. | Auth API. | Posts reset token/new password to Better Auth. |
 
@@ -130,19 +138,29 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `server/src/domains/account/controllers/account.controller.js` | Account request handlers. | Account service. | Thin JSON handlers for `/api/account`. |
 | `server/src/domains/account/services/account.service.js` | Customer account business logic. | Account repository, order mapper. | Profile, order history, verified-email guest matching. |
 | `server/src/domains/account/repositories/account.repository.js` | Account Prisma access. | Prisma. | Reads users/profiles/orders and writes profile updates. |
+| `server/src/domains/support/routes/support.routes.js` | Customer/admin issue route definitions. | Customer/admin auth guards, issue rate limiter, support controller. | Adds customer order issue endpoints and admin issue tools. |
+| `server/src/domains/support/controllers/support.controller.js` | Support request handlers. | Support service. | Thin JSON handlers for order issues and internal issues. |
+| `server/src/domains/support/services/support.service.js` | Support and internal issue business logic. | Support repository, account repository, constants, mappers. | Enforces customer ownership, seven-day delivered eligibility, case numbers, admin status changes, and internal issue fingerprints. |
+| `server/src/domains/support/repositories/support.repository.js` | Support Prisma access. | Prisma. | Creates/reads support requests, messages, events, internal issues, and internal issue events. |
+| `server/src/domains/support/mappers/support.mapper.js` | Support response mapping. | Support constants. | Hides internal notes from customer responses and exposes admin-only context to admin routes. |
+| `server/src/domains/support/constants/support.constants.js` | Support statuses/categories/visibility constants. | None. | Shared server source of truth for support workflow codes. |
 | `server/src/domains/customers/routes/adminCustomers.routes.js` | Admin customer routes. | `requireAdminAuth`, customer controller. | Protected `/api/admin/customers` endpoints. |
 | `server/src/domains/customers/controllers/adminCustomers.controller.js` | Admin customer request handlers. | Customer service. | List/detail/status/readiness JSON responses. |
 | `server/src/domains/customers/services/adminCustomers.service.js` | Admin customer business logic. | Customer repository, email payload builders. | Customer stats, detail, deactivate/reactivate, email readiness actions. |
 | `server/src/domains/customers/repositories/adminCustomers.repository.js` | Admin customer Prisma access. | Prisma. | Reads users/orders/events/readiness relations and updates account status. |
 | `server/src/domains/emails/mappers/emailPayloads.mapper.js` | Email payload builders. | Email event constants. | Verification, password reset, welcome, order/support/review readiness payloads. |
 | `server/src/domains/emails/services/emailProvider.service.js` | Email provider abstraction. | Env flag. | Queues/logs email payloads without sending real email by default. |
+| `server/src/domains/emails/routes/adminEmailDelivery.routes.js` | Admin notification route. | Admin auth, email delivery controller. | Protects `GET /api/admin/notifications`. |
+| `server/src/domains/emails/controllers/emailDelivery.controller.js` | Email delivery admin handler. | Email delivery service. | Reads notification history and stats with filters. |
+| `server/src/domains/emails/services/emailDelivery.service.js` | Email delivery read logic. | Email delivery repository, mapper. | Provides admin and customer email history responses. |
+| `server/src/domains/emails/repositories/emailDelivery.repository.js` | Email delivery Prisma access. | Prisma. | Creates, updates, filters, and summarizes `EmailDelivery` records. |
 | `server/src/domains/products/routes/products.routes.js` | Product API routes. | Controller/auth where needed. | Storefront and admin product endpoints. |
 | `server/src/domains/products/controllers/products.controller.js` | Product request handlers. | Product service. | Thin controller layer. |
 | `server/src/domains/products/services/products.service.js` | Product business logic. | Prisma, mapper, validators. | Product CRUD and list orchestration. |
 | `server/src/domains/products/mappers/products.mapper.js` | Product database-to-response mapping. | Product constants/utils. | Normalizes product and variant response shapes. |
 | `server/src/domains/checkout/routes/checkout.routes.js` | Checkout preview/order routes. | Checkout controller. | `POST /api/checkout/preview` and order creation. |
-| `server/src/domains/checkout/services/checkout.service.js` | Checkout orchestration. | Orders, promos, campaigns, Stripe, pricing. | Trusted totals, idempotency, inventory, usage recording. |
-| `server/src/domains/checkout/utils/checkoutPricing.js` | Pricing calculations. | Money/tax helpers. | Source of truth for subtotal, discounts, shipping, tax, total. |
+| `server/src/domains/checkout/services/checkout.service.js` | Checkout orchestration. | Orders, promos, campaigns, Stripe, pricing, shipping. | Trusted totals, idempotency, inventory, usage recording, and server-side selected shipping rate resolution. |
+| `server/src/domains/checkout/utils/checkoutPricing.js` | Pricing calculations. | Money/tax helpers. | Source of truth for subtotal, discounts, static shipping fallback, tax, total. |
 | `server/src/domains/payments/routes/payment.routes.js` | PaymentIntent route mounted under checkout. | Payment controller. | `POST /api/checkout/create-payment-intent`. |
 | `server/src/domains/payments/services/stripe.payment.js` | Stripe SDK wrapper. | Stripe secret key. | Creates/retrieves PaymentIntents. |
 | `server/src/domains/orders/routes/orders.routes.js` | Admin order routes. | Orders controller, admin auth. | Lists/details/status updates for admin orders. |
@@ -154,6 +172,12 @@ This file maps important files and folders. It is not a complete line-by-line in
 | `server/src/domains/campaigns/routes/campaigns.routes.js` | Campaign routes. | Campaign controller/admin auth. | Public campaign reads and admin CRUD. |
 | `server/src/domains/campaigns/services/campaigns.service.js` | Campaign business logic. | Repository/mapper/validator. | Donation rules, lifecycle, aggregate stats, order attribution usage. |
 | `server/src/domains/campaigns/repositories/campaigns.repository.js` | Campaign Prisma access. | Prisma. | Campaign CRUD, aggregate increments, and `OrderCampaignUsage` recording. |
+| `server/src/domains/shipping/routes/shipping.routes.js` | Shipping/tracking/admin shipment routes. | Admin auth, rate limits, shipping controller. | Protects admin tracking and shipment overview routes; receives Shippo webhook pings. |
+| `server/src/domains/shipping/controllers/shipping.controller.js` | Shipping request handlers. | Shipping service. | Handles admin tracking updates, refreshes, shipment overview, and webhook receipt. |
+| `server/src/domains/shipping/services/shipping.service.js` | Shipping business logic. | Shippo service, order repository, email service. | Upserts tracking, refreshes tracking, maps status to orders, and lists admin shipments. Future work should separate tracking saves from explicit admin-triggered customer email sends. |
+| `server/src/domains/shipping/services/shippo.service.js` | Shippo provider wrapper. | Shippo env, mapper. | Fetches tracking and rate-only shipment quotes; never buys labels. |
+| `server/src/domains/shipping/repositories/shipping.repository.js` | Shipping Prisma access. | Prisma. | Upserts `OrderShipment`, stores events, and lists admin shipment records. |
+| `server/src/domains/shipping/mappers/shipping.mapper.js` | Shipping response/provider mapping. | None. | Maps Shippo tracking/rates and database shipments into API-safe objects. |
 
 ## Prisma
 
@@ -161,6 +185,8 @@ This file maps important files and folders. It is not a complete line-by-line in
 | --- | --- | --- | --- |
 | `server/prisma/schema.prisma` | Database schema and enums. | Prisma/PostgreSQL. | Source of truth for Product, ProductVariant, Order, account models, OrderItem, OrderStatusHistory, Promo, PromoUsage, Campaign. |
 | `server/prisma/migrations/20260612000000_better_auth_customer_accounts/migration.sql` | Adds Better Auth/customer account tables and nullable `Order.userId`. | Prisma migrate. | Supports customer accounts, session persistence, customer order history, and future lifecycle/loyalty/support/review features. |
+| `server/prisma/migrations/20260615000000_add_order_shipping_method/migration.sql` | Adds nullable `Order.shippingMethod`. | Prisma migrate. | Preserves selected checkout delivery method. |
+| `server/prisma/migrations/20260615001000_add_order_shipping_rate_fields/migration.sql` | Adds nullable shipping carrier/service/rate/provider fields. | Prisma migrate. | Preserves Shippo/static shipping-rate traceability. |
 | `server/prisma/migrations/20260605000000_unique_order_payment_intent/migration.sql` | Adds unique PaymentIntent constraint. | Prisma migrate. | Supports order idempotency. |
 | `server/prisma/migrations/20260606000000_add_order_campaign_usage/migration.sql` | Adds order/campaign attribution table. | Prisma migrate. | Supports admin donation traceability and campaign order attribution. |
 | `server/prisma/migrations/20260607000000_add_order_status_history/migration.sql` | Adds order status history table. | Prisma migrate. | Supports admin fulfillment status audit trail and future admin-user attribution. |
@@ -172,3 +198,55 @@ This file maps important files and folders. It is not a complete line-by-line in
 - Some smaller presentational Vue components are documented at folder level rather than file-by-file because they do not own business rules.
 - Mermaid diagrams in this directory rendered successfully to SVG during the 2026-06-07 verification pass. Older `diagram.md` and `mockdiagram.md` are kept as architecture references, but the primary source docs are `README.md`, `data-flow.md`, `database.md`, `admin.md`, `file-map.md`, and `auth-roadmap.md`.
 - Generated Prisma files under `server/src/generated/prisma/` are generated output and are not individually documented.
+
+## Calm Essentials Account UI Files
+
+Focused 2026-10-08 implementation; paths below are relative to `client/src/domains/account/`.
+
+| File | Responsibility | Dependencies / Flow |
+| --- | --- | --- |
+| `components/AccountLayout.vue` | Protected parent, cached Orders child, sign-out redirect | Router, shared auth, AccountShell |
+| `components/AccountShell.vue`, `components/AccountNav.vue` | One storefront header/footer/cart; seven-tab desktop/mobile navigation | Existing cart/search/auth; nav constants |
+| `constants/account.constants.js` | Sidebar paths/labels/icons, order status display, page size, notification fields | Navigation, badges, history, profile mapper/editor |
+| `styles/account.css` | Scoped Calm Essentials tokens/responsive styles | Existing Tailwind utilities; no new styling framework |
+| `views/AccountDashboardView.vue`, `composables/useAccountDashboard.js` | Bounded overview/loading/error state | Existing dashboard API |
+| `views/AccountOrdersView.vue`, `composables/useAccountOrderHistory.js` | Group/search/filter/selection/Load more/refresh/mobile state | Existing order APIs; sequenced requests |
+| `utils/orderHistory.js`, `utils/accountFormatting.js` | Pure search/groups/references/quantity/date/address/tracking-URL helpers | Intl/URL, no requests or pricing calculations |
+| `components/AccountOrderCard.vue`, `components/AccountStatusBadge.vue` | Recent-order links and centralized status presentation | Formatting/constants |
+| `views/AccountOrderDetailView.vue`, `composables/useAccountOrders.js` | Existing standalone order detail URL/loading/retry | Ownership-protected order API |
+| `components/AccountOrderDetails.vue` | Shared items/shipping/tracking/totals/support presentation | Server snapshots, currency helper, status badge, issue dialog |
+| `components/AccountDialog.vue` | Modal focus trap/restore, scroll lock, idle close | Teleport; profile/issue editors |
+| `views/AccountProfileView.vue`, `views/AccountAddressesView.vue` | Profile/preferences/default-address summaries | Same existing profile endpoint |
+| `components/AccountProfileEditor.vue`, `composables/useAccountProfileEditor.js` | Save/Cancel/error feedback, session display refresh | Existing profile/auth, payload mapper, validators |
+| `mappers/accountProfile.mapper.js`, `validators/account.validators.js` | Preserve full replacement payload; focused validation | Notification constants; validation separated from transforms |
+| `views/AccountHelpView.vue`, `composables/useAccountHelp.js`, `components/AccountCaseDetail.vue` | Case list/detail/customer-visible replies/resolution | Existing support APIs, no general message or reply-write endpoint |
+| `components/AccountOrderIssueDialog.vue`, `composables/useAccountOrderIssue.js` | Eligible-order request/success link | Existing POST API and server-provided categories |
+| `views/AccountFutureView.vue` | Dedicated Rewards/Wishlist routes and honest future content | Storefront navigation only |
+
+Related changes: `client/src/app/router/index.js` groups protected account routes under the layout; `client/src/app/layouts/SiteHeader.vue` changes only responsive breakpoints to fix tablet overflow. Tests: `client/tests/tier2/account/account-profile-mapper.test.js` and `client/tests/tier3/account/account-history.test.js`.
+## Calm Workspace Admin Files
+
+Added or focused during the approved 2026-10-08 admin UI pass. Existing API/payload/validator contracts and custom admin cookies remain the sources of truth.
+
+| File(s), relative to client/src/domains/admin | Responsibility | Dependencies / flow |
+| --- | --- | --- |
+| `components/AdminLayout.vue` | Shared protected workspace, identity/logout, data routing, keyed nested detail view. | Session API, router, existing data-target badge, header/sidebar. |
+| `components/AdminHeader.vue`, `components/AdminSidebar.vue` | Brand/store/logout controls and responsive grouped navigation. | Layout events, router, navigation constants, icons. |
+| `constants/adminNavigation.constants.js` | Eleven tabs, grouping, active path-family rules. | Sidebar; no API or auth decisions. |
+| `api/adminSession.api.js` | Credentialed session read/logout. | Shared fetch/parser; existing /api/auth endpoints. |
+| `components/AdminPageHeader.vue`, `components/AdminMetrics.vue`, `components/AdminIcon.vue` | Shared compact headings, read-only metrics, semantic Lucide icons. | @lucide/vue; supplied state only. |
+| `components/AdminProductVariantsEditor.vue`, `components/AdminProductContentFields.vue` | Focused existing product fields. | Product form object; existing variant field component. |
+| `components/AdminScheduleFields.vue` | Reusable paired date/time fields and clear actions. | Promo/campaign forms; no serialization or timezone conversion. |
+| `components/AdminPromoAnalytics.vue`, `components/AdminCampaignImpact.vue` | In-page analytics/attribution views and real order links. | Existing promo analytics/campaign data and formatters. |
+| `composables/useAdminOverview.js` | Overview/report aggregation with independent source errors. | Existing order/stats/customer/notification/shipment/support APIs. |
+| `composables/useAdminActivity.js` | Filtered loading, busy/error state, last successful activity snapshot. | Existing notification/shipment APIs supplied by views. |
+| `composables/useAdminOrderDetail.js` | Order record reads, status/tracking/email actions and busy state. | Existing adminOrders API; no recalculation of business totals. |
+| `composables/useAdminIssueWorkspace.js` | Issue list/selection, edit draft, Save/Cancel, write errors. | Injected existing support/internal API functions. |
+| `composables/useAdminOrderIssues.js` | Internal-note/account-reply draft and explicit save. | Shared issue workspace, existing message endpoint. |
+| `constants/adminSupport.constants.js` | Current support/internal status, category, priority, severity options. | Support views; server still validates all submitted values. |
+| `components/AdminIssueHistory.vue` | Read-only server event timeline, actor/date/status context. | Existing sanitized event fields and workspace formatters. |
+| `utils/adminWorkspace.formatters.js` | Safe date display and enum labels. | Operational views/history; no payload shaping. |
+
+Other touched sources: `client/src/assets/styles/admin.css`, `client/src/app/router/index.js`, `client/package.json` / lockfile, existing admin CRUD/list/detail views and components, `client/src/domains/promos/components/PromoForm.vue` / `PromoCodeTester.vue`, and `client/tests/tier2/admin/admin-workspace.test.js`.
+
+Some older header/stat/group/modal components remain in the repository but are no longer composed by these new route views. They are not new sources of truth; remove them only after a dedicated usage audit, not by deleting unrelated accepted work.

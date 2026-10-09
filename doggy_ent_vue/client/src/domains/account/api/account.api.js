@@ -38,6 +38,15 @@ export async function updateAccountProfile(profile) {
   return data.result
 }
 
+export async function fetchAccountNotifications() {
+  const data = await parseJsonResponse(
+    await fetchApi(`${ACCOUNT_API_URL}/notifications`),
+    'Unable to load notification activity.',
+  )
+
+  return data.result
+}
+
 export async function fetchAccountOrders() {
   const data = await parseJsonResponse(
     await fetchApi(`${ACCOUNT_API_URL}/orders`),
@@ -53,5 +62,37 @@ export async function fetchAccountOrder(reference) {
     'Unable to load account order.',
   )
 
+  return data.result
+}
+
+export async function createAccountOrderIssue(reference, payload) {
+  const data = await parseJsonResponse(
+    await fetchApi(`${ACCOUNT_API_URL}/orders/${encodeURIComponent(reference)}/issues`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }),
+    'Unable to submit order issue.',
+  )
+
+  return data.result
+}
+
+export async function fetchAccountIssues() {
+  const data = await parseJsonResponse(
+    await fetchApi(`${ACCOUNT_API_URL}/issues`),
+    'Unable to load order issues.',
+  )
+
+  return data.result
+}
+
+export async function fetchAccountIssue(caseNumber) {
+  const data = await parseJsonResponse(
+    await fetchApi(`${ACCOUNT_API_URL}/issues/${encodeURIComponent(caseNumber)}`),
+    'Unable to load this help case.',
+  )
   return data.result
 }

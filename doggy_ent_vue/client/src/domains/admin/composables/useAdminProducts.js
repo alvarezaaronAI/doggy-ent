@@ -14,9 +14,7 @@ import {
   createEmptyAdminProductForm,
   mapProductToAdminProductForm,
 } from '../mappers/adminProductForm.mapper'
-import {
-  validateAdminProductForm,
-} from '../validators/adminProductForm.validator'
+import { validateAdminProductForm } from '../validators/adminProductForm.validator'
 
 export function useAdminProducts() {
   const products = ref([])
@@ -31,6 +29,7 @@ export function useAdminProducts() {
 
   const productSearchQuery = ref('')
   const productStatusFilter = ref('all')
+  const productCategoryFilter = ref('all')
   const form = ref(createEmptyAdminProductForm())
 
   const productCount = computed(() => products.value.length)
@@ -39,22 +38,31 @@ export function useAdminProducts() {
     const query = productSearchQuery.value.trim().toLowerCase()
 
     return products.value.filter((product) => {
-      const matchesQuery = !query || [
-        product.name,
-        product.protein,
-        product.cut,
-        product.category,
-        product.status,
-        product.sellingMode,
-        product.id,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query))
+      const matchesQuery =
+        !query ||
+        [
+          product.name,
+          product.protein,
+          product.cut,
+          product.category,
+          product.status,
+          product.sellingMode,
+          product.id,
+          ...(product.variants || []).map((variant) => variant.sku),
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query))
 
-      const matchesStatus = productStatusFilter.value === 'all'
-        || product.status === productStatusFilter.value
+      const matchesStatus =
+        productStatusFilter.value === 'all' ||
+        product.status === productStatusFilter.value
 
-      return matchesQuery && matchesStatus
+      return (
+        matchesQuery &&
+        matchesStatus &&
+        (productCategoryFilter.value === 'all' ||
+          product.category === productCategoryFilter.value)
+      )
     })
   })
 
@@ -207,6 +215,7 @@ export function useAdminProducts() {
   function clearProductFilters() {
     productSearchQuery.value = ''
     productStatusFilter.value = 'all'
+    productCategoryFilter.value = 'all'
   }
 
   return {
@@ -231,6 +240,7 @@ export function useAdminProducts() {
     productGroups,
     productSearchQuery,
     productStatusFilter,
+    productCategoryFilter,
     products,
     showForm,
     startEdit,

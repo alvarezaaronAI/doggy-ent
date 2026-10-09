@@ -1,6 +1,6 @@
 # Data Flow Maps
 
-Last updated: 2026-06-13
+Last updated: 2026-06-15
 
 ## Overall Request Flow
 
@@ -64,6 +64,8 @@ sequenceDiagram
   participant DB as PostgreSQL
 
   Browser->>Client: Submit checkout form
+  Client->>API: GET /api/checkout/shipping-options
+  API-->>Client: Server-owned shipping methods
   Client->>API: POST /api/checkout/preview
   API->>DB: Read products, promos, campaigns
   API-->>Client: Trusted preview totals
@@ -75,7 +77,8 @@ sequenceDiagram
   Stripe-->>Client: PaymentIntent succeeded
   Client->>API: POST /api/checkout with paymentIntentId
   API->>Stripe: Retrieve PaymentIntent
-  API->>DB: Recompute totals, create order, decrement inventory, record promo/campaign usage
+  API->>DB: Recompute totals, create order with shipping method, decrement inventory, record promo/campaign usage
+  API->>DB: Create EmailDelivery rows
   DB-->>API: Order
   API-->>Client: Order response
   Client->>Browser: Navigate to /order-success/:orderId
@@ -91,6 +94,7 @@ Key files:
 - Server preview/create route: `server/src/domains/checkout/routes/checkout.routes.js`
 - Server checkout service: `server/src/domains/checkout/services/checkout.service.js`
 - Server pricing: `server/src/domains/checkout/utils/checkoutPricing.js`
+- Server shipping options: `server/src/domains/checkout/constants/checkout.constants.js`
 - Stripe service: `server/src/domains/payments/services/stripe.payment.js`
 - Order repository: `server/src/domains/orders/repositories/orders.repository.js`
 
@@ -179,7 +183,92 @@ Important constraints:
 3. Admin customer API calls use `/api/admin/customers`, protected by `requireAdminAuth`.
 4. Server customer services read `User`, linked `Order` rows, verified-email guest matches, account events, support placeholders, review placeholders, notification preferences, and loyalty placeholders.
 5. Deactivate/reactivate actions update `User.status` and create `CustomerAccountEvent` rows with `changedByType: ADMIN_ENV`.
-6. Resend verification and password reset actions queue payloads through the email provider abstraction. They do not send real email unless a provider is configured.
+6. Resend verification and password reset actions call Better Auth email APIs, which queue Resend-backed `EmailDelivery` records when provider env is configured.
+7. Admin customer detail shows recent notification delivery history from `EmailDelivery`.
+8. Admin dashboard reads order stats, customer summaries, and notification stats to show orders, customers, revenue, shipment activity, tracking summary, and notification activity.
+
+## Notification Flow
+
+```mermaid
+sequenceDiagram
+  participant Trigger as Account, checkout, or admin action
+  participant Email as Email service
+  participant Prefs as Customer preferences
+  participant DB as PostgreSQL
+  participant Resend
+  participant UI as Admin or customer UI
+
+  Trigger->>Email: queueEmail(payload)
+  Email->>Prefs: Check category preferences when userId exists
+  Email->>DB: Create EmailDelivery
+  alt Provider configured and preference allows
+    Email->>Resend: Send transactional email
+    Resend-->>Email: Provider id
+    Email->>DB: Mark SENT
+  else Mock, missing provider, or opted out
+    Email->>DB: Mark MOCKED or SKIPPED
+  end
+  UI->>DB: Read EmailDelivery history
+```
+
+Notification surfaces:
+
+- Customer profile reads `/api/account/notifications`.
+- Admin dashboard reads `/api/admin/notifications`.
+- Admin order detail reads order-scoped `emailDeliveries` from `/api/admin/orders/:orderId`.
+- Admin customer detail reads customer-scoped `emailDeliveries` from `/api/admin/customers/:customerId`.
+
+## Tracking Flow
+
+```mermaid
+sequenceDiagram
+  participant Admin as Admin order detail
+  participant API as Shipping API
+  participant Shippo
+  participant DB as PostgreSQL
+  participant Email as Email service
+  participant Customer as Customer account/order success
+
+  Admin->>API: PUT /api/admin/orders/:orderId/tracking
+  API->>Shippo: Fetch status when API key exists
+  API->>DB: Upsert OrderShipment
+  API->>DB: Create OrderShipmentEvent timeline
+  API->>DB: Update Order.status when shipped or delivered
+  API-->>Admin: Return saved tracking state
+  Customer->>API: GET account or checkout order detail
+  API-->>Customer: Customer-safe shipment and events
+```
+
+Communications policy note: tracking/order changes should be saved separately from customer email sends. Future tracking work should require an explicit admin send action for tracking, shipped, delivered, review, support, issue-resolution, apology, promo, and marketing emails.
+
+## Checkout Shipping Rate Flow
+
+```mermaid
+sequenceDiagram
+  participant Client as CheckoutView.vue
+  participant CheckoutAPI as Checkout API
+  participant Shippo as Shippo test API
+  participant CheckoutService as checkout.service.js
+  participant Stripe as Stripe API
+  participant DB as PostgreSQL
+
+  Client->>CheckoutAPI: POST /api/checkout/shipping-rates
+  CheckoutAPI->>CheckoutService: fetchCheckoutShippingRates(customer, cartItems)
+  alt Shippo key and from-address env are configured
+    CheckoutService->>Shippo: Create shipment for rates only
+    Shippo-->>CheckoutService: Rate list
+    CheckoutService-->>Client: Carrier/service/rateId/amount options
+  else Missing config or provider failure
+    CheckoutService-->>Client: Static store fallback rates
+  end
+  Client->>CheckoutAPI: POST /api/checkout/create-payment-intent with selected rateId
+  CheckoutAPI->>CheckoutService: Re-resolve selected rate server-side
+  CheckoutService->>Stripe: Create PaymentIntent from trusted total
+  Client->>CheckoutAPI: POST /api/checkout with selected rateId
+  CheckoutService->>DB: Store order shipping carrier, service, rate id, provider, amount
+```
+
+Shippo rate shopping is intentionally rate-only. The app does not buy labels from checkout and falls back to store rates when Shippo configuration or address data is incomplete.
 
 ## Order Status History Flow
 
@@ -206,6 +295,57 @@ sequenceDiagram
   Service-->>API: Updated order
   API-->>Client: Updated status and history
 ```
+
+## Customer Order Issue Flow
+
+```mermaid
+sequenceDiagram
+  participant Customer as Customer order detail
+  participant AccountApi as Account API
+  participant SupportService as support.service.js
+  participant AccountRepo as account.repository.js
+  participant SupportRepo as support.repository.js
+  participant DB as PostgreSQL
+  participant Admin as Admin Order Issues
+
+  Customer->>AccountApi: POST /api/account/orders/:reference/issues
+  AccountApi->>SupportService: createOrderIssueForCustomer(user, reference, input)
+  SupportService->>AccountRepo: Find order owned by user or verified-email match
+  AccountRepo->>DB: Read order, shipments, support requests
+  SupportService->>SupportService: Check delivered seven-day eligibility
+  SupportService->>SupportRepo: Create support request, first message, event
+  SupportRepo->>DB: Insert CustomerSupportRequest and related rows
+  SupportRepo-->>AccountApi: Customer-safe issue
+  AccountApi-->>Customer: Friendly case number and status
+  Admin->>AccountApi: GET /api/admin/order-issues
+  AccountApi->>SupportRepo: Admin issue list with internal context
+  SupportRepo-->>Admin: Cases, messages, events
+```
+
+Support replies and status changes are account-first. Saving a support message or status does not automatically send email; email requires a separate future admin template/send action.
+
+## Internal Issue Capture Flow
+
+```mermaid
+sequenceDiagram
+  participant Request as API request
+  participant ErrorMiddleware as error.middleware.js
+  participant SupportService as support.service.js
+  participant SupportRepo as support.repository.js
+  participant DB as PostgreSQL
+  participant Admin as Admin Internal Issues
+
+  Request->>ErrorMiddleware: Unexpected 500
+  ErrorMiddleware->>SupportService: recordInternalIssue(safe context)
+  SupportService->>SupportService: Build fingerprint and friendly case number
+  SupportService->>SupportRepo: Upsert InternalIssue
+  SupportRepo->>DB: Create or increment issue and event
+  ErrorMiddleware-->>Request: Customer-safe error plus issue reference
+  Admin->>SupportRepo: GET /api/admin/internal-issues
+  SupportRepo-->>Admin: Sanitized operational issue list
+```
+
+Internal issue records must not store request bodies, cookies, auth/session tokens, provider secrets, database URLs, reset tokens, verification tokens, or raw sensitive provider payloads.
 
 ## Campaign Attribution Flow
 
@@ -258,4 +398,19 @@ sequenceDiagram
   Domain-->>Client: Account/admin/customer data
 ```
 
-Future Better Auth work should replace the custom auth/session layer, add roles such as `ADMIN` and `CUSTOMER`, and preserve the existing admin dashboard routes as the UI surface.
+Better Auth customer accounts are already implemented. A future, explicitly approved admin-auth migration may replace custom admin sessions while preserving the dashboard. Loyalty, referrals, and expanded permissions remain future work.
+
+## Calm Essentials Account UI Flow
+
+The protected `/account` parent route mounts `AccountLayout.vue` once. Children render inside the shared storefront-aware `AccountShell.vue`. Public sign-in/create/reset pages use the shell without the sidebar.
+
+| Screen | Data / Action | Source Of Truth |
+| --- | --- | --- |
+| Overview | GET /api/account | Account summary mapper; maximum two recent orders |
+| Orders | GET /api/account/orders, GET /api/account/orders/:reference | Server ownership queries and order snapshots; local eight-row display window |
+| Profile / Addresses | GET and PUT /api/account/profile | Profile/preferences; full payload mapper preserves unedited fields |
+| Order help | GET /api/account/issues, GET /api/account/issues/:caseNumber | Customer-scoped support queries and customer-visible message mapping |
+| Eligible help dialog | POST /api/account/orders/:reference/issues | Server category, delivery-window, ownership, and rate-limit checks |
+| Rewards / Wishlist | No feature writes | Explicit future-phase UI, no mock customer data |
+
+KeepAlive retains only the Orders child between account tabs. Sequenced detail requests prevent a slow earlier response from replacing the latest selection. Refresh reloads the list and selected detail. Sign-out exits the layout and clears cached account content. Address edits do not change existing orders. This UI pass adds no backend endpoints, schema changes, provider sends, or environment variables.

@@ -27,6 +27,11 @@ const campaignAttributions = computed(() =>
     ? order.value.campaignAttributions
     : [],
 )
+const shipment = computed(() =>
+  order.value?.shipment
+  || order.value?.shipments?.[0]
+  || null,
+)
 
 function formatPrice(value) {
   return Number(value || 0).toLocaleString(undefined, {
@@ -130,12 +135,36 @@ onMounted(loadOrder)
                   </p>
 
                   <p class="mt-3 text-lg font-black text-[var(--brand-4)]">
-                    Preparing order
+                    {{ shipment?.shipmentStatus || 'Preparing order' }}
                   </p>
 
                   <p class="mt-2 text-sm leading-relaxed text-stone-500">
-                    Most orders are packed and shipped within 1-2 business days.
+                    <template v-if="shipment?.trackingNumber">
+                      {{ shipment.carrier || 'Carrier' }} tracking {{ shipment.trackingNumber }} is attached to this order.
+                    </template>
+                    <template v-else>
+                      Most orders are packed and shipped within 1-2 business days.
+                    </template>
                   </p>
+                  <p class="mt-2 text-xs font-semibold text-stone-400">
+                    Shipping method: {{ order.shippingMethod || 'standard' }}
+                  </p>
+                  <p
+                    v-if="order.shippingCarrier || order.shippingService"
+                    class="mt-1 text-xs font-semibold text-stone-400"
+                  >
+                    Carrier: {{ [order.shippingCarrier, order.shippingService].filter(Boolean).join(' - ') }}
+                  </p>
+
+                  <a
+                    v-if="shipment?.trackingUrl"
+                    :href="shipment.trackingUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="mt-3 inline-flex text-sm font-black text-emerald-700"
+                  >
+                    Track package
+                  </a>
                 </div>
 
                 <div class="rounded-2xl border border-stone-200 bg-stone-50 p-5">

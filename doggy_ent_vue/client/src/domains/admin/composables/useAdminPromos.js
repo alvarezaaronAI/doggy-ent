@@ -1,21 +1,12 @@
-import {
-  computed,
-  ref,
-  watch,
-} from 'vue'
+import { computed, ref, watch } from 'vue'
 import { validatePromoCode } from '@promos/api/promos.api'
 import { usePromos } from '@promos/composables/usePromos'
-import {
-  PROMO_STATUSES,
-  PROMO_TYPES,
-} from '@promos/constants/promo.constants'
+import { PROMO_STATUSES, PROMO_TYPES } from '@promos/constants/promo.constants'
 import {
   normalizePromoForm,
   validatePromoForm,
 } from '@promos/utils/promo.rules'
-import {
-  fetchPromoAnalytics,
-} from '@promos/api/promos.api'
+import { fetchPromoAnalytics } from '@promos/api/promos.api'
 import {
   ADMIN_PROMO_GROUPS,
   DEFAULT_PROMO_TEST_FORM,
@@ -26,11 +17,8 @@ import {
   buildAdminPromoPayload,
   createEmptyAdminPromoForm,
   mapPromoToAdminPromoForm,
-  normalizeOptionalString,
 } from '../mappers/adminPromoForm.mapper'
-import {
-  getSecureRandomPromoCode,
-} from '../utils/adminPromos.utils'
+import { getSecureRandomPromoCode } from '../utils/adminPromos.utils'
 
 export function useAdminPromos() {
   const {
@@ -46,30 +34,29 @@ export function useAdminPromos() {
   } = usePromos()
 
   const editingPromoId = ref(null)
+  const showForm = ref(false)
   const isTestingPromo = ref(false)
   const promoTestResult = ref(null)
   const promoTestForm = ref({ ...DEFAULT_PROMO_TEST_FORM })
   const isAnalyticsModalOpen = ref(false)
   const isLoadingAnalytics = ref(false)
   const selectedPromoAnalytics = ref(null)
+  let analyticsRevision = 0
+  let testRevision = 0
   const form = ref(createEmptyAdminPromoForm())
 
   const promoSearchQuery = ref('')
   const promoTypeFilter = ref(PROMO_FILTER_ALL)
   const promoStatusFilter = ref(PROMO_FILTER_ALL)
 
-  const isUniquePromo = computed(
-    () => form.value.type === PROMO_TYPES.UNIQUE,
-  )
+  const isUniquePromo = computed(() => form.value.type === PROMO_TYPES.UNIQUE)
 
   const isReferralPromo = computed(
     () => form.value.type === PROMO_TYPES.REFERRAL,
   )
 
-  const activePromos = computed(
-    () => promos.value.filter(
-      (promo) => promo.status === PROMO_STATUSES.ACTIVE,
-    ),
+  const activePromos = computed(() =>
+    promos.value.filter((promo) => promo.status === PROMO_STATUSES.ACTIVE),
   )
 
   const totalUses = computed(() =>
@@ -90,48 +77,49 @@ export function useAdminPromos() {
     const query = promoSearchQuery.value.trim().toLowerCase()
 
     return promos.value.filter((promo) => {
-      const matchesQuery = !query || [
-        promo.code,
-        promo.name,
-        promo.type,
-        promo.status,
-        promo.assignedCustomerEmail,
-        promo.referralOwnerName,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query))
+      const matchesQuery =
+        !query ||
+        [
+          promo.code,
+          promo.name,
+          promo.type,
+          promo.status,
+          promo.assignedCustomerEmail,
+          promo.referralOwnerName,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query))
 
-      const matchesType = (
-        promoTypeFilter.value === PROMO_FILTER_ALL
-        || promo.type === promoTypeFilter.value
-      )
+      const matchesType =
+        promoTypeFilter.value === PROMO_FILTER_ALL ||
+        promo.type === promoTypeFilter.value
 
-      const matchesStatus = (
-        promoStatusFilter.value === PROMO_FILTER_ALL
-        || promo.status === promoStatusFilter.value
-      )
+      const matchesStatus =
+        promoStatusFilter.value === PROMO_FILTER_ALL ||
+        promo.status === promoStatusFilter.value
 
       return matchesQuery && matchesType && matchesStatus
     })
   })
 
-  const activeFilteredPromos = computed(
-    () => filteredPromos.value.filter(
+  const activeFilteredPromos = computed(() =>
+    filteredPromos.value.filter(
       (promo) => promo.status === PROMO_STATUSES.ACTIVE,
     ),
   )
 
-  const inactiveFilteredPromos = computed(
-    () => filteredPromos.value.filter(
+  const inactiveFilteredPromos = computed(() =>
+    filteredPromos.value.filter(
       (promo) => promo.status !== PROMO_STATUSES.ACTIVE,
     ),
   )
 
   const promoGroups = computed(() =>
     ADMIN_PROMO_GROUPS.map((group) => {
-      const groupPromos = group.key === 'active'
-        ? activeFilteredPromos.value
-        : inactiveFilteredPromos.value
+      const groupPromos =
+        group.key === 'active'
+          ? activeFilteredPromos.value
+          : inactiveFilteredPromos.value
 
       return {
         ...group,
@@ -152,25 +140,25 @@ export function useAdminPromos() {
   }
 
   async function openPromoAnalytics(promo) {
+    const revision = ++analyticsRevision
     isAnalyticsModalOpen.value = true
     isLoadingAnalytics.value = true
     selectedPromoAnalytics.value = null
 
     try {
-      selectedPromoAnalytics.value = await fetchPromoAnalytics(promo.id)
-    }
-    catch (error) {
-      errorMessage.value = (
-        error.message
-        || 'Unable to load promo analytics.'
-      )
-    }
-    finally {
-      isLoadingAnalytics.value = false
+      const analytics = await fetchPromoAnalytics(promo.id)
+      if (revision === analyticsRevision)
+        selectedPromoAnalytics.value = analytics
+    } catch (error) {
+      if (revision !== analyticsRevision) return
+      errorMessage.value = error.message || 'Unable to load promo analytics.'
+    } finally {
+      if (revision === analyticsRevision) isLoadingAnalytics.value = false
     }
   }
 
   function closePromoAnalytics() {
+    analyticsRevision += 1
     isAnalyticsModalOpen.value = false
   }
 
@@ -187,6 +175,19 @@ export function useAdminPromos() {
   }
 
   async function testPromoCode() {
+    if (isTestingPromo.value) return
+    const customerEmail = String(promoTestForm.value.customerEmail || '')
+      .trim()
+      .toLowerCase()
+    if (!customerEmail) {
+      promoTestResult.value = {
+        valid: false,
+        message: 'Enter a customer email before testing a promo.',
+      }
+      return
+    }
+    promoTestForm.value.customerEmail = customerEmail
+    const revision = testRevision
     isTestingPromo.value = true
     promoTestResult.value = null
     errorMessage.value = ''
@@ -194,22 +195,20 @@ export function useAdminPromos() {
     try {
       const data = await validatePromoCode({
         code: promoTestForm.value.code,
-        customerEmail: normalizeOptionalString(
-          promoTestForm.value.customerEmail,
-        ),
+        customerEmail,
         cart: {
-          subtotal: Number(
-            promoTestForm.value.subtotal || 0,
-          ),
+          subtotal: Number(promoTestForm.value.subtotal || 0),
           items: [],
         },
       })
 
+      if (revision !== testRevision) return
       promoTestResult.value = {
         ...data,
         statusCode: 200,
       }
     } catch (error) {
+      if (revision !== testRevision) return
       promoTestResult.value = {
         valid: false,
         message: error.message || 'Unable to test promo code.',
@@ -255,6 +254,7 @@ export function useAdminPromos() {
   }
 
   function editPromo(promo) {
+    showForm.value = true
     editingPromoId.value = promo.id
     clearMessages()
     form.value = mapPromoToAdminPromoForm(promo)
@@ -262,9 +262,7 @@ export function useAdminPromos() {
   }
 
   async function deletePromo(promo) {
-    const shouldDelete = window.confirm(
-      `Delete promo code ${promo.code}?`,
-    )
+    const shouldDelete = window.confirm(`Delete promo code ${promo.code}?`)
 
     if (!shouldDelete) {
       return
@@ -276,22 +274,40 @@ export function useAdminPromos() {
   }
 
   function resetForm() {
+    showForm.value = false
     editingPromoId.value = null
     form.value = createEmptyAdminPromoForm()
   }
 
+  function openCreateForm() {
+    resetForm()
+    clearMessages()
+    showForm.value = true
+  }
+
   watch(
-    () => [
-      form.value.type,
-      form.value.assignedCustomerEmail,
-      form.value.referralOwnerName,
-      form.value.usageLimitTotal,
-      form.value.usageLimitPerCustomer,
+    promoTestForm,
+    () => {
+      testRevision += 1
+      promoTestResult.value = null
+    },
+    { deep: true, flush: 'sync' },
+  )
+
+  watch(
+    [
+      () => form.value.type,
+      () => form.value.assignedCustomerEmail,
+      () => form.value.referralOwnerName,
+      () => form.value.usageLimitTotal,
+      () => form.value.usageLimitPerCustomer,
     ],
     enforcePromoRules,
   )
 
   return {
+    showForm,
+    openCreateForm,
     activeFilteredPromos,
     activePromos,
     clearPromoFilters,

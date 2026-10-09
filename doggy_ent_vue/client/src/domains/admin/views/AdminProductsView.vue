@@ -1,8 +1,10 @@
 <script setup>
-import { onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, onMounted } from 'vue'
 import AdminProductFormPanel from '../components/AdminProductFormPanel.vue'
 import AdminProductsTable from '../components/AdminProductsTable.vue'
+import AdminPageHeader from '../components/AdminPageHeader.vue'
+import AdminMetrics from '../components/AdminMetrics.vue'
+import AdminIcon from '../components/AdminIcon.vue'
 import {
   PRODUCT_CATEGORIES,
   PRODUCT_PROTEINS,
@@ -11,166 +13,182 @@ import {
   PRODUCT_STATUS_OPTIONS,
 } from '../constants/adminProducts.constants'
 import { useAdminProducts } from '../composables/useAdminProducts'
-
 const {
-  activeProducts,
-  clearProductFilters,
   closeForm,
-  comingSoonProducts,
   deleteProduct,
-  draftProducts,
   errorMessage,
   filteredProducts,
   form,
   formTitle,
   isDeleting,
   isEditMode,
+  isLoading,
   isSubmitting,
   loadProducts,
   openCreateForm,
-  productCount,
-  productGroups,
   productSearchQuery,
   productStatusFilter,
+  productCategoryFilter,
+  products,
   showForm,
   startEdit,
   submitButtonLabel,
   submitProduct,
   successMessage,
 } = useAdminProducts()
-
-function handleDeleteProduct(product) {
-  deleteProduct(product.id, product.name)
-}
-
-onMounted(() => {
-  loadProducts()
-})
+const metrics = computed(() => [
+  {
+    label: 'Active',
+    value: products.value.filter((p) => p.status === 'active').length,
+    hint: 'Visible in the active catalog',
+  },
+  {
+    label: 'Coming soon',
+    value: products.value.filter((p) => p.status === 'coming-soon').length,
+    hint: 'Preparing for launch',
+  },
+  {
+    label: 'Drafts',
+    value: products.value.filter((p) => p.status === 'draft').length,
+    hint: 'Not published',
+  },
+])
+const lowStock = computed(() =>
+  products.value.flatMap((product) =>
+    product.sellingMode && product.sellingMode !== 'inventory-limited'
+      ? []
+      : (product.variants || [])
+          .filter((v) => Number(v.quantity) <= Number(v.lowStockThreshold ?? 0))
+          .map((variant) => ({ product, variant })),
+  ),
+)
+onMounted(loadProducts)
 </script>
-
 <template>
-  <main class="min-h-screen bg-[var(--brand-5)] text-slate-900">
-    <section class="mx-auto max-w-[96rem] px-4 py-8 md:px-6 md:py-12 2xl:max-w-[104rem]">
-      <div class="section-panel p-5 md:p-7">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-400">
-              Admin / Catalog
-            </p>
-            <h1 class="mt-2 text-4xl font-extrabold">Products</h1>
-            <p class="mt-3 max-w-3xl text-stone-300">
-              Manage products, inventory, launch status, and storefront visibility.
-            </p>
-            <p class="mt-2 text-sm text-stone-400">
-              Current products: <strong>{{ productCount }}</strong>
-            </p>
-          </div>
-
-          <RouterLink
-            to="/admin"
-            class="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-[var(--brand-4)] transition hover:border-emerald-400 hover:bg-emerald-50"
-          >
-            ← Back to Dashboard
-          </RouterLink>
-        </div>
-
-        <div v-if="errorMessage" class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-          {{ errorMessage }}
-        </div>
-
-        <div v-if="successMessage" class="mt-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-green-700">
-          {{ successMessage }}
-        </div>
-
-        <div class="mt-6 grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[400px_minmax(0,1fr)]">
-          <AdminProductFormPanel
-            :category-options="PRODUCT_CATEGORIES"
-            :form="form"
-            :form-title="formTitle"
-            :is-edit-mode="isEditMode"
-            :is-submitting="isSubmitting"
-            :product-status-options="PRODUCT_STATUS_OPTIONS"
-            :protein-options="PRODUCT_PROTEINS"
-            :selling-mode-options="PRODUCT_SELLING_MODES"
-            :show-form="showForm"
-            :submit-button-label="submitButtonLabel"
-            @cancel="closeForm"
-            @create="openCreateForm"
-            @submit="submitProduct"
-          />
-
-          <div class="min-w-0 space-y-5">
-            <div class="sticky top-0 z-10 mb-2 flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-              <input
-                v-model="productSearchQuery"
-                type="text"
-                class="min-w-0 flex-1 rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none"
-                placeholder="Search products…"
-              />
-              <select
-                v-model="productStatusFilter"
-                class="rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none"
-              >
-                <option
-                  v-for="option in PRODUCT_STATUS_FILTER_OPTIONS"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.label }}
-                </option>
-              </select>
-              <button
-                class="rounded-xl border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-100 transition"
-                :disabled="!productSearchQuery && productStatusFilter === 'all'"
-                @click="clearProductFilters"
-              >
-                Clear
-              </button>
-              <button
-                v-if="!showForm"
-                class="ml-auto rounded-xl bg-emerald-400 px-5 py-2 font-bold text-[var(--brand-4)] transition hover:bg-emerald-300"
-                @click="openCreateForm"
-              >
-                + Add Product
-              </button>
-            </div>
-
-            <div class="sticky top-[58px] z-10 grid grid-cols-2 gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-stone-400 shadow-sm md:grid-cols-4">
-              <div>
-                Active
-                <span class="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-green-700">{{ activeProducts.length }}</span>
-              </div>
-              <div>
-                Coming Soon
-                <span class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">{{ comingSoonProducts.length }}</span>
-              </div>
-              <div>
-                Draft
-                <span class="ml-2 rounded-full bg-stone-200 px-2 py-0.5 text-stone-700">{{ draftProducts.length }}</span>
-              </div>
-              <div>
-                Total
-                <span class="ml-2 rounded-full bg-stone-100 px-2 py-0.5 text-stone-700">{{ filteredProducts.length }}</span>
-              </div>
-            </div>
-
-            <div class="space-y-8">
-              <AdminProductsTable
-                v-for="group in productGroups"
-                :key="group.key"
-                :count-class="group.countClass"
-                :empty-message="group.emptyMessage"
-                :is-deleting="isDeleting"
-                :products="group.products"
-                :title="group.title"
-                :title-class="group.titleClass"
-                @delete="handleDeleteProduct"
-                @edit="startEdit"
-              />
-            </div>
-          </div>
-        </div>
+  <section class="admin-page">
+    <AdminPageHeader
+      :title="
+        showForm
+          ? isEditMode
+            ? 'Edit ' + form.name
+            : 'Add product'
+          : 'Products'
+      "
+      eyebrow="Catalog"
+    >
+      <button
+        v-if="!showForm"
+        type="button"
+        class="admin-button admin-primary"
+        @click="openCreateForm"
+      >
+        <AdminIcon name="add" />Add product
+      </button>
+    </AdminPageHeader>
+    <p v-if="errorMessage" role="alert" class="admin-alert admin-alert-error">
+      {{ errorMessage }}
+    </p>
+    <p
+      v-if="successMessage"
+      role="status"
+      class="admin-alert admin-alert-success"
+    >
+      {{ successMessage }}
+    </p>
+    <AdminProductFormPanel
+      v-if="showForm"
+      :category-options="PRODUCT_CATEGORIES"
+      :form="form"
+      :form-title="formTitle"
+      :is-edit-mode="isEditMode"
+      :is-submitting="isSubmitting"
+      :product-status-options="PRODUCT_STATUS_OPTIONS"
+      :protein-options="PRODUCT_PROTEINS"
+      :selling-mode-options="PRODUCT_SELLING_MODES"
+      :show-form="showForm"
+      :submit-button-label="submitButtonLabel"
+      @cancel="closeForm"
+      @create="openCreateForm"
+      @submit="submitProduct"
+    />
+    <template v-else>
+      <AdminMetrics :items="metrics" :loading="isLoading" />
+      <div class="admin-segments" role="group" aria-label="Product status">
+        <button
+          v-for="option in PRODUCT_STATUS_FILTER_OPTIONS"
+          :key="option.value"
+          type="button"
+          :aria-pressed="productStatusFilter === option.value"
+          @click="productStatusFilter = option.value"
+        >
+          {{ option.label }}
+        </button>
       </div>
-    </section>
-  </main>
+      <div class="admin-filters">
+        <label class="admin-field"
+          >Search products<input
+            v-model="productSearchQuery"
+            type="search"
+            placeholder="Product name or SKU"
+        /></label>
+        <label class="admin-field"
+          >Category<select
+            aria-label="Category"
+            v-model="productCategoryFilter"
+          >
+            <option value="all">All categories</option>
+            <option v-for="category in PRODUCT_CATEGORIES" :key="category">
+              {{ category }}
+            </option>
+          </select></label
+        >
+        <button
+          type="button"
+          class="admin-button"
+          :disabled="isLoading"
+          @click="loadProducts"
+        >
+          <AdminIcon name="refresh" />Refresh
+        </button>
+      </div>
+      <div class="mb-3 flex items-center justify-between">
+        <h2>Product library</h2>
+        <span class="admin-muted">{{ filteredProducts.length }} products</span>
+      </div>
+      <p v-if="isLoading" role="status" class="admin-state">
+        Loading products...
+      </p>
+      <AdminProductsTable
+        v-else
+        :products="filteredProducts"
+        :is-deleting="isDeleting"
+        @delete="deleteProduct($event.id, $event.name)"
+        @edit="startEdit"
+      />
+      <section
+        v-if="lowStock.length && !isLoading"
+        class="mt-8 border-t border-[var(--admin-line)] pt-5"
+      >
+        <h2>
+          Inventory attention
+          <span class="admin-badge ml-2">{{ lowStock.length }} variants</span>
+        </h2>
+        <button
+          v-for="entry in lowStock"
+          :key="entry.product.id + entry.variant.size"
+          type="button"
+          class="admin-row w-full text-left"
+          @click="startEdit(entry.product)"
+        >
+          <AdminIcon name="products" /><span class="flex-1"
+            ><strong>{{ entry.product.name }} / {{ entry.variant.size }}</strong
+            ><small class="admin-muted mt-1 block"
+              >{{ entry.variant.quantity }} in stock &middot; Threshold
+              {{ entry.variant.lowStockThreshold }}</small
+            ></span
+          ><span class="admin-link">Review stock<AdminIcon name="next" /></span>
+        </button>
+      </section>
+    </template>
+  </section>
 </template>

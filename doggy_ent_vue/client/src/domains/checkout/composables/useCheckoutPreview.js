@@ -10,6 +10,7 @@ export function useCheckoutPreview({
   customer,
   selectedShipping,
   shippingPrice,
+  getShippingPayload = null,
 }) {
   const checkoutPreviewResult = ref(null)
   const isRefreshingCheckoutPreview = ref(false)
@@ -47,10 +48,12 @@ export function useCheckoutPreview({
             country: normalizeCountry(customer.value.country),
           },
 
-          shipping: {
-            method: selectedShipping.value,
-            price: shippingPrice.value,
-          },
+          shipping: typeof getShippingPayload === 'function'
+            ? getShippingPayload()
+            : {
+                method: selectedShipping.value,
+                price: shippingPrice.value,
+              },
         })
 
       if (requestId !== activePreviewRequestId) {

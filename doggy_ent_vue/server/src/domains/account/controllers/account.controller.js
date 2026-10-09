@@ -1,6 +1,7 @@
 import {
   getAccountDashboard,
   getAccountOrderByReference,
+  getAccountNotifications,
   getAccountOrders,
   getAccountProfile,
   updateAccountProfile,
@@ -86,5 +87,23 @@ export async function getAccountOrderController(req, res) {
   }
   catch (error) {
     return handleAccountError(res, error, 'Unable to load order.')
+  }
+}
+
+export async function getAccountNotificationsController(req, res) {
+  try {
+    const result = await getAccountNotifications(req.customerUser)
+
+    return res.json({
+      success: true,
+      result,
+    })
+  }
+  catch (error) {
+    return handleAccountError(
+      res,
+      error,
+      'Unable to load notification activity.',
+    )
   }
 }

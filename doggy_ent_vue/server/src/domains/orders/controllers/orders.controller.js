@@ -2,6 +2,7 @@ import {
   fetchAdminOrders,
   fetchAdminOrderById,
   fetchAdminOrderStats,
+  resendAdminOrderEmail,
   updateAdminOrderStatus,
 } from '../services/orders.service.js'
 
@@ -79,6 +80,26 @@ export async function patchAdminOrderStatus(req, res) {
       res,
       error,
       'Unable to update order status.',
+    )
+  }
+}
+
+export async function postAdminOrderEmailResend(req, res) {
+  try {
+    const result = await resendAdminOrderEmail(
+      req.params.orderId,
+      {
+        event: req.body.event,
+      },
+    )
+
+    return res.status(200).json(result)
+  }
+  catch (error) {
+    return handleControllerError(
+      res,
+      error,
+      'Unable to resend order email.',
     )
   }
 }

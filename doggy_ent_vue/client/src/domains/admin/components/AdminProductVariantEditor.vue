@@ -37,9 +37,14 @@ defineProps({
 
 <template>
   <div>
-    <label class="mb-2 block text-sm font-semibold text-[var(--brand-4)]">{{ label }}<span v-if="required"> *</span></label>
+    <label
+      :for="'admin-product-' + field"
+      class="mb-2 block text-sm font-semibold text-[var(--brand-4)]"
+      >{{ label }}<span v-if="required"> *</span></label
+    >
     <input
       v-model="form[field]"
+      :id="'admin-product-' + field"
       :type="inputType"
       :min="min"
       :step="step"

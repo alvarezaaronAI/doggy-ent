@@ -2,6 +2,12 @@ import { createStripePaymentIntent } from '../services/stripe.payment.js'
 import {
   previewCheckout,
 } from '../../checkout/services/checkout.service.js'
+import {
+  buildAdminFailedPaymentEmail,
+} from '../../emails/mappers/emailPayloads.mapper.js'
+import {
+  queueEmail,
+} from '../../emails/services/emailProvider.service.js'
 
 export const createPaymentIntent = async (req, res) => {
   try {
@@ -33,6 +39,21 @@ export const createPaymentIntent = async (req, res) => {
     })
   } catch (error) {
     console.error('Payment controller error:', error)
+
+    queueEmail(
+      buildAdminFailedPaymentEmail({
+        customerEmail:
+          req.body?.customer?.email
+          || req.body?.customerEmail
+          || null,
+        message: error.message || 'Payment intent creation failed.',
+      }),
+    ).catch((emailError) => {
+      console.error(
+        '[payments] Failed admin payment failure email dispatch.',
+        emailError,
+      )
+    })
 
     return res.status(error.statusCode || 500).json({
       success: false,

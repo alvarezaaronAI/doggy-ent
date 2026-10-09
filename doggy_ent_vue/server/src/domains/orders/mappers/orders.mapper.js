@@ -67,6 +67,90 @@ export function mapOrderStatusHistoryEntry(entry) {
   }
 }
 
+export function mapOrderShipmentEvent(event) {
+  if (!event) {
+    return null
+  }
+
+  return {
+    id: event.id,
+    status: event.status,
+    message: event.message,
+    location: event.location,
+    occurredAt: event.occurredAt,
+    createdAt: event.createdAt,
+  }
+}
+
+export function mapOrderShipment(shipment) {
+  if (!shipment) {
+    return null
+  }
+
+  return {
+    id: shipment.id,
+    carrier: shipment.carrier,
+    trackingNumber: shipment.trackingNumber,
+    trackingUrl: shipment.trackingUrl,
+    shipmentStatus: shipment.shipmentStatus,
+    estimatedDelivery: shipment.estimatedDelivery,
+    shippedAt: shipment.shippedAt,
+    deliveredAt: shipment.deliveredAt,
+    lastSyncedAt: shipment.lastSyncedAt,
+    source: shipment.source,
+    createdAt: shipment.createdAt,
+    updatedAt: shipment.updatedAt,
+    events: Array.isArray(shipment.events)
+      ? shipment.events
+          .map(mapOrderShipmentEvent)
+          .filter(Boolean)
+      : [],
+  }
+}
+
+export function mapOrderEmailDelivery(delivery) {
+  if (!delivery) {
+    return null
+  }
+
+  return {
+    id: delivery.id,
+    event: delivery.event,
+    recipient: delivery.recipient,
+    subject: delivery.subject,
+    provider: delivery.provider,
+    status: delivery.status,
+    errorMessage: delivery.errorMessage,
+    sentAt: delivery.sentAt,
+    createdAt: delivery.createdAt,
+  }
+}
+
+export function mapCustomerShipment(shipment) {
+  const mappedShipment = mapOrderShipment(shipment)
+
+  if (!mappedShipment) {
+    return null
+  }
+
+  return {
+    carrier: mappedShipment.carrier,
+    trackingNumber: mappedShipment.trackingNumber,
+    trackingUrl: mappedShipment.trackingUrl,
+    shipmentStatus: mappedShipment.shipmentStatus,
+    estimatedDelivery: mappedShipment.estimatedDelivery,
+    shippedAt: mappedShipment.shippedAt,
+    deliveredAt: mappedShipment.deliveredAt,
+    lastSyncedAt: mappedShipment.lastSyncedAt,
+    events: mappedShipment.events.map((event) => ({
+      status: event.status,
+      message: event.message,
+      location: event.location,
+      occurredAt: event.occurredAt,
+    })),
+  }
+}
+
 export function getOrderDonationAmount(order) {
   return Array.isArray(order?.campaignUsages)
     ? order.campaignUsages.reduce(
@@ -98,6 +182,10 @@ export function mapOrder(order) {
     total: Number(order.total || 0),
     subtotal: Number(order.subtotal || 0),
     shippingAmount: Number(order.shippingAmount || 0),
+    shippingCarrier: order.shippingCarrier || null,
+    shippingService: order.shippingService || null,
+    shippingRateId: order.shippingRateId || null,
+    shippingRateProvider: order.shippingRateProvider || null,
     discountAmount: Number(order.discountAmount || 0),
     taxAmount: Number(order.taxAmount || 0),
     donationAmount: getOrderDonationAmount(order),
@@ -111,9 +199,22 @@ export function mapOrder(order) {
     lastStatusChange: Array.isArray(order.statusHistory)
       ? mapOrderStatusHistoryEntry(order.statusHistory[0])
       : null,
+    shipments: Array.isArray(order.shipments)
+      ? order.shipments
+          .map(mapOrderShipment)
+          .filter(Boolean)
+      : [],
+    shipment: Array.isArray(order.shipments)
+      ? mapOrderShipment(order.shipments[0])
+      : null,
     campaignAttributions: Array.isArray(order.campaignUsages)
       ? order.campaignUsages
           .map(mapOrderCampaignUsage)
+          .filter(Boolean)
+      : [],
+    emailDeliveries: Array.isArray(order.emailDeliveries)
+      ? order.emailDeliveries
+          .map(mapOrderEmailDelivery)
           .filter(Boolean)
       : [],
     items: Array.isArray(order.items)
@@ -153,6 +254,11 @@ export function mapCustomerOrder(order) {
       : 'PENDING',
     total: mappedOrder.total,
     subtotal: mappedOrder.subtotal,
+    shippingMethod: mappedOrder.shippingMethod,
+    shippingCarrier: mappedOrder.shippingCarrier,
+    shippingService: mappedOrder.shippingService,
+    shippingRateId: mappedOrder.shippingRateId,
+    shippingRateProvider: mappedOrder.shippingRateProvider,
     shippingAmount: mappedOrder.shippingAmount,
     discountAmount: mappedOrder.discountAmount,
     taxAmount: mappedOrder.taxAmount,
@@ -163,6 +269,12 @@ export function mapCustomerOrder(order) {
     items: mappedOrder.items,
     promoUsage: mappedOrder.promoUsage,
     statusHistory: mappedOrder.statusHistory,
+    shipment: mapCustomerShipment(mappedOrder.shipment),
+    shipments: Array.isArray(mappedOrder.shipments)
+      ? mappedOrder.shipments
+          .map(mapCustomerShipment)
+          .filter(Boolean)
+      : [],
     campaignAttributions: mappedOrder.campaignAttributions,
   }
 }

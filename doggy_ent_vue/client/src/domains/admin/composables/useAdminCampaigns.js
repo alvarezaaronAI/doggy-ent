@@ -16,9 +16,7 @@ import {
   createEmptyAdminCampaignForm,
   mapCampaignToAdminCampaignForm,
 } from '../mappers/adminCampaignForm.mapper'
-import {
-  normalizeCampaignStatus,
-} from '../utils/adminCampaigns.utils'
+import { normalizeCampaignStatus } from '../utils/adminCampaigns.utils'
 
 export function useAdminCampaigns() {
   const campaigns = ref([])
@@ -28,6 +26,7 @@ export function useAdminCampaigns() {
   const errorMessage = ref('')
   const successMessage = ref('')
   const editingCampaignId = ref(null)
+  const showForm = ref(false)
   const selectedCampaignAnalytics = ref(null)
   const form = ref(createEmptyAdminCampaignForm())
 
@@ -36,7 +35,8 @@ export function useAdminCampaigns() {
 
   const activeCampaigns = computed(() =>
     campaigns.value.filter(
-      (campaign) => normalizeCampaignStatus(campaign.status) === CAMPAIGN_STATUSES.ACTIVE,
+      (campaign) =>
+        normalizeCampaignStatus(campaign.status) === CAMPAIGN_STATUSES.ACTIVE,
     ),
   )
 
@@ -65,20 +65,21 @@ export function useAdminCampaigns() {
     const query = campaignSearchQuery.value.trim().toLowerCase()
 
     return campaigns.value.filter((campaign) => {
-      const matchesQuery = !query || [
-        campaign.name,
-        campaign.description,
-        campaign.donationTarget,
-        campaign.status,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query))
+      const matchesQuery =
+        !query ||
+        [
+          campaign.name,
+          campaign.description,
+          campaign.donationTarget,
+          campaign.status,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query))
 
-      const matchesStatus = (
-        campaignStatusFilter.value === CAMPAIGN_FILTER_ALL
-        || normalizeCampaignStatus(campaign.status)
-          === normalizeCampaignStatus(campaignStatusFilter.value)
-      )
+      const matchesStatus =
+        campaignStatusFilter.value === CAMPAIGN_FILTER_ALL ||
+        normalizeCampaignStatus(campaign.status) ===
+          normalizeCampaignStatus(campaignStatusFilter.value)
 
       return matchesQuery && matchesStatus
     })
@@ -86,21 +87,24 @@ export function useAdminCampaigns() {
 
   const activeFilteredCampaigns = computed(() =>
     filteredCampaigns.value.filter(
-      (campaign) => normalizeCampaignStatus(campaign.status) === CAMPAIGN_STATUSES.ACTIVE,
+      (campaign) =>
+        normalizeCampaignStatus(campaign.status) === CAMPAIGN_STATUSES.ACTIVE,
     ),
   )
 
   const inactiveFilteredCampaigns = computed(() =>
     filteredCampaigns.value.filter(
-      (campaign) => normalizeCampaignStatus(campaign.status) !== CAMPAIGN_STATUSES.ACTIVE,
+      (campaign) =>
+        normalizeCampaignStatus(campaign.status) !== CAMPAIGN_STATUSES.ACTIVE,
     ),
   )
 
   const campaignGroups = computed(() =>
     ADMIN_CAMPAIGN_GROUPS.map((group) => {
-      const groupCampaigns = group.key === 'active'
-        ? activeFilteredCampaigns.value
-        : inactiveFilteredCampaigns.value
+      const groupCampaigns =
+        group.key === 'active'
+          ? activeFilteredCampaigns.value
+          : inactiveFilteredCampaigns.value
 
       return {
         ...group,
@@ -124,9 +128,10 @@ export function useAdminCampaigns() {
   }
 
   function getProductName(productId) {
-    return products.value.find(
-      (product) => String(product.id) === String(productId),
-    )?.name || productId
+    return (
+      products.value.find((product) => String(product.id) === String(productId))
+        ?.name || productId
+    )
   }
 
   function getCampaignProductNames(campaign) {
@@ -165,10 +170,7 @@ export function useAdminCampaigns() {
       const payload = buildAdminCampaignPayload(form.value)
 
       if (editingCampaignId.value) {
-        await updateCampaign(
-          editingCampaignId.value,
-          payload,
-        )
+        await updateCampaign(editingCampaignId.value, payload)
       } else {
         await createCampaign(payload)
       }
@@ -187,6 +189,7 @@ export function useAdminCampaigns() {
   }
 
   function editCampaign(campaign) {
+    showForm.value = true
     editingCampaignId.value = campaign.id
     successMessage.value = ''
     errorMessage.value = ''
@@ -211,11 +214,21 @@ export function useAdminCampaigns() {
   }
 
   function resetForm() {
+    showForm.value = false
     editingCampaignId.value = null
     form.value = createEmptyAdminCampaignForm()
   }
 
+  function openCreateForm() {
+    resetForm()
+    errorMessage.value = ''
+    successMessage.value = ''
+    showForm.value = true
+  }
+
   return {
+    showForm,
+    openCreateForm,
     activeCampaigns,
     activeFilteredCampaigns,
     campaignGroups,

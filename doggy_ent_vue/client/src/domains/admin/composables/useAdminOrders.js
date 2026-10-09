@@ -1,8 +1,5 @@
 import { computed, ref } from 'vue'
-import {
-  fetchAdminOrderStats,
-  fetchAdminOrders,
-} from '../api/adminOrders.api'
+import { fetchAdminOrderStats, fetchAdminOrders } from '../api/adminOrders.api'
 import {
   DEFAULT_ORDER_STATS,
   ORDER_FILTER_ALL,
@@ -13,6 +10,8 @@ import {
 export function useAdminOrders() {
   const orders = ref([])
   const loading = ref(false)
+  const error = ref('')
+  const statsError = ref('')
   const orderSearchQuery = ref('')
   const orderStatusFilter = ref(ORDER_FILTER_ALL)
   const stats = ref({ ...DEFAULT_ORDER_STATS })
@@ -21,18 +20,24 @@ export function useAdminOrders() {
     const query = orderSearchQuery.value.trim().toLowerCase()
 
     return orders.value.filter((order) => {
-      const matchesQuery = !query || [
-        order.id,
-        order.orderNumber,
-        order.customerName,
-        order.customerEmail,
-        order.status,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query))
+      const matchesQuery =
+        !query ||
+        [
+          order.id,
+          order.orderNumber,
+          order.customerReference,
+          order.customerName,
+          order.customerEmail,
+          order.customerPhone,
+          order.city,
+          order.status,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query))
 
-      const matchesStatus = orderStatusFilter.value === ORDER_FILTER_ALL
-        || order.status === orderStatusFilter.value
+      const matchesStatus =
+        orderStatusFilter.value === ORDER_FILTER_ALL ||
+        order.status === orderStatusFilter.value
 
       return matchesQuery && matchesStatus
     })
@@ -51,17 +56,19 @@ export function useAdminOrders() {
   )
 
   const readyToFulfillOrders = computed(() =>
-    filteredOrders.value.filter((order) => [
-      ORDER_STATUSES.PAID,
-      ORDER_STATUSES.PROCESSING,
-      ORDER_STATUSES.SHIPPED,
-    ].includes(order.status)),
+    filteredOrders.value.filter((order) =>
+      [
+        ORDER_STATUSES.PAID,
+        ORDER_STATUSES.PROCESSING,
+        ORDER_STATUSES.SHIPPED,
+      ].includes(order.status),
+    ),
   )
 
   const needsAttentionOrders = computed(() =>
-    filteredOrders.value.filter((order) => [
-      ORDER_STATUSES.PENDING,
-    ].includes(order.status)),
+    filteredOrders.value.filter((order) =>
+      [ORDER_STATUSES.PENDING].includes(order.status),
+    ),
   )
 
   const orderBuckets = computed(() => ({
@@ -90,41 +97,44 @@ export function useAdminOrders() {
 
   async function loadOrders() {
     loading.value = true
+    error.value = ''
 
     try {
       orders.value = await fetchAdminOrders()
-    } catch {
-      // Preserve the previous view behavior: failed loads stay quiet.
+    } catch (loadError) {
+      error.value = loadError.message || 'Unable to load orders.'
     } finally {
       loading.value = false
     }
   }
 
   async function loadStats() {
+    statsError.value = ''
     try {
       stats.value = {
         ...stats.value,
-        ...await fetchAdminOrderStats(),
+        ...(await fetchAdminOrderStats()),
       }
-    } catch {
-      // Preserve the previous view behavior: failed stats stay quiet.
+    } catch (loadError) {
+      statsError.value = loadError.message || 'Unable to load order totals.'
     }
   }
 
   async function loadPageData() {
-    await Promise.all([
-      loadOrders(),
-      loadStats(),
-    ])
+    await Promise.all([loadOrders(), loadStats()])
   }
 
   function isFirstTimeCustomer(order) {
-    const email = String(order.customerEmail || '').trim().toLowerCase()
+    const email = String(order.customerEmail || '')
+      .trim()
+      .toLowerCase()
 
     if (!email) return true
 
     const matchingOrders = orders.value.filter((candidate) => {
-      const candidateEmail = String(candidate.customerEmail || '').trim().toLowerCase()
+      const candidateEmail = String(candidate.customerEmail || '')
+        .trim()
+        .toLowerCase()
 
       return email && candidateEmail === email
     })
@@ -133,6 +143,8 @@ export function useAdminOrders() {
   }
 
   return {
+    error,
+    statsError,
     cancelledOrders,
     clearOrderFilters,
     filteredOrders,

@@ -10,6 +10,11 @@ import AdminOrdersView from '../../domains/admin/views/AdminOrdersView.vue'
 import AdminPromosView from '../../domains/admin/views/AdminPromosView.vue'
 import AdminCampaignsView from '../../domains/admin/views/AdminCampaignsView.vue'
 import AdminCustomersView from '../../domains/admin/views/AdminCustomersView.vue'
+import AdminNotificationsView from '../../domains/admin/views/AdminNotificationsView.vue'
+import AdminReportsView from '../../domains/admin/views/AdminReportsView.vue'
+import AdminShipmentsView from '../../domains/admin/views/AdminShipmentsView.vue'
+import AdminOrderIssuesView from '../../domains/admin/views/AdminOrderIssuesView.vue'
+import AdminInternalIssuesView from '../../domains/admin/views/AdminInternalIssuesView.vue'
 import CheckoutView from '../../domains/checkout/views/CheckoutView.vue'
 import OrderSuccessView from '../../domains/checkout/views/OrderSuccessView.vue'
 import AdminLoginView from '../../domains/admin/views/AdminLoginView.vue'
@@ -74,6 +79,36 @@ const routes = [
     meta: { requiresAdminAuth: true },
   },
   {
+    path: '/admin/notifications',
+    name: 'admin-notifications',
+    component: AdminNotificationsView,
+    meta: { requiresAdminAuth: true },
+  },
+  {
+    path: '/admin/shipments',
+    name: 'admin-shipments',
+    component: AdminShipmentsView,
+    meta: { requiresAdminAuth: true },
+  },
+  {
+    path: '/admin/order-issues',
+    name: 'admin-order-issues',
+    component: AdminOrderIssuesView,
+    meta: { requiresAdminAuth: true },
+  },
+  {
+    path: '/admin/internal-issues',
+    name: 'admin-internal-issues',
+    component: AdminInternalIssuesView,
+    meta: { requiresAdminAuth: true },
+  },
+  {
+    path: '/admin/reports',
+    name: 'admin-reports',
+    component: AdminReportsView,
+    meta: { requiresAdminAuth: true },
+  },
+  {
     path: '/checkout',
     name: 'checkout',
     component: CheckoutView,
@@ -106,33 +141,33 @@ const routes = [
   },
   {
     path: '/account',
-    name: 'account-dashboard',
-    component: () => import('../../domains/account/views/AccountDashboardView.vue'),
+    component: () => import('../../domains/account/components/AccountLayout.vue'),
     meta: { requiresCustomerAuth: true },
-  },
-  {
-    path: '/account/profile',
-    name: 'account-profile',
-    component: () => import('../../domains/account/views/AccountProfileView.vue'),
-    meta: { requiresCustomerAuth: true },
-  },
-  {
-    path: '/account/orders',
-    name: 'account-orders',
-    component: () => import('../../domains/account/views/AccountOrdersView.vue'),
-    meta: { requiresCustomerAuth: true },
-  },
-  {
-    path: '/account/orders/:reference',
-    name: 'account-order-detail',
-    component: () => import('../../domains/account/views/AccountOrderDetailView.vue'),
-    meta: { requiresCustomerAuth: true },
+    children: [
+      { path: '', name: 'account-dashboard', component: () => import('../../domains/account/views/AccountDashboardView.vue') },
+      { path: 'profile', name: 'account-profile', component: () => import('../../domains/account/views/AccountProfileView.vue') },
+      { path: 'addresses', name: 'account-addresses', component: () => import('../../domains/account/views/AccountAddressesView.vue') },
+      { path: 'orders', name: 'account-orders', component: () => import('../../domains/account/views/AccountOrdersView.vue') },
+      { path: 'orders/:reference', name: 'account-order-detail', component: () => import('../../domains/account/views/AccountOrderDetailView.vue') },
+      { path: 'help', name: 'account-help', component: () => import('../../domains/account/views/AccountHelpView.vue') },
+      { path: 'rewards', name: 'account-rewards', component: () => import('../../domains/account/views/AccountFutureView.vue'), props: { kind: 'Rewards' } },
+      { path: 'wishlist', name: 'account-wishlist', component: () => import('../../domains/account/views/AccountFutureView.vue'), props: { kind: 'Wishlist' } },
+    ],
   },
 ]
 
+const adminRoutes = routes.filter((route) => route.meta?.requiresAdminAuth)
+const applicationRoutes = routes.filter((route) => !route.meta?.requiresAdminAuth)
+applicationRoutes.push({
+  path: '/admin',
+  component: () => import('../../domains/admin/components/AdminLayout.vue'),
+  meta: { requiresAdminAuth: true },
+  children: adminRoutes.map((route) => ({ ...route, path: route.path.replace(/^\/admin\/?/, '') })),
+})
+
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes: applicationRoutes,
 })
 
 router.beforeEach(async (to) => {

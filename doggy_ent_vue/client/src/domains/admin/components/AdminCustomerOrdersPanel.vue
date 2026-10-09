@@ -1,5 +1,5 @@
 <template>
-  <section class="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+  <section class="admin-form-section">
     <h2 class="text-lg font-bold text-stone-900">
       {{ title }}
     </h2>
@@ -12,8 +12,12 @@
         class="flex items-center justify-between gap-4 py-3 text-sm transition hover:text-emerald-700"
       >
         <div>
-          <p class="font-bold">{{ order.orderNumber || order.customerReference }}</p>
-          <p class="text-xs text-stone-500">{{ order.customerEmail }} · {{ order.status }}</p>
+          <p class="font-bold">
+            {{ order.customerReference || order.orderNumber || order.id }}
+          </p>
+          <p class="text-xs text-stone-500">
+            {{ order.customerEmail }} · {{ order.status }}
+          </p>
         </div>
 
         <p class="font-bold">
@@ -22,16 +26,12 @@
       </RouterLink>
     </div>
 
-    <p v-else class="mt-4 text-sm text-stone-500">
-      No orders found.
-    </p>
+    <p v-else class="mt-4 text-sm text-stone-500">No orders found.</p>
   </section>
 </template>
 
 <script setup>
-import {
-  formatCurrency,
-} from '@shared/utils/currency'
+import { formatCurrency } from '@shared/utils/currency'
 
 defineProps({
   orders: {

@@ -4,6 +4,8 @@ export function mapCustomerProfile(user) {
   }
 
   const profile = user.profile || {}
+  const notificationPreference =
+    user.notificationPreference || {}
 
   return {
     id: user.id,
@@ -19,7 +21,23 @@ export function mapCustomerProfile(user) {
       lastName: profile.lastName || '',
       phone: profile.phone || '',
       marketingOptIn: Boolean(profile.marketingOptIn),
+      preferredContactMethod: profile.preferredContactMethod || '',
       defaultAddress: profile.defaultAddress || null,
+    },
+    notificationPreference: {
+      orderUpdates:
+        notificationPreference.orderUpdates !== false,
+      trackingUpdates:
+        notificationPreference.trackingUpdates !== false,
+      reviewRequests:
+        notificationPreference.reviewRequests !== false,
+      loyaltyNotifications:
+        notificationPreference.loyaltyNotifications !== false,
+      referralNotifications:
+        notificationPreference.referralNotifications !== false,
+      marketingEmails: Boolean(
+        notificationPreference.marketingEmails,
+      ),
     },
     placeholders: {
       tracking: 'Tracking updates will appear here when shipping integration is added.',
@@ -33,20 +51,18 @@ export function mapCustomerProfile(user) {
 export function mapCustomerAccountSummary({
   user,
   orders = [],
+  openIssueCount = 0,
 }) {
   const totalOrders = orders.length
-  const lifetimeSpend = orders.reduce(
-    (total, order) => total + Number(order.total || 0),
-    0,
-  )
 
   return {
     profile: mapCustomerProfile(user),
     stats: {
       totalOrders,
-      lifetimeSpend,
       latestOrderDate: orders[0]?.createdAt || null,
+      latestOrderStatus: orders[0]?.status || null,
+      openIssueCount,
     },
-    recentOrders: orders.slice(0, 3),
+    recentOrders: orders.slice(0, 2),
   }
 }
