@@ -2,7 +2,6 @@ import { computed, ref } from 'vue'
 import {
   fetchAdminOrderById,
   refreshAdminOrderTracking,
-  resendAdminOrderEmail,
   updateAdminOrderTracking,
   updateAdminOrderStatus,
 } from '../api/adminOrders.api'
@@ -12,7 +11,6 @@ export function useAdminOrderDetail(orderId) {
   const order = ref(null)
   const loading = ref(false)
   const trackingSaving = ref(false)
-  const notificationSaving = ref(false)
   const statusSaving = ref(false)
   const error = ref('')
   const statusMessage = ref('')
@@ -139,23 +137,6 @@ export function useAdminOrderDetail(orderId) {
     }
   }
 
-  async function resendOrderEmail(event) {
-    if (!order.value?.id) return
-
-    notificationSaving.value = true
-    statusMessage.value = 'Sending notification...'
-
-    try {
-      const result = await resendAdminOrderEmail(order.value.id, event)
-
-      await applyOrderUpdate(result.order || order.value, 'Notification queued.')
-    } catch (error) {
-      statusMessage.value = error.message || 'Unable to resend notification.'
-    } finally {
-      notificationSaving.value = false
-    }
-  }
-
   async function loadOrder() {
     loading.value = true
     error.value = ''
@@ -171,11 +152,16 @@ export function useAdminOrderDetail(orderId) {
     }
   }
 
+  async function refreshEmailActivity(message) {
+    statusMessage.value = message
+    try { order.value = await fetchAdminOrderById(orderId) }
+    catch { statusMessage.value = message + ' Email activity could not be refreshed; reload to check it.' }
+  }
+
   return {
     order,
     loading,
     trackingSaving,
-    notificationSaving,
     statusSaving,
     statusMessage,
     error,
@@ -189,7 +175,7 @@ export function useAdminOrderDetail(orderId) {
     updateStatus,
     updateTracking,
     refreshTracking,
-    resendOrderEmail,
     loadOrder,
+    refreshEmailActivity,
   }
 }

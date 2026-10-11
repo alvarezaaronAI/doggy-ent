@@ -24,12 +24,12 @@ export function useCheckout({
   const checkoutResult = ref(null)
   const checkoutAttemptId = ref(null)
 
-  async function placeOrder() {
+  async function placeOrder({ paymentExecutor = null } = {}) {
     if (isProcessingOrder.value || hasSubmittedOrder.value) {
       return
     }
 
-    if (!validateCheckout()) {
+    if (!validateCheckout({ wallet: Boolean(paymentExecutor) })) {
       return
     }
 
@@ -40,7 +40,7 @@ export function useCheckout({
 
     try {
       if (!paymentCompleted.value) {
-        const paymentResult = await stripePaymentForm.value.submitPayment()
+        const paymentResult = paymentExecutor ? await paymentExecutor() : await stripePaymentForm.value.submitPayment()
 
         paymentCompleted.value = true
         completedPaymentIntent.value = paymentResult
@@ -97,6 +97,7 @@ export function useCheckout({
       checkoutStatus.value = (
         'Order placed successfully! Redirecting...'
       )
+      return true
     }
     catch (error) {
       checkoutStatusType.value = 'error'

@@ -22,6 +22,10 @@ export function mapOrderCampaignUsage(usage) {
     orderId: usage.orderId,
     campaignId: usage.campaignId,
     campaignName: usage.campaign?.name || null,
+    slug: usage.campaign?.slug || null,
+    pageAvailable: usage.campaign?.publicPageEnabled === true && !['DRAFT', 'ARCHIVED'].includes(usage.campaign?.status),
+    donationType: usage.campaign?.donationType,
+    donationValue: usage.campaign?.donationValue,
     donationTarget: usage.campaign?.donationTarget || null,
     donationAmount: Number(usage.donationAmount || 0),
     eligibleSubtotal: Number(usage.eligibleSubtotal || 0),
@@ -244,14 +248,8 @@ export function mapCustomerOrder(order) {
     zip: mappedOrder.zip,
     country: mappedOrder.country,
     status: mappedOrder.status,
-    paymentStatus: [
-      'PAID',
-      'PROCESSING',
-      'SHIPPED',
-      'DELIVERED',
-    ].includes(mappedOrder.status)
-      ? 'PAID'
-      : 'PENDING',
+    paymentStatus: mappedOrder.status === 'REFUNDED' ? 'REFUNDED' : order.stripePaymentIntentId ? 'PAID' : 'PENDING',
+    receiptEmailStatus: (order.emailDeliveries || []).some(delivery => delivery.event === 'ORDER_CONFIRMATION' && delivery.status === 'SENT') ? 'SENT' : 'NOT_SENT',
     total: mappedOrder.total,
     subtotal: mappedOrder.subtotal,
     shippingMethod: mappedOrder.shippingMethod,

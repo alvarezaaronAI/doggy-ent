@@ -16,6 +16,14 @@ The Prisma schema at `server/prisma/schema.prisma` is the database source of tru
 
 No real `DATABASE_URL` values should be documented or committed.
 
+## Media Library Follow-Up
+
+`MediaAsset` owns indexed, searchable public-safe metadata, UUID, normalized-byte SHA-256 uniqueness, dimensions/sizes, folder, accessibility description, actor type and timestamps. `MediaAssetData` has a one-to-one cascading foreign key and two PostgreSQL `BYTEA`/Prisma `Bytes` fields for optimized WebP and thumbnail. Metadata lists do not select blobs. Atomic nested creation plus serializable capacity checking limits stored images/thumbnails to 256 MiB; duplicate normalized images reuse one record. No delete/replace API is exposed, protecting historical product/order image snapshots.
+
+Existing product/campaign image strings and storefront JSON save stable `/api/media/<uuid>` references; no commerce column is removed or retyped. Services validate these IDs against the selected database before writes. Migration `20261009020000_media_library` creates two tables/indexes/checks/FK only. Local preflight/deploy/generate/status succeeded: **20 migrations, up to date**. Earlier Railway 18-migration results below are historical; content/media migrations have not been approved/applied/verified there in this phase. No reset/reseed or Railway business write occurred.
+
+Images now persist in DB backups, increasing backup/storage/serving cost. This bounded initial backend is not unlimited object storage; future CDN/storage/usage/cleanup can be added behind stable IDs. See [media-library.md](media-library.md) for constraints, public-asset security and deployment steps.
+
 ## Models
 
 ### Product
@@ -202,7 +210,21 @@ Historical limitation:
 
 - Orders created before this table existed may have aggregate campaign stats but no order-level attribution rows.
 
+### StorefrontContent
+
+Added 2026-10-09 for homepage visual editing, separate from catalog/commerce records. Singleton `id = home`; JSON `draft`; nullable JSON `published`; integer `revision` default 1; nullable `publishedAt`; `createdAt` and Prisma-managed `updatedAt`. Draft and published snapshots share the schema versioned public-content document. Atomic revision-matched writes prevent stale overwrites; publication saves both snapshots together. Public reads never seed data and only return the published projection.
+
+Additive `20261009010000_storefront_content` creates this table without altering existing product/customer/order schemas. Local-only preflight confirmed loopback DB target and no unfinished migration; local `prisma migrate deploy` applied this pending migration, and `prisma migrate status` reported all 19 migrations applied/schema up to date. Railway was not queried or migrated in this phase. Existing backend startup runs migration deploy; obtain explicit approval and confirm target/backup/pending migrations before deploying that change. No reset/reseed occurred. See [storefront-editor.md](./storefront-editor.md).
+
 ## Migration Notes
+
+### 2026-10-10 Manual Email Update
+
+New `EmailTemplate`: cuid ID, internal name, supported event, subject/heading/body/footer plain text, archived flag, optimistic revision and created/updated timestamps; index on event/archive. Delivery/audit rows remain in existing `EmailDelivery`, not mixed into templates or orders. Additive `20261010000000_manual_email_templates/migration.sql` creates only this table/index.
+
+Guarded LOCAL loopback preflight and apply succeeded; final `prisma migrate status` reports **21 migrations/schema up to date**. No Railway query/migration/deployment occurred here; content/media/manual-email migrations require explicit target/backup/preflight/deploy approval. Old 18/19/20 migration counts below describe their historical phases. See [checkout/order email](checkout-and-order-email.md).
+
+Wallet/confirmation editor settings use existing `StorefrontContent` JSON; no new product, order or campaign presentation columns were needed. Existing item/promo/campaign snapshots drive shared cards. Order insertion and conditional inventory decrement now share a Prisma transaction after verified payment. Usage recording remains separate after that transaction; concurrency/failure reconciliation remains a launch risk.
 
 Migrations are under `server/prisma/migrations/`.
 

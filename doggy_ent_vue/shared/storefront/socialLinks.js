@@ -1,0 +1,16 @@
+export const DEFAULT_SOCIAL_URLS = { instagram: 'https://www.instagram.com/chaseevieco/' }
+const platforms = [
+  { key: 'instagram', label: 'Instagram', icon: 'fa-instagram', hosts: ['instagram.com', 'www.instagram.com'] },
+  { key: 'tiktok', label: 'TikTok', icon: 'fa-tiktok', hosts: ['tiktok.com', 'www.tiktok.com'] },
+  { key: 'youtube', label: 'YouTube', icon: 'fa-youtube', hosts: ['youtube.com', 'www.youtube.com'] },
+]
+export function createSocialLinks(urls = {}) {
+  return platforms.map(({ key, label, icon, hosts }) => {
+    const placeholder = { label, icon, href: '' }
+    try {
+      const url = new URL(urls[key] ?? DEFAULT_SOCIAL_URLS[key])
+      if (url.protocol !== 'https:' || !hosts.includes(url.hostname) || url.username || url.password || url.port || url.pathname === '/') return placeholder
+      return { label, icon, href: url.href }
+    } catch { return placeholder }
+  })
+}

@@ -22,15 +22,15 @@
 .admin-workspace * {
   letter-spacing: 0 !important;
 }
-.admin-workspace h1 {
+.admin-workspace h1:not(.storefront-ui *) {
   @apply text-3xl font-semibold;
   color: var(--admin-text);
 }
-.admin-workspace h2 {
+.admin-workspace h2:not(.storefront-ui *) {
   @apply text-base font-semibold;
   color: var(--admin-text);
 }
-.admin-workspace h3 {
+.admin-workspace h3:not(.storefront-ui *) {
   @apply text-sm font-semibold;
   color: var(--admin-text);
 }

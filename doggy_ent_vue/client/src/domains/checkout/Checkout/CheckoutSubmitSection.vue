@@ -1,6 +1,5 @@
-
-
 <script setup>
+import { LockKeyhole, LoaderCircle } from '@lucide/vue'
 defineProps({
   isProcessingOrder: {
     type: Boolean,
@@ -22,34 +21,31 @@ defineProps({
 </script>
 
 <template>
-  <div class="rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-5">
-    <div class="hidden flex-col gap-4 md:flex-row md:items-center md:justify-between xl:flex">
-      <p class="max-w-2xl text-sm text-stone-300">
+  <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-[0_8px_24px_#24352d0a]">
+    <div class="flex flex-col gap-4">
+      <p class="max-w-2xl text-sm text-stone-600">
         By placing your order, you agree to our store policies, shipping terms, and secure payment authorization.
       </p>
 
       <button
         type="submit"
-        class="focus-ring rounded-2xl px-6 py-4 font-extrabold transition md:min-w-[240px]"
+        class="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md border px-5 py-4 font-semibold transition"
         :disabled="isProcessingOrder || !checkoutRequirementsComplete"
         :class="checkoutRequirementsComplete
-          ? 'bg-emerald-400 hover:bg-emerald-300 text-[var(--brand-4)] shadow-md hover:-translate-y-0.5'
-          : 'bg-stone-200 text-stone-400 shadow-none cursor-not-allowed grayscale saturate-0'
+          ? 'border-[var(--storefront-brand-3)] bg-[var(--storefront-brand-2)] text-[var(--storefront-brand-4)] shadow-sm enabled:hover:brightness-95 disabled:cursor-wait'
+          : 'border-stone-200 bg-stone-100 text-stone-500 shadow-none cursor-not-allowed'
         "
       >
-        <i
-          :class="isProcessingOrder
-            ? 'fa-solid fa-spinner animate-spin mr-2'
-            : 'fa-solid fa-lock mr-2'
-          "
-        ></i>
+        <LoaderCircle v-if="isProcessingOrder" :size="18" class="shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+        <LockKeyhole v-else :size="18" class="shrink-0" aria-hidden="true" />
         {{ isProcessingOrder ? 'Processing Secure Payment...' : 'Complete Secure Order' }}
       </button>
     </div>
 
     <div
       v-if="checkoutStatus"
-      class="mt-4 rounded-2xl border p-4 text-sm font-bold"
+      class="mt-4 rounded-md border p-4 text-sm font-semibold"
+      role="status"
       :class="checkoutStatusType === 'success'
         ? 'border-green-200 bg-green-50 text-green-800'
         : 'border-red-200 bg-red-50 text-red-800'"

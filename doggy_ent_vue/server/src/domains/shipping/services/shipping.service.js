@@ -6,15 +6,6 @@ import {
   updateOrderStatusById,
 } from '../../orders/repositories/orders.repository.js'
 import {
-  buildOrderEmailPayload,
-} from '../../emails/mappers/emailPayloads.mapper.js'
-import {
-  EMAIL_EVENTS,
-} from '../../emails/constants/emailEvents.constants.js'
-import {
-  queueEmail,
-} from '../../emails/services/emailProvider.service.js'
-import {
   fetchShippoTrackingStatus,
   isShippoConfigured,
 } from './shippo.service.js'
@@ -48,35 +39,6 @@ function statusFromShipmentStatus(status) {
   return null
 }
 
-function getTrackingEmailEvent(orderStatus) {
-  if (orderStatus === ORDER_STATUS.DELIVERED) {
-    return EMAIL_EVENTS.ORDER_DELIVERED
-  }
-
-  if (orderStatus === ORDER_STATUS.SHIPPED) {
-    return EMAIL_EVENTS.ORDER_SHIPPED
-  }
-
-  return EMAIL_EVENTS.TRACKING_UPDATE
-}
-
-async function queueTrackingEmail({
-  order,
-  shipment,
-  event,
-}) {
-  if (!order?.customerEmail) {
-    return null
-  }
-
-  return queueEmail(
-    buildOrderEmailPayload({
-      event,
-      order,
-      tracking: shipment,
-    }),
-  )
-}
 
 export async function addOrUpdateOrderTracking(
   orderId,
@@ -138,13 +100,6 @@ export async function addOrUpdateOrderTracking(
     )
   }
 
-  await queueTrackingEmail({
-    order: updatedOrder,
-    shipment,
-    event: getTrackingEmailEvent(
-      nextOrderStatus || updatedOrder.status,
-    ),
-  })
 
   return {
     order: await findOrderById(orderId),

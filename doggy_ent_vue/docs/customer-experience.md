@@ -31,6 +31,14 @@ Add to Cart continues to open a right-side drawer over the current page, not a c
 
 Real Chase/Evie portraits and business-approved expanded story content remain a manual content phase. These UI edits are not deployed automatically. The user approved the unframed baseline preview; final real-device/Safari and business imagery review still remain.
 
+## Admin-Controlled Storefront Presentation
+
+The 2026-10-09 editor preserves the accepted homepage by default: gray-tinted hero, featured treat, collection, generous upcoming cards, gallery, care/ingredients/brand/help, warm footer and right-side bag. Public pages use only published content. Drafts remain private; header/footer stay shared across home, brand, campaigns and account pages.
+
+Hidden-section anchor actions are omitted. Search follows a visible collection and disappears when none is published. Curated collections still respect catalog availability and search/filter/sort. Seasonal/background images require approved hosted HTTPS artwork and readable foregrounds. Product prices/variants/inventory/ingredients, promo eligibility, campaign calculations, auth, and checkout totals stay domain-owned.
+
+Failed content reads retain last known good/default presentation rather than blocking shopping; this is not successful-delivery or real-time-update proof. The full brand-story page is outside homepage teaser editing. See [storefront-editor.md](architecture/storefront-editor.md).
+
 ## Customer Account Overview
 
 Redesign the account home as a clear navigation hub when customer account work is in scope.
@@ -101,7 +109,7 @@ Order details should include:
 - Tax.
 - Discount only when present.
 - Promo only when present.
-- Donation only when present.
+- Business-funded giving only when present, in a separate thank-you below the total, never as a charge row.
 - Total.
 - Tracking only when available.
 - Customer-visible issue messages and resolution when available.
@@ -144,6 +152,12 @@ Future support may include refunds, replacements, store credit, apology promo co
 
 ## Checkout
 
+The approved 2026-10-10 presentation is Receipt First: the open bag precedes the form on narrow screens, with bordered/shadowed contact/shipping/delivery/payment cards and a mobile-visible secure submit. Sign in/Create account opens in place. Signup requires password confirmation and a review of name/email before account creation, confirms a Better Auth session, then returns to the retained cart/form. It never places an order or saves a shipping address merely by signing in. Safe account prefilling only fills blank fields.
+
+Cart, checkout, account orders and Soft Essentials confirmation share one `CommerceItemCard`, with actual size/quantity/unit/line price, campaign emerald and an applied-order-promo marker. Published campaign badges open the same public campaign page renderer in a dialog. Private campaigns may contribute without exposing a page.
+
+Confirmation is actual saved order data. Receipt copy names the order email and truthfully distinguishes not sent from provider accepted; order emails are manual-only. Guest receipt access requires the short-lived checkout proof or customer ownership, not merely an order reference. See [checkout/order email architecture](architecture/checkout-and-order-email.md) for privacy/deployment limitations.
+
 Requirements:
 
 - Signed-in customers should have known information prefilled.
@@ -155,16 +169,17 @@ Requirements:
 
 ## Apple Pay And Google Pay
 
-For now:
-
-- Disable Apple Pay and Google Pay checkout.
-- Do not show active payment buttons.
-- Present them only as a polished future feature if shown at all.
-- Use clear copy such as `Coming Fall 2026`.
-- Do not imply they currently work.
-- Do not build incomplete payment-sheet flows in this phase.
+The user explicitly requested active wallet support on 2026-10-10, superseding the earlier Fall 2026 placeholder rule. Use Stripe Express Checkout Element with device availability and honest card fallback. Admin Website -> Checkout has independent Apple Pay/Google Pay switches, published with the existing draft workflow. Card remains available. Wallet/domain/HTTPS configuration and an approved real-device Stripe test transaction remain required; local unavailable-wallet fallback is not payment certification.
 
 ## Shipping Rates
+
+### Shipping Address Review (2026-10-10)
+
+The checkout shipping card has persistent field labels and postal autofill attributes. Apartment/unit is progressively revealed without losing an existing value. Complete recipient/address fields enable **Use this address**, which shows a compact postal-address review; **Edit** retains values and returns focus to the street field. This changes checkout presentation only, not saved account addresses or shipping pricing. The review action is optional; normal checkout validation still requires recipient/address details.
+
+Canada uses a province/territory input and postal-code label rather than the US state list. The existing four US state options remain; supported business destinations, postal format rules, and carrier coverage need separate review. Do not label the address verified. Stripe Address Element is not installed; its autocomplete/completeness features are a possible later integration, not proof of carrier deliverability.
+
+The secure-order action uses immutable storefront yellow/brown tokens, a full-width lock action and distinct disabled/processing states. Its readiness is explicitly Boolean: an empty required field must not become a truthy Boolean component prop. Neither address review nor pressing Edit initiates payment.
 
 Treat `Carrier rates are unavailable. Store shipping rates are shown.` as a verified root-cause task, not a cosmetic message change.
 
@@ -237,3 +252,13 @@ Browser fixture QA passed at 1440, 1280, 1024, 768, and 390 pixel widths. Real-a
 ### 2026-10-09 Action Visibility Refinement
 
 Account navigation, links, edit buttons, order/month selections, recent-order links, and dialog controls now have restrained gray surfaces/borders even before hover. Green selected/primary states and focus outlines remain. The approved layout, shared storefront cart/auth/search, customer-safe order details, and Save/Cancel flows are unchanged. Internal record inspectors and Stripe links exist only in admin, never in customer account pages.
+
+### Public Image And Seasonal Content Follow-Up
+
+Uploaded product/campaign/home/footer imagery now uses stable DB-backed public asset paths resolved against the configured API origin, including product snapshots in cart/checkout/customer order details. Customers gain no upload or library access. Existing image URLs/templates remain supported. Homepage seasonal artwork appears beneath readable tinted bands, with explicit section backgrounds taking priority and hero photography independently controlled. Preserve real product/variant prices and customer order ownership; decorative generated Halloween artwork is not product photography or customer proof. See [media library](architecture/media-library.md).
+
+### Receipt First Cost Summary And Giving (2026-10-10)
+
+Checkout keeps bordered item cards and the existing form/payment cards. Use a conventional receipt breakdown: Items subtotal with item count, Discount/code only when applicable, Shipping, Estimated tax, then a separated prominent Order total. Amounts are right-aligned with tabular numerals; no arithmetic plus/equal symbols. Those symbols were briefly trialed at the user's request, then removed after the user preferred a standard commerce receipt layout. The server total is not recomputed in the UI.
+
+Giving is not a billing row. A separate soft-emerald card sits below the entire checkout summary, outside the collapsible bag; the confirmation has the same card outside its financial panel. It emphasizes the contribution amount and actual beneficiary/campaign with concise business-funded/no-extra-cost wording. Checkout contributions are estimated; confirmation/account detail use saved attribution. Only published campaign pages offer **About campaign**, opening the shared campaign renderer in a pop-out without leaving checkout. Public metadata is joined by campaign ID without replacing server amounts or saved beneficiary names. Private/disabled pages have no action. Editor sample actions are inert. Order email HTML/text keep giving after totals too. Zero giving is omitted. This reflects attributed contributions, not proof of beneficiary payout.

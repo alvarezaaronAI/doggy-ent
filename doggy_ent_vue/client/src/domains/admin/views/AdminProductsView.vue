@@ -17,6 +17,7 @@ const {
   closeForm,
   deleteProduct,
   errorMessage,
+  editingProductId,
   filteredProducts,
   form,
   formTitle,
@@ -99,6 +100,7 @@ onMounted(loadProducts)
       v-if="showForm"
       :category-options="PRODUCT_CATEGORIES"
       :form="form"
+      :product-id="editingProductId"
       :form-title="formTitle"
       :is-edit-mode="isEditMode"
       :is-submitting="isSubmitting"

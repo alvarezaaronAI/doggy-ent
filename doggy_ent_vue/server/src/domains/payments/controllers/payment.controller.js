@@ -2,15 +2,12 @@ import { createStripePaymentIntent } from '../services/stripe.payment.js'
 import {
   previewCheckout,
 } from '../../checkout/services/checkout.service.js'
-import {
-  buildAdminFailedPaymentEmail,
-} from '../../emails/mappers/emailPayloads.mapper.js'
-import {
-  queueEmail,
-} from '../../emails/services/emailProvider.service.js'
+import { signCapability } from '../../../shared/utils/signedCapability.js'
+import { validateRequiredCheckoutFields } from '../../checkout/validators/checkout.validator.js'
 
 export const createPaymentIntent = async (req, res) => {
   try {
+    validateRequiredCheckoutFields({ customer: req.body?.customer })
     const checkoutPreview = await previewCheckout(req.body)
 
     if (
@@ -35,25 +32,12 @@ export const createPaymentIntent = async (req, res) => {
       success: true,
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
+      checkoutProof: signCapability('checkout-payment', { paymentIntentId: paymentIntent.id, email: String(req.body?.customer?.email || req.body?.customerEmail || '').trim().toLowerCase() }, 24 * 60 * 60 * 1000),
       pricing: checkoutPreview.pricing,
     })
   } catch (error) {
     console.error('Payment controller error:', error)
 
-    queueEmail(
-      buildAdminFailedPaymentEmail({
-        customerEmail:
-          req.body?.customer?.email
-          || req.body?.customerEmail
-          || null,
-        message: error.message || 'Payment intent creation failed.',
-      }),
-    ).catch((emailError) => {
-      console.error(
-        '[payments] Failed admin payment failure email dispatch.',
-        emailError,
-      )
-    })
 
     return res.status(error.statusCode || 500).json({
       success: false,

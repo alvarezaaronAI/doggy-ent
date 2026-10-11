@@ -9,10 +9,6 @@ import {
   updateOrderStatusById,
 } from '../repositories/orders.repository.js'
 import {
-  decrementProductInventory,
-} from '../../products/services/products.service.js'
-import { prisma } from '../../../db/prisma.js'
-import {
   normalizeCurrencyAmount,
 } from '../../../shared/utils/money.js'
 import {
@@ -21,103 +17,6 @@ import {
 import {
   validateOrderStatus,
 } from '../validators/orders.validator.js'
-import {
-  EMAIL_EVENTS,
-} from '../../emails/constants/emailEvents.constants.js'
-import {
-  buildAdminOrderEmailPayload,
-  buildOrderEmailPayload,
-} from '../../emails/mappers/emailPayloads.mapper.js'
-import {
-  queueEmail,
-} from '../../emails/services/emailProvider.service.js'
-
-function getStatusEmailEvent(status) {
-  if (status === ORDER_STATUS.SHIPPED) {
-    return EMAIL_EVENTS.ORDER_SHIPPED
-  }
-
-  if (status === ORDER_STATUS.DELIVERED) {
-    return EMAIL_EVENTS.ORDER_DELIVERED
-  }
-
-  if (status === ORDER_STATUS.CANCELLED) {
-    return EMAIL_EVENTS.ORDER_CANCELLED
-  }
-
-  if (status === ORDER_STATUS.REFUNDED) {
-    return EMAIL_EVENTS.REFUND_ISSUED
-  }
-
-  return EMAIL_EVENTS.ORDER_STATUS_UPDATE
-}
-
-async function queueOrderStatusEmails({
-  order,
-  status,
-  note = null,
-}) {
-  if (!order?.id) {
-    return
-  }
-
-  const emailTasks = [
-    queueEmail(
-      buildOrderEmailPayload({
-        event: getStatusEmailEvent(status),
-        order,
-        message: note,
-      }),
-    ),
-  ]
-
-  if ([ORDER_STATUS.CANCELLED, ORDER_STATUS.REFUNDED].includes(status)) {
-    emailTasks.push(
-      queueEmail(
-        buildAdminOrderEmailPayload({
-          event: EMAIL_EVENTS.ADMIN_REFUND_SUPPORT_NOTIFICATION,
-          order,
-          message: note || `Order moved to ${status}.`,
-        }),
-      ),
-    )
-  }
-
-  await Promise.allSettled(emailTasks)
-}
-
-async function rollbackInventoryReservation({
-  items = [],
-}) {
-  for (const item of items) {
-    const quantity = Math.max(
-      0,
-      Number.parseInt(item.quantity || 0, 10),
-    )
-
-    if (!quantity) {
-      continue
-    }
-
-    const sku = item.variant?.sku || item.sku
-
-    if (!sku) {
-      continue
-    }
-
-    await prisma.productVariant.update({
-      where: {
-        sku,
-      },
-
-      data: {
-        inventory: {
-          increment: quantity,
-        },
-      },
-    })
-  }
-}
 
 export async function fetchAdminOrders() {
   return await findAllOrders()
@@ -145,8 +44,8 @@ export async function fetchAdminOrderStats() {
   return await findOrderStats()
 }
 
-export async function fetchCustomerOrderByReference(reference) {
-  return await findCustomerOrderByReference(reference)
+export async function fetchCustomerOrderByReference(reference, ownership = {}) {
+  return await findCustomerOrderByReference(reference, ownership)
 }
 
 export async function updateAdminOrderStatus(
@@ -170,16 +69,6 @@ export async function updateAdminOrderStatus(
       },
     )
 
-    queueOrderStatusEmails({
-      order,
-      status: normalizedStatus,
-      note: normalizedNote,
-    }).catch((error) => {
-      console.error(
-        '[orders] Failed order status email dispatch.',
-        error,
-      )
-    })
 
     return order
   }
@@ -194,65 +83,6 @@ export async function updateAdminOrderStatus(
   }
 }
 
-function withAdminResendDedupe(payload) {
-  return {
-    ...payload,
-    dedupeKey: `${payload.event}:${payload.orderId || payload.orderReference}:admin-resend:${Date.now()}`,
-  }
-}
-
-export async function resendAdminOrderEmail(
-  orderId,
-  {
-    event,
-  },
-) {
-  const order = await findOrderById(orderId)
-
-  if (!order) {
-    const error = new Error('Order not found.')
-    error.statusCode = 404
-    throw error
-  }
-
-  const allowedEvents = new Set([
-    EMAIL_EVENTS.ORDER_CONFIRMATION,
-    EMAIL_EVENTS.ORDER_SHIPPED,
-    EMAIL_EVENTS.TRACKING_UPDATE,
-    EMAIL_EVENTS.ORDER_DELIVERED,
-    EMAIL_EVENTS.REVIEW_REQUEST,
-  ])
-
-  if (!allowedEvents.has(event)) {
-    const error = new Error('Unsupported resend email event.')
-    error.statusCode = 400
-    throw error
-  }
-
-  if (
-    event === EMAIL_EVENTS.REVIEW_REQUEST
-    && order.status !== ORDER_STATUS.DELIVERED
-  ) {
-    const error = new Error('Review requests can only be sent for delivered orders.')
-    error.statusCode = 400
-    throw error
-  }
-
-  const result = await queueEmail(
-    withAdminResendDedupe(
-      buildOrderEmailPayload({
-        event,
-        order,
-        message: 'This message was resent by admin request.',
-      }),
-    ),
-  )
-
-  return {
-    result,
-    order: await findOrderById(orderId),
-  }
-}
 
 export async function createNewOrder(orderInput) {
   const orderNumber = `DGE-${Date.now()}`
@@ -291,12 +121,6 @@ export async function createNewOrder(orderInput) {
     orderInput.taxAmount || 0,
   )
 
-  // TEMPORARY: disable idempotency return while tracing checkout flow.
-  // We discovered earlier incomplete orders are being reused,
-  // which causes Guest Customer + subtotal-only snapshots.
-  // We want to force creation of the finalized checkout payload
-  // until the upstream duplicate request source is fully isolated.
-
   const normalizedItems = Array.isArray(orderInput.items)
     ? orderInput.items.map((item) => ({
         productId: item.productId || item.id || null,
@@ -316,10 +140,6 @@ export async function createNewOrder(orderInput) {
       }))
     : []
 
-  await decrementProductInventory({
-    items: normalizedItems,
-  })
-
   try {
     return await createOrder({
       orderNumber,
@@ -336,11 +156,15 @@ export async function createNewOrder(orderInput) {
       country: orderInput.country || null,
       marketingOptIn: Boolean(orderInput.marketingOptIn),
       saveInfo: Boolean(orderInput.saveInfo),
-      status: ORDER_STATUS.PENDING,
+      status: ORDER_STATUS.PAID,
       subtotal,
       total,
       currency: orderInput.currency || 'usd',
       shippingMethod,
+      shippingCarrier: orderInput.shippingCarrier,
+      shippingService: orderInput.shippingService,
+      shippingRateId: orderInput.shippingRateId,
+      shippingRateProvider: orderInput.shippingRateProvider,
       shippingAmount,
       discountAmount,
       taxAmount,
@@ -349,18 +173,6 @@ export async function createNewOrder(orderInput) {
     })
   }
   catch (error) {
-    try {
-      await rollbackInventoryReservation({
-        items: normalizedItems,
-      })
-    }
-    catch (rollbackError) {
-      console.error(
-        '[orders] Failed inventory rollback.',
-        rollbackError,
-      )
-    }
-
     if (
       error.code === 'P2002'
       && stripePaymentIntentId
@@ -377,4 +189,8 @@ export async function createNewOrder(orderInput) {
 
     throw error
   }
+}
+
+export async function resendAdminOrderEmail() {
+  throw Object.assign(new Error('Use the template preview and explicit send workflow.'), { statusCode: 410 })
 }

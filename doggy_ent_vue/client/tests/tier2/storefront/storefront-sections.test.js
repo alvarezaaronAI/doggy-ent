@@ -33,7 +33,7 @@ describe('storefront section presentation', () => {
     )
     expect(html).toContain('Small-Batch Dog Treats')
     expect(html).toContain('Shop Salmon Jerky')
-    expect(html).toContain('href="#spotlight"')
+    expect(html).toContain('href="/#spotlight"')
     expect(html).toContain('The stored product introduction.')
     expect(html).toContain('Limited batch')
     expect(html).not.toContain('Shop Chicken')
@@ -82,7 +82,7 @@ describe('storefront section presentation', () => {
   it('offers ordinary shopping when no upcoming products exist', async () => {
     const html = await renderDrops()
     expect(html).toContain('More good things are on the way.')
-    expect(html).toContain('href="#shop"')
+    expect(html).toContain('href="/#shop"')
     expect(html).not.toContain('View upcoming treat')
   })
 

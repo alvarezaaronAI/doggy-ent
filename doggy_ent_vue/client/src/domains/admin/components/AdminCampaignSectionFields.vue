@@ -5,6 +5,7 @@ import {
   DONATION_TYPE_OPTIONS,
 } from '../constants/adminCampaigns.constants.js'
 import AdminScheduleFields from './AdminScheduleFields.vue'
+import AdminImageField from './AdminImageField.vue'
 const props = defineProps({
   section: String,
   form: { type: Object, required: true },
@@ -33,12 +34,7 @@ const filteredProducts = computed(() =>
           rows="4"
         ></textarea>
       </label>
-      <label class="admin-field"
-        >Image URL<input
-          v-model="form.image"
-          type="url"
-          placeholder="HTTPS image URL"
-      /></label>
+      <AdminImageField v-model="form.image" label="Campaign hero photo" folder="campaigns" help="The main photo at the top of the public campaign page." @description="form.imageAlt = $event" />
       <label class="admin-field"
         >Image description<input v-model="form.imageAlt" maxlength="240"
       /></label>

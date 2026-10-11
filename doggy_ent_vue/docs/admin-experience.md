@@ -1,5 +1,11 @@
 # Admin Experience Requirements
 
+## Checkout And Manual Email Editors (2026-10-10)
+
+Website now includes Homepage, Checkout and Order confirmation selection, using the established left navigation/shared canvas/right inspector and explicit draft Save/Publish/Cancel. Checkout edits heading/introduction/wallet switches. Soft Essentials confirmation edits appearance/next/help copy, never financial/customer/payment/receipt state. Changed-section markers and selection scrolling reflect the actual draft. Embedded sample checkout never initializes Stripe or submits orders.
+
+Email templates is the thirteenth tool; all previous tabs and signed-in/data-routing controls remain. Five order-message suggestions can be saved as reusable copies, edited with a live fictional sample preview, and archived/reactivated with revision protection. Actual Orders -> Customer email updates requires saved-template preview, server-owned recipient/status/tracking, review confirmation and explicit dry/live action. Default dry run sends nothing even with a configured live provider. No automatic order/tracking/payment notice is sent by Save. Legacy unpreviewed resend returns 410. Essential account/security actions remain available. Bulk marketing, promo audience, support/review email workflows and safe failed-send reconciliation remain future phases; see [manual email architecture](architecture/checkout-and-order-email.md).
+
 The admin should feel like an organized operations workspace, not a crowded developer dashboard.
 
 ## Admin Philosophy
@@ -22,7 +28,7 @@ Implemented 2026-10-09 inside the existing workspace. The left side remains norm
 - Save is explicit. Cancel confirms discarded changes; failed saves keep the draft. A successful write followed by a failed list refresh is reported as a refresh failure, not an invitation to repeat the save.
 - Donation rule labels distinguish a fixed contribution once per eligible order from a percentage of eligible product sales. Dates use the device time zone and serialize to ISO; untouched timestamps preserve their precision.
 - Publishing is independent of giving. An enabled public page may be Active, Paused, or Ended; Draft/Archived pages stay private. Active status and schedule determine contribution eligibility. Featured campaigns are prioritized in public badges. A renamed campaign keeps its existing slug/link.
-- Optional story, partner HTTPS URL, image description, and public-page visibility are persisted campaign fields. Existing image, featured flag, schedule, and product selection are retained. Public publishing requires an introduction/beneficiary and an image description when an image is present. No upload button or provider action was added.
+- Optional story, partner HTTPS URL, image description, and public-page visibility are persisted campaign fields. Existing image, featured flag, schedule, and product selection are retained. Public publishing requires an introduction/beneficiary and an image description when an image is present. The original page-editor phase used image URLs only; the media follow-up adds upload/library selection for the campaign image. Partner destinations remain links. No provider action was added.
 - Public APIs use explicit field allowlists, never the internal campaign mapper. Revenue, customer data, attributed orders, and internal order IDs must stay in protected admin impact tools.
 
 See [admin architecture](architecture/admin.md), [database](architecture/database.md), and [handoff](../PROJECT_HANDOFF.md) for migration/deployment status.
@@ -38,6 +44,16 @@ Suggested groups:
 - Analytics.
 - Operations.
 - System.
+
+## Website And Product Visual Editing
+
+Implemented locally 2026-10-09: Website is the twelfth sidebar tool under Store & Marketing. Identity/data routing stay intact. Section list, actual homepage canvas, and focused inspector support explicit draft Save/Cancel/Publish, safe navigation/social links, seasonal backgrounds, hide/order controls, and banner/story/collection/gallery additions. Draft saves do not change the live site; stale revisions reject rather than overwrite another editor. No arbitrary scripts/layout engine or sale calculation is added.
+
+Image follow-up adds URL/upload/library/clear controls beside actual image fields across Website, Products and Campaigns. The searchable, folder-organized library stores optimized public images in the selected DB, not an ephemeral backend disk. Uploads are immediate library writes; page Save/Publish is still explicit. Metadata Save is separate from selection; never upload private/customer files. Use contextual labels and selected artwork/palette plus unsaved markers to distinguish actual changes. Background choices now override original section CSS and stay visible under legible reading tints. Hero uses its separate photograph; do not show ineffective section-background controls there. See [media library](architecture/media-library.md).
+
+Products now shows the actual active/draft or upcoming card beside focused existing fields. Edit handles select the same draft; preview sizes do not change a shopper's bag. All original product fields and explicit API Save/Cancel remain. Product Save persists to the selected database immediately, independently of website publication.
+
+See [storefront visual editing](architecture/storefront-editor.md) for controls, ownership, local-only migration and Railway approval requirements. Auth, checkout, other admin tools, and communications policy are unchanged.
 
 ## Main Admin Dashboard
 
@@ -262,7 +278,7 @@ The approved Calm Workspace design is implemented as of 2026-10-08. This is a co
 - Shipments and Notifications retain provider/history filters and now expose load errors. Notification template editing remains a clearly labeled future-phase section.
 - Reports labels aggregate order value accurately: the current API includes pending and other stored orders. It is not settled-payment revenue. Donation attribution is not a payout ledger.
 - Order Issues separates customer-visible account replies from internal notes; saves/replies do not automatically send email. Internal Issues shows safe context and event history. Both use staged saves, cancellation, busy/error states, and retained drafts after failed writes.
-- Future templates, bulk promo email, payment-reconciled/date-range reports, customer notes/activity/reviews/loyalty remain unconnected and explicitly labeled.
+- Order templates/manual previewed sends are now connected; bulk promo email, payment-reconciled/date-range reports, customer notes/activity/reviews/loyalty remain unconnected and explicitly labeled.
 
 Live Safari, local/Railway DB-mode, deployed cookie, and real provider QA still require the controlled manual checklist in [verification-and-qa.md](verification-and-qa.md). See [PROJECT_HANDOFF.md](../PROJECT_HANDOFF.md) for exact changed files and check results.
 

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { mediaImageSource } from '@shared/utils/mediaImage.js'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -27,7 +28,7 @@ watch(
   >
     <img
       v-if="!imageFailed"
-      :src="image"
+      :src="mediaImageSource(image)"
       :alt="imageAlt"
       fetchpriority="high"
       decoding="async"

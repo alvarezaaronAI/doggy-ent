@@ -1,4 +1,5 @@
 <script setup>
+import { mediaImageSource } from '@shared/utils/mediaImage.js'
 import { PRODUCT_VARIANT_SIZES } from '../constants/adminProducts.constants'
 import { formatAdminProductPrice } from '../utils/adminProducts.formatters'
 import AdminProductStatusBadge from './AdminProductStatusBadge.vue'
@@ -28,7 +29,7 @@ defineEmits(['delete', 'edit'])
             <div class="flex items-center gap-3">
               <img
                 v-if="product.image"
-                :src="product.image"
+                :src="mediaImageSource(product.image)"
                 alt=""
                 class="h-14 w-12 shrink-0 rounded border border-[var(--admin-line)] bg-white object-contain"
               /><span

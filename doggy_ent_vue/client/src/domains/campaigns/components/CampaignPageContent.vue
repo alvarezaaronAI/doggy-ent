@@ -9,14 +9,17 @@ import {
   safeCampaignLink,
 } from '../utils/campaignPresentation.js'
 import { formatCurrency } from '@shared/utils/currency.js'
+import { mediaImageSource } from '@shared/utils/mediaImage.js'
+import { getMediaAssetId } from '@storefront-content/mediaRules.js'
 import '@storefront/styles/storefront.css'
 const props = defineProps({
   campaign: { type: Object, required: true },
   products: { type: Array, default: () => [] },
   editable: Boolean,
+  quickView: Boolean,
   activeSection: String,
 })
-const emit = defineEmits(['select-section', 'add-to-cart', 'quick-view'])
+const emit = defineEmits(['select-section', 'add-to-cart', 'quick-view', 'browse'])
 const variants = useProductVariants()
 const imageFailed = ref(false)
 watch(
@@ -26,7 +29,7 @@ watch(
   },
 )
 const image = computed(() =>
-  imageFailed.value ? '' : safeCampaignLink(props.campaign.image),
+  imageFailed.value ? '' : mediaImageSource(getMediaAssetId(props.campaign.image) ? props.campaign.image : safeCampaignLink(props.campaign.image)),
 )
 const beneficiaryUrl = computed(() =>
   safeCampaignLink(props.campaign.beneficiaryUrl),
@@ -237,6 +240,8 @@ function goToProducts(event) {
           :inert="editable"
         >
           <ProductCard
+            :browse-only="quickView"
+            @browse="emit('browse')"
             v-for="product in eligibleProducts"
             :key="product.id"
             :product="product"
@@ -274,6 +279,7 @@ function goToProducts(event) {
           v-if="!editable"
           :to="{ path: '/', hash: '#shop' }"
           class="store-button mt-7"
+          @click="quickView && emit('browse')"
           >Explore all treats <ArrowRight :size="16"
         /></RouterLink>
       </div>

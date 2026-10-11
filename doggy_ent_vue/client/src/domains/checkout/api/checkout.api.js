@@ -3,6 +3,7 @@ import {
   fetchApi,
   parseJsonResponse,
 } from '@shared/api/http.js'
+import { getReceiptAccess, rememberReceiptAccess } from '../utils/receiptAccess.js'
 
 async function parseCheckoutResponse(
   response,
@@ -58,10 +59,11 @@ export async function submitCheckout({
   customer,
   shipping,
   stripePaymentIntentId,
+  checkoutProof,
 }) {
   const normalizedCustomer = normalizeCustomer(customer)
 
-  return postCheckoutRequest(
+  const result = await postCheckoutRequest(
     '/api/checkout',
     {
       cartItems,
@@ -70,9 +72,12 @@ export async function submitCheckout({
       customer: normalizedCustomer,
       shipping,
       stripePaymentIntentId,
+      checkoutProof,
     },
     'Checkout failed.',
   )
+  rememberReceiptAccess(result.order?.orderNumber, result.receiptAccess)
+  return result
 }
 
 export async function submitCheckoutPreview({
@@ -99,6 +104,7 @@ export async function submitCheckoutPreview({
 export async function fetchCheckoutOrder(reference) {
   const response = await fetchApi(
     `/api/checkout/orders/${encodeURIComponent(reference)}`,
+    { headers: { 'X-Order-Receipt': getReceiptAccess(reference) } },
   )
 
   return parseCheckoutResponse(

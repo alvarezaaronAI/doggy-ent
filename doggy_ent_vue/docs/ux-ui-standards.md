@@ -57,6 +57,8 @@ Use restrained shadows on individual product items and media, not on section con
 
 Footer restores warm oat, a yellow/blue brand mark, centered wrapping navigation/social controls on mobile, and a separated copyright area. It uses immutable storefront colors even in account pages. Missing social destinations are disabled placeholders rather than `href="#"` links.
 
+Checkout cost rows remain a conventional receipt. Giving uses a separate emerald impact card below the financial summary, not another charge. The secure action uses immutable storefront yellow/brown, clear disabled/processing states and the same inert renderer in admin. Shipping review uses a postal-address block with Edit, not a verification badge or additional nested floating card.
+
 ## Animation And Motion
 
 Use subtle motion where it improves feedback or comprehension:

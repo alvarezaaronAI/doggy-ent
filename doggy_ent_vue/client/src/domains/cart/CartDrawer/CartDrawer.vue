@@ -1,5 +1,7 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useStorefrontCampaigns } from '@campaigns/composables/useStorefrontCampaigns.js'
+const { campaignsForProduct, loadCampaigns } = useStorefrontCampaigns()
 import { X } from '@lucide/vue'
 import { useCartDrawerDialog } from '@cart/composables/useCartDrawerDialog'
 import {
@@ -39,6 +41,7 @@ const emit = defineEmits([
 ])
 
 const dialog = ref(null)
+watch(() => props.isOpen, open => { if (open) loadCampaigns() }, { immediate: true })
 const { onKeydown } = useCartDrawerDialog({
   isOpen: () => props.isOpen,
   dialog,
@@ -137,6 +140,7 @@ function getAvailabilityLabel(item) {
             v-for="item in props.cartItems"
             :key="`${item.id}-${item.size}`"
             :item="item"
+            :campaigns="campaignsForProduct(item)"
             :is-at-max="isAtMax"
             :get-selling-mode-label="getSellingModeLabel"
             :get-availability-label="getAvailabilityLabel"

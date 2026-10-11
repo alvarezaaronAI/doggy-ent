@@ -2,6 +2,7 @@ import {
   CAMPAIGN_DONATION_TYPE,
   CAMPAIGN_STATUS,
 } from '../constants/campaigns.constants.js'
+import { getMediaAssetId } from '../../storefront/content/mediaRules.js'
 
 function failure(message) {
   const error = new Error(message)
@@ -50,11 +51,11 @@ export function validateCampaignInput(campaign) {
   )
     return failure('Campaign end must be after its start.')
   if (
-    !isSafeCampaignUrl(campaign.image) ||
+    (!getMediaAssetId(campaign.image) && !isSafeCampaignUrl(campaign.image)) ||
     !isSafeCampaignUrl(campaign.beneficiaryUrl)
   )
     return failure(
-      'Image and beneficiary links must be valid HTTPS URLs without credentials.',
+      'Choose an uploaded image or HTTPS image URL; beneficiary links must use HTTPS without credentials.',
     )
   if (
     String(campaign.description || '').length > 600 ||

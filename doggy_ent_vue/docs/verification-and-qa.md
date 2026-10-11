@@ -1,5 +1,32 @@
 # Verification And QA
 
+## Receipt First And Manual Order Email QA (2026-10-10)
+
+Latest exact commands/results live in [handoff](../PROJECT_HANDOFF.md). Existing test suites cover DB-resolved selected-size prices/SKUs, quantities/drafts/overselling, proof expiry/forgery/reference/owner binding, conditional stock transaction, reviewed signup/session retry, once-only wallet payment executor, server promo email invalidation, template escaping/revision/status/tracking/actor/stale/confirmation/recipient gates and provider no-send/dedup. This is not live Stripe/Resend or concurrency/load certification.
+
+Actual guarded local HTTP checked temporary 10%/one-per-email/expired/invalid promo, normalized email, DB subtotal rather than spoofed values, campaign plus promo giving, and invalid-promo rejection before Stripe PaymentIntent creation. Only disposable promo/usage fixtures were removed. A real local rolled-back Prisma transaction checked limited versus made-to-order inventory/order writes without residual products/orders.
+
+Actual local browser: existing customer sign-in stayed on checkout, retained the 6 oz bag and safe profile prefill; reviewed signup fields visible but no real new account; mobile-visible submit, actual owned Soft Essentials receipt, template save/reload/unsaved preview/cancel, real-order preparing preview and deliberate MOCKED dry run with live-send unchecked. No email/payment/label sent. Website commerce fields/toggles/confirmation copy/palette previewed and restored without Publish. These checks used the observed narrow in-app browser and wide/390px embedded previews; full actual desktop/mobile/Safari remains required.
+
+Final cost-summary refinement: live checkout retained one 6 oz item at $14.99, shipping $5.99, estimated tax $1.99 and total $22.97. Giving $3.00 appears in a separate emerald/shadow card below the entire summary; no Donation generated row or plus/equal markers remain. Automated checkout/receipt/email tests prove that positive giving does not enter the billing rows, zero giving is hidden, names are deduplicated/escaped, publication metadata cannot change amounts/beneficiaries, private/unknown campaigns have no pop-out action, and promo subtraction still displays. An intermediate dev hot-reload complained about a not-yet-synchronized canonical export; completing both sync/builds and refreshing resolved it. This is not a production build failure.
+
+Shipping tests cover labeled postal autofill, optional apartment persistence, Canada province input, complete/incomplete review, retained values and review/Edit focus. The live incomplete form correctly disables **Use this address**; no fake recipient or address was inserted to force browser review. Complete postal review/Edit is unit/SSR verified and remains a real-device manual check. The live secure action initially appeared enabled because an empty-string readiness was cast by a Boolean prop; explicit Boolean readiness fixes it. Regression tests check the actual coordinator plus yellow ready styling, disabled/processing states and inert shared admin sample. Final live incomplete checkout has both review and submit disabled; no payment was attempted.
+
+Before deployment:
+
+1. Check existing auth, admin tools/data routing, home variants/quick view and cart drawer. Add 6 oz and 18 oz; verify name/size/quantity/unit/line price and item borders. Restore only QA bag additions.
+2. With a reviewed published campaign page, open the same campaign pop-out from catalog/bag/checkout/confirmation. Test Escape/backdrop/focus return/nested drawer and retained checkout. Current local contributing campaign has its public page disabled; end-to-end published-popup QA remains open, not a reason to silently publish it.
+3. Guest: email before promo, normalized email, one-per-email/invalid/expired; email-change invalidation, promo+campaign totals/giving, mobile submit and unavailable-wallet fallback. Create account -> review -> edit/confirm -> session -> same bag/form. Real signup is a user-controlled check because essential account email may be enabled.
+4. On HTTPS with registered Stripe domain and supported devices, independently disable/enable each admin wallet setting via draft/Publish. Run approved Stripe test card/Apple Pay/Google Pay payments, required authentication, rate/price refresh and post-payment network retry. Confirm one order/decrement/redemption/attribution and customer-owned account history. Never charge again when payment completed but finalization failed.
+5. Anonymous receipt reference alone/another reference/expired proof must not reveal PII. Guest same-tab refresh with proof works; signed-in owner works; non-owner fails. Confirm no proof/client secret/PII logging or URL leakage. Document guest expired-link recovery limitation.
+6. Templates: save/edit/reload/archive/reactivate, failed-save retention, concurrent revision 409, unknown placeholder rejection, long copy, actual received/preparing/shipped/delivered/cancelled status gates. Shipped must have tracking. Sample/unsaved/stale/wrong-actor preview cannot send.
+7. Orders: Preview -> review checkbox -> default dry run -> MOCKED activity; repeated identical action must not send twice. Save status/tracking and verify no automatic email. Account verification/reset remains separate. Only after explicit approval/inbox/budget, enable live and send one approved email; check Resend and actual clients. SENT is acceptance, not proof of delivery. Review FAILED/pending provider state before any retry.
+8. Confirm local migration status 21 and generated Prisma 6.16.2; review additive EmailTemplate SQL. Railway content/media/email migration requires explicit approval/target/backup/preflight. Coordinate matching frontend/backend and stale/in-flight checkouts because old clients lack the new payment proof. No casual Railway restart/deploy (`start` migrates).
+
+9. Shipping: browser autofill/long fields, optional apartment, complete postal review/Edit/Tab focus, US and Canada labels, retained guest/signed-in edits, narrow screens and configured destination/rate coverage. No verified/deliverable badge; Stripe Address Element is not part of this release. Check ready yellow, incomplete disabled and processing secure action without accidental double submit. Check the same action inside the inert admin preview.
+
+No automated test may send real customer email or buy a label. Existing critical/high dependency advisories, post-payment price/stock/rate changes, separate promo/campaign persistence/concurrent limits, receipt recovery, provider retry/reconciliation, full accessibility and real-device wallets remain open. See [architecture](architecture/checkout-and-order-email.md).
+
 Use this guide for repair passes, launch-readiness work, provider verification, docs verification, migrations, and final reporting.
 
 ## Repair And Launch-Readiness Passes
@@ -165,6 +192,31 @@ Exact commands/results and remaining deployment risks are in the latest [handoff
 - Isolated dialog tests cover scroll locking/restoration, initial/opener focus, Tab in both directions, hidden-control exclusion, outside focus containment, Escape, removal focus recovery, and unmount cleanup. These are not full browser accessibility certification.
 - Local browser QA should check all nine home anchors and actual 6 oz/18 oz prices/availability, featured Add to Cart, Quick View handoff, quantity/removal, close/backdrop/Continue Shopping, desktop 420 px and mobile full-width drawer, short-height landscape footer scrolling, retained bag across story/account routes, and short-screen hero content. Never clear a user's saved bag for QA; restore only temporary items/quantities added by the check.
 - Recheck campaign-green cards with an eligible campaign, signed-in customer headers, Safari touch/keyboard behavior, screen readers/reduced motion, and approved guest/signed-in Stripe test checkout after reviewed deployment. Local UI checks and unit tests do not establish those live results. No provider sends, real payments, DB writes, or migrations are required by this styling pass.
+
+## Visual Product And Website Editor QA
+
+- Confirm Website is reachable as the twelfth tool and existing signed-in/data-routing controls remain. Check local vs Railway DB startup target before writes.
+- Products: actual active/draft/upcoming card, edit handles, separate 6 oz/18 oz preview price/availability, every existing content/analysis/variant/publishing field, explicit Save/Cancel and retained failed-save draft. Preview cart/quick view must not perform purchases.
+- Website: edit all original sections/header/announcement/footer/links; wide/phone preview; long text/image failure; hide/reorder; add/remove supported banner/story/collection/gallery; existing baseline/defaults still complete.
+- Save draft/reload must persist without changing public content. Confirm Publish only after reviewing target/content; inspect the public page after publication. Restore published to draft, Save/Cancel, stale revision 409 and failed-save retention.
+- Hidden anchors must disappear from navigation/actions. Search follows a visible collection, curated collections respect filters, and no collection means no dead search control. No raw HTML/script/protected/credential-bearing URL accepted.
+- Check all existing home content, campaign green styling, real 6 oz/18 oz and Quick View cart prices, drawer on same route, account/header/footer state, promo/campaign/checkout server totals, and guest/signed-in checkout after deployment.
+- Automated tests use mocked persistence/provider boundaries; a local rolled-back PostgreSQL transaction checks real revision/atomic-publish writes. Neither proves Railway or deployed sessions/payments. Check the latest handoff for which UI actions completed and any browser automation interruption.
+- Review canonical/generated content parity and both isolated deployment roots. No new env variables or env example files. Migration `20261009010000_storefront_content` needs explicit Railway approval before normal backend deployment, which invokes migration deploy.
+
+See [storefront-editor.md](architecture/storefront-editor.md) for editing boundaries and [handoff](../PROJECT_HANDOFF.md) for results. No real provider sends, payments, Railway mutations, destructive reset or reseed during automated QA.
+
+## Image Library And Seasonal Editor QA
+
+- Confirm backend target before any upload or Publish. Upload stores a public image immediately even when its page draft is canceled; no private/customer files.
+- Validate auth rejection before image processing; accept JPEG/PNG/WebP only, declared/decoded match, no SVG/animated/compressed payloads, <=8 MiB /20 MP, optimized <=2 MiB. Verify safe JSON errors, busy/failed/empty states and retained page fields.
+- Upload the same image twice: one normalized binary record/URL. Check name/alt/folder Save, library search/24-item paging, thumbnail/dimensions/size/storage, Use this image, Clear, Escape/Tab/focus restoration and mobile overflow.
+- Save Draft/reload: media reference persists, public remains unchanged. Explicit Publish/local reload: chosen background appears. Preserve existing user-published sections. Verify a palette overrides original ID CSS and cancel restores it; hero photograph remains separate.
+- Check asset renderers in home/hero/footer/gallery/campaign, product card/Quick View, cart, checkout, success and customer/admin order items against configured API origin; never persist local/deployment hosts. Existing HTTPS/templates and image-failure UI must still work.
+- Check canonical/generated modules and isolated deployment roots. Local status is 20 migrations after media follow-up. Railway needs explicit preflight/migration/deployment approval; install Sharp Linux optional dependencies, generate/restart backend, then deploy matching frontend. No env examples/secrets.
+- Unit/SSR/isolated HTTP tests do not prove production Safari/Linux/CDN/backup recovery, full accessibility, or real payment/provider workflows. Run approved guest/signed-in checkout with promo+campaign after reviewed deployment, not as an automatic image-upload test.
+
+See [media library](architecture/media-library.md) and latest [handoff](../PROJECT_HANDOFF.md) for actual results and remaining manual checks.
 
 ## Provider Verification Rules
 

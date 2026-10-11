@@ -122,7 +122,7 @@ export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
   return mapOrder(order)
 }
 
-export async function findCustomerOrderByReference(reference) {
+export async function findCustomerOrderByReference(reference, { userId = null, viewerId = null } = {}) {
   const normalizedReference = String(reference || '').trim()
 
   if (!normalizedReference) {
@@ -131,6 +131,7 @@ export async function findCustomerOrderByReference(reference) {
 
   const order = await prisma.order.findFirst({
     where: {
+      ...(userId ? { userId } : {}),
       OR: [
         {
           orderNumber: normalizedReference,
@@ -168,7 +169,8 @@ export async function findCustomerOrderByReference(reference) {
       })
     : null
 
-  return mapCustomerOrder(order ? { ...order, promoUsage } : null)
+  const mapped = mapCustomerOrder(order ? { ...order, promoUsage } : null)
+  return mapped ? { ...mapped, accountLinked: Boolean(viewerId && order.userId === viewerId) } : null
 }
 
 export async function findOrdersByCustomerEmail(
@@ -261,7 +263,15 @@ export async function findOrderStats() {
 }
 
 export async function createOrder(orderInput) {
-  const createdOrder = await prisma.order.create({
+  const createdOrder = await prisma.$transaction(async tx => {
+    for (const item of orderInput.items) {
+      const variant = await tx.productVariant.findUnique({ where: { sku: item.sku }, include: { product: true } })
+      if (!variant || !variant.isActive || variant.product.status !== 'ACTIVE') throw Object.assign(new Error('An ordered variant is no longer available.'), { statusCode: 409 })
+      if (variant.product.sellingMode && variant.product.sellingMode !== 'INVENTORY_LIMITED') continue
+      const reserved = await tx.productVariant.updateMany({ where: { sku: item.sku, inventory: { gte: item.quantity } }, data: { inventory: { decrement: item.quantity } } })
+      if (!reserved.count) throw Object.assign(new Error('An ordered variant no longer has enough stock. Payment may be complete; contact support rather than paying again.'), { statusCode: 409 })
+    }
+    return tx.order.create({
     data: {
       orderNumber: orderInput.orderNumber,
       userId: orderInput.userId || null,
@@ -314,6 +324,7 @@ export async function createOrder(orderInput) {
       shipments: orderShipmentsInclude,
       emailDeliveries: orderEmailDeliveriesInclude,
     },
+    })
   })
 
   return mapOrder(createdOrder)

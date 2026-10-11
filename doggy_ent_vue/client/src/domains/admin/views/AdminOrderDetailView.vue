@@ -1,4 +1,5 @@
 <script setup>
+import { mediaImageSource } from '@shared/utils/mediaImage.js'
 import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminPageHeader from '../components/AdminPageHeader.vue'
@@ -8,12 +9,12 @@ import AdminOrderValueBadge from '../components/AdminOrderValueBadge.vue'
 import AdminOrderStatusPanel from '../components/AdminOrderStatusPanel.vue'
 import AdminOrderNotificationsPanel from '../components/AdminOrderNotificationsPanel.vue'
 import AdminOrderTrackingPanel from '../components/AdminOrderTrackingPanel.vue'
+import AdminOrderEmailComposer from '../components/AdminOrderEmailComposer.vue'
 import { useAdminOrderDetail } from '../composables/useAdminOrderDetail'
 const {
   order,
   loading,
   trackingSaving,
-  notificationSaving,
   statusSaving,
   statusMessage,
   error,
@@ -27,8 +28,8 @@ const {
   updateStatus,
   updateTracking,
   refreshTracking,
-  resendOrderEmail,
   loadOrder,
+  refreshEmailActivity,
 } = useAdminOrderDetail(useRoute().params.orderId)
 onMounted(loadOrder)
 </script>
@@ -68,7 +69,7 @@ onMounted(loadOrder)
             >
               <img
                 v-if="item.productImage"
-                :src="item.productImage"
+                :src="mediaImageSource(item.productImage)"
                 :alt="item.productName"
                 class="w-16 h-16 object-contain shrink-0 border border-[var(--admin-line)] rounded-md bg-white"
               />
@@ -111,10 +112,9 @@ onMounted(loadOrder)
             <summary class="font-semibold cursor-pointer">
               Customer email updates
             </summary>
+            <AdminOrderEmailComposer :order="order" @sent="refreshEmailActivity" />
             <AdminOrderNotificationsPanel
               :deliveries="order.emailDeliveries || []"
-              :disabled="notificationSaving"
-              @resend="resendOrderEmail"
             />
           </details>
           <section class="admin-form-section">

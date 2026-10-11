@@ -1,4 +1,5 @@
 <script setup>
+import { mediaImageSource } from '@shared/utils/mediaImage.js'
 import { Package } from '@lucide/vue'
 import { ref, watch } from 'vue'
 const props = defineProps({
@@ -27,7 +28,7 @@ watch(
     <img
       v-if="product.image && !failed"
       class="store-product-media"
-      :src="product.image"
+      :src="mediaImageSource(product.image)"
       :alt="product.name"
       loading="lazy"
       decoding="async"

@@ -1,6 +1,6 @@
 # Doggy Ent Architecture
 
-Last updated: 2026-10-09
+Last updated: 2026-10-10
 
 This directory documents how the Doggy Ent Vue storefront, admin dashboard, Express API, Prisma database, Stripe integration, and temporary local admin workflows fit together. It is evidence-based from the repository; future plans are labeled as future work.
 
@@ -29,15 +29,23 @@ flowchart LR
 - [file-map.md](./file-map.md): Important files and folders, grouped by responsibility.
 - [database.md](./database.md): Prisma models, relationships, migrations, ownership, and data-source rules.
 - [admin.md](./admin.md): Admin dashboard architecture, auth, protected APIs, and temporary data target workflow.
+- [storefront-editor.md](./storefront-editor.md): Product mini-card editing, homepage draft/publish, content/background controls, security, and deployment boundaries.
+- [media-library.md](./media-library.md): Protected image uploads, reusable metadata/blob storage, public rendering, limits, and deployment boundaries.
+- [checkout-and-order-email.md](./checkout-and-order-email.md): Receipt First checkout, Soft Essentials receipts, reusable cards, campaign pop-out, wallets, guest receipt security, trusted catalog/inventory and previewed manual order emails.
 - [auth-roadmap.md](./auth-roadmap.md): Current custom admin auth, implemented Better Auth customer accounts, same-site domain direction, and future admin/customer auth plan.
 
 ## Important Source-Of-Truth Locations
 
+- Homepage presentation defaults/rules/projection: `shared/storefront/`; deployment snapshots are generated, not independently maintained. Shared renderer: `HomePageContent.vue`; persisted publication: `StorefrontContent`. See [storefront-editor.md](./storefront-editor.md).
+- Image upload/path rules: `shared/storefront/mediaRules.js`; public source resolver: `client/src/shared/utils/mediaImage.js`; media persistence/security: `server/src/domains/media/`, `MediaAsset` and `MediaAssetData`. See [media-library.md](./media-library.md).
 - Product variants and storefront selected card size state: `client/src/domains/products/composables/useProductVariants.js`
 - Cart item creation and local cart state: `client/src/domains/cart/composables/useCart.js`
 - Product API mapping: `server/src/domains/products/mappers/products.mapper.js` (server response); `client/src/domains/products/mappers/product.mapper.js` (variant cents-to-display-currency boundary)
 - Product variant ordering: `client/src/domains/products/utils/productVariants.js`; selection/availability: `useProductVariants.js`
 - Checkout pricing: `server/src/domains/checkout/utils/checkoutPricing.js`
+- Trusted checkout catalog: `checkout/services/checkoutCatalog.service.js`; transactional order/inventory: `orders/repositories/orders.repository.js`.
+- Checkout/confirmation defaults: `shared/storefront/commercePresentation.js`; shared product/item surfaces: `client/src/shared/components/{CommerceCardSurface,CommerceItemCard}.vue`.
+- Manual order email authoring/rendering/security: `server/src/domains/emails/{constants,validators,mappers,services,repositories}`, `EmailTemplate`, `EmailDelivery` and `shared/utils/signedCapability.js`.
 - Checkout orchestration: `server/src/domains/checkout/services/checkout.service.js`
 - Promo statuses and rules: `server/src/domains/promos/constants/promos.constants.js`, `client/src/domains/promos/constants/promo.constants.js`
 - Promo server normalization and validation: `server/src/domains/promos/services/promos.service.js`, `server/src/domains/promos/validators/promos.validator.js`
@@ -73,4 +81,4 @@ The later homepage/story follow-up and approved baseline implementation add no A
 
 ## Mermaid Verification
 
-Mermaid fence balance was rechecked on 2026-06-15. `mmdc` was not installed in the local workspace during this pass, so SVG rendering was not rerun. The prior verified root cause of docs issues was documentation drift in older diagram files, especially references to temporary in-memory product data that no longer matches the Prisma-backed application.
+On 2026-10-10, the cached official Mermaid CLI 11.15.0 rendered all 15 diagrams across README (1), data-flow (11), admin (1) and auth-roadmap (2) to temporary SVGs, exit 0. File-map/database contain no diagrams and were checked by the same Markdown input tool. No repository dependency or generated SVG was added. This supersedes the earlier note that rendering had not been rerun. The prior verified root cause of docs issues was documentation drift in older diagram files, especially references to temporary in-memory product data that no longer matches the Prisma-backed application.

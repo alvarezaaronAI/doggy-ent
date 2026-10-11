@@ -14,8 +14,11 @@ import authRoutes from './domains/auth/routes/auth.routes.js'
 import accountRoutes from './domains/account/routes/account.routes.js'
 import adminCustomersRoutes from './domains/customers/routes/adminCustomers.routes.js'
 import adminEmailDeliveryRoutes from './domains/emails/routes/adminEmailDelivery.routes.js'
+import adminEmailTemplateRoutes from './domains/emails/routes/adminEmailTemplate.routes.js'
 import shippingRoutes from './domains/shipping/routes/shipping.routes.js'
 import supportRoutes from './domains/support/routes/support.routes.js'
+import storefrontRoutes from './domains/storefront/routes/storefront.routes.js'
+import mediaRoutes from './domains/media/routes/media.routes.js'
 import {
   customerAuth,
 } from './domains/auth/services/customerAuth.service.js'
@@ -95,10 +98,13 @@ app.use('/api/campaigns', campaignsRoutes)
 app.use('/api/admin/orders', ordersRoutes)
 app.use('/api/admin/customers', adminCustomersRoutes)
 app.use('/api/admin/notifications', adminEmailDeliveryRoutes)
+app.use('/api/admin/email-templates', adminEmailTemplateRoutes)
 app.use('/api/account', accountRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api', supportRoutes)
 app.use('/api', shippingRoutes)
+app.use('/api', storefrontRoutes)
+app.use('/api', mediaRoutes)
 
 app.use(errorMiddleware)
 

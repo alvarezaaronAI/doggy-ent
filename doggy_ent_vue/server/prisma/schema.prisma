@@ -7,6 +7,44 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model StorefrontContent {
+  id          String   @id
+  draft       Json
+  published   Json?
+  revision    Int      @default(1)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MediaAsset {
+  id                String         @id @default(uuid())
+  name              String
+  originalFilename  String
+  altText           String         @default("")
+  folder            String         @default("general")
+  mimeType          String
+  width             Int
+  height            Int
+  byteSize          Int
+  thumbnailByteSize Int
+  checksum          String         @unique
+  createdByType     String         @default("ADMIN_ENV")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  data              MediaAssetData?
+
+  @@index([folder, createdAt])
+  @@index([createdAt, id])
+}
+
+model MediaAssetData {
+  assetId        String     @id
+  bytes          Bytes
+  thumbnailBytes Bytes
+  asset          MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -281,6 +319,22 @@ model OrderShipmentEvent {
   @@unique([shipmentId, status, occurredAt])
   @@index([shipmentId])
   @@index([occurredAt])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  event       String
+  subject     String
+  heading     String
+  body        String
+  footer      String
+  archived    Boolean  @default(false)
+  revision    Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([event, archived])
 }
 
 model EmailDelivery {

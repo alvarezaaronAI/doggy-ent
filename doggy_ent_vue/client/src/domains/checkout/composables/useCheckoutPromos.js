@@ -81,6 +81,7 @@ export function useCheckoutPromos({
       }
 
       appliedPromoCode.value = normalizedCode
+      if (data.valid === false) throw new Error(data.message || 'This promo is not eligible.')
 
       appliedPromoDiscount.value = Number(
         data.discountAmount || 0,
@@ -136,14 +137,14 @@ export function useCheckoutPromos({
   }
 
   watch(
-    () => customer.value.email,
-    (email) => {
+    () => normalizeCustomerEmail(customer.value.email),
+    (email, previous) => {
       const normalizedEmail = normalizeCustomerEmail(email)
 
       if (
-        appliedPromoCode.value
+        (promoStatus.value === 'checking' && email !== previous) || (appliedPromoCode.value
         && appliedPromoEmail.value
-        && normalizedEmail !== appliedPromoEmail.value
+        && normalizedEmail !== appliedPromoEmail.value)
       ) {
         clearPromo({
           status: 'idle',
@@ -152,6 +153,10 @@ export function useCheckoutPromos({
       }
     },
   )
+
+  watch(() => JSON.stringify(cartItems.value), () => {
+    if (appliedPromoCode.value || promoStatus.value === 'checking') clearPromo({ message: 'Your bag changed. Re-enter the promo to check this order.' })
+  })
 
   return {
     promoCode,

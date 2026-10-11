@@ -32,7 +32,7 @@ const emit = defineEmits([
 
     <div>
       <h3 class="text-base font-extrabold">Promo code</h3>
-      <p class="mt-1 text-xs leading-relaxed text-stone-300">
+      <p class="mt-1 text-xs leading-relaxed text-stone-600">
         Have a discount code? Apply it before placing your order.
       </p>
 
@@ -42,13 +42,14 @@ const emit = defineEmits([
           class="flex-1 rounded-2xl border bg-white px-4 py-3 outline-none focus:border-emerald-400"
           :class="promoStatus === 'error' ? 'border-red-300 bg-red-50' : promoStatus === 'success' ? 'border-green-300 bg-green-50' : promoStatus === 'checking' ? 'border-amber-300 bg-amber-50' : 'border-stone-700'"
           placeholder="Enter promo code"
+          aria-label="Promo code"
           @input="emit('update:promo-code', $event.target.value)"
           @keydown.enter.prevent="emit('apply-promo-code')"
         />
 
         <button
           type="button"
-          class="focus-ring rounded-lg border border-emerald-400 px-5 py-3 font-semibold text-emerald-400 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-60"
+          class="focus-ring rounded-md border border-stone-300 bg-stone-50 px-5 py-3 font-semibold text-[#315bc5] hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="promoStatus === 'checking'"
           @click="emit('apply-promo-code')"
         >
@@ -57,7 +58,7 @@ const emit = defineEmits([
         </button>
       </div>
 
-      <p class="mt-3 text-sm text-stone-300">
+      <p class="mt-3 text-sm text-stone-600" role="status">
         {{ promoMessage }}
       </p>
     </div>

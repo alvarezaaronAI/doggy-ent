@@ -1,38 +1,37 @@
 <script setup>
-import { BRAND_STORY_PATH } from '@storefront/constants/brandContent.js'
+import { computed, onMounted } from 'vue'
+import ContentLink from '@storefront/components/ContentLink.vue'
+import { useStorefrontContent } from '@storefront/composables/useStorefrontContent.js'
+import { visibleStorefrontLinks } from '@storefront-content/sectionCatalog.js'
 import { createSocialLinks } from '@storefront/utils/socialLinks.js'
-const socialLinks = createSocialLinks({
-  instagram: import.meta.env.VITE_INSTAGRAM_URL,
-  tiktok: import.meta.env.VITE_TIKTOK_URL,
-  youtube: import.meta.env.VITE_YOUTUBE_URL,
-})
-const links = [
-  ['All Treats', { path: '/', hash: '#shop' }],
-  ['Coming Soon', { path: '/', hash: '#coming-soon' }],
-  ['How We Make Them', { path: '/', hash: '#process' }],
-  ['Ingredients', { path: '/', hash: '#ingredients' }],
-  ['Happy Pups', { path: '/', hash: '#reviews' }],
-  ['Meet Chase & Evie', BRAND_STORY_PATH],
-  ['FAQ', { path: '/', hash: '#faq' }],
-]
+import { mediaImageSource } from '@shared/utils/mediaImage.js'
+const props = defineProps({ content: Object, preview: Boolean })
+const { content: liveContent, loadContent } = useStorefrontContent()
+const page = computed(() => props.content || liveContent.value)
+const footer = computed(() => page.value.footer)
+const links = computed(() => visibleStorefrontLinks(footer.value.links, page.value.sections))
+const socialLinks = computed(() => createSocialLinks(footer.value.social))
+const background = computed(() => ({
+  backgroundColor: { white: '#fff', giving: '#edf6f0', oat: 'var(--storefront-brand-5)' }[footer.value.background],
+  ...(footer.value.backgroundImage ? { backgroundImage: `linear-gradient(rgba(255,255,255,.70),rgba(255,255,255,.70)), url(${JSON.stringify(mediaImageSource(footer.value.backgroundImage))})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
+}))
+onMounted(() => { if (!props.preview) loadContent() })
 </script>
 <template>
-  <footer class="site-footer">
+  <footer v-if="footer.visible" class="site-footer" :style="background">
     <div class="site-footer-inner">
       <div>
         <RouterLink to="/" class="site-footer-brand"
           ><span class="site-footer-mark"
             ><i class="fa-solid fa-paw" aria-hidden="true"></i></span
-          ><span>Chase &amp; Evie Co.</span></RouterLink
+          ><span>{{ footer.brandName }}</span></RouterLink
         >
         <p class="site-footer-intro">
-          Small-batch dog treats inspired by Chase &amp; Evie.
+          {{ footer.text }}
         </p>
       </div>
       <nav aria-label="Footer">
-        <RouterLink v-for="[label, to] in links" :key="label" :to="to">{{
-          label
-        }}</RouterLink>
+        <ContentLink v-for="(link, index) in links" :key="index" :href="link.href">{{ link.label }}</ContentLink>
       </nav>
       <div class="site-footer-social">
         <nav aria-label="Social media">
@@ -65,8 +64,8 @@ const links = [
       </div>
     </div>
     <div class="site-footer-bottom">
-      <p>&copy; {{ new Date().getFullYear() }} Chase &amp; Evie Co.</p>
-      <p>Made for happy pups, simple treats, and small-batch drops.</p>
+      <p>&copy; {{ new Date().getFullYear() }} {{ footer.brandName }}</p>
+      <p>{{ footer.tagline }}</p>
     </div>
   </footer>
 </template>

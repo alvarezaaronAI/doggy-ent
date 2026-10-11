@@ -1,210 +1,37 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
-import {
-  useAccountAuth,
-} from '@domains/account/composables/useAccountAuth.js'
-import {
-  normalizeAccountEmail,
-  validateCreateAccountForm,
-  validateSignInForm,
-} from '@domains/account/validators/account.validators.js'
-
-const props = defineProps({
-  mode: {
-    type: String,
-    default: 'sign-in',
-  },
-})
-
+import CommerceDialog from '@shared/components/CommerceDialog.vue'
+import { ShieldCheck, ArrowLeft, Check } from '@lucide/vue'
+import { useCheckoutAuth } from '../composables/useCheckoutAuth.js'
+const props = defineProps({ mode: { type: String, default: 'sign-in' }, customer: { type: Object, default: () => ({}) } })
 const emit = defineEmits(['authenticated', 'close'])
-
-const { loading, signIn, signUp } = useAccountAuth()
-const activeMode = ref(props.mode)
-const message = ref('')
-const signInForm = reactive({
-  email: '',
-  password: '',
-})
-const createForm = reactive({
-  name: '',
-  email: '',
-  password: '',
-})
-
-const isCreateMode = computed(() => activeMode.value === 'create')
-
-watch(
-  () => props.mode,
-  (mode) => {
-    activeMode.value = mode || 'sign-in'
-    message.value = ''
-  },
-)
-
-function switchMode(mode) {
-  activeMode.value = mode
-  message.value = ''
-}
-
-async function submit() {
-  message.value = isCreateMode.value
-    ? validateCreateAccountForm(createForm)
-    : validateSignInForm(signInForm)
-
-  if (message.value) {
-    return
-  }
-
-  try {
-    if (isCreateMode.value) {
-      await signUp({
-        ...createForm,
-        email: normalizeAccountEmail(createForm.email),
-      })
-    }
-    else {
-      await signIn({
-        ...signInForm,
-        email: normalizeAccountEmail(signInForm.email),
-      })
-    }
-
-    emit('authenticated')
-  }
-  catch (error) {
-    message.value = error.message || 'Unable to continue.'
-  }
-}
+const { form, creating, review, message, loading, switchMode, submit } = useCheckoutAuth(props.mode, props.customer, details => emit('authenticated', details))
 </script>
-
 <template>
-  <Teleport to="body">
-    <div class="fixed inset-0 z-[130] bg-black/50" @click="emit('close')"></div>
-
-    <section
-      class="fixed left-1/2 top-1/2 z-[140] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-stone-200 bg-white p-6 text-stone-900 shadow-2xl"
-      aria-modal="true"
-      role="dialog"
-      aria-labelledby="checkout-auth-title"
-    >
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-            Checkout account
-          </p>
-          <h2 id="checkout-auth-title" class="mt-1 text-2xl font-black text-[var(--brand-4)]">
-            {{ isCreateMode ? 'Create account' : 'Sign in' }}
-          </h2>
-          <p class="mt-2 text-sm text-stone-500">
-            Continue checkout without losing your cart or entered details.
-          </p>
+  <CommerceDialog :title="review ? 'Confirm your account details' : creating ? 'Create your account' : 'Welcome back'" :busy="loading" @close="emit('close')">
+    <form class="space-y-5 p-6" @submit.prevent="submit">
+      <p class="text-sm leading-relaxed text-stone-600">{{ review ? 'Check your details before creating your account. Your checkout and bag stay right here.' : 'Faster checkout, order history, and a familiar place to come back to. Guest checkout is always available.' }}</p>
+      <fieldset v-if="!review" :disabled="loading" class="space-y-4">
+        <div v-if="creating" class="grid grid-cols-2 gap-3">
+          <label class="text-sm font-semibold">First name<input v-model="form.firstName" autocomplete="given-name" required class="mt-2 w-full rounded-md border border-stone-300 px-3 py-3" /></label>
+          <label class="text-sm font-semibold">Last name<input v-model="form.lastName" autocomplete="family-name" required class="mt-2 w-full rounded-md border border-stone-300 px-3 py-3" /></label>
         </div>
-
-        <button
-          class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 text-stone-500 hover:border-emerald-400 hover:text-emerald-700"
-          type="button"
-          aria-label="Close account sign in"
-          @click="emit('close')"
-        >
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <label class="block text-sm font-semibold">Email address<input v-model="form.email" type="email" autocomplete="email" required class="mt-2 w-full rounded-md border border-stone-300 px-3 py-3" /></label>
+        <label class="block text-sm font-semibold">Password<input v-model="form.password" type="password" :autocomplete="creating ? 'new-password' : 'current-password'" :minlength="creating ? 8 : undefined" required class="mt-2 w-full rounded-md border border-stone-300 px-3 py-3" /></label>
+        <label v-if="creating" class="block text-sm font-semibold">Confirm password<input v-model="form.confirmPassword" type="password" autocomplete="new-password" required class="mt-2 w-full rounded-md border border-stone-300 px-3 py-3" /></label>
+      </fieldset>
+      <div v-else class="space-y-4 border-y border-stone-200 py-5">
+        <div><p class="text-xs text-stone-500">Account name</p><p class="font-semibold">{{ form.firstName }} {{ form.lastName }}</p></div>
+        <div><p class="text-xs text-stone-500">Account email</p><p class="break-words font-semibold">{{ form.email.trim().toLowerCase() }}</p></div>
+        <p class="text-sm text-stone-600">Your shipping address and phone stay in checkout. They are not added to your profile without a separate save.</p>
+        <p class="flex gap-2 text-sm text-[#17634c]"><ShieldCheck :size="18" class="shrink-0" />You will be signed in here after creating your account. No order or payment is placed yet.</p>
+        <button type="button" class="inline-flex items-center gap-2 rounded-md border border-stone-300 bg-stone-50 px-3 py-2" :disabled="loading" @click="review = false"><ArrowLeft :size="16" />Edit details</button>
       </div>
-
-      <form class="mt-5 space-y-4" @submit.prevent="submit">
-        <label v-if="isCreateMode" class="block text-sm font-bold text-stone-700">
-          Name
-          <input
-            v-model="createForm.name"
-            class="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-            type="text"
-            autocomplete="name"
-            placeholder="Your name"
-          />
-        </label>
-
-        <label v-if="isCreateMode" class="block text-sm font-bold text-stone-700">
-          Email
-          <input
-            v-model="createForm.email"
-            class="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-            type="email"
-            autocomplete="email"
-            placeholder="you@example.com"
-          />
-        </label>
-
-        <label v-else class="block text-sm font-bold text-stone-700">
-          Email
-          <input
-            v-model="signInForm.email"
-            class="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-            type="email"
-            autocomplete="email"
-            placeholder="you@example.com"
-          />
-        </label>
-
-        <label v-if="isCreateMode" class="block text-sm font-bold text-stone-700">
-          Password
-          <input
-            v-model="createForm.password"
-            class="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-            type="password"
-            autocomplete="new-password"
-            placeholder="At least 8 characters"
-          />
-        </label>
-
-        <label v-else class="block text-sm font-bold text-stone-700">
-          Password
-          <input
-            v-model="signInForm.password"
-            class="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Your password"
-          />
-        </label>
-
-        <p v-if="message" class="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-          {{ message }}
-        </p>
-
-        <button
-          class="w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700 disabled:opacity-60"
-          :disabled="loading"
-          type="submit"
-        >
-          {{ loading ? 'Working...' : isCreateMode ? 'Create account and return to checkout' : 'Sign in and return to checkout' }}
-        </button>
-      </form>
-
-      <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-        <button
-          v-if="isCreateMode"
-          class="font-bold text-emerald-700 hover:text-emerald-900"
-          type="button"
-          @click="switchMode('sign-in')"
-        >
-          Sign in instead
-        </button>
-        <button
-          v-else
-          class="font-bold text-emerald-700 hover:text-emerald-900"
-          type="button"
-          @click="switchMode('create')"
-        >
-          Create account instead
-        </button>
-
-        <button
-          class="font-bold text-stone-500 hover:text-stone-800"
-          type="button"
-          @click="emit('close')"
-        >
-          Continue as guest
-        </button>
+      <p v-if="message" class="rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">{{ message }}</p>
+      <button type="submit" class="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#f2de5c] px-4 py-3 font-semibold text-[#6a3c2b] disabled:opacity-50" :disabled="loading"><Check v-if="review" :size="18" />{{ loading ? 'Connecting your account...' : review ? 'Confirm & create account' : creating ? 'Review account details' : 'Sign in & continue checkout' }}</button>
+      <div class="flex flex-wrap justify-between gap-3 text-sm">
+        <button type="button" class="font-semibold text-[#315bc5]" :disabled="loading" @click="switchMode(creating ? 'sign-in' : 'create')">{{ creating ? 'Sign in instead' : 'Create an account' }}</button>
+        <button type="button" class="text-stone-600 underline" :disabled="loading" @click="emit('close')">Continue as guest</button>
       </div>
-    </section>
-  </Teleport>
+    </form>
+  </CommerceDialog>
 </template>

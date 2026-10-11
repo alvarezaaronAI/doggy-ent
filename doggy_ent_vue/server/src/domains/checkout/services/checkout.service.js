@@ -8,16 +8,6 @@ import {
 } from '../../campaigns/services/campaigns.service.js'
 import { calculateTax } from '../../../shared/services/tax.service.js'
 import { createNewOrder } from '../../orders/services/orders.service.js'
-import {
-  EMAIL_EVENTS,
-} from '../../emails/constants/emailEvents.constants.js'
-import {
-  buildAdminOrderEmailPayload,
-  buildOrderEmailPayload,
-} from '../../emails/mappers/emailPayloads.mapper.js'
-import {
-  queueEmail,
-} from '../../emails/services/emailProvider.service.js'
 
 import {
   validateStripePaymentIntent,
@@ -50,28 +40,8 @@ import {
   validateFinalizedCheckoutPreview,
   validateRequiredCheckoutFields,
 } from '../validators/checkout.validator.js'
+import { resolveCheckoutItems } from './checkoutCatalog.service.js'
 
-async function queueCheckoutEmails(order) {
-  if (!order?.id) {
-    return
-  }
-
-  await Promise.allSettled([
-    queueEmail(
-      buildOrderEmailPayload({
-        event: EMAIL_EVENTS.ORDER_CONFIRMATION,
-        order,
-      }),
-    ),
-    queueEmail(
-      buildAdminOrderEmailPayload({
-        event: EMAIL_EVENTS.ADMIN_NEW_ORDER,
-        order,
-        message: 'A new paid checkout order was created.',
-      }),
-    ),
-  ])
-}
 
 function hasRateAddress(customer = {}) {
   return [
@@ -172,14 +142,15 @@ async function resolveCheckoutShipping({
   }
 }
 
-export async function previewCheckout(checkoutInput = {}) {
+export async function previewCheckout(checkoutInput = {}, { trustedItems = null } = {}) {
   const {
-    cartItems = [],
+    cartItems: inputItems = [],
     promoCode = null,
     customerEmail = null,
     customer = {},
     shipping = {},
   } = checkoutInput
+  const cartItems = trustedItems || await resolveCheckoutItems(inputItems)
   const normalizedCustomerEmail = normalizeEmail(
     customer.email || customerEmail,
   )
@@ -252,7 +223,14 @@ export async function createCheckout(
     customerUser = null,
   } = {},
 ) {
-  const checkoutPreview = await previewCheckout(checkoutInput)
+  const usedPayment = await findOrderByStripePaymentIntentId(String(checkoutInput.stripePaymentIntentId || '').trim())
+  if (usedPayment) {
+    if (normalizeEmail(checkoutInput.customer?.email || checkoutInput.customerEmail) !== normalizeEmail(usedPayment.customerEmail)) throw Object.assign(new Error('This payment already belongs to another order.'), { statusCode: 409 })
+    return { order: usedPayment, pricing: { subtotal: usedPayment.subtotal, discountAmount: usedPayment.discountAmount, shippingAmount: usedPayment.shippingAmount, taxAmount: usedPayment.taxAmount, total: usedPayment.total } }
+  }
+  const trustedItems = await resolveCheckoutItems(checkoutInput.cartItems)
+  checkoutInput = { ...checkoutInput, cartItems: trustedItems }
+  const checkoutPreview = await previewCheckout(checkoutInput, { trustedItems })
 
   validateRequiredCheckoutFields({
     customer: checkoutInput.customer,
@@ -419,12 +397,6 @@ export async function createCheckout(
     }
   }
 
-  queueCheckoutEmails(order).catch((error) => {
-    console.error(
-      '[checkout] Failed checkout email dispatch.',
-      error,
-    )
-  })
 
   return {
     ...checkoutPreview,

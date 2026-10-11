@@ -1,4 +1,5 @@
 import { prisma } from '../../../db/prisma.js'
+import { assertMediaImagesExist } from '../../media/services/mediaReferences.service.js'
 import {
   buildProductMutationData,
   mapProductWithDisplayPrice,
@@ -40,6 +41,7 @@ export async function fetchProductBySlug(slug) {
 
 export async function createProduct(productInput) {
   const normalizedProduct = normalizeProductInput(productInput)
+  await assertMediaImagesExist([normalizedProduct.image])
 
   const createdProduct = await prisma.product.create({
     data: buildProductMutationData(normalizedProduct),
@@ -66,6 +68,7 @@ export async function updateProductById(productId, productInput) {
   }
 
   const normalizedProduct = normalizeProductInput(productInput)
+  await assertMediaImagesExist([normalizedProduct.image])
 
   await prisma.productVariant.deleteMany({
     where: {

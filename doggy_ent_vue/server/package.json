@@ -7,7 +7,7 @@
     "dev": "node --watch src/server.js",
     "dev:local": "DOGGY_SERVER_ENV_TARGET=LOCAL node --watch src/server.js",
     "dev:railway": "DOGGY_SERVER_ENV_TARGET=RAILWAY_DB DOGGY_SERVER_ENV_FILE=.env.railway.local node --watch src/server.js",
-    "build": "prisma generate",
+    "build": "node scripts/sync-storefront-content.js && prisma generate",
     "start": "prisma migrate deploy && node src/server.js",
     "seed:products": "node src/db/seeds/products.seed.js",
     "prisma:studio": "prisma studio",
@@ -24,7 +24,8 @@
   "description": "",
   "dependencies": {
     "@better-auth/infra": "^0.2.14",
-    "@prisma/client": "^6.16.2",
+    "@prisma/client": "6.16.2",
+    "approve": "^0.0.12",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.6.18",
     "cookie-parser": "^1.4.7",
@@ -32,8 +33,11 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.1",
+    "ls": "^1.0.0",
     "pg": "^8.20.0",
-    "prisma": "^6.16.2",
+    "prisma": "6.16.2",
+    "scripts": "^0.1.0",
+    "sharp": "^0.35.5",
     "stripe": "^22.1.1"
   },
   "devDependencies": {
