@@ -1,9 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import {
-  toNodeHandler,
-} from 'better-auth/node'
+import { boundedAuthHandler } from './app/middleware/auth/boundedAuthHandler.js'
 import productsRoutes from './domains/products/routes/products.routes.js'
 import promosRoutes from './domains/promos/routes/promos.routes.js'
 import campaignsRoutes from './domains/campaigns/routes/campaigns.routes.js'
@@ -22,11 +20,14 @@ import mediaRoutes from './domains/media/routes/media.routes.js'
 import {
   customerAuth,
 } from './domains/auth/services/customerAuth.service.js'
+import { adminAuth } from './domains/auth/services/adminAuth.service.js'
+import { getTrustedAuthOrigins } from './config/env.js'
 import {
   errorMiddleware,
 } from './app/middleware/error.middleware.js'
 import {
   customerAuthRateLimiter,
+  adminLoginRateLimiter,
 } from './app/middleware/security/rateLimit.middleware.js'
 import {
   securityHeaders,
@@ -40,18 +41,7 @@ function normalizeOrigin(origin) {
     .replace(/\/$/, '')
 }
 
-function splitOrigins(value) {
-  return String(value || '')
-    .split(',')
-    .map(normalizeOrigin)
-    .filter(Boolean)
-}
-
-const allowedOrigins = new Set([
-  'http://localhost:5173',
-  ...splitOrigins(process.env.FRONTEND_URL),
-  ...splitOrigins(process.env.CLIENT_URL),
-])
+const allowedOrigins = new Set(getTrustedAuthOrigins())
 
 app.use(securityHeaders)
 
@@ -66,9 +56,7 @@ app.use(cors({
     }
 
     return callback(
-      new Error(
-        `CORS blocked for origin: ${origin}`,
-      ),
+      Object.assign(new Error('This request origin is not allowed.'), { statusCode: 403 }),
     )
   },
 
@@ -76,7 +64,15 @@ app.use(cors({
 }))
 
 app.use('/api/customer-auth', customerAuthRateLimiter)
-app.all('/api/customer-auth/*splat', toNodeHandler(customerAuth))
+app.all('/api/customer-auth/*splat', boundedAuthHandler(customerAuth))
+app.use('/api/admin-auth/sign-in/email', adminLoginRateLimiter)
+app.use('/api/admin-auth', customerAuthRateLimiter)
+app.all('/api/admin-auth/*splat', (req, res, next) => {
+  const path = req.path.slice('/api/admin-auth'.length)
+  if (!['/sign-in/email', '/sign-out', '/get-session'].includes(path)) return res.status(404).json({ message: 'Admin authentication endpoint not found.' })
+  res.set('Cache-Control', 'no-store')
+  return boundedAuthHandler(adminAuth)(req, res, next)
+})
 
 app.use(express.json({
   limit: '100kb',
@@ -105,6 +101,7 @@ app.use('/api', supportRoutes)
 app.use('/api', shippingRoutes)
 app.use('/api', storefrontRoutes)
 app.use('/api', mediaRoutes)
+app.use('/api', (_req, res) => res.status(404).json({ success: false, message: 'API endpoint not found.' }))
 
 app.use(errorMiddleware)
 

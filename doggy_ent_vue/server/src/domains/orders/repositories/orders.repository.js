@@ -335,8 +335,9 @@ export async function updateOrderStatusById(
   status,
   {
     note = null,
-    changedByType = 'ADMIN_ENV',
-    changedBy = 'ADMIN_ENV',
+    changedByType = 'SYSTEM',
+    changedBy = null,
+    allowedFromStatuses = null,
   } = {},
 ) {
   const updatedOrder = await prisma.$transaction(async (tx) => {
@@ -351,6 +352,8 @@ export async function updateOrderStatusById(
       error.code = 'P2025'
       throw error
     }
+
+    if (allowedFromStatuses && !allowedFromStatuses.includes(existingOrder.status)) return existingOrder
 
     if (existingOrder.status !== status) {
       await tx.orderStatusHistory.create({
@@ -368,6 +371,7 @@ export async function updateOrderStatusById(
     return tx.order.update({
       where: {
         id: orderId,
+        status: existingOrder.status,
       },
       data: {
         status,
@@ -387,6 +391,9 @@ export async function updateOrderStatusById(
         shipments: orderShipmentsInclude,
         emailDeliveries: orderEmailDeliveriesInclude,
       },
+    }).catch(error => {
+      if (error.code === 'P2025') throw Object.assign(new Error('This order changed during the update. Reload it before saving again.'), { statusCode: 409 })
+      throw error
     })
   })
 

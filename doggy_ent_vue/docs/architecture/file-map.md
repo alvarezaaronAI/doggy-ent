@@ -185,8 +185,8 @@ Existing `HomeView`/sections/header/footer/announcement are adapted to published
 
 | File | Purpose | Dependencies | Flow Participation |
 | --- | --- | --- | --- |
-| `server/src/domains/auth/routes/auth.routes.js` | Login/logout/me/data-target routes. | Auth service. | Owns custom admin session endpoints. |
-| `server/src/domains/auth/services/auth.service.js` | Admin credential/session/cookie logic. | bcrypt, crypto, env. | Current custom admin auth source of truth. |
+| `server/src/domains/auth/routes/auth.routes.js` | Compatible login/logout/me/data-target endpoints. | Admin auth service, rate limiter. | Preserves dashboard calls while delegating persistence to Better Auth. |
+| `server/src/domains/auth/services/auth.service.js` | Admin input validation, native API delegation, fresh role/status projection and cookie forwarding. | Better Auth admin config, Node header adapter. | No custom signed-session implementation remains. |
 | `server/src/domains/auth/services/customerAuth.service.js` | Better Auth customer configuration. | Better Auth, Prisma adapter, `@better-auth/infra`, email payload builders. | Owns customer auth, Infrastructure dashboard plugin, role/status fields, session lookup, signup profile hooks, and response token sanitization. |
 | `server/src/domains/auth/constants/authRoles.constants.js` | Current and future role/status constants. | None. | Source of truth for CUSTOMER/ADMIN and account active/deactivated labels. |
 | `server/src/domains/account/routes/account.routes.js` | Protected customer account routes. | `requireCustomerAuth`, account controller. | Customer dashboard/profile/orders API. |
@@ -443,3 +443,26 @@ Current responsibilities supersede older checkout-success/email-resend descripti
 | Client checkout `tests/tier2/checkout/{commerce-presentation,shipping-address}.test.js` and promo tests; server checkout security/inventory and manual-email tests | Selected variants, signup/session retry, postal review/Edit/focus, Boolean submit readiness, impact publication gates, wallet finalization reuse, true receipt state and security/email gates | Vitest/Vue SSR/mocked boundaries; actual local HTTP/UI and rollback DB QA separately recorded |
 
 Views remain small; checkout coordination is split from identity/shipping/auth, APIs remain separate and server template renderer/validator/repository are separate. No new arbitrary HTML editor, bulk queue, address book, tax provider, auth rebuild or checkout engine. Existing unused legacy mobile/header/progress checkout components are retained for a later focused dead-code audit, not rendered in the current flow. Broader file-level coverage gaps listed earlier remain open.
+
+## Production Audit File Additions (2026-10-11)
+
+| File | Responsibility and dependencies | Flow participation |
+| --- | --- | --- |
+| server auth/services/adminAuth.service.js | Native Better Auth/Prisma admin config; role/status gate, isolated cookies, bounded expiry | Admin login and server guards |
+| server auth/utils/authResponse.js | Shared token projection and persistent logout verification | Customer and admin native API after hooks |
+| server auth/services/adminProvision.service.js and repositories/adminProvision.repository.js | Preflight/conflict rules and atomic ADMIN credential/event creation | Explicit CLI provisioning only, no startup hook |
+| server/scripts/provision-admin.js | Existing env loader and loopback safety/preflight/apply | Local deployment preparation; remote requires separate approval |
+| server app/middleware/auth/boundedAuthHandler.js | Native better-call Node transport with 100 KB byte cap | Both native auth surfaces before Express JSON parsing |
+| server account/validators/account.validator.js | Typed/bounded profile/address/preferences validation | Protected own-profile save |
+| server shared/utils/apiError.js | Generic DB/provider errors with explicit business 4xx preserved | Domain controllers |
+| server shared/utils/operationalLog.js | Allowlisted event/code/status and admin actor/templated route | Operational failures and protected writes |
+| server shared/utils/databaseSafety.js | Confirmed local-only destructive seed guard | Seed script only; not checkout inventory |
+| client admin/validators/adminAuth.validator.js | Admin-group-only return path | Existing admin login redirect |
+| client admin/api/adminSession.api.js | Login plus confirmed session, read/logout wrappers | Original dashboard transport, native Better Auth underneath |
+| client admin/components/AdminDataTargetBadge.vue | Actual backend target or checking/unverified state | Prevent misleading local labels |
+| server tests/tier2/admin/{better-auth-admin,customer-auth-security,admin-session-service,admin-provision,audit-security,catalog-safety}.test.js | Engine/contract/HTTP/negative security tests, no live providers | Auth/privacy/data safety regression coverage |
+| server tests/tier2/orders/audit-order-integrity.test.js | Ownership query, customer-only lifecycle, status CAS/terminal guards | Order/admin regression coverage |
+| client tests/tier2/admin/admin-auth.test.js | Session confirmation, redirect and Vercel API fallback tests | Admin/deployment contracts |
+| docs/audits/2026-10-11-production-audit.md and 2026-10-11-api-access.md | Findings, coverage, scorecard, routes and limitations | Review/launch gates |
+
+Paths labeled server/client above are rooted at server/src/domains, server/src or client/src/domains as their group indicates; full Git paths are listed in the latest handoff. Existing reusable account/admin/storefront components remain the source of UI truth. Compatibility and empty/unreachable candidates were inventoried, not blindly deleted.

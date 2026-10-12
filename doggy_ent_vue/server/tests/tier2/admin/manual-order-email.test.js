@@ -57,7 +57,7 @@ describe('manual order templates and preview-before-send', () => {
     const preview = await previewEmailTemplate(template.id, { orderId: 'order-1' }, 'admin')
     const result = await sendEmailTemplate(template.id, { previewProof: preview.previewProof, dryRun: true, confirmed: true, recipient: 'attacker@example.test' }, 'admin')
     expect(result.message).toContain('No email was sent')
-    expect(provider.queueEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'alex@example.com', manualApproved: true, dryRun: true, dedupeKey: expect.stringContaining('manual:dry:'), auditMetadata: expect.objectContaining({ actorType: 'ADMIN_ENV', actor: 'admin' }) }))
+    expect(provider.queueEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'alex@example.com', manualApproved: true, dryRun: true, dedupeKey: expect.stringContaining('manual:dry:'), auditMetadata: expect.objectContaining({ actorType: 'ADMIN', actor: 'admin' }) }))
   })
   it('rejects stale template revisions rather than losing editor work', async () => {
     repo.updateEmailTemplate.mockResolvedValue(null)

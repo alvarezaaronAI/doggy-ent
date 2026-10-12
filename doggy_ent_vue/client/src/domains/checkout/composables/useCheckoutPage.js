@@ -286,7 +286,6 @@ async function loadCampaignPreview() {
   } catch (error) {
     console.error(
       'Failed to load campaign preview.',
-      error,
     )
 
     campaignPreview.value = []

@@ -6,6 +6,7 @@ import {
 } from '../../../domains/auth/services/customerAuth.service.js'
 
 export async function requireCustomerAuth(req, res, next) {
+  res.set('Cache-Control', 'no-store')
   try {
     const session = await getCustomerSessionFromRequest(req)
 

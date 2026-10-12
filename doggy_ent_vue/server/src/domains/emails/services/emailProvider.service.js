@@ -11,6 +11,7 @@ import {
   updateEmailDeliveryById,
 } from '../repositories/emailDelivery.repository.js'
 import { prisma } from '../../../db/prisma.js'
+import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
 
 function getResendApiKey() {
   return String(process.env.RESEND_API_KEY || '').trim()
@@ -51,9 +52,10 @@ function isMockEmailMode() {
 }
 
 function sanitizeEmailError(error) {
-  const message = String(error?.message || error || 'Email provider error.')
-  const key = getResendApiKey()
-  return (key ? message.replaceAll(key, '[redacted]') : message).slice(0, 500)
+  const status = Number(error?.statusCode)
+  return Number.isInteger(status) && status >= 400 && status <= 599
+    ? `Email provider request failed (${status}). Review provider delivery status before retrying.`
+    : 'Email provider request failed. Review provider delivery status before retrying.'
 }
 
 function getDedupeKey(payload) {
@@ -277,9 +279,7 @@ export async function queueEmail(payload = {}) {
   catch (error) {
     const safeMessage = sanitizeEmailError(error)
 
-    console.error(
-      `[email] ${payload.event} email failed: ${safeMessage}`,
-    )
+    logOperationalFailure('EMAIL_PROVIDER_FAILED', error)
 
     const updatedDelivery = await updateEmailDeliveryById(
       delivery.id,

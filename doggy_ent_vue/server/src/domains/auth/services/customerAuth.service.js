@@ -30,77 +30,18 @@ import {
   queueEmail,
 } from '../../emails/services/emailProvider.service.js'
 
-function normalizeOrigin(origin) {
-  return String(origin || '')
-    .trim()
-    .replace(/\/$/, '')
-}
-
-function splitOrigins(value) {
-  return String(value || '')
-    .split(',')
-    .map(normalizeOrigin)
-    .filter(Boolean)
-}
-
-function getTrustedOrigins() {
-  return [
-    'http://localhost:5173',
-    ...splitOrigins(process.env.FRONTEND_URL),
-    ...splitOrigins(process.env.CLIENT_URL),
-  ]
-}
-
-function getBetterAuthSecret() {
-  return (
-    process.env.BETTER_AUTH_SECRET
-    || process.env.ADMIN_SESSION_SECRET
-    || process.env.ADMIN_PASSWORD_HASH
-  )
-}
-
-function sanitizeAuthPayload(value) {
-  if (Array.isArray(value)) {
-    return value.map(sanitizeAuthPayload)
-  }
-
-  if (!value || typeof value !== 'object') {
-    return value
-  }
-
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([key]) => key !== 'token')
-      .map(([key, childValue]) => [
-        key,
-        sanitizeAuthPayload(childValue),
-      ]),
-  )
-}
-
-async function sanitizeReturnedAuthResponse(returned) {
-  if (!returned) {
-    return returned
-  }
-
-  if (returned instanceof Response) {
-    const data = await returned.clone().json().catch(() => null)
-
-    return data ? sanitizeAuthPayload(data) : returned
-  }
-
-  return sanitizeAuthPayload(returned)
-}
+import { getAuthBaseURL, getAuthSecret, getTrustedAuthOrigins } from '../../../config/env.js'
+import { sanitizeReturnedAuthResponse, verifySessionRevocation } from '../utils/authResponse.js'
+import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
 
 export const customerAuth = betterAuth({
   appName: 'Doggy Ent',
+  logger: { disabled: true },
+  onAPIError: { onError: error => logOperationalFailure('CUSTOMER_AUTH_FAILED', error) },
   basePath: '/api/customer-auth',
-  secret: getBetterAuthSecret(),
-  baseURL:
-    process.env.BETTER_AUTH_URL
-    || process.env.API_BASE_URL
-    || 'http://localhost:3000',
-  trustedOrigins: getTrustedOrigins(),
+  secret: getAuthSecret(),
+  baseURL: getAuthBaseURL(),
+  trustedOrigins: getTrustedAuthOrigins(),
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
@@ -111,14 +52,7 @@ export const customerAuth = betterAuth({
   ],
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
-      if (![
-        '/sign-up/email',
-        '/sign-in/email',
-        '/get-session',
-      ].includes(ctx.path)) {
-        return
-      }
-
+      await verifySessionRevocation(ctx)
       const sanitizedPayload =
         await sanitizeReturnedAuthResponse(
           ctx.context.returned,
@@ -134,6 +68,7 @@ export const customerAuth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
+    revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({
       user,
       url,
@@ -187,6 +122,10 @@ export const customerAuth = betterAuth({
     },
   },
   databaseHooks: {
+    session: { create: { before: async session => {
+      const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { status: true } })
+      return user?.status === ACCOUNT_STATUS.ACTIVE ? { data: session } : false
+    } } },
     user: {
       create: {
         after: async (user) => {
@@ -236,7 +175,7 @@ export async function getCustomerSessionFromRequest(req) {
 export async function getCustomerUserFromRequest(req) {
   const session = await getCustomerSessionFromRequest(req)
 
-  return session?.user || null
+  return session?.user?.status === ACCOUNT_STATUS.ACTIVE ? session.user : null
 }
 
 export function isCustomerRole(user) {

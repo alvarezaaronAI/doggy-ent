@@ -1,6 +1,7 @@
 import {
   ACCOUNT_STATUS,
 } from '../../auth/constants/authRoles.constants.js'
+import { getFrontendOrigin } from '../../../config/env.js'
 import {
   customerAuth,
 } from '../../auth/services/customerAuth.service.js'
@@ -62,19 +63,21 @@ export async function fetchAdminCustomerById(customerId) {
   return buildCustomerDetail(customer)
 }
 
-export async function deactivateAdminCustomer(customerId) {
+export async function deactivateAdminCustomer(customerId, actor = null) {
   const customer = await updateCustomerAccountStatus({
     customerId,
     status: ACCOUNT_STATUS.DEACTIVATED,
+    actor,
   })
 
   return buildCustomerDetail(customer)
 }
 
-export async function reactivateAdminCustomer(customerId) {
+export async function reactivateAdminCustomer(customerId, actor = null) {
   const customer = await updateCustomerAccountStatus({
     customerId,
     status: ACCOUNT_STATUS.ACTIVE,
+    actor,
   })
 
   return buildCustomerDetail(customer)
@@ -90,7 +93,7 @@ export async function queueAdminCustomerVerification(customerId) {
   return customerAuth.api.sendVerificationEmail({
     body: {
       email: customer.email,
-      callbackURL: '/account/profile',
+      callbackURL: `${getFrontendOrigin()}/account/profile`,
     },
   })
 }
@@ -105,7 +108,7 @@ export async function queueAdminCustomerPasswordReset(customerId) {
   return customerAuth.api.requestPasswordReset({
     body: {
       email: customer.email,
-      redirectTo: '/account/reset-password',
+      redirectTo: `${getFrontendOrigin()}/account/reset-password`,
     },
   })
 }

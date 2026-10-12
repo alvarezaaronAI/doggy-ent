@@ -1,12 +1,12 @@
 # Doggy Ent Architecture
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 This directory documents how the Doggy Ent Vue storefront, admin dashboard, Express API, Prisma database, Stripe integration, and temporary local admin workflows fit together. It is evidence-based from the repository; future plans are labeled as future work.
 
 ## Project Shape
 
-Doggy Ent is a Vue 3 + Vite storefront and admin app backed by an Express 5 API, Prisma, PostgreSQL, Better Auth, and Stripe. Customers browse products, choose product variants, add items to cart, validate promos, pay through Stripe, and receive an order success page. Customer accounts now use Better Auth on `/api/customer-auth` while guest checkout remains available. Admin users currently continue to use the custom admin auth flow and manage products, promos, campaigns, orders, and customers through protected admin pages.
+Doggy Ent is a Vue 3 + Vite storefront and admin app backed by an Express 5 API, Prisma, PostgreSQL, Better Auth, and Stripe. Customers browse products, choose variants, use the cart, validate promos, pay through Stripe, and view an order receipt. Guest checkout remains available. Customer and admin authentication use separate Better Auth configurations on `/api/customer-auth` and `/api/admin-auth`; the existing admin dashboard keeps its `/api/auth` compatibility calls. See the [production audit](../audits/2026-10-11-production-audit.md) for launch blockers and verification limits.
 
 ```mermaid
 flowchart LR
@@ -15,6 +15,8 @@ flowchart LR
   Storefront --> Api["Express API"]
   AdminApp --> Api
   Storefront --> CustomerAuth["Better Auth customer API"]
+  AdminApp --> AdminAuth["Better Auth admin API and compatibility routes"]
+  AdminAuth --> Prisma
   CustomerAuth --> Prisma
   Api --> Prisma["Prisma client"]
   Prisma --> DB["PostgreSQL"]
@@ -32,7 +34,7 @@ flowchart LR
 - [storefront-editor.md](./storefront-editor.md): Product mini-card editing, homepage draft/publish, content/background controls, security, and deployment boundaries.
 - [media-library.md](./media-library.md): Protected image uploads, reusable metadata/blob storage, public rendering, limits, and deployment boundaries.
 - [checkout-and-order-email.md](./checkout-and-order-email.md): Receipt First checkout, Soft Essentials receipts, reusable cards, campaign pop-out, wallets, guest receipt security, trusted catalog/inventory and previewed manual order emails.
-- [auth-roadmap.md](./auth-roadmap.md): Current custom admin auth, implemented Better Auth customer accounts, same-site domain direction, and future admin/customer auth plan.
+- [auth-roadmap.md](./auth-roadmap.md): Better Auth customer/admin sessions, deliberate admin provisioning, rollout and same-site domain direction.
 
 ## Important Source-Of-Truth Locations
 
@@ -54,7 +56,7 @@ flowchart LR
 - Public campaign page and admin visual editor: one `client/src/domains/campaigns/components/CampaignPageContent.vue` renderer, composed by `CampaignView.vue` and `AdminCampaignForm.vue`
 - Public brand story: `client/src/domains/storefront/constants/brandContent.js` owns `/meet-chase-evie`, existing story copy, names, template images, and values. `BrandView.vue` composes shared storefront/cart components; `utils/socialLinks.js` owns safe footer destinations/placeholders.
 - Order statuses, admin labels, and persisted status history: `client/src/domains/admin/constants/adminOrders.constants.js`, `server/src/domains/orders/constants/orders.constants.js`, `server/prisma/schema.prisma`
-- Admin auth/session: `server/src/domains/auth/services/auth.service.js`, `server/src/domains/auth/routes/auth.routes.js`
+- Admin auth/session: `server/src/domains/auth/services/adminAuth.service.js`; compatibility transport: `auth.service.js`, `auth.routes.js`; provisioning: `server/scripts/provision-admin.js`.
 - Customer auth/session and Better Auth Infrastructure dashboard connection: `server/src/domains/auth/services/customerAuth.service.js`, `client/src/domains/account/api/authClient.js`, `server/src/domains/account/*`, `client/src/domains/account/*`
 - Customer management: `server/src/domains/customers/*`, `client/src/domains/admin/views/AdminCustomersView.vue`, `client/src/domains/admin/views/AdminCustomerDetailView.vue`
 - Admin notification, shipment, and report pages: `client/src/domains/admin/views/AdminNotificationsView.vue`, `AdminShipmentsView.vue`, `AdminReportsView.vue`
@@ -82,3 +84,7 @@ The later homepage/story follow-up and approved baseline implementation add no A
 ## Mermaid Verification
 
 On 2026-10-10, the cached official Mermaid CLI 11.15.0 rendered all 15 diagrams across README (1), data-flow (11), admin (1) and auth-roadmap (2) to temporary SVGs, exit 0. File-map/database contain no diagrams and were checked by the same Markdown input tool. No repository dependency or generated SVG was added. This supersedes the earlier note that rendering had not been rerun. The prior verified root cause of docs issues was documentation drift in older diagram files, especially references to temporary in-memory product data that no longer matches the Prisma-backed application.
+
+### 2026-10-11 Audit Verification
+
+The official cached Mermaid CLI rendered all 20 diagrams across README, admin, auth-roadmap, data-flow, diagram and mockdiagram to nonempty temporary SVGs, exit 0. Other architecture files have no Mermaid fences. Supplemental automatic order/tracking email arrows and custom-admin descriptions were stale documentation, not new automation; corrected to current manual-send/Better Auth behavior. No diagram dependency or generated SVG was added to the repository.

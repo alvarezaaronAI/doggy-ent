@@ -1,3 +1,4 @@
+import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
 import {
   ORDER_STATUS,
 } from '../../orders/constants/orders.constants.js'
@@ -43,6 +44,7 @@ function statusFromShipmentStatus(status) {
 export async function addOrUpdateOrderTracking(
   orderId,
   payload = {},
+  actor,
 ) {
   const order = await findOrderById(orderId)
 
@@ -72,10 +74,7 @@ export async function addOrUpdateOrderTracking(
     }
   }
   catch (error) {
-    console.error(
-      '[shipping] Shippo tracking sync failed:',
-      error.safeMessage || error.message,
-    )
+    logOperationalFailure('SHIPPO_TRACKING_FAILED', error)
   }
 
   const shipment = await upsertShipmentForOrder(shipmentInput)
@@ -94,8 +93,9 @@ export async function addOrUpdateOrderTracking(
       nextOrderStatus,
       {
         note: `Tracking ${shipment.trackingNumber} marked ${nextOrderStatus}.`,
-        changedByType: 'ADMIN_ENV',
-        changedBy: 'ADMIN_ENV',
+        changedByType: actor?.id ? 'ADMIN' : 'SYSTEM',
+        changedBy: actor?.id || null,
+        allowedFromStatuses: nextOrderStatus === ORDER_STATUS.DELIVERED ? ['PAID', 'PROCESSING', 'SHIPPED'] : ['PAID', 'PROCESSING'],
       },
     )
   }
@@ -107,7 +107,7 @@ export async function addOrUpdateOrderTracking(
   }
 }
 
-export async function refreshOrderTracking(orderId) {
+export async function refreshOrderTracking(orderId, actor) {
   const order = await findOrderById(orderId)
   const shipment = order?.shipments?.[0]
 
@@ -121,7 +121,7 @@ export async function refreshOrderTracking(orderId) {
     carrier: shipment.carrier,
     trackingNumber: shipment.trackingNumber,
     trackingUrl: shipment.trackingUrl,
-  })
+  }, actor)
 }
 
 export async function fetchAdminShipmentOverview({

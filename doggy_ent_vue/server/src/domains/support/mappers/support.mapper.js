@@ -30,17 +30,18 @@ export function mapSupportMessage(message, {
   }
 }
 
-export function mapSupportEvent(event) {
+export function mapSupportEvent(event, { includeInternal = false } = {}) {
   if (!event) {
     return null
   }
+  if (!includeInternal && (event.metadata?.visibility === 'INTERNAL' || event.eventType === 'INTERNAL_NOTE_ADDED')) return null
 
   return {
     id: event.id,
     eventType: event.eventType,
     fromStatus: event.fromStatus,
     toStatus: event.toStatus,
-    metadata: event.metadata || null,
+    metadata: includeInternal ? event.metadata || null : null,
     actorType: event.actorType,
     createdAt: normalizeDate(event.createdAt),
   }
@@ -89,7 +90,7 @@ export function mapOrderIssue(issue, {
           .filter(Boolean)
       : [],
     events: Array.isArray(issue.events)
-      ? issue.events.map(mapSupportEvent).filter(Boolean)
+      ? issue.events.map(event => mapSupportEvent(event, { includeInternal })).filter(Boolean)
       : [],
   }
 }

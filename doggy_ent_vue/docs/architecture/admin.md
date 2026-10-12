@@ -1,6 +1,6 @@
 # Admin Architecture
 
-Last updated: 2026-10-09
+Last updated: 2026-10-11
 
 ## Image Editing Follow-Up
 
@@ -10,7 +10,7 @@ Website labels describe content locations; selected palette/artwork and **Edited
 
 ## Overview
 
-The admin dashboard is a Vue route group protected by a router guard and protected server API routes. It manages products, promos, campaigns, orders, and customer accounts. The current admin auth system remains custom admin auth; Better Auth currently powers customer accounts and is prepared to replace admin auth in a later permissions phase.
+The admin dashboard is a Vue route group protected by a router guard and server API guards. The explicitly approved admin migration now uses database-backed Better Auth admin sessions, separate from customer cookies. The dashboard, sidebar, identity, data routing and CRUD remain unchanged. See [auth rollout](auth-roadmap.md).
 
 ## Admin Routes
 
@@ -29,7 +29,8 @@ Client routes live in `client/src/app/router/index.js`.
 | `/admin/customers` | `AdminCustomersView.vue` | Protected customer list. |
 | `/admin/customers/:customerId` | `AdminCustomerDetailView.vue` | Protected customer detail, linked orders, readiness actions. |
 | `/admin/shipments` | `AdminShipmentsView.vue` | Protected shipment history and carrier events. |
-| `/admin/notifications` | `AdminNotificationsView.vue` | Protected delivery history; template center is future work. |
+| `/admin/notifications` | `AdminNotificationsView.vue` | Protected delivery history. |
+| `/admin/email-templates` | `AdminEmailTemplatesView.vue` | Protected template authoring, explicit preview/send. |
 | `/admin/reports` | `AdminReportsView.vue` | Protected all-time operational summaries. |
 | `/admin/order-issues` | `AdminOrderIssuesView.vue` | Protected support cases, notes/replies, and history. |
 | `/admin/internal-issues` | `AdminInternalIssuesView.vue` | Protected sanitized operational issues and history. |
@@ -40,7 +41,7 @@ The router guard calls `/api/auth/me` through `fetchApi`. Server admin API route
 
 Protected admin route entries are nested under `AdminLayout.vue` while retaining their existing public paths and route names. Login stays outside that layout. The existing cookie guard remains unchanged.
 
-`AdminLayout.vue` owns identity, logout, the existing backend-derived target badge, and `AdminSidebar.vue`. `adminNavigation.constants.js` is the single list of twelve tools (the original eleven plus Website) and active-route matching. The nested RouterView is keyed by path, so changing order/customer IDs creates a fresh detail state rather than reusing a stale onMounted-only record.
+`AdminLayout.vue` owns identity, logout, the backend-derived target badge, and `AdminSidebar.vue`. `adminNavigation.constants.js` is the single list of thirteen tools, including Website and Email templates, and active-route matching. The nested RouterView is keyed by path, so changing order/customer IDs creates fresh detail state.
 
 Admin styling lives in `client/src/assets/styles/admin.css`, uses Tailwind utilities with a Tailwind reference directive, and is scoped to admin elements/tokens. `AdminIcon.vue` maps semantic names to `@lucide/vue` icons. Storefront/account styling and state are not replaced.
 
@@ -51,13 +52,13 @@ Products/promos/campaigns use explicit list/editor state. Analytics/impact panel
 ## Auth Flow
 
 1. Login page posts admin credentials to `/api/auth/login`.
-2. Server validates `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH`.
-3. Server creates a custom admin session cookie.
+2. Better Auth verifies the deliberately provisioned database credential and fresh ADMIN/ACTIVE user.
+3. Server creates an eight-hour, database-backed, HttpOnly admin cookie. Legacy signed cookies are not accepted.
 4. Client route guard calls `/api/auth/me`.
 5. Server validates the cookie/session and returns `authenticated: true`.
 6. Protected admin routes render.
 
-The current session layer is temporary and documented in [auth-roadmap.md](./auth-roadmap.md).
+Logout deletes the database session before reporting success; a copied cookie then returns 401. Native admin signup and unrelated native auth endpoints are blocked. Environment credentials are provisioning inputs, not per-login authority. See [auth-roadmap.md](./auth-roadmap.md).
 
 ## Admin Data Target Badge
 
@@ -65,8 +66,10 @@ The current session layer is temporary and documented in [auth-roadmap.md](./aut
 
 - `LOCAL DATA TARGET`
 - `RAILWAY DB TARGET`
+- `DEPLOYED DATA TARGET` in production
+- `CHECKING DATA TARGET` before backend confirmation; `TARGET UNVERIFIED` on failure, never a misleading LOCAL fallback
 
-The server target is derived from `DOGGY_SERVER_ENV_TARGET` in `server/src/config/env.js`.
+The server target is derived from startup configuration in `server/src/config/env.js`. Explicit local mode refuses remote DB hosts; Railway DB mode requires a remote override. Host classification cannot detect a manually configured tunnel, so operators must still confirm the target.
 
 ## Temporary Railway DB Admin Workflow
 
@@ -190,7 +193,7 @@ Status update behavior:
 - The admin selects the next status separately.
 - Save persists the status change; Cancel discards the staged selection.
 - Status changes create `OrderStatusHistory` rows.
-- Until Better Auth/admin users exist, history rows use `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
+- New authenticated admin changes record `changedByType: ADMIN` and the real admin user ID. Historical ADMIN_ENV entries remain unchanged; system changes use SYSTEM.
 
 Admin order detail shows:
 

@@ -50,6 +50,7 @@ function normalizeVariant({
     size,
     price: Number(variant.price ?? 0),
     sku: variant.sku,
+    isActive: variant.isActive !== false,
     quantity,
     stockStatus: getStockStatus(quantity, stockStatus),
     lowStockThreshold: normalizeInventoryQuantity(
@@ -186,6 +187,7 @@ export function buildProductMutationData(normalizedProduct) {
         price: Math.round(Number(variant.price) * 100),
         inventory: variant.quantity,
         sku: variant.sku,
+        isActive: variant.isActive,
       })),
     },
   }

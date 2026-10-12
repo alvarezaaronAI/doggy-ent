@@ -142,3 +142,14 @@ As of the 2026-06-17 product experience pass:
 - Admin issue status saves, internal notes, and customer-visible account replies do not send email automatically.
 - Admin can mark email follow-up requested on an order issue message; support-case email preview/send remains future work. The separate order-email template flow above is now implemented.
 - In-account order issue history is the current customer-visible communication channel for support cases.
+
+## Security Email And Provider Privacy Follow-Up (2026-10-11)
+
+Verification/reset dedupe keys are action-specific one-way URL digests: identical requests dedupe, new action links are not permanently suppressed. Persist only hasActionUrl metadata, never the reset/verification URL or token. All native JSON auth endpoints are sanitized. Password-reset expiry/reuse and session revocation are tested with the actual engine in isolated fixtures; no real email was sent.
+Admin-triggered verification/reset callbacks now return to the absolute configured frontend origin, not relative backend account routes. Provider-free fixtures verify this wiring. Live links from a temporary local server using Railway DB must remain mocked until public auth origin/signing compatibility and approved email QA are reviewed.
+
+Provider failures store a generic status/reconciliation message and log only safe structured event/code/status, not raw provider response text. Mocked failure tests ensure recipient/action-proof/secret text does not enter logs or delivery errors. Existing persisted historical provider errors were not rewritten.
+
+Manual order email preview/send remains mandatory, actor-bound to the actual ADMIN user ID. Status/tracking saves do not send email. FAILED/pending activity still requires provider reconciliation before retries; no new automatic resend policy was introduced.
+
+Shippo requests now have a 15-second timeout and generic customer-safe failure messages. The acknowledgement-only webhook requires a configured shared secret and fails closed when absent. It is NOT a verified Shippo signature/event-matching/fulfillment implementation; no labels/shipments were purchased. See [audit](audits/2026-10-11-production-audit.md).

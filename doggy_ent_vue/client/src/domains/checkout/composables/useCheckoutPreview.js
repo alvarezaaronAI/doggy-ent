@@ -67,7 +67,6 @@ export function useCheckoutPreview({
     catch (error) {
       console.error(
         '[checkout-preview] Failed to refresh preview.',
-        error,
       )
       if (requestId === activePreviewRequestId) {
         checkoutPreviewResult.value = null

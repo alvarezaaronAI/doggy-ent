@@ -3,6 +3,7 @@ import {
   createNewProduct,
   deleteExistingProduct,
   getAllProducts,
+  getAdminProducts,
   getProductBySlug,
   updateExistingProduct,
 } from '../controllers/products.controller.js'
@@ -11,6 +12,7 @@ import { requireAdminAuth } from '../../../app/middleware/auth/requireAdminAuth.
 const router = Router()
 
 router.get('/', getAllProducts)
+router.get('/admin/library', requireAdminAuth, getAdminProducts)
 router.get('/:slug', getProductBySlug)
 router.post('/', requireAdminAuth, createNewProduct)
 router.put('/:id', requireAdminAuth, updateExistingProduct)

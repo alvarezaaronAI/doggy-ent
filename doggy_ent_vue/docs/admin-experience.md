@@ -292,3 +292,13 @@ Live Safari, local/Railway DB-mode, deployed cookie, and real provider QA still 
 - Never expose credentials, auth accounts, session/reset/verification tokens, raw provider payloads, arbitrary event metadata, or email action URLs. Inspection is allowlisted server-side and admin-only; it is not a generic DB browser or DB editing tool.
 - Stripe PaymentIntent IDs are operational identifiers, not API keys. Each order's valid stored `pi_` ID is appended to a validated HTTPS Stripe payments dashboard base. Admin can save/cancel that non-secret base under Stripe dashboard settings, persisted only in the current browser. Optional build-time default: `VITE_STRIPE_DASHBOARD_PAYMENTS_URL`. No automatic account or test/live inference; see [admin architecture](architecture/admin.md).
 - Explicit order saves refresh the protected full detail. If refresh fails after a successful write, retain the saved result, remove the stale internal snapshot, and explain the refresh failure without inviting a duplicate write.
+
+## Approved Better Auth Admin Migration (2026-10-11)
+
+The existing dashboard, thirteen tabs, signed-in identity, data routing, editor behavior and admin CRUD remain. Admin sessions now use separate Better Auth configuration and persisted ADMIN/ACTIVE users, behind the compatible /api/auth endpoints. No public admin signup or bearer fallback. Credentials must be deliberately provisioned; environment hashes no longer act as live login authority. Follow [auth rollout](architecture/auth-roadmap.md).
+
+The target badge initially checks the backend and reports TARGET UNVERIFIED on failure. Production reports DEPLOYED DATA TARGET. LOCAL startup refuses remote DB hosts; Railway DB mode requires its remote override. Never write based only on a frontend mode label.
+
+New order/tracking/customer lifecycle/support history records use the real authenticated admin ID; historical ADMIN_ENV remains. Customer lifecycle tools cannot target ADMIN records. Status updates compare the current row and return 409 on concurrent change; tracking cannot regress cancelled/refunded/delivered orders. REFUNDED still does not execute a Stripe refund. Protected writes emit safe structured actor/route/status logs without bodies or credentials. MFA and finer permissions remain future work.
+
+The audit provisioned only the confirmed local DB. Railway provisioning/deployment and browser login acceptance were not performed. See [audit report](audits/2026-10-11-production-audit.md).

@@ -41,6 +41,7 @@ import {
   validateRequiredCheckoutFields,
 } from '../validators/checkout.validator.js'
 import { resolveCheckoutItems } from './checkoutCatalog.service.js'
+import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
 
 
 function hasRateAddress(customer = {}) {
@@ -87,10 +88,7 @@ export async function fetchCheckoutShippingRates({
     }
   }
   catch (error) {
-    console.error(
-      '[checkout] Shippo rate shopping failed:',
-      error.safeMessage || error.message,
-    )
+    logOperationalFailure('CHECKOUT_SHIPPING_RATES_FAILED', error)
   }
 
   return {
@@ -370,10 +368,7 @@ export async function createCheckout(
       })
     }
     catch (error) {
-      console.error(
-        '[checkout] Failed promo redemption persistence.',
-        error,
-      )
+      logOperationalFailure('CHECKOUT_PROMO_USAGE_FAILED', error)
     }
   }
 
@@ -390,10 +385,7 @@ export async function createCheckout(
       }
     }
     catch (error) {
-      console.error(
-        '[checkout] Failed campaign donation persistence.',
-        error,
-      )
+      logOperationalFailure('CHECKOUT_CAMPAIGN_USAGE_FAILED', error)
     }
   }
 

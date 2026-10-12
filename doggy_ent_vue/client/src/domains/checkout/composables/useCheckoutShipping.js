@@ -78,7 +78,6 @@ async function loadShippingOptions() {
   catch (error) {
     console.warn(
       '[checkout] Using local fallback shipping options.',
-      error,
     )
   }
 }
@@ -129,7 +128,7 @@ async function loadShippingRates() {
   }
   catch (error) {
     shippingRateMessage.value = 'Carrier rates are unavailable. Store shipping rates are shown.'
-    console.warn('[checkout] Shipping rate refresh failed.', error)
+    console.warn('[checkout] Shipping rate refresh failed.')
   }
   finally {
     isLoadingShippingRates.value = false

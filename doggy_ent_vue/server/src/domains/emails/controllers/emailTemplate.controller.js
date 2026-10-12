@@ -3,5 +3,5 @@ const respond = handler => async (req, res, next) => { try { res.set('Cache-Cont
 export const getTemplates = respond(() => getEmailTemplates())
 export const postTemplate = respond(req => saveEmailTemplate(null, req.body))
 export const putTemplate = respond(req => saveEmailTemplate(req.params.id, req.body))
-export const postPreview = respond(req => previewEmailTemplate(req.params.id, req.body, req.admin.email))
-export const postSend = respond(req => sendEmailTemplate(req.params.id, req.body, req.admin.email))
+export const postPreview = respond(req => previewEmailTemplate(req.params.id, req.body, req.admin.id))
+export const postSend = respond(req => sendEmailTemplate(req.params.id, req.body, req.admin.id))

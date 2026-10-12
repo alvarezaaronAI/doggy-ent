@@ -1,122 +1,42 @@
+import { Router } from 'express'
+import { adminLoginRateLimiter } from '../../../app/middleware/security/rateLimit.middleware.js'
+import { loginAdmin, logoutAdmin, getAdminFromRequest, getAdminDataTarget, forwardAuthCookies } from '../services/auth.service.js'
 
+const router = Router()
 
-import express from 'express'
-import rateLimit from 'express-rate-limit'
-
-import {
-  loginAdmin,
-  logoutAdmin,
-  getAdminFromSession,
-  getAdminDataTarget,
-  getSessionCookieName,
-  getSessionCookieOptions,
-} from '../services/auth.service.js'
-
-
-const router = express.Router()
-
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many login attempts. Please try again later.',
-  },
-})
-
-router.post('/login', loginLimiter, async (req, res) => {
+router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next() })
+router.post('/login', adminLoginRateLimiter, async (req, res) => {
   try {
-    const result = await loginAdmin(req.body)
-
-    res.cookie(
-      getSessionCookieName(),
-      result.sessionId,
-      getSessionCookieOptions()
-    )
-
-    return res.json({
-      success: true,
-      admin: result.admin,
-      expiresAt: result.expiresAt,
-    })
+    const result = await loginAdmin(req.body, req)
+    forwardAuthCookies(res, result.headers)
+    res.clearCookie('doggy_admin_session', { path: '/', httpOnly: true })
+    return res.json({ success: true, admin: result.admin })
   } catch (error) {
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      message: error.message || 'Unable to login.',
-    })
+    const code = error.statusCode === 400 ? 400 : error.statusCode === 401 || error.status === 'UNAUTHORIZED' || error.status === 'FORBIDDEN' ? 401 : 500
+    return res.status(code).json({ success: false, message: code === 400 ? 'Enter a valid email and password.' : code === 401 ? 'Invalid admin credentials.' : 'Unable to sign in.' })
   }
 })
 
 router.post('/logout', async (req, res) => {
   try {
-    const sessionId = req.cookies?.[getSessionCookieName()]
-
-    await logoutAdmin(sessionId)
-
-    res.clearCookie(
-      getSessionCookieName(),
-      getSessionCookieOptions()
-    )
-
+    const result = await logoutAdmin(req)
+    forwardAuthCookies(res, result.headers)
+    res.clearCookie('doggy_admin_session', { path: '/', httpOnly: true })
     return res.json({ success: true })
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Unable to logout.',
-    })
+  } catch {
+    return res.status(500).json({ success: false, message: 'Unable to sign out. Please try again.' })
   }
 })
 
-router.get('/me', async (req, res) => {
+for (const path of ['/me', '/data-target']) router.get(path, async (req, res) => {
   try {
-    const sessionId = req.cookies?.[getSessionCookieName()]
-
-    const admin = await getAdminFromSession(sessionId)
-
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        authenticated: false,
-      })
-    }
-
-    return res.json({
-      success: true,
-      authenticated: true,
-      admin,
-    })
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Unable to validate session.',
-    })
-  }
-})
-
-router.get('/data-target', async (req, res) => {
-  try {
-    const sessionId = req.cookies?.[getSessionCookieName()]
-
-    const admin = await getAdminFromSession(sessionId)
-
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        authenticated: false,
-      })
-    }
-
-    return res.json({
-      success: true,
-      target: getAdminDataTarget(),
-    })
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Unable to load admin data target.',
-    })
+    const admin = await getAdminFromRequest(req)
+    if (!admin) return res.status(401).json({ success: false, authenticated: false })
+    return res.json(path === '/me'
+      ? { success: true, authenticated: true, admin }
+      : { success: true, target: getAdminDataTarget() })
+  } catch {
+    return res.status(500).json({ success: false, message: 'Unable to validate admin session.' })
   }
 })
 

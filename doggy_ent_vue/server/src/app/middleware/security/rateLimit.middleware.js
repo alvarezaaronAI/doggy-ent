@@ -22,6 +22,12 @@ export const checkoutRateLimiter = createRateLimiter({
   message: 'Too many checkout requests. Please try again shortly.',
 })
 
+export const adminLoginRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many login attempts. Please try again later.',
+})
+
 export const paymentRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 30,

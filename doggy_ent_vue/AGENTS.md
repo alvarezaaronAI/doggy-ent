@@ -149,9 +149,9 @@ HAVING COUNT(*) > 1;
 
 - Customer accounts use Better Auth.
 - Preserve guest checkout.
-- Custom admin auth remains until an explicit admin Better Auth migration is requested.
-- Stabilize existing admin auth/session issues before migrating admin auth.
-- Future Better Auth admin roles should preserve the existing dashboard and use roles such as `ADMIN` and `CUSTOMER`.
+- Admin migration was explicitly approved on 2026-10-11. Admin now uses a separate Better Auth configuration on `/api/admin-auth`, with `/api/auth` compatibility endpoints preserving the dashboard.
+- Admin access requires a persisted session, fresh `ADMIN` role and `ACTIVE` status. Public admin signup is disabled; never promote a customer or provision admins automatically on startup.
+- Deliberate provisioning and rollout instructions live in `docs/architecture/auth-roadmap.md`. Railway provisioning/deployment still requires explicit approval and target preflight. MFA and finer admin permissions remain future work.
 
 ## Communications And Providers
 

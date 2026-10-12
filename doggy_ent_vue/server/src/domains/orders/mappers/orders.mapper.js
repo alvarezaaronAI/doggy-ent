@@ -266,7 +266,6 @@ export function mapCustomerOrder(order) {
     updatedAt: mappedOrder.updatedAt,
     items: mappedOrder.items,
     promoUsage: mappedOrder.promoUsage,
-    statusHistory: mappedOrder.statusHistory,
     shipment: mapCustomerShipment(mappedOrder.shipment),
     shipments: Array.isArray(mappedOrder.shipments)
       ? mappedOrder.shipments

@@ -163,3 +163,9 @@ Do not send automatic order/tracking/support/review/promo emails. Keep manual-fi
 
 Run required verification, update PROJECT_HANDOFF.md and relevant docs, and provide files changed, commands/results, remaining risks, manual QA, and whether the tree is safe for commit review.
 ```
+
+## Production Audit Gates (2026-10-11)
+
+This supersedes the earlier future-only admin-auth direction: the user explicitly approved Better Auth admin migration. It is implemented locally behind compatible endpoints with deliberate provisioning and no dashboard rebuild. Accept browser login/logout/persistence before any separately approved Railway provisioning/deployment. MFA/fine-grained roles remain future work.
+
+The next launch-critical phase is durable CheckoutAttempt/payment idempotency, verified Stripe webhook recovery and atomic inventory/promo/campaign attribution, with post-payment reconciliation/refunds. The current browser-only finalization and separate usage commits are not launch-certified. No SQL for this next phase was added. Validate tax/shipping destinations, resolve Prisma tooling advisories, confirm backups/restore/monitoring and perform approved sandbox/device QA before real-customer launch. Dead files, cosmetic cleanup and new loyalty features have lower priority. See [audit and scorecard](audits/2026-10-11-production-audit.md).

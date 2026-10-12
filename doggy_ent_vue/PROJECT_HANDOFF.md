@@ -1,11 +1,11 @@
 # Doggy Ent Project Handoff
 
 Generated: 2026-06-05
-Latest update: 2026-10-10 - Database-backed image library, explanatory image/content fields and seasonal preview feedback; interrupted server startup repaired by aligning Prisma packages. Both builds and 152 tests pass. Halloween artwork is published and visible locally; local status is 20 migrations/up to date. Railway content/media migration and deployment are not performed.
+Latest update: 2026-10-11 - Production security/commerce audit and explicitly approved Better Auth admin migration. Both builds and 234 tests pass; local 21 migrations are up to date. Local admin provisioned and persisted-session/logout API checks pass. Browser acceptance and Railway rollout are not performed. Durable payment recovery and atomic promo/campaign integrity remain launch blockers. See the latest audit section and docs/audits/.
 Workspace: `/Users/nazxylix/Developer/vue-projects/doggy_ent/doggy_ent_vue`
 Current branch observed: `dev-main`
 
-This handoff is evidence-based from the repository. Anything not verified from code is called out as uncertainty.
+This handoff is evidence-based from the repository. Anything not verified from code is called out as uncertainty. Earlier numbered sections and phase logs are historical snapshots; the latest dated evidence checkpoint supersedes their old auth, test-count, migration and email descriptions.
 
 ## 1. Business Overview
 
@@ -68,7 +68,7 @@ Route inventory:
 - `/admin/promos`: admin promos, protected.
 - `/admin/campaigns`: admin campaigns, protected.
 
-Admin route protection is client-side through `/api/auth/me` and server-side only where the API route applies `requireAdminAuth`. Important risk: the current server admin orders API does not apply `requireAdminAuth` in `server/src/domains/orders/routes/orders.routes.js`.
+Admin navigation checks `/api/auth/me`; server guards remain the security authority. The current admin orders router applies `requireAdminAuth` to all routes. As of the approved 2026-10-11 migration, that guard verifies a persisted Better Auth session plus ADMIN/ACTIVE role/status. The old unguarded-orders finding is no longer current.
 
 ## 3. Server Architecture
 
@@ -5702,3 +5702,248 @@ Manual next steps:
 6. Triage existing critical/high dependency advisories and earlier unrelated dependencies; strengthen promo/campaign atomicity/reservations, post-payment reconciliation, receipt recovery and provider failure retry before claiming launch readiness.
 
 Recommended next phase: focused visual/device review and commerce/provider security QA, followed by explicitly approved coordinated migration/deployment; not a new broad refactor. [Architecture and flow](docs/architecture/checkout-and-order-email.md), [file map](docs/architecture/file-map.md), [communications policy](docs/communications.md), [QA](docs/verification-and-qa.md). The continued edits are safe for focused commit review after these local checks, not a launch or live-provider certification. No commit/push/deploy; local servers remain available.
+
+## 2026-10-11 Production Audit And Approved Better Auth Admin Migration
+
+### Authority And Scope
+
+This is the current evidence checkpoint and supersedes older custom-admin, 152-test, 20-migration and automatic-email descriptions in this historical handoff. Initial tree was clean on dev-main. The user requested the comprehensive security/commerce/architecture audit and explicitly approved: repair copied-session logout and move admin to Better Auth. No commit/push/deploy, Railway migration/provisioning, secret rotation, live email, real payment or label purchase occurred.
+
+Full deliverables:
+
+- [Production audit, Sections A-H](docs/audits/2026-10-11-production-audit.md): architecture/coverage, 29 findings, file management, commerce, exact verification, manual QA, remaining risks and 14-category scorecard.
+- [API access inventory](docs/audits/2026-10-11-api-access.md): all mounted app routes and 105 installed customer/Infra native paths with access/validation/response/limiter notes.
+- [Current auth/provisioning/rollout](docs/architecture/auth-roadmap.md): separate Better Auth customer/admin configs, migration, local data modes, variables and manual deployment gates.
+
+### Root Cause And Admin Repair
+
+The old admin cookie contained a signed session that remained valid after logout; deleting a browser cookie did not revoke copies. The approved repair replaces the custom signed/Map implementation with Better Auth database sessions on existing User/Account/Session tables, behind compatible /api/auth/login, logout, me and data-target. Native /api/admin-auth exposes only sign-in/email, sign-out and get-session. No new Prisma model/migration.
+
+- Persisted ADMIN/ACTIVE role/status required on every server-protected request; no public admin signup or bearer-token fallback.
+- Separate doggy-admin cookie prefix; HttpOnly, path /, host-only; local SameSite=Lax and production Secure/SameSite=None for current split hosts.
+- Absolute eight-hour admin expiry; refresh/cookie cache disabled. Old signed cookies rejected/cleared.
+- Native logout deletion is checked after the engine: failed DB revocation does not report success. Same failure safeguard applied to customer logout.
+- All native customer/admin JSON responses strip password/session/provider tokens, including list-sessions/change-password; transport cookies remain HttpOnly.
+- Typed admin credential validation, safe admin-only return paths and /api/auth/me confirmation before redirect.
+- Existing dashboard, thirteen tools, customer accounts, guest checkout, editor UX and signed-in/data-routing controls preserved.
+- Deliberate provisioning imports an existing bcrypt hash only into a new ADMIN credential. Future new hashes use Better Auth scrypt. CUSTOMER conflicts/overwrite refused; no startup provisioning.
+- Local npm run admin:provision preflight and -- --apply succeeded, creating only the authorized local admin/credential/provision event. Re-running does not rotate a stored credential.
+- New protected order/tracking/customer/support histories use actual ADMIN actor ID; historical ADMIN_ENV unchanged. Customer lifecycle tools cannot target ADMIN rows.
+- Better Auth customer Infra configuration stays on /api/customer-auth. Dashboard Base URL is the public backend origin represented by BETTER_AUTH_URL; Base Path /api/customer-auth. No second admin Infra integration, MFA or fine-grained role system was enabled.
+
+Better Auth does not solve Safari third-party-cookie blocking between unrelated Vercel/Railway hosts. Owned domain plus same-site API subdomain remains recommended. Production remote admin provisioning and browser acceptance are not completed.
+
+### Other Verified Repairs
+
+- Customer-safe checkout finalization/replay; internal status history/notes/actors omitted entirely. Internal support-note events and private metadata excluded from customer projection.
+- Public products hide DRAFT/ARCHIVED; protected /api/products/admin/library keeps full admin catalog with existing cents normalization.
+- Transactional product variant replacement avoids partial deletion on failed save, preserves inactive sizes and validates prices/sizes/inventory/types.
+- Bounded typed own-profile fields and preference/address validation.
+- Order references gain random suffix; concurrent status save compare-and-set returns 409 with history in one transaction. Tracking cannot regress terminal/cancelled/refunded states.
+- Native auth raw transport now capped at 100 KB for declared/chunked requests, using the existing framework's better-call Node adapter.
+- Production auth fails closed on missing/short signing secret or non-HTTPS/credential-bearing backend URL. BETTER_AUTH_URL is origin-only: an auth path/query/fragment would override the installed engine's separate basePath configs and is rejected. Localhost is not automatically trusted in production.
+- LOCAL startup refuses remote DB hosts; Railway DB mode requires a remote DATABASE_URL override. Startup command target takes precedence. Production badge says DEPLOYED DATA TARGET; failed lookup says TARGET UNVERIFIED, not LOCAL.
+- Destructive product seed requires explicit confirmed LOCAL loopback development target; never executed during audit.
+- Generic DB/provider errors, no Prisma raw query/error logging, sanitized exception capture and allowlisted structured operational/admin-write logs.
+- Resend/Shippo errors no longer persist/log raw provider text; requests use bounded provider timeouts. Shippo webhook fails closed when secret absent, with timing-safe comparison. It remains acknowledgement-only, not fulfillment/event processing.
+- Security email dedupe uses one-way action URL digest; no token/action URL persisted in metadata. Identical action dedupes; new verification links can be requested. Operational emails remain explicit preview/send.
+- Admin-triggered customer verification/reset now uses absolute validated frontend return URLs instead of relative backend paths. Production startup checks that frontend origin; live email delivery/return remains untested. Temporary local-to-Railway-DB email should stay mocked unless public auth URL/signing configuration and an approved inbox/budget have been reviewed.
+- Admin tracking links reuse safe render helper; new tracking URLs must be HTTPS without credentials.
+- Vercel static security headers and SPA rewrite exclude /api and /api/...; Font Awesome CSS has published/matched SHA512 SRI and CORS. Vite binds only loopback/trusted dev host.
+- Removed unused approve, ls, scripts packages; compatible audited lock updates; justified direct better-call transport dependency. Prisma/client remain matched 6.16.2.
+- No broad reorganization/dead-file deletion, UI redesign, payment engine rewrite or new schema.
+
+### Repository Audit Evidence
+
+Initial inventory: 567 tracked files. Later first-party inventory: 584 before final docs additions. All folders inventoried; 458 source/script Vue/JS modules parsed with zero parse failures/missing literal imports; 266 standalone source/script JS files syntax checked; six generated deployment content snapshots match canonical shared/storefront.
+
+19 empty placeholders, 24 nonempty client literal-import-unreachable candidates and server compatibility/CLI-only modules are documented, not blindly deleted. Products service directly uses Prisma and promo routes still have controller responsibilities; these established exceptions were preserved. Existing product editor notIncluded/guaranteedAnalysis/showGuaranteedAnalysis/lowStockThreshold fields still lack persisted schema columns; explicitly open functionality gap.
+
+Secret-pattern/source/build checks found no matches in inspected current first-party text/built assets, no source maps and no localhost in the application API helper build chunk. Current .env files are untracked/ignored and no .env.example exists. Git history has a prior server/.env path, but the blob is zero bytes with no assignments; this does not establish a credential leak. No full all-blob secret-history guarantee is made. No secret values were printed/copied/documented or env files modified.
+
+### Exact Commands And Results
+
+| Command/check | Final result |
+| --- | --- |
+| Initial git status, git diff --stat, git diff --name-status | Clean tree at audit start; all subsequent changes left for review |
+| client npm run build | Exit 0; Vite 8.3.4; 2263 modules; main JS 308.22 KB / 85.04 KB gzip |
+| server npm run build | Exit 0; canonical sync + Prisma Client 6.16.2 generated; repeated after final server change |
+| client npm test | Exit 0; 22 files, 109 tests: 11 tier1 + 92 tier2 + 6 tier3 |
+| server npm test | Exit 0; 31 files, 125 tests: 28 tier1 + 94 tier2 + 3 tier3 |
+| Combined | 53 files, 234 passing tests; 36 added test cases |
+| npx prisma migrate status | Exit 0; confirmed local loopback DB; 21 migrations; schema up to date |
+| npm run admin:provision | Exit 0; initial preflight/no writes; final repeat reports already provisioned/no changes |
+| npm run admin:provision -- --apply | Exit 0; confirmed local ADMIN credential/event created; no customer/password overwrite |
+| Guarded local Prisma + ephemeral HTTP smoke | Exit 0; real DB admin session/catalog read/logout deletion/copied-cookie 401; 20 anonymous protected read groups 401; 3 private-file JSON 404 probes; disallowed origin 403. Test session removed |
+| Targeted actual auth-engine tests | Pass; admin/customer role isolation, token redaction, expiry, origin/legacy cookies, copied-cookie logout and injected DB revocation failure; customer reset reuse/expiry/session revocation |
+| 266 node --check source/script modules | Exit 0; zero syntax failures |
+| Babel/Vue literal import graph | 458 parsed; no parse failures/missing literal imports |
+| Canonical content snapshots | Six modules, client/server copies: no drift |
+| npm ls --depth=0, client/server | Exit 0; no missing/extraneous direct dependencies |
+| client npm audit --json | Exit 0; zero advisories (baseline 10) |
+| server npm audit --json | Exit 1; four HIGH remaining, no critical/moderate/low (baseline 15) |
+| root npm audit --json | Exit 0; zero advisories; root has no app dependencies |
+| npm uninstall approve ls scripts --ignore-scripts | Exit 0; ten packages removed |
+| client npm audit fix --ignore-scripts | Exit 0; compatible fixes, no remaining advisories |
+| server npm audit fix --ignore-scripts | Exit 1 due four remaining Prisma tooling advisories; no force/downgrade applied |
+| npm install better-call@1.3.6 --save-exact --ignore-scripts | Exit 0; bounded auth adapter dependency justified |
+| Published Font Awesome SRI versus fetched CSS SHA512 | Match; public text-only check, no private data |
+| Markdown links/fences | 24 files; zero unclosed fences/missing local links |
+| Cached official Mermaid CLI | Exit 0; 20 diagrams -> 20 nonempty temporary SVGs; no repo dependency/output added |
+| git diff --check | Exit 0 |
+| curl --fail --silent local /api/health | Exit 0; status OK on the existing local server |
+| Browser acceptance | NOT VERIFIED: CUA URL access policy-blocked; no workaround/screenshot/browser-login claim |
+
+Intermediate test/setup failures were repaired and rerun: old ADMIN_ENV email audit expectation updated to ADMIN; a new test syntax typo fixed; an origin fixture exposed missing native first-login guard and was fixed; local smoke setup's private package import failed before session creation, replaced with exported serializeSignedCookie. Final tests/builds passed. No lint/typecheck scripts exist; none added. No clean npm ci, live provider, load benchmark, full accessibility or browser/Safari certification.
+
+### Dependency Residual Risk
+
+Server npm audit lists prisma, @prisma/config, deepmerge-ts and effect as HIGH: recursive graph exhaustion and Effect RPC context contamination propagate via Prisma CLI/config. No untrusted Effect RPC endpoint/user-controlled Prisma configuration was found, so application exploitability is not assumed. npm's force proposal changes to Prisma 6.12.0; do not downgrade/major-upgrade casually. Plan a matched CLI/client upgrade with build/migration/regression checks.
+
+### Environment And Manual Rollout
+
+Variable names only:
+
+- Server: DATABASE_URL; NODE_ENV; PORT; BETTER_AUTH_SECRET (preferred dedicated >=32-character secret); BETTER_AUTH_URL (HTTPS backend origin); CLIENT_URL and/or FRONTEND_URL (comma-separated exact frontend origins).
+- Deliberate initial admin provisioning: ADMIN_EMAIL; ADMIN_PASSWORD_HASH (bcrypt cost at least 10). These no longer rotate a provisioned DB password on restart.
+- Compatibility: ADMIN_SESSION_SECRET signing fallback; API_BASE_URL backend origin fallback.
+- Existing provider/Infra features: STRIPE_SECRET_KEY; BETTER_AUTH_API_KEY; EMAIL_PROVIDER; RESEND_API_KEY; RESEND_FROM_EMAIL; RESEND_REPLY_TO_EMAIL; SHIPPO_API_KEY or SHIPPO_API_TOKEN; SHIPPO_WEBHOOK_SECRET; existing Shippo sender/parcel variable names in architecture/provider docs.
+- Client/Vercel: VITE_API_BASE_URL or compatibility VITE_API_URL; VITE_STRIPE_PUBLISHABLE_KEY; public-only display/config variables. No VITE secret.
+- Ignored local files: server/.env remains normal local DB; server/.env.railway.local supplies remote overrides; local client env files remain public config only. No .env.example created.
+
+Temporary commands unchanged:
+1. Fully local: server npm run dev:local; client npm run dev:local.
+2. Railway DB admin: server npm run dev:railway; client npm run dev:local. Browser uses local API, not Railway backend.
+3. CLI admin provisioning uses its own normal env loading; a running Railway-mode server does not change the CLI's target. Default CLI refuses remote hosts; --allow-remote is only for a separately approved reviewed rollout.
+
+Before any separately approved Railway provisioning/deployment: confirm backup/target/schema status and admin-email conflict; provision without promotion/overwrite; deploy matching backend/frontend; expect old admin sessions to reauthenticate; test HTTPS/cookies/CORS and existing thirteen tools. server npm start runs prisma migrate deploy, not a read-only verification. No new auth migration, but any existing pending migration still needs owner approval. Vercel dashboard project root/headers/API base and Railway config were not inspected.
+
+### Remaining Launch Gates And Manual QA
+
+**Not ready for real paying customers.** Successful payment can be left without an order because finalization is browser-driven with no durable attempt/webhook recovery; prices/stock/rates/promos can change after payment. Promo/campaign usage commits separately and can race/fail after a discounted order persists. REFUNDED does not execute Stripe refunds, and tax/shipping jurisdiction/provider behavior remains uncertified.
+
+Next approved phase: durable checkout snapshot/idempotency, raw-body signed Stripe webhook/event dedupe, atomic/reserved inventory/promo/campaign attribution and post-payment/refund reconciliation. Follow with Prisma remediation, backup/restore/monitoring proof, live-provider/device QA and MFA. Do not launch or charge again as a recovery workaround.
+
+Manual next checks:
+- Local admin login/reload/restart/logout/relogin, customer denial, no cookie-copy access, all thirteen tools/identity/target labels.
+- Product public/draft privacy, failed-save stock retention, inactive 6/18 sizes, cart/quick-view/guest and signed-in checkout retained.
+- Customer ownership/profile/disabled-account, signup/reset/verification with approved inbox and email budget; no token leaks.
+- Email-before-promo, expiry/limits/email changes, campaign coexistence/server totals; concurrent purchase certification still blocked.
+- Receipt proof/reference/non-owner/expiry privacy; no internal status history/support notes or Stripe secrets.
+- Staged status/tracking, actual actors/terminal guards, no automatic email; explicit template preview/confirmation/dry-run/dedupe.
+- Real desktop/mobile/Safari, wallet/required-auth redirect/network recovery under approved Stripe test setup only after durability repair.
+- Vercel direct routes/static headers/API root, Railway target/migrations/provisioning/TLS/proxy, DB least privilege/backups/PITR/restore, operational alerts and provider reconciliation.
+
+See the full report for the 14-category scorecard. Tree is safe for focused commit review with stated risks, not automatic deployment or launch. No application files removed, no env changed, no schema/migration added, nothing committed/pushed.
+
+### Exact Files Created (21)
+
+```text
+client/src/domains/admin/validators/adminAuth.validator.js
+client/tests/tier2/admin/admin-auth.test.js
+docs/audits/2026-10-11-api-access.md
+docs/audits/2026-10-11-production-audit.md
+server/scripts/provision-admin.js
+server/src/app/middleware/auth/boundedAuthHandler.js
+server/src/domains/account/validators/account.validator.js
+server/src/domains/auth/repositories/adminProvision.repository.js
+server/src/domains/auth/services/adminAuth.service.js
+server/src/domains/auth/services/adminProvision.service.js
+server/src/domains/auth/utils/authResponse.js
+server/src/shared/utils/apiError.js
+server/src/shared/utils/databaseSafety.js
+server/src/shared/utils/operationalLog.js
+server/tests/tier2/admin/admin-provision.test.js
+server/tests/tier2/admin/admin-session-service.test.js
+server/tests/tier2/admin/audit-security.test.js
+server/tests/tier2/admin/better-auth-admin.test.js
+server/tests/tier2/admin/catalog-safety.test.js
+server/tests/tier2/admin/customer-auth-security.test.js
+server/tests/tier2/orders/audit-order-integrity.test.js
+```
+
+### Exact Files Modified (81)
+
+```text
+AGENTS.md
+PROJECT_HANDOFF.md
+README.md
+client/index.html
+client/package-lock.json
+client/src/domains/admin/api/adminProducts.api.js
+client/src/domains/admin/api/adminSession.api.js
+client/src/domains/admin/components/AdminDataTargetBadge.vue
+client/src/domains/admin/components/AdminOrderTrackingPanel.vue
+client/src/domains/admin/views/AdminLoginView.vue
+client/src/domains/checkout/composables/useCheckoutPage.js
+client/src/domains/checkout/composables/useCheckoutPreview.js
+client/src/domains/checkout/composables/useCheckoutShipping.js
+client/src/domains/payments/services/payment.service.js
+client/vercel.json
+client/vite.config.js
+docs/admin-experience.md
+docs/architecture/README.md
+docs/architecture/admin.md
+docs/architecture/auth-roadmap.md
+docs/architecture/data-flow.md
+docs/architecture/database.md
+docs/architecture/diagram.md
+docs/architecture/file-map.md
+docs/architecture/mockdiagram.md
+docs/communications.md
+docs/customer-experience.md
+docs/implementation-roadmap.md
+docs/operations-and-issues.md
+docs/verification-and-qa.md
+server/package-lock.json
+server/package.json
+server/src/app.js
+server/src/app/middleware/auth/requireAdminAuth.js
+server/src/app/middleware/auth/requireCustomerAuth.js
+server/src/app/middleware/error.middleware.js
+server/src/app/middleware/security/rateLimit.middleware.js
+server/src/config/env.js
+server/src/db/prisma.js
+server/src/db/seeds/products.seed.js
+server/src/domains/account/controllers/account.controller.js
+server/src/domains/account/services/account.service.js
+server/src/domains/auth/routes/auth.routes.js
+server/src/domains/auth/services/auth.service.js
+server/src/domains/auth/services/customerAuth.service.js
+server/src/domains/campaigns/routes/campaigns.routes.js
+server/src/domains/checkout/controllers/checkout.controller.js
+server/src/domains/checkout/services/checkout.service.js
+server/src/domains/customers/controllers/adminCustomers.controller.js
+server/src/domains/customers/repositories/adminCustomers.repository.js
+server/src/domains/customers/services/adminCustomers.service.js
+server/src/domains/emails/controllers/emailDelivery.controller.js
+server/src/domains/emails/controllers/emailTemplate.controller.js
+server/src/domains/emails/mappers/emailPayloads.mapper.js
+server/src/domains/emails/services/emailProvider.service.js
+server/src/domains/emails/services/emailTemplate.service.js
+server/src/domains/orders/controllers/orders.controller.js
+server/src/domains/orders/mappers/orders.mapper.js
+server/src/domains/orders/repositories/orders.repository.js
+server/src/domains/orders/services/orders.service.js
+server/src/domains/payments/controllers/payment.controller.js
+server/src/domains/payments/services/stripe.payment.js
+server/src/domains/products/controllers/products.controller.js
+server/src/domains/products/mappers/products.mapper.js
+server/src/domains/products/routes/products.routes.js
+server/src/domains/products/services/products.service.js
+server/src/domains/products/validators/products.validator.js
+server/src/domains/promos/services/promos.service.js
+server/src/domains/shipping/controllers/shipping.controller.js
+server/src/domains/shipping/services/shipping.service.js
+server/src/domains/shipping/services/shippo.service.js
+server/src/domains/shipping/validators/shipping.validator.js
+server/src/domains/support/controllers/support.controller.js
+server/src/domains/support/mappers/support.mapper.js
+server/src/domains/support/services/support.service.js
+server/tests/tier2/admin/internal-record-auth.test.js
+server/tests/tier2/admin/manual-email-provider.test.js
+server/tests/tier2/admin/manual-order-email.test.js
+server/tests/tier2/admin/media-routes.test.js
+server/tests/tier2/admin/public-campaigns.test.js
+server/tests/tier2/admin/storefront-content.test.js
+```

@@ -1,3 +1,4 @@
+import { apiError } from '../../../shared/utils/apiError.js'
 import {
   fetchAdminOrders,
   fetchAdminOrderById,
@@ -7,8 +8,9 @@ import {
 } from '../services/orders.service.js'
 
 function handleControllerError(res, error, message) {
-  return res.status(error.statusCode || 500).json({
-    message: error.message || message,
+  const failure = apiError(error, message)
+  return res.status(failure.statusCode).json({
+    message: failure.message,
   })
 }
 
@@ -71,6 +73,7 @@ export async function patchAdminOrderStatus(req, res) {
         status: req.body.status,
         note: req.body.note,
       },
+      req.admin,
     )
 
     return res.status(200).json(order)

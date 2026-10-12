@@ -1,3 +1,4 @@
+import { apiError } from '../../../shared/utils/apiError.js'
 import {
   getAccountDashboard,
   getAccountOrderByReference,
@@ -8,9 +9,10 @@ import {
 } from '../services/account.service.js'
 
 function handleAccountError(res, error, fallbackMessage) {
-  return res.status(error.statusCode || 500).json({
+  const failure = apiError(error, fallbackMessage)
+  return res.status(failure.statusCode).json({
     success: false,
-    message: error.message || fallbackMessage,
+    message: failure.message,
   })
 }
 

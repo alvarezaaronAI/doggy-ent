@@ -15,6 +15,14 @@ export function normalizeTrackingNumber(value) {
 export function validateTrackingPayload(payload = {}) {
   const carrier = normalizeCarrier(payload.carrier)
   const trackingNumber = normalizeTrackingNumber(payload.trackingNumber)
+  const trackingUrl = String(payload.trackingUrl || '').trim() || null
+  if (trackingUrl) {
+    let url
+    try { url = new URL(trackingUrl) } catch { /* Reject malformed links below. */ }
+    if (!url || url.protocol !== 'https:' || url.username || url.password || trackingUrl.length > 2048) {
+      throw Object.assign(new Error('Tracking link must be an HTTPS URL without embedded credentials.'), { statusCode: 400 })
+    }
+  }
 
   if (!carrier) {
     const error = new Error('Carrier is required.')
@@ -34,7 +42,7 @@ export function validateTrackingPayload(payload = {}) {
   return {
     carrier,
     trackingNumber,
-    trackingUrl: String(payload.trackingUrl || '').trim() || null,
+    trackingUrl,
     shipmentStatus:
       String(payload.shipmentStatus || 'UNKNOWN')
         .trim()

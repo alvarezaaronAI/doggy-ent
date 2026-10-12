@@ -1,6 +1,6 @@
 # Doggy Ent Current Architecture Diagram
 
-Last updated: 2026-06-15
+Last updated: 2026-10-11
 
 This compact diagram reflects the current Prisma-backed application. The older version of this file referred to temporary in-memory product data, which no longer matches the codebase.
 
@@ -34,7 +34,7 @@ flowchart LR
   AccountDomain --> Prisma
   EmailDomain --> Prisma
   ShippingDomain --> Prisma
-  AuthDomain --> SessionCookie["admin session cookie"]
-  AuthDomain --> BetterAuth["Better Auth customer sessions"]
+  AuthDomain --> BetterAuth["Separate Better Auth customer and admin sessions"]
+  BetterAuth --> Prisma
   Prisma --> Postgres["PostgreSQL"]
 ```

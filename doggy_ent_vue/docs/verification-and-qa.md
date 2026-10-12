@@ -266,3 +266,13 @@ Final reports should include:
 - Manual QA checklist.
 - Whether edits are safe for commit review.
 - Next recommended phase or prompt when useful.
+
+## Production Audit And Admin Auth QA (2026-10-11)
+
+Exact final results and changed-file manifest live in [handoff](../PROJECT_HANDOFF.md) and the [production audit](audits/2026-10-11-production-audit.md). This pass includes actual Better Auth engine fixtures, local Prisma session/HTTP checks, production-config/body/role/privacy/catalog/transaction contract tests and updated package audits. These are not browser/provider/production certification.
+
+Local admin provisioning is deliberate, not startup automation. Recheck original login -> all thirteen tools -> refresh -> logout -> copied-cookie rejection -> relogin, CUSTOMER denial and target labels. Browser automation was policy-blocked in this audit; desktop/mobile/Safari remain manual. Verify configured production origin/secret/base URL and same-site domain plan before separately approved remote rollout. Do not restore vulnerable signed-session code as rollback.
+
+All architecture Mermaid fences were rendered with the cached official CLI, including supplemental diagram files; old automatic-email arrows were corrected to the manual-send policy. Markdown/fences/local path links and secret-pattern/build scans were rerun. No live provider request, charge, label, shared DB migration or customer-data write is permitted during automated QA.
+
+Unresolved launch gates: closed-browser/redirect/failed-finalization payment recovery, concurrent promo claims and attribution, truthful refund/payment ledger, tax/shipping business validation, Prisma tooling advisories, approved wallet/provider QA, DB backups/restore and monitoring evidence.

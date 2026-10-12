@@ -2,9 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import express from 'express'
 
 vi.mock('../../../src/domains/auth/services/auth.service.js', () => ({
-  getSessionCookieName: () => 'admin-session',
-  getAdminFromSession: async (id) =>
-    id === 'fixture-admin' ? { email: 'admin@example.com' } : null,
+  getAdminFromRequest: async (req) =>
+    req.cookies?.['admin-session'] === 'fixture-admin' ? { email: 'admin@example.com' } : null,
 }))
 vi.mock('../../../src/domains/orders/controllers/orders.controller.js', () => {
   const read = (req, res) =>

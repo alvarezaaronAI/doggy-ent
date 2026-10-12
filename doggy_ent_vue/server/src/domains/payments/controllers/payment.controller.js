@@ -4,6 +4,7 @@ import {
 } from '../../checkout/services/checkout.service.js'
 import { signCapability } from '../../../shared/utils/signedCapability.js'
 import { validateRequiredCheckoutFields } from '../../checkout/validators/checkout.validator.js'
+import { apiError } from '../../../shared/utils/apiError.js'
 
 export const createPaymentIntent = async (req, res) => {
   try {
@@ -36,13 +37,11 @@ export const createPaymentIntent = async (req, res) => {
       pricing: checkoutPreview.pricing,
     })
   } catch (error) {
-    console.error('Payment controller error:', error)
-
-
-    return res.status(error.statusCode || 500).json({
+    const failure = apiError(error, 'Unable to start secure payment. Please try again.')
+    return res.status(failure.statusCode).json({
       success: false,
       message:
-        error.message || 'Failed to create payment intent.',
+        failure.message,
     })
   }
 }

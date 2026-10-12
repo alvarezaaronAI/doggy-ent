@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'node:crypto'
+import { apiError } from '../../../shared/utils/apiError.js'
 import {
   addOrUpdateOrderTracking,
   fetchAdminShipmentOverview,
@@ -5,9 +7,10 @@ import {
 } from '../services/shipping.service.js'
 
 function handleShippingError(res, error, fallbackMessage) {
-  return res.status(error.statusCode || 500).json({
+  const failure = apiError(error, fallbackMessage)
+  return res.status(failure.statusCode).json({
     success: false,
-    message: error.message || fallbackMessage,
+    message: failure.message,
   })
 }
 
@@ -16,6 +19,7 @@ export async function putAdminOrderTracking(req, res) {
     const result = await addOrUpdateOrderTracking(
       req.params.orderId,
       req.body,
+      req.admin,
     )
 
     return res.json({
@@ -34,7 +38,7 @@ export async function putAdminOrderTracking(req, res) {
 
 export async function postAdminOrderTrackingRefresh(req, res) {
   try {
-    const result = await refreshOrderTracking(req.params.orderId)
+    const result = await refreshOrderTracking(req.params.orderId, req.admin)
 
     return res.json({
       success: true,
@@ -76,6 +80,9 @@ export async function postShippoWebhook(req, res) {
     process.env.SHIPPO_WEBHOOK_SECRET || '',
   ).trim()
 
+  if (!webhookSecret) {
+    return res.status(503).json({ success: false, message: 'Tracking webhook is not configured.' })
+  }
   if (webhookSecret) {
     const providedSecret = String(
       req.get('x-shippo-webhook-secret')
@@ -83,7 +90,8 @@ export async function postShippoWebhook(req, res) {
       || '',
     ).trim()
 
-    if (providedSecret !== webhookSecret) {
+    const received = Buffer.from(providedSecret), expected = Buffer.from(webhookSecret)
+    if (received.length !== expected.length || !timingSafeEqual(received, expected)) {
       return res.status(401).json({
         success: false,
         message: 'Invalid webhook secret.',

@@ -3,13 +3,13 @@ import express from 'express'
 import { createDefaultStorefrontContent } from '../../../src/domains/storefront/content/sectionCatalog.js'
 import { validateStorefrontContent, isSafeContentUrl } from '../../../src/domains/storefront/content/contentValidation.js'
 const repo = vi.hoisted(() => ({ findStorefrontContent: vi.fn(), writeStorefrontContent: vi.fn() }))
-const auth = vi.hoisted(() => ({ getAdminFromSession: vi.fn(), getSessionCookieName: () => 'admin-session' }))
+const auth = vi.hoisted(() => ({ getAdminFromRequest: vi.fn(), getSessionCookieName: () => 'admin-session' }))
 vi.mock('../../../src/domains/storefront/repositories/storefront.repository.js', () => repo)
 vi.mock('../../../src/domains/auth/services/auth.service.js', () => auth)
 const { getAdminStorefrontContent, getPublicStorefrontContent, saveStorefrontContent } = await import('../../../src/domains/storefront/services/storefront.service.js')
 const { default: routes } = await import('../../../src/domains/storefront/routes/storefront.routes.js')
 let server
-beforeEach(() => { vi.resetAllMocks(); auth.getAdminFromSession.mockResolvedValue(null) })
+beforeEach(() => { vi.resetAllMocks(); auth.getAdminFromRequest.mockResolvedValue(null) })
 afterEach(async () => { if (server) { await new Promise(resolve => server.close(resolve)); server = null } })
 describe('website content validation and publishing', () => {
   it('starts from the existing complete storefront without creating a record', async () => {
@@ -71,7 +71,7 @@ describe('website content validation and publishing', () => {
     expect(publicRead.status).toBe(200)
     expect(publicRead.headers.get('cache-control')).toBe('no-store')
     for (const [method, path] of [['GET', '/admin/storefront'], ['PUT', '/admin/storefront/draft'], ['PUT', '/admin/storefront/publish']]) expect((await fetch(origin + '/api' + path, { method })).status).toBe(401)
-    auth.getAdminFromSession.mockResolvedValue({ email: 'admin@example.test' })
+    auth.getAdminFromRequest.mockResolvedValue({ email: 'admin@example.test' })
     repo.writeStorefrontContent.mockResolvedValue({ draft: createDefaultStorefrontContent(), revision: 1 })
     const saved = await fetch(origin + '/api/admin/storefront/draft', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: 0, content: createDefaultStorefrontContent() }) })
     expect(saved.status).toBe(200)

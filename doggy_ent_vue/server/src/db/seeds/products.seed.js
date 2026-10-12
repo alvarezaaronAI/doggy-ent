@@ -1,4 +1,11 @@
 import pkg from '@prisma/client'
+import { loadServerEnv } from '../../config/env.js'
+import { assertLocalCatalogReset } from '../../shared/utils/databaseSafety.js'
+import { fileURLToPath } from 'node:url'
+
+loadServerEnv({ rootDir: fileURLToPath(new URL('../../../', import.meta.url)) })
+assertLocalCatalogReset({ databaseUrl: process.env.DATABASE_URL, nodeEnv: process.env.NODE_ENV,
+  dataTarget: process.env.ADMIN_DATA_TARGET, confirmed: process.argv.includes('--confirm-local-reset') })
 
 const { PrismaClient } = pkg
 const prisma = new PrismaClient()
@@ -271,7 +278,7 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error(error)
+    console.error('Local catalog seed failed. Check the confirmed target and required fields; no database details are printed.')
     process.exit(1)
   })
   .finally(async () => {

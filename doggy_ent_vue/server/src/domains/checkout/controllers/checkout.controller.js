@@ -1,3 +1,4 @@
+import { apiError } from '../../../shared/utils/apiError.js'
 import {
   previewCheckout,
   createCheckout,
@@ -14,11 +15,13 @@ import {
   getCustomerUserFromRequest,
 } from '../../auth/services/customerAuth.service.js'
 import { signCapability, readCapability } from '../../../shared/utils/signedCapability.js'
+import { mapCustomerOrder } from '../../orders/mappers/orders.mapper.js'
 
 function handleCheckoutError(res, error, fallbackMessage) {
-  return res.status(error.statusCode || 500).json({
+  const failure = apiError(error, fallbackMessage)
+  return res.status(failure.statusCode).json({
     success: false,
-    message: error.message || fallbackMessage,
+    message: failure.message,
   })
 }
 
@@ -83,7 +86,7 @@ export async function createCheckoutController(req, res) {
 
     return res.json({
       success: true,
-      result: { ...result, receiptAccess },
+      result: { ...result, order: mapCustomerOrder(result.order), receiptAccess },
     })
   } catch (error) {
     return handleCheckoutError(

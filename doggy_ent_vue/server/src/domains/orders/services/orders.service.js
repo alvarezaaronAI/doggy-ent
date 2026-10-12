@@ -17,6 +17,7 @@ import {
 import {
   validateOrderStatus,
 } from '../validators/orders.validator.js'
+import { randomBytes } from 'node:crypto'
 
 export async function fetchAdminOrders() {
   return await findAllOrders()
@@ -54,6 +55,7 @@ export async function updateAdminOrderStatus(
     status,
     note = null,
   },
+  actor,
 ) {
   const normalizedStatus = validateOrderStatus(status)
   const normalizedNote = String(note || '').trim() || null
@@ -64,8 +66,8 @@ export async function updateAdminOrderStatus(
       normalizedStatus,
       {
         note: normalizedNote,
-        changedByType: 'ADMIN_ENV',
-        changedBy: 'ADMIN_ENV',
+        changedByType: actor?.id ? 'ADMIN' : 'SYSTEM',
+        changedBy: actor?.id || null,
       },
     )
 
@@ -85,7 +87,7 @@ export async function updateAdminOrderStatus(
 
 
 export async function createNewOrder(orderInput) {
-  const orderNumber = `DGE-${Date.now()}`
+  const orderNumber = `DGE-${Date.now()}-${randomBytes(6).toString('hex').toUpperCase()}`
   const stripePaymentIntentId =
     orderInput.stripePaymentIntentId || null
 

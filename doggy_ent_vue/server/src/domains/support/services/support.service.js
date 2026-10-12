@@ -254,7 +254,7 @@ export async function getAdminOrderIssues(filters = {}) {
   }
 }
 
-export async function updateOrderIssueAsAdmin(caseNumber, input = {}) {
+export async function updateOrderIssueAsAdmin(caseNumber, input = {}, actor = null) {
   const nextStatus = normalizeCode(input.status, '')
   const nextPriority = normalizeCode(input.priority, '')
   const data = {}
@@ -301,8 +301,8 @@ export async function updateOrderIssueAsAdmin(caseNumber, input = {}) {
       ? {
           eventType: 'ADMIN_UPDATED',
           toStatus: data.status,
-          actorType: ORDER_ISSUE_AUTHOR_TYPES.ADMIN_ENV,
-          actorId: 'ADMIN_ENV',
+          actorType: actor?.id ? 'ADMIN' : 'SYSTEM',
+          actorId: actor?.id || null,
           metadata: eventMetadata,
         }
       : null,
@@ -315,7 +315,7 @@ export async function updateOrderIssueAsAdmin(caseNumber, input = {}) {
   return mapOrderIssue(issue, { includeInternal: true })
 }
 
-export async function addAdminOrderIssueMessage(caseNumber, input = {}) {
+export async function addAdminOrderIssueMessage(caseNumber, input = {}, actor = null) {
   const body = normalizeText(input.body)
 
   if (body.length < 2) {
@@ -331,8 +331,8 @@ export async function addAdminOrderIssueMessage(caseNumber, input = {}) {
     caseNumber,
     body,
     visibility,
-    authorType: ORDER_ISSUE_AUTHOR_TYPES.ADMIN_ENV,
-    authorUserId: 'ADMIN_ENV',
+    authorType: actor?.id ? 'ADMIN' : 'SYSTEM',
+    authorUserId: actor?.id || null,
     emailRequested: Boolean(input.emailRequested),
   })
 
@@ -368,7 +368,7 @@ export async function getInternalIssues(filters = {}) {
   }
 }
 
-export async function updateInternalIssueAsAdmin(caseNumber, input = {}) {
+export async function updateInternalIssueAsAdmin(caseNumber, input = {}, actor = null) {
   const status = normalizeCode(input.status, '')
   const severity = normalizeCode(input.severity, '')
   const data = {}
@@ -412,8 +412,8 @@ export async function updateInternalIssueAsAdmin(caseNumber, input = {}) {
     event: Object.keys(data).length
       ? {
           eventType: 'ADMIN_UPDATED',
-          actorType: ORDER_ISSUE_AUTHOR_TYPES.ADMIN_ENV,
-          actorId: 'ADMIN_ENV',
+          actorType: actor?.id ? 'ADMIN' : 'SYSTEM',
+          actorId: actor?.id || null,
           metadata: data,
         }
       : null,

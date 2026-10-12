@@ -1,3 +1,4 @@
+import { checkoutRateLimiter } from '../../../app/middleware/security/rateLimit.middleware.js'
 import express from 'express'
 
 import {
@@ -16,6 +17,8 @@ import { recordCampaignDonationUsage } from '../services/campaigns.service.js'
 import { requireAdminAuth } from '../../../app/middleware/auth/requireAdminAuth.js'
 
 const router = express.Router()
+
+router.use('/preview', checkoutRateLimiter)
 // Public commerce campaign routes
 router.get('/public', getStorefrontCampaignsController)
 router.get('/public/:slug', getPublicCampaignPageController)

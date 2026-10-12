@@ -150,7 +150,7 @@ Key files:
 5. Server admin orders are mounted at `/api/admin/orders` and guarded by admin auth in the orders route layer.
 6. Admin order timeline labels are centralized in `client/src/domains/admin/constants/adminOrders.constants.js`.
 7. Admin order detail shows the current status separately from the staged next status selector. Status changes persist only after Save; Cancel resets the staged selection.
-8. Status updates create `OrderStatusHistory` rows when the status changes. Until Better Auth/admin users replace the custom admin auth system, entries use `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
+8. Status updates compare the current persisted status and append history in one transaction. Authenticated changes record ADMIN and the actual admin ID; historical ADMIN_ENV remains unchanged. Concurrent conflicts return 409. Tracking cannot regress terminal order states.
 9. Admin order responses include `donationAmount`, campaign attribution rows, promo usage when recorded, same-customer order summaries, `lastStatusChange`, and `statusHistory`.
 
 ## Customer Account Flow
@@ -203,7 +203,7 @@ Important constraints:
 2. The existing admin router guard validates `/api/auth/me`.
 3. Admin customer API calls use `/api/admin/customers`, protected by `requireAdminAuth`.
 4. Server customer services read `User`, linked `Order` rows, verified-email guest matches, account events, support placeholders, review placeholders, notification preferences, and loyalty placeholders.
-5. Deactivate/reactivate actions update `User.status` and create `CustomerAccountEvent` rows with `changedByType: ADMIN_ENV`.
+5. Deactivate/reactivate actions target only CUSTOMER rows and append CustomerAccountEvent with ADMIN and the authenticated actor ID.
 6. Resend verification and password reset actions call Better Auth email APIs, which queue Resend-backed `EmailDelivery` records when provider env is configured.
 7. Admin customer detail shows recent notification delivery history from `EmailDelivery`.
 8. Admin dashboard reads order stats, customer summaries, and notification stats to show orders, customers, revenue, shipment activity, tracking summary, and notification activity.
@@ -309,7 +309,7 @@ sequenceDiagram
   Admin->>Client: Save status
   Client->>API: PATCH /api/admin/orders/:orderId/status
   API->>Service: updateAdminOrderStatus(orderId, status, note)
-  Service->>Repo: updateOrderStatusById with ADMIN_ENV actor
+  Service->>Repo: Compare status and record authenticated ADMIN actor
   Repo->>DB: Read current order
   Repo->>DB: Create OrderStatusHistory if status changed
   Repo->>DB: Update Order.status
@@ -421,7 +421,7 @@ sequenceDiagram
   Domain-->>Client: Account/admin/customer data
 ```
 
-Better Auth customer accounts are already implemented. A future, explicitly approved admin-auth migration may replace custom admin sessions while preserving the dashboard. Loyalty, referrals, and expanded permissions remain future work.
+Better Auth customer accounts and the explicitly approved admin-session migration are implemented. Separate cookie prefixes preserve both experiences. Loyalty, referrals, MFA and expanded permissions remain future work. See [auth rollout](auth-roadmap.md).
 
 ## Public Brand Story And Homepage Presentation
 
@@ -451,3 +451,11 @@ The protected `/account` parent route mounts `AccountLayout.vue` once. Children 
 | Rewards / Wishlist | No feature writes | Explicit future-phase UI, no mock customer data |
 
 KeepAlive retains only the Orders child between account tabs. Sequenced detail requests prevent a slow earlier response from replacing the latest selection. Refresh reloads the list and selected detail. Sign-out exits the layout and clears cached account content. Address edits do not change existing orders. This UI pass adds no backend endpoints, schema changes, provider sends, or environment variables.
+
+## Production Audit Flow Corrections (2026-10-11)
+
+Admin login -> compatible /api/auth/login -> native Better Auth admin config -> existing credential/User/Session tables -> isolated HttpOnly cookie -> /api/auth/me confirmation -> existing dashboard. Logout -> DB deletion -> revocation check -> success; copied cookie then fails. Provisioning happens only through explicit CLI, never public signup or startup. See [auth architecture](auth-roadmap.md).
+
+Checkout finalization/replay now projects customer-safe order data. Internal status history/admin actors and internal support event metadata do not reach customer APIs. Status/tracking/customer lifecycle/support changes use the authenticated admin ID; tracking cannot regress terminal states.
+
+PaymentIntent creation/finalization still has no durable attempt or Stripe webhook recovery. Promo/campaign usage still commits after order creation, and failures are logged. The diagrams describe present request flow, not certified recovery. Supplemental mockdiagram no longer depicts automatic checkout/tracking email; operational sends require independent explicit preview/confirmation. See [launch gates](../audits/2026-10-11-production-audit.md).

@@ -1,6 +1,6 @@
 # Database Architecture
 
-Last updated: 2026-10-09
+Last updated: 2026-10-11
 
 ## Source Of Truth
 
@@ -101,7 +101,7 @@ Customer-editable profile extension. Stores first/last name, phone, marketing op
 
 ### CustomerAccountEvent
 
-Account lifecycle/audit foundation. Records account creation, status changes, and future internal notes/audit events. Current admin account status actions use `changedByType = ADMIN_ENV` until Better Auth admin users replace custom admin auth.
+Account lifecycle/audit foundation. Records account creation, status changes and deliberate admin provisioning. New authenticated admin status actions use `changedByType = ADMIN` and the real admin user ID; historical ADMIN_ENV entries are retained.
 
 ### CustomerSupportRequest
 
@@ -135,8 +135,8 @@ Future-proof audit record for admin order status transitions. Each row stores th
 
 Current actor behavior:
 
-- Admin status changes use `changedByType = ADMIN_ENV`.
-- `changedBy` is currently the non-secret label `ADMIN_ENV`.
+- New admin status changes use `changedByType = ADMIN` and `changedBy` is the authenticated admin ID.
+- Historical ADMIN_ENV records are not rewritten. Customer projections omit internal status history, notes and actor IDs entirely.
 - Future Better Auth work should replace this with a real admin user ID or email owned by an accounts/users table.
 
 Primary flow participation:
@@ -264,11 +264,11 @@ Deployment rule:
 | Order issue cases | Server support domain and `CustomerSupportRequest` |
 | Order issue messages/events | Server support domain and `CustomerSupportMessage`/`CustomerSupportEvent` |
 | Internal operational issues | Server support domain and `InternalIssue`/`InternalIssueEvent` |
-| Admin customer management | Server customers domain and existing custom admin auth |
+| Admin customer management | Server customers domain and Better Auth ADMIN/ACTIVE guard; lifecycle tools cannot target ADMIN rows |
 | Email readiness payloads | Server emails domain; no real provider unless configured |
 | Promo rules and usage | Server promos domain |
 | Campaign rules and usage | Server campaigns domain and `OrderCampaignUsage` |
-| Admin sessions | Server auth domain, custom temporary implementation |
+| Admin sessions | Existing User/Account/Session tables, separate Better Auth admin configuration and cookie prefix |
 
 Migration status verified 2026-10-09:
 
@@ -276,3 +276,9 @@ Migration status verified 2026-10-09:
 - The user explicitly asked to apply the update to Railway. A secret-safe preflight loaded the existing ignored Railway DB override, confirmed the target, compared migration checksums, checked for failed migrations/partial columns, and found only the reviewed campaign migration pending.
 - `prisma migrate deploy` succeeded; all four columns and the migration record were verified. All eighteen repository migrations now match Railway, with no remaining pending migration, failed migration, or checksum mismatch. Campaign record count was unchanged. No business records were updated, and no provider action occurred.
 - This updates schema only, not deployed server/frontend code. Rebuild/redeploy reviewed code normally; do not run reset/seed commands. Future shared-database migrations still require explicit approval and preflight.
+
+## Admin Session Migration And Audit Safety (2026-10-11)
+
+The approved admin migration reuses User, Account, Session and CustomerAccountEvent; no new schema/migration. Local provisioning creates a new ADMIN credential/event only after preflight and refuses CUSTOMER conflicts/overwrites. Local 21 migrations are up to date. Railway schema status/provisioning/deployment were not checked or changed in this audit.
+
+Public product reads now exclude DRAFT/ARCHIVED; protected library preserves admin access. Product variant deletion/replacement is transactional and inactive sizes remain inactive. Order status/history uses compare-and-set, but promo/campaign usage remains outside the order transaction. Full payment recovery/reservation/atomic attribution requires a separately approved database design. Profile and notification preference writes remain separate; unsupported product editor fields still lack persisted schema columns. See [audit](../audits/2026-10-11-production-audit.md).

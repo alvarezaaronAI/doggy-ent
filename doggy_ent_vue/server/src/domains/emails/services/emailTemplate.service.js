@@ -64,7 +64,7 @@ export async function sendEmailTemplate(id, input = {}, actor = '') {
     event: template.event, to: order.customerEmail, orderId: order.id, userId: order.userId,
     renderedEmail: rendered, manualApproved: true, dryRun: input.dryRun,
     dedupeKey: `manual:${input.dryRun ? 'dry' : 'live'}:${proof.fingerprint}`,
-    auditMetadata: { actorType: 'ADMIN_ENV', actor, templateId: template.id, templateRevision: template.revision || 0 },
+    auditMetadata: { actorType: 'ADMIN', actor, templateId: template.id, templateRevision: template.revision || 0 },
   })
   return { status: result.status, message: result.status === 'SENT' ? 'Email accepted by the provider. Delivery is not yet confirmed.' : result.status === 'MOCKED' ? 'Dry run recorded. No email was sent.' : result.status === 'DUPLICATE' ? 'This exact email was already processed. No duplicate was sent.' : result.status === 'FAILED' ? 'Email failed. Review delivery activity before retrying.' : result.reason || 'No email was sent.' }
 }

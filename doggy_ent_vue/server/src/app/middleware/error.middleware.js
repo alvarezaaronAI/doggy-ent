@@ -1,6 +1,7 @@
 import {
   recordInternalIssue,
 } from '../../domains/support/services/support.service.js'
+import { logOperationalFailure } from '../../shared/utils/operationalLog.js'
 
 export async function errorMiddleware(error, req, res, next) {
   if (res.headersSent) {
@@ -11,14 +12,15 @@ export async function errorMiddleware(error, req, res, next) {
   let issueReference = null
 
   if (statusCode >= 500) {
+    logOperationalFailure('API_OPERATION_FAILED', error)
     try {
       const issue = await recordInternalIssue({
         category: 'SERVER_EXCEPTION',
         severity: 'HIGH',
         source: 'express-error-middleware',
-        summary: error.message || 'Unexpected server error',
-        safeDetails: 'A server-owned operation failed unexpectedly.',
-        route: `${req.method} ${req.originalUrl}`,
+        summary: 'A server-owned operation failed unexpectedly.',
+        safeDetails: /^[A-Z0-9_]{1,40}$/.test(error.code || '') ? `Error category: ${error.code}` : 'Unexpected server exception.',
+        route: `${req.method} ${req.baseUrl || ''}${req.route?.path || '/api'}`,
         customerId: req.customerUser?.id || null,
       })
       issueReference = issue?.caseNumber || null
