@@ -24,6 +24,7 @@
   font-weight: 800;
   text-decoration: none;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .site-mark {
   flex-shrink: 0;
@@ -102,6 +103,7 @@
   max-width: 1280px;
   margin: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   padding: 0 24px 12px;
@@ -112,6 +114,8 @@
   font-size: 14px;
   border-radius: 4px;
   text-decoration: none;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 .site-desktop-nav a:hover {
   background: #f0f3ee;
@@ -185,6 +189,7 @@
   border: 1px solid #e1e5df;
   border-radius: 4px;
   font-size: 14px;
+  overflow-wrap: anywhere;
 }
 @media (max-width: 899px) {
   .site-search-desktop,

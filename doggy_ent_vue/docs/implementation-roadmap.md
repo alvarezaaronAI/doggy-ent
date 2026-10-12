@@ -1,5 +1,21 @@
 # Implementation Roadmap
 
+## 2026-10-10 Checkout And Order Email Status
+
+Implemented locally: Receipt First checkout, in-place reviewed signup/sign-in, shared bordered/giving/promo item cards, published-campaign pop-out using the real renderer, Stripe Express Checkout wallet support with admin switches, Soft Essentials confirmation and shared Website commerce editor. Verified pricing/receipt flaws were repaired: DB-owned variant prices/SKUs, email-bound payment proof, owned/scoped guest receipt reads and atomic stock/order writes.
+
+Email Template Center and actual-order preview/review/manual send are now implemented, superseding earlier future-only notes below. Five suggestions, saved copies, revision/archive, rich server-controlled rendering, recipient/status/tracking gates, default dry run, explicit live opt-in, stale-preview rejection and delivery deduplication. Automatic operational/order/payment/tracking sends are removed; essential account/security email remains. Support/review/promo/bulk templates and safe provider failure reconciliation remain future work.
+
+Next gate: review combined local edits/migration/security contract, full desktop/mobile/Safari/accessibility, published campaign content, approved signup and Stripe card/wallet/promo+campaign QA. Then explicitly approved Railway migration and coordinated frontend/backend deployment. Legacy checkout clients lack the new payment proof, so in-flight checkout rollout must be planned. No real payment/email/label or Railway action occurred in this phase; one local template and one MOCKED delivery were created by deliberate QA. See [architecture](architecture/checkout-and-order-email.md) and [handoff](../PROJECT_HANDOFF.md).
+
+## 2026-10-09 Visual Storefront Editing Status
+
+Implemented local source: actual product-card canvas, protected Website tool, shared homepage preview, typed content controls, safe links, seasonal backgrounds, section hide/order/add, private draft and explicit revision-safe publication. Existing storefront/cart/commerce/admin/auth remain connected. See [editor guide](architecture/storefront-editor.md).
+
+Media follow-up: protected raster upload/search/folder/metadata library, bounded PostgreSQL metadata/blob persistence, stable host-independent images, contextual labels/unsaved cues, and visible seasonal/palette choices. Local additive media migration is applied; Railway content/media migration/deployment still requires explicit approval. Next: visual/device/content approval, dependency advisory triage (including existing critical/high reports), database backup review and approved coordinated backend/frontend deployment. Object storage/CDN, usage/cleanup/version tools and scheduling are separate later phases. See [media library](architecture/media-library.md).
+
+New additive content and media tables are applied only locally. Railway migration/deployment needs explicit approval; existing server startup includes migration deploy. Next: controlled real-browser editor QA, approved real/seasonal assets, review combined source/generated snapshots, then authorized migration/server/frontend deployment and checkout/session regression QA. Scheduled publication, older revision history, arbitrary block functions and broader brand/page editing are future additions, not part of this pass.
+
 ## 2026-10-09 Calm Giving Status
 
 The approved fluid storefront, deterministic variant display/selection, emerald giving cards, public campaign page, and shared visual campaign editor are connected. All original homepage content areas remain; unsupported reviews, nutrition values, notification actions, social links, and free-shipping claims were removed or labeled honestly.
@@ -147,3 +163,9 @@ Do not send automatic order/tracking/support/review/promo emails. Keep manual-fi
 
 Run required verification, update PROJECT_HANDOFF.md and relevant docs, and provide files changed, commands/results, remaining risks, manual QA, and whether the tree is safe for commit review.
 ```
+
+## Production Audit Gates (2026-10-11)
+
+This supersedes the earlier future-only admin-auth direction: the user explicitly approved Better Auth admin migration. It is implemented locally behind compatible endpoints with deliberate provisioning and no dashboard rebuild. Accept browser login/logout/persistence before any separately approved Railway provisioning/deployment. MFA/fine-grained roles remain future work.
+
+The next launch-critical phase is durable CheckoutAttempt/payment idempotency, verified Stripe webhook recovery and atomic inventory/promo/campaign attribution, with post-payment reconciliation/refunds. The current browser-only finalization and separate usage commits are not launch-certified. No SQL for this next phase was added. Validate tax/shipping destinations, resolve Prisma tooling advisories, confirm backups/restore/monitoring and perform approved sandbox/device QA before real-customer launch. Dead files, cosmetic cleanup and new loyalty features have lower priority. See [audit and scorecard](audits/2026-10-11-production-audit.md).

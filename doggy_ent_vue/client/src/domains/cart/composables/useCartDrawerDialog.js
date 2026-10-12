@@ -14,6 +14,7 @@ export function useCartDrawerDialog({ isOpen, dialog, close }) {
   }
 
   function keepFocus(event) {
+    if (event.target.closest?.('dialog[open]')) return
     if (isOpen() && !dialog.value?.contains(event.target)) {
       focusInitial()
     }

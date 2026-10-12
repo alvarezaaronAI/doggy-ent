@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
+      '@storefront-content': fileURLToPath(new URL('./src/domains/storefront/content', import.meta.url)),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@app': fileURLToPath(new URL('./src/app', import.meta.url)),
       '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
@@ -23,8 +24,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,
-    allowedHosts: 'all',
+    host: 'localhost',
+    allowedHosts: ['localhost'],
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

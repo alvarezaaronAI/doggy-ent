@@ -24,8 +24,7 @@ vi.mock(
   () => repo,
 )
 vi.mock('../../../src/domains/auth/services/auth.service.js', () => ({
-  getSessionCookieName: () => 'admin-session',
-  getAdminFromSession: async () => null,
+  getAdminFromRequest: async () => null,
 }))
 const { default: routes } =
   await import('../../../src/domains/campaigns/routes/campaigns.routes.js')

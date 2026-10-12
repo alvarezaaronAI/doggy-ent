@@ -1,16 +1,11 @@
 import {
   EMAIL_EVENTS,
 } from '../constants/emailEvents.constants.js'
+import { createHash } from 'node:crypto'
+import { getFrontendOrigin } from '../../../config/env.js'
 
-function getFrontendOrigin() {
-  return String(
-    process.env.FRONTEND_URL
-    || process.env.CLIENT_URL
-    || 'http://localhost:5173',
-  )
-    .split(',')[0]
-    .trim()
-    .replace(/\/$/, '')
+function securityEmailKey(event, user, url) {
+  return `${event}:${user.id || user.email}:${createHash('sha256').update(String(url)).digest('hex')}`
 }
 
 function mapOrderItem(item) {
@@ -34,7 +29,7 @@ export function buildAccountVerificationEmail({
     userId: user.id,
     customerName: user.name,
     actionUrl: url,
-    dedupeKey: `${event}:${user.id || user.email}`,
+    dedupeKey: securityEmailKey(event, user, url),
   }
 }
 
@@ -48,7 +43,7 @@ export function buildPasswordResetEmail({
     userId: user.id,
     customerName: user.name,
     actionUrl: url,
-    dedupeKey: `${EMAIL_EVENTS.PASSWORD_RESET}:${user.id || user.email}:${Date.now()}`,
+    dedupeKey: securityEmailKey(EMAIL_EVENTS.PASSWORD_RESET, user, url),
   }
 }
 

@@ -1,3 +1,4 @@
+import { apiError } from '../../../shared/utils/apiError.js'
 import {
   addAdminOrderIssueMessage,
   createOrderIssueForCustomer,
@@ -10,9 +11,10 @@ import {
 } from '../services/support.service.js'
 
 function sendError(res, error, fallbackMessage) {
-  return res.status(error.statusCode || 500).json({
+  const failure = apiError(error, fallbackMessage)
+  return res.status(failure.statusCode).json({
     success: false,
-    message: error.message || fallbackMessage,
+    message: failure.message,
   })
 }
 
@@ -84,6 +86,7 @@ export async function updateAdminOrderIssueController(req, res) {
     const result = await updateOrderIssueAsAdmin(
       req.params.caseNumber,
       req.body,
+      req.admin,
     )
 
     return res.json({
@@ -101,6 +104,7 @@ export async function addAdminOrderIssueMessageController(req, res) {
     const result = await addAdminOrderIssueMessage(
       req.params.caseNumber,
       req.body,
+      req.admin,
     )
 
     return res.status(201).json({
@@ -132,6 +136,7 @@ export async function updateAdminInternalIssueController(req, res) {
     const result = await updateInternalIssueAsAdmin(
       req.params.caseNumber,
       req.body,
+      req.admin,
     )
 
     return res.json({

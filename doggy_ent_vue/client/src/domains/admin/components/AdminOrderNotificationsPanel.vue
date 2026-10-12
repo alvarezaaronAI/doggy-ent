@@ -10,27 +10,6 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['resend'])
-
-const resendActions = [
-  {
-    event: 'ORDER_CONFIRMATION',
-    label: 'Resend confirmation',
-  },
-  {
-    event: 'TRACKING_UPDATE',
-    label: 'Resend tracking',
-  },
-  {
-    event: 'ORDER_DELIVERED',
-    label: 'Resend delivered',
-  },
-  {
-    event: 'REVIEW_REQUEST',
-    label: 'Send review request',
-  },
-]
-
 function formatEvent(value) {
   return String(value || 'Notification')
     .replaceAll('_', ' ')
@@ -54,25 +33,13 @@ function formatDateTime(value) {
     >
       <div>
         <h2 class="text-lg font-extrabold text-[var(--brand-4)]">
-          Notifications
+          Email activity
         </h2>
         <p class="mt-1 text-sm text-stone-400">
-          Review order email history and resend customer messages.
+          Sent means accepted by the provider, not confirmed delivery. Mocked means no email was sent.
         </p>
       </div>
 
-      <div class="flex flex-wrap gap-2 md:justify-end">
-        <button
-          v-for="action in resendActions"
-          :key="action.event"
-          type="button"
-          class="rounded-lg border border-stone-300 px-3 py-2 text-xs font-bold text-stone-700 transition hover:border-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="disabled"
-          @click="emit('resend', action.event)"
-        >
-          {{ action.label }}
-        </button>
-      </div>
     </div>
 
     <div v-if="deliveries.length" class="mt-4 space-y-3">

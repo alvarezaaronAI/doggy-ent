@@ -1,10 +1,16 @@
 # Admin Architecture
 
-Last updated: 2026-10-09
+Last updated: 2026-10-11
+
+## Image Editing Follow-Up
+
+Website, Products and Campaigns share `AdminImageField` and a native modal reusable library. Image URLs may be replaced by uploaded assets; destination/social/partner URLs remain links. Confirm backend-derived target before upload: uploads immediately store public raster assets in that DB even if the page draft is canceled. Page Save/Publish remains separate. Search/folders/pagination/metadata Save keep reusable assets organized; do not upload private/customer documents. No delete/replace action is exposed.
+
+Website labels describe content locations; selected palette/artwork and **Edited · not saved** cues expose changes before Save. Shared public/canvas CSS now honors explicit backgrounds, repeats seasonal artwork beneath reading tints, and keeps hero photography separately editable. Existing admin identity, data routing, auth and CRUD remain. See [media library](media-library.md) for limits/schema/deployment and [handoff](../../PROJECT_HANDOFF.md) for actual QA.
 
 ## Overview
 
-The admin dashboard is a Vue route group protected by a router guard and protected server API routes. It manages products, promos, campaigns, orders, and customer accounts. The current admin auth system remains custom admin auth; Better Auth currently powers customer accounts and is prepared to replace admin auth in a later permissions phase.
+The admin dashboard is a Vue route group protected by a router guard and server API guards. The explicitly approved admin migration now uses database-backed Better Auth admin sessions, separate from customer cookies. The dashboard, sidebar, identity, data routing and CRUD remain unchanged. See [auth rollout](auth-roadmap.md).
 
 ## Admin Routes
 
@@ -15,6 +21,7 @@ Client routes live in `client/src/app/router/index.js`.
 | `/admin/login` | `AdminLoginView.vue` | Public login page. |
 | `/admin` | `AdminDashboardView.vue` | Protected dashboard. |
 | `/admin/products` | `AdminProductsView.vue` | Protected product CRUD. |
+| `/admin/website` | `AdminWebsiteView.vue` | Protected homepage draft/publish visual editor. |
 | `/admin/promos` | `AdminPromosView.vue` | Protected promo CRUD/test/analytics. |
 | `/admin/campaigns` | `AdminCampaignsView.vue` | Protected campaign CRUD. |
 | `/admin/orders` | `AdminOrdersView.vue` | Protected order list. |
@@ -22,7 +29,8 @@ Client routes live in `client/src/app/router/index.js`.
 | `/admin/customers` | `AdminCustomersView.vue` | Protected customer list. |
 | `/admin/customers/:customerId` | `AdminCustomerDetailView.vue` | Protected customer detail, linked orders, readiness actions. |
 | `/admin/shipments` | `AdminShipmentsView.vue` | Protected shipment history and carrier events. |
-| `/admin/notifications` | `AdminNotificationsView.vue` | Protected delivery history; template center is future work. |
+| `/admin/notifications` | `AdminNotificationsView.vue` | Protected delivery history. |
+| `/admin/email-templates` | `AdminEmailTemplatesView.vue` | Protected template authoring, explicit preview/send. |
 | `/admin/reports` | `AdminReportsView.vue` | Protected all-time operational summaries. |
 | `/admin/order-issues` | `AdminOrderIssuesView.vue` | Protected support cases, notes/replies, and history. |
 | `/admin/internal-issues` | `AdminInternalIssuesView.vue` | Protected sanitized operational issues and history. |
@@ -33,7 +41,7 @@ The router guard calls `/api/auth/me` through `fetchApi`. Server admin API route
 
 Protected admin route entries are nested under `AdminLayout.vue` while retaining their existing public paths and route names. Login stays outside that layout. The existing cookie guard remains unchanged.
 
-`AdminLayout.vue` owns identity, logout, the existing backend-derived target badge, and `AdminSidebar.vue`. `adminNavigation.constants.js` is the single list of eleven tools and active-route matching. The nested RouterView is keyed by path, so changing order/customer IDs creates a fresh detail state rather than reusing a stale onMounted-only record.
+`AdminLayout.vue` owns identity, logout, the backend-derived target badge, and `AdminSidebar.vue`. `adminNavigation.constants.js` is the single list of thirteen tools, including Website and Email templates, and active-route matching. The nested RouterView is keyed by path, so changing order/customer IDs creates fresh detail state.
 
 Admin styling lives in `client/src/assets/styles/admin.css`, uses Tailwind utilities with a Tailwind reference directive, and is scoped to admin elements/tokens. `AdminIcon.vue` maps semantic names to `@lucide/vue` icons. Storefront/account styling and state are not replaced.
 
@@ -44,13 +52,13 @@ Products/promos/campaigns use explicit list/editor state. Analytics/impact panel
 ## Auth Flow
 
 1. Login page posts admin credentials to `/api/auth/login`.
-2. Server validates `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH`.
-3. Server creates a custom admin session cookie.
+2. Better Auth verifies the deliberately provisioned database credential and fresh ADMIN/ACTIVE user.
+3. Server creates an eight-hour, database-backed, HttpOnly admin cookie. Legacy signed cookies are not accepted.
 4. Client route guard calls `/api/auth/me`.
 5. Server validates the cookie/session and returns `authenticated: true`.
 6. Protected admin routes render.
 
-The current session layer is temporary and documented in [auth-roadmap.md](./auth-roadmap.md).
+Logout deletes the database session before reporting success; a copied cookie then returns 401. Native admin signup and unrelated native auth endpoints are blocked. Environment credentials are provisioning inputs, not per-login authority. See [auth-roadmap.md](./auth-roadmap.md).
 
 ## Admin Data Target Badge
 
@@ -58,8 +66,10 @@ The current session layer is temporary and documented in [auth-roadmap.md](./aut
 
 - `LOCAL DATA TARGET`
 - `RAILWAY DB TARGET`
+- `DEPLOYED DATA TARGET` in production
+- `CHECKING DATA TARGET` before backend confirmation; `TARGET UNVERIFIED` on failure, never a misleading LOCAL fallback
 
-The server target is derived from `DOGGY_SERVER_ENV_TARGET` in `server/src/config/env.js`.
+The server target is derived from startup configuration in `server/src/config/env.js`. Explicit local mode refuses remote DB hosts; Railway DB mode requires a remote override. Host classification cannot detect a manually configured tunnel, so operators must still confirm the target.
 
 ## Temporary Railway DB Admin Workflow
 
@@ -130,6 +140,14 @@ Primary files:
 - `client/src/domains/admin/components/AdminProductFormPanel.vue`
 - `server/src/domains/products/*`
 
+### Website Visual Editing
+
+`AdminWebsiteView.vue` composes the section list, `AdminWebsiteCanvas.vue`, and focused fields/links/items. `useAdminWebsite.js` owns drafts, explicit saves/publication, revision conflicts and unsaved-work guards; `adminWebsite.api.js` owns credentialed HTTP. Public and admin canvases share `HomePageContent.vue` and shell/section components. The product form similarly uses `AdminProductCanvas.vue` and the real product cards, while keeping its existing API/mapper/validator and immediate product Save semantics.
+
+Server management endpoints are `GET /api/admin/storefront`, `PUT /api/admin/storefront/draft`, and `PUT /api/admin/storefront/publish`, all protected by `requireAdminAuth`. Public `GET /api/storefront/content` returns only a published allowlisted snapshot. The new domain follows route/controller/service/repository/Prisma, with typed public content rules generated from canonical `shared/storefront/` into deployable app roots. No auth/pricing/provider changes.
+
+See [storefront-editor.md](./storefront-editor.md) for the control matrix, supported typed section additions, draft/publish boundaries, safety and deployment steps. New `StorefrontContent` table migration is applied only locally; Railway requires explicit approval before deployment/migration.
+
 ### Promos
 
 Admin promos use shared promo constants/rules on the client and server-side normalization/validation before Prisma writes.
@@ -175,7 +193,7 @@ Status update behavior:
 - The admin selects the next status separately.
 - Save persists the status change; Cancel discards the staged selection.
 - Status changes create `OrderStatusHistory` rows.
-- Until Better Auth/admin users exist, history rows use `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
+- New authenticated admin changes record `changedByType: ADMIN` and the real admin user ID. Historical ADMIN_ENV entries remain unchanged; system changes use SYSTEM.
 
 Admin order detail shows:
 
@@ -194,7 +212,7 @@ Admin order detail shows:
 - Shipment tracking controls for carrier, tracking number, status, tracking URL, and refresh.
 - Shipment timeline/event history when Shippo or manual status updates are present.
 - Order notification history from `EmailDelivery`.
-- Resend controls for confirmation, tracking, delivered, and review request emails.
+- Saved-template preview/review and explicit dry/live sends for received, preparing, shipped, delivered and cancelled emails. Review/support/bulk email workflows remain future work.
 
 ### Customers
 
@@ -226,13 +244,15 @@ Admin notification activity is visible in:
 
 - `/admin`: compact dashboard metric cards.
 - `/admin/notifications`: delivery history, resend history, failed/mocked/skipped status, provider state, and event/status filters.
-- `/admin/orders/:orderId`: order-scoped email delivery history and resend controls.
+- `/admin/orders/:orderId`: order-scoped delivery history and protected preview/review/manual sends.
+- `/admin/email-templates`: saved/suggested order-message editor with sample preview and explicit Save/Cancel/archive.
 - `/admin/customers/:customerId`: customer-scoped email delivery history.
 
 Server routes:
 
 - `GET /api/admin/notifications`
-- `POST /api/admin/orders/:orderId/emails/resend`
+- `POST /api/admin/orders/:orderId/emails/resend`: retired, returns 410.
+- `/api/admin/email-templates`: protected list/create/update/preview/send routes; see [checkout/order email](checkout-and-order-email.md).
 
 Server files:
 

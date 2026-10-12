@@ -1,27 +1,30 @@
 <script setup>
 import { ArrowRight, Package } from '@lucide/vue'
 import ComingSoonCard from '@products/ProductCard/ComingSoonCard.vue'
+import ContentLink from '@storefront/components/ContentLink.vue'
+import { sectionSettings } from '@storefront-content/sectionCatalog.js'
 defineProps({
   products: { type: Array, default: () => [] },
   getDisplayTags: { type: Function, required: true },
   loading: { type: Boolean, default: false },
   error: { type: String, default: '' },
+  id: { type: String, default: 'coming-soon' },
+  settings: { type: Object, default: () => sectionSettings('drops') },
 })
 defineEmits(['preview', 'retry'])
 </script>
 <template>
-  <section id="coming-soon" class="store-section">
+  <section :id="id" class="store-section">
     <div class="store-inner home-next-drops">
       <div class="home-drop-intro">
-        <p class="store-eyebrow">Something to look forward to</p>
-        <h2 class="mt-3 text-3xl font-bold">Next Drops</h2>
+        <p class="store-eyebrow">{{ settings.eyebrow }}</p>
+        <h2 class="mt-3 text-3xl font-bold">{{ settings.title }}</h2>
         <p class="store-muted mt-5 leading-relaxed">
-          A look at what we're working on. Availability and launch details will
-          appear here when they're ready.
+          {{ settings.text }}
         </p>
-        <a href="#shop" class="store-button mt-6"
-          >Shop today's treats <ArrowRight :size="18"
-        /></a>
+        <ContentLink :href="settings.buttonUrl" class="store-button mt-6"
+          >{{ settings.buttonLabel }} <ArrowRight :size="18"
+        /></ContentLink>
       </div>
       <div v-if="loading" class="store-muted" role="status">
         Loading upcoming treats...

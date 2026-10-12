@@ -11,6 +11,7 @@ import {
   updateEmailDeliveryById,
 } from '../repositories/emailDelivery.repository.js'
 import { prisma } from '../../../db/prisma.js'
+import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
 
 function getResendApiKey() {
   return String(process.env.RESEND_API_KEY || '').trim()
@@ -51,9 +52,10 @@ function isMockEmailMode() {
 }
 
 function sanitizeEmailError(error) {
-  return String(error?.message || error || 'Email provider error.')
-    .replace(getResendApiKey(), '[redacted]')
-    .slice(0, 500)
+  const status = Number(error?.statusCode)
+  return Number.isInteger(status) && status >= 400 && status <= 599
+    ? `Email provider request failed (${status}). Review provider delivery status before retrying.`
+    : 'Email provider request failed. Review provider delivery status before retrying.'
 }
 
 function getDedupeKey(payload) {
@@ -114,12 +116,15 @@ async function sendWithResend({
   subject,
   text,
   to,
+  dedupeKey,
 }) {
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
+    signal: AbortSignal.timeout(15000),
     headers: {
       Authorization: `Bearer ${getResendApiKey()}`,
       'Content-Type': 'application/json',
+      'Idempotency-Key': dedupeKey,
     },
     body: JSON.stringify({
       from: getEmailFrom(),
@@ -154,8 +159,12 @@ async function sendWithResend({
 export function isEmailProviderConfigured() {
   return Boolean(getResendApiKey() && getEmailFrom())
 }
+export function getEmailProviderStatus() {
+  return { configured: isEmailProviderConfigured(), live: !isMockEmailMode(), mode: isMockEmailMode() ? 'DRY_RUN' : 'RESEND' }
+}
 
 export async function queueEmail(payload = {}) {
+  if (/^(ORDER_|TRACKING_|REVIEW_|ADMIN_|REFUND_|SUPPORT_)/.test(payload.event || '') && payload.manualApproved !== true) return { queued: false, status: EMAIL_STATUS.SKIPPED, reason: 'Order emails require an approved admin preview and send.' }
   const recipients = normalizeRecipients(payload.to)
 
   if (!payload.event || !recipients.length) {
@@ -178,8 +187,8 @@ export async function queueEmail(payload = {}) {
     }
   }
 
-  const rendered = renderEmailTemplate(payload)
-  const provider = isMockEmailMode() ? 'MOCK' : 'RESEND'
+  const rendered = payload.renderedEmail || renderEmailTemplate(payload)
+  const provider = payload.dryRun || isMockEmailMode() ? 'MOCK' : 'RESEND'
   const allowedByPreferences =
     await isAllowedByNotificationPreferences(payload)
 
@@ -211,7 +220,8 @@ export async function queueEmail(payload = {}) {
     ? EMAIL_STATUS.MOCKED
     : 'PENDING'
 
-  const delivery = await createEmailDelivery({
+  let delivery
+  try { delivery = await createEmailDelivery({
     dedupeKey,
     event: payload.event,
     recipient: recipients.join(','),
@@ -224,13 +234,17 @@ export async function queueEmail(payload = {}) {
       hasActionUrl: Boolean(payload.actionUrl),
       orderReference: payload.orderReference || null,
       mockMode: provider === 'MOCK',
+      ...payload.auditMetadata,
     },
     sentAt: provider === 'MOCK' ? new Date() : null,
-  })
+  }) } catch (error) {
+    if (error.code !== 'P2002') throw error
+    return { queued: false, status: EMAIL_STATUS.DUPLICATE, delivery: await findEmailDeliveryByDedupeKey(dedupeKey) }
+  }
 
   if (provider === 'MOCK') {
     console.info(
-      `[email] Mocked ${payload.event} email to ${recipients.join(', ')}`,
+      `[email] Dry run recorded for ${payload.event}; no email sent.`,
     )
 
     return {
@@ -244,6 +258,7 @@ export async function queueEmail(payload = {}) {
     const result = await sendWithResend({
       ...rendered,
       to: recipients,
+      dedupeKey,
     })
 
     const updatedDelivery = await updateEmailDeliveryById(
@@ -264,9 +279,7 @@ export async function queueEmail(payload = {}) {
   catch (error) {
     const safeMessage = sanitizeEmailError(error)
 
-    console.error(
-      `[email] ${payload.event} email failed: ${safeMessage}`,
-    )
+    logOperationalFailure('EMAIL_PROVIDER_FAILED', error)
 
     const updatedDelivery = await updateEmailDeliveryById(
       delivery.id,

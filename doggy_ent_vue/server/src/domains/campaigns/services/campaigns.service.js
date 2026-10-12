@@ -21,6 +21,7 @@ import {
   isCampaignActive,
 } from '../utils/campaigns.utils.js'
 import { normalizeCurrencyAmount } from '../../../shared/utils/money.js'
+import { assertMediaImagesExist } from '../../media/services/mediaReferences.service.js'
 import { validateCampaignInput } from '../validators/campaigns.validator.js'
 import {
   mapPublicCampaignPage,
@@ -58,6 +59,7 @@ export async function createCampaign(input) {
   if (validationError) {
     throw validationError
   }
+  await assertMediaImagesExist([campaign.image])
 
   const existingCampaign = await findCampaignBySlug(campaign.slug)
 
@@ -89,6 +91,7 @@ export async function updateCampaignById(campaignId, input) {
 
   const validationError = validateCampaignInput(updatedCampaign)
   if (validationError) throw validationError
+  await assertMediaImagesExist([updatedCampaign.image])
 
   return updateCampaignRecord(
     campaignId,

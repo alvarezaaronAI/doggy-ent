@@ -21,6 +21,7 @@ import {
 import {
   mapOrderIssue,
 } from '../../support/mappers/support.mapper.js'
+import { validateAccountProfile } from '../validators/account.validator.js'
 
 function canIncludeVerifiedEmailMatches(user) {
   return Boolean(user?.emailVerified && user?.email)
@@ -87,6 +88,7 @@ export async function getAccountProfile(user) {
 }
 
 export async function updateAccountProfile(user, input = {}) {
+  validateAccountProfile(input)
   const [profile, notificationPreference] = await Promise.all([
     updateCustomerProfileByUserId(
       user.id,

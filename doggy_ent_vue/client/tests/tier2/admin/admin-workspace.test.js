@@ -32,8 +32,10 @@ beforeEach(() => vi.clearAllMocks())
 describe('calm admin workspace', () => {
   it('retains all eleven navigation tabs and highlights only the correct route family', () => {
     const items = ADMIN_NAVIGATION.flatMap((group) => group.items)
-    expect(items).toHaveLength(11)
-    expect(new Set(items.map((item) => item.to)).size).toBe(11)
+    expect(items).toHaveLength(13)
+    expect(new Set(items.map((item) => item.to)).size).toBe(13)
+    expect(items.find((item) => item.to === '/admin/email-templates')).toBeTruthy()
+    expect(items.find((item) => item.to === '/admin/website')).toBeTruthy()
     expect(
       isAdminNavActive(
         '/admin/orders/order-1',

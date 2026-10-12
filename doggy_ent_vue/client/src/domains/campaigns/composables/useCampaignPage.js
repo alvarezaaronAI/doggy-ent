@@ -8,6 +8,7 @@ export function useCampaignPage(slug) {
   let request = 0
   async function load() {
     const current = ++request
+    if (!slug.value) { campaign.value = null; loading.value = false; return }
     loading.value = true
     campaign.value = null
     error.value = ''

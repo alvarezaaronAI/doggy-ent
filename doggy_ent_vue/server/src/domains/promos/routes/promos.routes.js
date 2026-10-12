@@ -1,5 +1,7 @@
 import express from 'express'
 import rateLimit from 'express-rate-limit'
+import { resolveCheckoutItems } from '../../checkout/services/checkoutCatalog.service.js'
+import { calculateSubtotal } from '../../checkout/utils/checkoutPricing.js'
 import {
   createPromo,
   deletePromoById,
@@ -106,7 +108,9 @@ router.post(
   promoValidationLimiter,
   async (req, res, next) => {
     try {
-      const result = await validatePromoCode(req.body)
+      const email = String(req.body?.customerEmail || '').trim().toLowerCase()
+      const items = email.includes('@') ? await resolveCheckoutItems(req.body?.cart?.items) : []
+      const result = await validatePromoCode({ ...req.body, customerEmail: email, cart: { items, subtotal: calculateSubtotal(items) } })
 
       return res.status(result.valid ? 200 : 400).json(result)
     }

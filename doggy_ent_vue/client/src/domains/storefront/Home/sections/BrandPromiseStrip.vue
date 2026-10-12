@@ -1,16 +1,18 @@
 <script setup>
 import { Leaf, Flame, Heart, ArrowRight } from '@lucide/vue'
-import { BRAND_VALUES } from '@storefront/constants/brandContent.js'
-const icons = { leaf: Leaf, flame: Flame, heart: Heart }
+import { sectionSettings } from '@storefront-content/sectionCatalog.js'
+import ContentLink from '@storefront/components/ContentLink.vue'
+defineProps({ id: { type: String, default: 'promise' }, settings: { type: Object, default: () => sectionSettings('promise') } })
+const icons = [Leaf, Flame, Heart]
 </script>
 <template>
-  <nav class="home-promise-strip" aria-label="Our approach">
+  <nav :id="id" class="home-promise-strip" aria-label="Our approach">
     <div class="store-inner grid gap-4 sm:grid-cols-3">
-      <a v-for="value in BRAND_VALUES" :key="value.id" :href="'#' + value.id">
-        <component :is="icons[value.icon]" :size="22" aria-hidden="true" />
+      <ContentLink v-for="(value, index) in settings.items" :key="index" :href="value.href">
+        <component :is="icons[index % icons.length]" :size="22" aria-hidden="true" />
         <span>{{ value.title }}</span
         ><ArrowRight :size="16" aria-hidden="true" />
-      </a>
+      </ContentLink>
     </div>
   </nav>
 </template>

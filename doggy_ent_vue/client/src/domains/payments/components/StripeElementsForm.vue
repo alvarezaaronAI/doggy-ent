@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 
 import { stripePromise } from '@payments/services/stripe.js'
 import { createPaymentIntent } from '@payments/services/payment.service.js'
 
 const props = defineProps({
+  preview: Boolean,
   cartItems: {
     type: Array,
     default: () => [],
@@ -36,6 +37,7 @@ const cardElementContainer = ref(null)
 
 const cardholderName = ref('')
 const stripeReady = ref(false)
+const initializationError = ref('')
 
 defineExpose({
   async submitPayment() {
@@ -55,6 +57,7 @@ defineExpose({
     })
 
     const { clientSecret } = paymentIntentResponse
+    if (Math.round(Number(paymentIntentResponse.pricing?.total) * 100) !== Math.round(props.checkoutTotal * 100)) throw new Error('Your total changed. Review the refreshed order before paying.')
 
     const paymentResult = await stripeInstance.value.confirmCardPayment(clientSecret, {
       payment_method: {
@@ -76,12 +79,17 @@ defineExpose({
     return {
       paymentIntentId: paymentResult.paymentIntent.id,
       status: paymentResult.paymentIntent.status,
+      checkoutProof: paymentIntentResponse.checkoutProof,
     }
   },
 })
 
 onMounted(async () => {
+  if (props.preview) return
+  try {
   stripeInstance.value = await stripePromise
+  if (!cardElementContainer.value) return
+  if (!stripeInstance.value) throw new Error('Payment provider unavailable.')
 
   elementsInstance.value = stripeInstance.value.elements()
 
@@ -110,7 +118,12 @@ onMounted(async () => {
   })
 
   stripeReady.value = true
+  } catch {
+    initializationError.value = 'Secure payment fields could not load. Reload this page before paying.'
+    emit('card-complete', false)
+  }
 })
+onBeforeUnmount(() => cardElement.value?.destroy())
 </script>
 
 <template>
@@ -161,6 +174,7 @@ onMounted(async () => {
 
         <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 transition focus-within:border-emerald-400 focus-within:bg-white">
           <div ref="cardElementContainer"></div>
+          <p v-if="preview" class="text-sm text-stone-500">Card number · Expiry · CVC</p>
         </div>
       </div>
     </div>
@@ -188,10 +202,11 @@ onMounted(async () => {
     </div>
 
     <div
-      v-if="!stripeReady"
+      v-if="!stripeReady && !preview"
+      role="status"
       class="mt-4 text-sm font-semibold text-stone-500"
     >
-      Initializing secure payment fields...
+      {{ initializationError || 'Initializing secure payment fields...' }}
     </div>
   </div>
 </template>

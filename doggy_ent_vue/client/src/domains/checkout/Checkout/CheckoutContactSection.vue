@@ -30,7 +30,7 @@ const emit = defineEmits(['open-auth'])
 
       <div class="min-w-0 flex-1">
         <h3 class="text-xl font-extrabold">Contact</h3>
-        <p class="mt-1 text-xs leading-relaxed text-stone-300">We’ll send your confirmation and shipping updates here.</p>
+        <p class="mt-1 text-xs leading-relaxed text-stone-300">Your receipt and order updates use this email when our team sends them.</p>
 
         <div
           v-if="isSignedIn"

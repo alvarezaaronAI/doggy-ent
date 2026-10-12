@@ -1,6 +1,6 @@
 # Doggy Ent Mock Architecture
 
-This diagram documents the intended current shape of the Chase & Evie Co. commerce app: storefront, checkout, admin CMS, customer accounts, notification delivery, and tracking fulfillment.
+This supplemental diagram reflects the current commerce app. It is not a mock-data implementation. Order and tracking emails require a separate explicit admin preview/send; they are not checkout or tracking automation.
 
 ```mermaid
 flowchart LR
@@ -72,14 +72,13 @@ flowchart LR
   CheckoutDomain --> ProductDB
   CheckoutDomain --> PromoDB
   CheckoutDomain --> OrderDB
-  CheckoutDomain --> EmailDomain
   OrdersDomain --> OrderDB
   CustomersDomain --> CustomerDB
   EmailDomain --> EmailDB
   EmailDomain --> Resend
   ShippingDomain --> Shippo
   ShippingDomain --> OrderDB
-  ShippingDomain --> EmailDomain
+  AdminRoutes --> EmailDomain
 ```
 
 ## Checkout And Notification Sequence
@@ -106,10 +105,8 @@ sequenceDiagram
   Checkout->>API: POST /api/checkout
   API->>Stripe: Verify payment
   API->>DB: Create order and order items
-  API->>Email: Queue order confirmation
-  Email->>DB: Create EmailDelivery
-  Email->>Resend: Send when configured
   API-->>Checkout: Order response
+  Note over API,Email: Receipt email requires a later admin preview and explicit send
 ```
 
 ## Admin Tracking Sequence
@@ -129,7 +126,7 @@ sequenceDiagram
   API->>DB: Upsert OrderShipment
   API->>DB: Create OrderShipmentEvent rows
   API->>DB: Update order status when shipped or delivered
-  API->>Email: Queue tracking or delivered email
+  Note over API,Email: Saving tracking does not send email
   API-->>UI: Updated order with shipment timeline
 ```
 

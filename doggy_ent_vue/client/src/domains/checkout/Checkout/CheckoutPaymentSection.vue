@@ -1,123 +1,25 @@
-
 <script setup>
 import { ref } from 'vue'
+import { LockKeyhole } from '@lucide/vue'
 import StripeElementsForm from '@payments/components/StripeElementsForm.vue'
-
-defineProps({
-  cartItems: {
-    type: Array,
-    required: true,
-  },
-  checkoutTotal: {
-    type: Number,
-    required: true,
-  },
-  customer: {
-    type: Object,
-    required: true,
-  },
-  promoCode: {
-    type: String,
-    default: '',
-  },
-  shipping: {
-    type: Object,
-    required: true,
-  },
-})
-
-const emit = defineEmits([
-  'card-complete',
-])
-
+import StripeWalletButtons from '@payments/components/StripeWalletButtons.vue'
+defineProps({ cartItems: Array, checkoutTotal: Number, customer: Object, promoCode: String, shipping: Object, walletSettings: Object, walletReady: Boolean, locked: Boolean, placeWalletOrder: Function, preview: Boolean })
+const emit = defineEmits(['card-complete'])
 const stripeElementsForm = ref(null)
-
-defineExpose({
-  async submitPayment(...args) {
-    return await stripeElementsForm.value?.submitPayment(...args)
-  },
-})
+defineExpose({ async submitPayment() { return stripeElementsForm.value?.submitPayment() } })
 </script>
-
 <template>
-  <div class="rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,white_88%,var(--brand-5))] p-5">
+  <div class="checkout-form-card rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
     <div class="flex gap-4">
-      <span class="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-400 font-extrabold text-[var(--brand-4)]">
-        4
-      </span>
-
+      <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f2de5c] font-semibold text-[#6a3c2b]">4</span>
       <div class="min-w-0 flex-1">
-        <h3 class="text-xl font-extrabold">Payment</h3>
-        <p class="mt-1 text-xs leading-relaxed text-stone-300">
-          Your payment details are securely processed with Stripe while keeping the Doggy Ent checkout experience.
-        </p>
-
-        <div class="mt-5 rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p class="text-sm font-extrabold text-[var(--brand-4)]">Express checkout</p>
-              <p class="mt-1 text-xs leading-relaxed text-stone-300">
-                Pay faster with your saved wallet details.
-              </p>
-            </div>
-
-            <span class="rounded-full border border-stone-800 bg-white px-3 py-2 text-sm font-bold text-[var(--brand-4)]">
-              <i class="fa-solid fa-bolt mr-2"></i> Faster checkout
-            </span>
-          </div>
-
-          <div class="mt-4 grid gap-3 sm:grid-cols-3">
-            <button
-              type="button"
-              class="rounded-2xl bg-stone-900 px-4 py-4 font-extrabold text-white transition hover:-translate-y-0.5"
-            >
-              Apple Pay
-            </button>
-
-            <button
-              type="button"
-              class="rounded-2xl bg-stone-900 px-4 py-4 font-extrabold text-white transition hover:-translate-y-0.5"
-            >
-              Google Pay
-            </button>
-
-            <button
-              type="button"
-              class="rounded-2xl border border-stone-700 bg-white px-4 py-4 font-extrabold text-blue-800 transition hover:-translate-y-0.5"
-            >
-              PayPal
-            </button>
-          </div>
-        </div>
-
-        <div class="my-5 flex items-center gap-4 text-xs font-extrabold uppercase tracking-[0.08em] text-stone-400">
-          <div class="h-px flex-1 bg-[color-mix(in_srgb,var(--brand-3)_30%,white)]"></div>
-          Or pay with card
-          <div class="h-px flex-1 bg-[color-mix(in_srgb,var(--brand-3)_30%,white)]"></div>
-        </div>
-
-        <div class="mt-5 rounded-2xl border border-stone-700 bg-[color-mix(in_srgb,var(--brand-5)_60%,white)] p-4">
-          <div class="flex items-start gap-3">
-            <i class="fa-solid fa-shield-heart mt-0.5 text-xl text-emerald-400"></i>
-            <div>
-              <p class="font-extrabold">Protected payment</p>
-              <p class="mt-1 text-xs leading-relaxed text-stone-300">
-                Your payment details are securely encrypted and processed through Stripe.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-5 overflow-hidden rounded-2xl border border-stone-700 bg-white shadow-sm">
-          <StripeElementsForm
-            ref="stripeElementsForm"
-            :cart-items="cartItems"
-            :checkout-total="checkoutTotal"
-            :customer="customer"
-            :promo-code="promoCode"
-            :shipping="shipping"
-            @card-complete="emit('card-complete', $event)"
-          />
+        <h3 class="text-xl font-semibold">Payment</h3>
+        <p class="mt-2 flex items-center gap-2 text-xs text-stone-600"><LockKeyhole :size="14" />Your card details are encrypted and processed by Stripe.</p>
+        <div class="mt-5">
+          <StripeWalletButtons v-if="!preview && (walletSettings?.applePay || walletSettings?.googlePay)" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :apple-pay="walletSettings.applePay" :google-pay="walletSettings.googlePay" :ready="walletReady" :locked="locked" :place-wallet-order="placeWalletOrder" />
+          <div v-if="preview" class="mb-4 flex flex-wrap gap-2 text-xs text-stone-600"><span v-if="walletSettings?.applePay" class="rounded-md border border-stone-200 bg-stone-50 p-3">Apple Pay enabled</span><span v-if="walletSettings?.googlePay" class="rounded-md border border-stone-200 bg-stone-50 p-3">Google Pay enabled</span></div>
+          <p class="mb-2 text-sm font-semibold">Pay by card</p>
+          <StripeElementsForm ref="stripeElementsForm" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :preview="preview" @card-complete="emit('card-complete', $event)" />
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@
       "@shared/*": ["src/shared/*"],
       "@domains/*": ["src/domains/*"],
       "@storefront/*": ["src/domains/storefront/*"],
+      "@storefront-content/*": ["src/domains/storefront/content/*"],
       "@products/*": ["src/domains/products/*"],
       "@cart/*": ["src/domains/cart/*"],
       "@checkout/*": ["src/domains/checkout/*"],

@@ -96,7 +96,7 @@ export async function deleteCampaignController(req, res, next) {
 
 export async function previewCampaignsController(req, res, next) {
   try {
-    const preview = await previewCampaignDonations(req.body.cartItems || [])
+    const preview = await previewCampaignDonations(await resolveCheckoutItems(req.body.cartItems || []))
 
     return res.json({
       campaigns: preview,
@@ -105,3 +105,4 @@ export async function previewCampaignsController(req, res, next) {
     return next(error)
   }
 }
+import { resolveCheckoutItems } from '../../checkout/services/checkoutCatalog.service.js'

@@ -32,6 +32,11 @@ export async function getAllProducts(req, res, next) {
   }
 }
 
+export async function getAdminProducts(_req, res, next) {
+  try { res.json(await fetchAllProducts({ includeUnpublished: true })) }
+  catch (error) { next(error) }
+}
+
 export async function getProductBySlug(req, res, next) {
   try {
     const { slug } = req.params

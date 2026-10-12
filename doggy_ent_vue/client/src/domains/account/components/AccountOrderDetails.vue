@@ -52,32 +52,7 @@
         </div>
       </details>
     </section>
-    <div
-      v-for="(item, index) in order.items"
-      :key="item.id || index"
-      class="flex items-start gap-4 border-b border-[var(--account-line)] py-5"
-    >
-      <div
-        class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--account-line)] bg-white"
-      >
-        <img
-          v-if="item.productImage"
-          :src="item.productImage"
-          :alt="item.productName"
-          class="h-full w-full object-cover"
-          loading="lazy"
-        />
-        <i v-else class="fa-solid fa-box text-[var(--account-green)]" aria-hidden="true"></i>
-      </div>
-      <div class="min-w-0 flex-1">
-        <h3 class="break-words">{{ item.productName }}</h3>
-        <p class="account-muted mt-1 text-sm">{{ item.size }} &middot; Qty {{ item.quantity }}</p>
-        <div class="mt-1 flex flex-wrap justify-between gap-2 text-sm">
-          <span class="account-muted">{{ money(item.unitPrice) }} each</span
-          ><span class="font-semibold">{{ money(item.lineTotal) }}</span>
-        </div>
-      </div>
-    </div>
+    <div class="space-y-3 mt-5"><CommerceItemCard v-for="(item, index) in order.items" :key="item.id || index" :item="item" :campaigns="itemCampaigns(item, order.campaignUsages || order.campaignAttributions || [], true)" :promo-code="Number(order.discountAmount) > 0 ? order.promoUsage?.promoCode : ''" :format-price="money" /></div>
     <dl class="space-y-3 py-6 text-sm">
       <div class="flex justify-between gap-5">
         <dt>Subtotal</dt>
@@ -93,23 +68,20 @@
       </div>
       <div class="flex justify-between gap-5">
         <dt>Shipping</dt>
-        <dd>{{ money(order.shippingAmount) }}</dd>
+        <dd class="tabular-nums">{{ money(order.shippingAmount) }}</dd>
       </div>
       <div class="flex justify-between gap-5">
         <dt>Tax</dt>
-        <dd>{{ money(order.taxAmount) }}</dd>
-      </div>
-      <div v-if="Number(order.donationAmount) > 0" class="flex justify-between gap-5">
-        <dt>Donation impact<span class="account-muted block text-xs">Not an extra charge</span></dt>
-        <dd>{{ money(order.donationAmount) }}</dd>
+        <dd class="tabular-nums">{{ money(order.taxAmount) }}</dd>
       </div>
       <div
         class="flex justify-between gap-5 border-t border-[var(--account-line)] pt-4 text-lg font-semibold"
       >
         <dt>{{ order.paymentStatus === 'PAID' ? 'Total paid' : 'Total' }}</dt>
-        <dd>{{ money(order.total) }}</dd>
+        <dd class="tabular-nums">{{ money(order.total) }}</dd>
       </div>
     </dl>
+    <CommerceGivingNote :amount="Number(order.donationAmount) || 0" :campaigns="order.campaignUsages || order.campaignAttributions || []" :format-price="money" />
     <section class="account-section">
       <h3>Shipping to</h3>
       <p class="mt-3">{{ order.customerName }}</p>
@@ -167,6 +139,9 @@
   </article>
 </template>
 <script setup>
+import CommerceItemCard from '@shared/components/CommerceItemCard.vue'
+import CommerceGivingNote from '@shared/components/CommerceGivingNote.vue'
+import { itemCampaigns } from '@shared/mappers/commerceItem.mapper.js'
 import { computed, onDeactivated, ref } from 'vue'
 import { formatCurrency } from '@shared/utils/currency'
 import AccountStatusBadge from './AccountStatusBadge.vue'

@@ -12,9 +12,7 @@ function getShippoApiKey() {
 }
 
 function sanitizeShippoError(error) {
-  return String(error?.message || error || 'Shippo provider error.')
-    .replace(getShippoApiKey(), '[redacted]')
-    .slice(0, 500)
+  return 'Carrier information is temporarily unavailable. Please try again later.'
 }
 
 export function isShippoConfigured() {
@@ -36,6 +34,7 @@ export async function fetchShippoTrackingStatus({
   const response = await fetch(
     `https://api.goshippo.com/tracks/${encodeURIComponent(carrier)}/${encodeURIComponent(trackingNumber)}`,
     {
+      signal: AbortSignal.timeout(15000),
       headers: {
         Authorization: `ShippoToken ${getShippoApiKey()}`,
       },
@@ -46,11 +45,9 @@ export async function fetchShippoTrackingStatus({
 
   if (!response.ok) {
     const error = new Error(
-      data?.detail
-      || data?.message
-      || `Shippo returned ${response.status}.`,
+      'Carrier information is temporarily unavailable. Please try again later.',
     )
-    error.statusCode = response.status
+    error.statusCode = 502
     error.safeMessage = sanitizeShippoError(error)
     throw error
   }
@@ -161,6 +158,7 @@ export async function fetchShippoRates({
 
   const response = await fetch('https://api.goshippo.com/shipments/', {
     method: 'POST',
+    signal: AbortSignal.timeout(15000),
     headers: {
       Authorization: `ShippoToken ${getShippoApiKey()}`,
       'Content-Type': 'application/json',
@@ -177,11 +175,9 @@ export async function fetchShippoRates({
 
   if (!response.ok) {
     const error = new Error(
-      data?.detail
-      || data?.message
-      || `Shippo returned ${response.status}.`,
+      'Carrier rates are temporarily unavailable. Store shipping rates may be used.',
     )
-    error.statusCode = response.status
+    error.statusCode = 502
     error.safeMessage = sanitizeShippoError(error)
     throw error
   }

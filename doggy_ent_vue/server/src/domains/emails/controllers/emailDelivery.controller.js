@@ -1,11 +1,13 @@
+import { apiError } from '../../../shared/utils/apiError.js'
 import {
   fetchAdminEmailDeliveries,
 } from '../services/emailDelivery.service.js'
 
 function handleEmailDeliveryError(res, error, fallbackMessage) {
-  return res.status(error.statusCode || 500).json({
+  const failure = apiError(error, fallbackMessage)
+  return res.status(failure.statusCode).json({
     success: false,
-    message: error.message || fallbackMessage,
+    message: failure.message,
   })
 }
 

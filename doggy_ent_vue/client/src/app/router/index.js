@@ -54,6 +54,12 @@ const routes = [
     meta: { requiresAdminAuth: true },
   },
   {
+    path: '/admin/website',
+    name: 'admin-website',
+    component: () => import('../../domains/admin/views/AdminWebsiteView.vue'),
+    meta: { requiresAdminAuth: true },
+  },
+  {
     path: '/admin/orders',
     name: 'admin-orders',
     component: AdminOrdersView,
@@ -93,6 +99,12 @@ const routes = [
     path: '/admin/notifications',
     name: 'admin-notifications',
     component: AdminNotificationsView,
+    meta: { requiresAdminAuth: true },
+  },
+  {
+    path: '/admin/email-templates',
+    name: 'admin-email-templates',
+    component: () => import('../../domains/admin/views/AdminEmailTemplatesView.vue'),
     meta: { requiresAdminAuth: true },
   },
   {

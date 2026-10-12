@@ -45,6 +45,7 @@ const customerDetailInclude = {
 
 export async function findAdminCustomers() {
   return prisma.user.findMany({
+    where: { role: 'CUSTOMER' },
     orderBy: {
       createdAt: 'desc',
     },
@@ -61,9 +62,10 @@ export async function findAdminCustomers() {
 }
 
 export async function findAdminCustomerById(customerId) {
-  return prisma.user.findUnique({
+  return prisma.user.findFirst({
     where: {
       id: customerId,
+      role: 'CUSTOMER',
     },
     include: customerDetailInclude,
   })
@@ -103,10 +105,12 @@ export async function findGuestOrdersByCustomerEmail(email) {
 export async function updateCustomerAccountStatus({
   customerId,
   status,
+  actor = null,
 }) {
   return prisma.user.update({
     where: {
       id: customerId,
+      role: 'CUSTOMER',
     },
     data: {
       status,
@@ -114,8 +118,8 @@ export async function updateCustomerAccountStatus({
         create: {
           type: `ACCOUNT_${status}`,
           message: `Account status changed to ${status}.`,
-          changedByType: 'ADMIN_ENV',
-          changedBy: 'ADMIN_ENV',
+          changedByType: actor?.id ? 'ADMIN' : 'SYSTEM',
+          changedBy: actor?.id || null,
         },
       },
     },

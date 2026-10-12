@@ -1,5 +1,6 @@
 <script setup>
 import { computed, reactive, watch } from 'vue'
+import { safeTrackingUrl } from '@domains/account/utils/accountFormatting.js'
 
 const props = defineProps({
   order: {
@@ -35,6 +36,7 @@ const form = reactive({
 const shipment = computed(
   () => props.order?.shipment || props.order?.shipments?.[0] || null,
 )
+const trackingLink = computed(() => safeTrackingUrl(shipment.value?.trackingUrl))
 
 function syncForm() {
   form.carrier = shipment.value?.carrier || ''
@@ -125,10 +127,10 @@ watch(shipment, syncForm, {
       <p class="md:col-span-2">
         <span class="font-semibold text-stone-400">Tracking URL:</span>
         <a
-          v-if="shipment.trackingUrl"
-          :href="shipment.trackingUrl"
+          v-if="trackingLink"
+          :href="trackingLink"
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           class="break-all font-bold text-emerald-700"
         >
           {{ shipment.trackingUrl }}

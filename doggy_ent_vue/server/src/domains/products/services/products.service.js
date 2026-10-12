@@ -1,4 +1,5 @@
 import { prisma } from '../../../db/prisma.js'
+import { assertMediaImagesExist } from '../../media/services/mediaReferences.service.js'
 import {
   buildProductMutationData,
   mapProductWithDisplayPrice,
@@ -8,8 +9,9 @@ import {
   normalizeInventoryQuantity,
 } from '../utils/products.utils.js'
 
-export async function fetchAllProducts() {
+export async function fetchAllProducts({ includeUnpublished = false } = {}) {
   const products = await prisma.product.findMany({
+    where: includeUnpublished ? {} : { status: { in: ['ACTIVE', 'OUT_OF_STOCK', 'COMING_SOON'] } },
     include: {
       variants: true,
     },
@@ -31,7 +33,7 @@ export async function fetchProductBySlug(slug) {
     },
   })
 
-  if (!product) {
+  if (!product || ['DRAFT', 'ARCHIVED'].includes(product.status)) {
     return null
   }
 
@@ -40,6 +42,7 @@ export async function fetchProductBySlug(slug) {
 
 export async function createProduct(productInput) {
   const normalizedProduct = normalizeProductInput(productInput)
+  await assertMediaImagesExist([normalizedProduct.image])
 
   const createdProduct = await prisma.product.create({
     data: buildProductMutationData(normalizedProduct),
@@ -65,22 +68,14 @@ export async function updateProductById(productId, productInput) {
     return null
   }
 
-  const normalizedProduct = normalizeProductInput(productInput)
+  const normalizedProduct = normalizeProductInput({ ...productInput, variants: productInput.variants.map(variant => ({
+    ...variant, isActive: variant.isActive ?? existingProduct.variants.find(existing => existing.size === variant.size)?.isActive,
+  })) })
+  await assertMediaImagesExist([normalizedProduct.image])
 
-  await prisma.productVariant.deleteMany({
-    where: {
-      productId,
-    },
-  })
-
-  const updatedProduct = await prisma.product.update({
-    where: {
-      id: productId,
-    },
-    data: buildProductMutationData(normalizedProduct),
-    include: {
-      variants: true,
-    },
+  const updatedProduct = await prisma.$transaction(async tx => {
+    await tx.productVariant.deleteMany({ where: { productId } })
+    return tx.product.update({ where: { id: productId }, data: buildProductMutationData(normalizedProduct), include: { variants: true } })
   })
 
   return mapProductWithDisplayPrice(updatedProduct)

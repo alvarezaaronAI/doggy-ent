@@ -1,4 +1,5 @@
 import Stripe from 'stripe'
+import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
@@ -18,7 +19,7 @@ export const createStripePaymentIntent = async ({ amount, currency = 'usd' }) =>
 
     return paymentIntent
   } catch (error) {
-    console.error('Stripe payment intent error:', error)
+    logOperationalFailure('PAYMENT_INTENT_CREATE_FAILED', error)
     throw error
   }
 }
@@ -37,11 +38,7 @@ export async function retrieveStripePaymentIntent(
       stripePaymentIntentId,
     )
   } catch (error) {
-    console.error(
-      'Stripe payment intent retrieval error:',
-      error,
-    )
-
+    logOperationalFailure('PAYMENT_INTENT_RETRIEVE_FAILED', error)
     throw error
   }
 }

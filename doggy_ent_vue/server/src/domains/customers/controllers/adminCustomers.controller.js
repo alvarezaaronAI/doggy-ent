@@ -1,3 +1,4 @@
+import { apiError } from '../../../shared/utils/apiError.js'
 import {
   deactivateAdminCustomer,
   fetchAdminCustomerById,
@@ -8,9 +9,10 @@ import {
 } from '../services/adminCustomers.service.js'
 
 function handleCustomerError(res, error, fallbackMessage) {
-  return res.status(error.statusCode || 500).json({
+  const failure = apiError(error, fallbackMessage)
+  return res.status(failure.statusCode).json({
     success: false,
-    message: error.message || fallbackMessage,
+    message: failure.message,
   })
 }
 
@@ -56,6 +58,7 @@ export async function deactivateAdminCustomerController(req, res) {
   try {
     const customer = await deactivateAdminCustomer(
       req.params.customerId,
+      req.admin,
     )
 
     return res.json({
@@ -76,6 +79,7 @@ export async function reactivateAdminCustomerController(req, res) {
   try {
     const customer = await reactivateAdminCustomer(
       req.params.customerId,
+      req.admin,
     )
 
     return res.json({

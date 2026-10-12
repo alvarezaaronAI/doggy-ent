@@ -1,14 +1,18 @@
 <script setup>
+import { mediaImageSource } from '@shared/utils/mediaImage.js'
 import { computed } from 'vue'
 import { Package, ShoppingBag } from '@lucide/vue'
 import ProductCampaignBadge from '@products/ProductCard/ProductCampaignBadge.vue'
 import ProductCardVariantSelector from '@products/ProductCard/ProductCardVariantSelector.vue'
 import { useProductVariants } from '@products/composables/useProductVariants'
 import { formatCurrency } from '@shared/utils/currency'
+import { sectionSettings } from '@storefront-content/sectionCatalog.js'
 const props = defineProps({
   featuredProduct: Object,
   selectedSize: String,
   campaigns: { type: Array, default: () => [] },
+  id: { type: String, default: 'spotlight' },
+  settings: { type: Object, default: () => sectionSettings('spotlight') },
 })
 const emit = defineEmits(['add-to-cart', 'select-size'])
 const {
@@ -22,9 +26,9 @@ const variant = computed(() =>
 )
 </script>
 <template>
-  <section id="spotlight" class="store-section">
+  <section :id="id" class="store-section">
     <div class="store-inner">
-      <p class="store-eyebrow">Featured treat</p>
+      <p class="store-eyebrow">{{ settings.eyebrow }}</p>
       <div
         v-if="featuredProduct"
         class="mt-5 grid gap-8 md:grid-cols-2 md:items-center"
@@ -32,7 +36,7 @@ const variant = computed(() =>
         <div class="spotlight-image">
           <img
             v-if="featuredProduct.image"
-            :src="featuredProduct.image"
+            :src="mediaImageSource(featuredProduct.image)"
             :alt="featuredProduct.name"
             loading="lazy"
           />

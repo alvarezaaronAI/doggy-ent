@@ -39,7 +39,7 @@ export const createPaymentIntent = async ({
 
     return data
   } catch (error) {
-    console.error('Frontend payment service error:', error)
+    console.error('Secure payment initialization failed.')
     throw error
   }
 }

@@ -33,6 +33,7 @@ function createResponse() {
 
   return response
 }
+const customer = { firstName: 'QA', lastName: 'Example', email: 'qa@example.com', address1: '123 Example Lane', city: 'Sample City', state: 'CA', zip: '90001', country: 'United States' }
 
 describe('payment intent trusted amount', () => {
   beforeEach(() => {
@@ -57,6 +58,7 @@ describe('payment intent trusted amount', () => {
     await createPaymentIntent({
       body: {
         amount: 999,
+        customer,
         cartItems: [],
         promoCode: 'CHASE20',
       },
@@ -64,6 +66,7 @@ describe('payment intent trusted amount', () => {
 
     expect(mocks.previewCheckout).toHaveBeenCalledWith({
       amount: 999,
+      customer,
       cartItems: [],
       promoCode: 'CHASE20',
     })
@@ -89,6 +92,7 @@ describe('payment intent trusted amount', () => {
     await createPaymentIntent({
       body: {
         promoCode: 'BAD',
+        customer,
       },
     }, response)
 

@@ -19,6 +19,6 @@ router.get('/', getAdminOrders)
 router.get('/stats', getAdminOrderStats)
 router.get('/:orderId', getAdminOrderById)
 router.patch('/:orderId/status', patchAdminOrderStatus)
-router.post('/:orderId/emails/resend', postAdminOrderEmailResend)
+router.post('/:orderId/emails/resend', (_req, res) => res.status(410).json({ success: false, message: 'Use the order email template preview and explicit send workflow.' }))
 
 export default router

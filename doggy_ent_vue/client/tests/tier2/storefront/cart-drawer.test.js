@@ -43,7 +43,7 @@ describe('approved storefront drawer presentation', () => {
       getLineTotal: () => 36, isAtMax: () => true,
       getSellingModeLabel: () => 'In-stock item', getAvailabilityLabel: () => '2 available',
     })
-    expect(html).toMatch(/aria-label="Increase quantity[^>]*disabled/)
+    expect(html).toMatch(/<button(?=[^>]*aria-label="Increase quantity)(?=[^>]* disabled)[^>]*>/)
     expect(html).toContain('Maximum available quantity reached')
     expect(html).toContain('aria-label="Remove Test Treat, 6 oz"')
   })

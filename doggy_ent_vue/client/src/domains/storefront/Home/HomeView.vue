@@ -4,26 +4,17 @@ import CartDrawer from '@cart/CartDrawer/CartDrawer.vue'
 import PromoStrip from '@app/layouts/PromoStrip.vue'
 import SiteHeader from '@app/layouts/SiteHeader.vue'
 import SiteFooter from '@app/layouts/SiteFooter.vue'
-import HeroSection from '@storefront/Home/sections/HeroSection.vue'
-import BrandPromiseStrip from '@storefront/Home/sections/BrandPromiseStrip.vue'
-import NextDropsSection from '@storefront/Home/sections/NextDropsSection.vue'
-import ProductSpotlightSection from '@storefront/Home/sections/ProductSpotlightSection.vue'
-import ProcessSection from '@storefront/Home/sections/ProcessSection.vue'
-import IngredientsAnalysisSection from '@storefront/Home/sections/IngredientsAnalysisSection.vue'
-import ReviewsPreviewSection from '@storefront/Home/sections/ReviewsPreviewSection.vue'
-import AboutBrandSection from '@storefront/Home/sections/AboutBrandSection.vue'
-import ShopHelpSection from '@storefront/Home/sections/ShopHelpSection.vue'
 import '@storefront/styles/storefront.css'
 import '@storefront/styles/home.css'
 import { useStorefrontCampaigns } from '@campaigns/composables/useStorefrontCampaigns'
 import ProductQuickView from '@products/ProductQuickView/ProductQuickView.vue'
-import ProductCard from '@products/ProductCard/ProductCard.vue'
-import ProductFilters from '@products/ProductFilters/ProductFilters.vue'
 import { useProducts } from '@products/composables/useProducts'
 import { useProductFilters } from '@products/composables/useProductFilters'
 import { useProductVariants } from '@products/composables/useProductVariants'
 import { useCart } from '@cart/composables/useCart'
-import { formatCurrency } from '@shared/utils/currency'
+import HomePageContent from './HomePageContent.vue'
+import { useStorefrontContent } from '../composables/useStorefrontContent.js'
+const { content, loadContent } = useStorefrontContent()
 
 const selectedProduct = ref(null)
 const isQuickViewOpen = ref(false)
@@ -46,6 +37,7 @@ const {
 
 onMounted(async () => {
   loadSavedCart()
+  loadContent()
 
   await loadProducts()
   await loadCampaigns()
@@ -72,14 +64,16 @@ const {
   activeProducts,
 } = useProductFilters(storefrontProducts)
 
-const featuredProduct = computed(
-  () =>
-    storefrontProducts.value.find(
-      (product) => product.status === 'active' && product.featured,
-    ) ||
-    storefrontProducts.value.find((product) => product.status === 'active') ||
-    null,
-)
+const pageContext = computed(() => ({
+  products: storefrontProducts.value, activeProducts: activeProducts.value,
+  comingSoonProducts: comingSoonProducts.value, isLoading: isLoading.value,
+  errorMessage: errorMessage.value, campaignError: campaignError.value,
+  availableCategories: availableCategories.value, availableProteins: availableProteins.value,
+  selectedCategory: selectedCategory.value, selectedProtein: selectedProtein.value, selectedSort: selectedSort.value,
+  getProductVariants, getSelectedCardSize, selectCardSize, getSelectedCardPrice,
+  getSelectedCardVariant, getSelectedStockLabel, isPurchasable, getDisplayTags,
+  campaignsForProduct, loadProducts, loadCampaigns,
+}))
 
 const {
   cart,
@@ -132,112 +126,15 @@ function getDisplayTags(product) {
       @update:search-query="searchQuery = $event"
     />
 
-    <HeroSection :product="featuredProduct" />
-    <BrandPromiseStrip />
-
-    <main>
-      <ProductSpotlightSection
-        :featured-product="featuredProduct"
-        :selected-size="getSelectedCardSize(featuredProduct)"
-        :campaigns="campaignsForProduct(featuredProduct)"
-        @select-size="selectCardSize(featuredProduct, $event)"
-        @add-to-cart="addToCart"
-      />
-
-      <section id="shop" class="store-section">
-        <div class="store-inner">
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p class="store-eyebrow">The collection</p>
-              <h2 class="mt-3 text-3xl font-bold">All Treats</h2>
-            </div>
-          </div>
-
-          <ProductFilters
-            :available-categories="availableCategories"
-            :available-proteins="availableProteins"
-            :selected-category="selectedCategory"
-            :selected-protein="selectedProtein"
-            :selected-sort="selectedSort"
-            @update:selected-category="selectedCategory = $event"
-            @update:selected-protein="selectedProtein = $event"
-            @update:selected-sort="selectedSort = $event"
-          />
-          <p
-            v-if="campaignError"
-            class="store-muted mt-4 text-sm"
-            role="status"
-          >
-            Giving details are temporarily unavailable.
-            <button
-              type="button"
-              class="store-button ml-2"
-              @click="loadCampaigns"
-            >
-              Reload giving details
-            </button>
-          </p>
-
-          <div v-if="isLoading" class="store-muted mt-8" role="status">
-            Loading treats...
-          </div>
-
-          <div
-            v-else-if="errorMessage"
-            class="mt-8 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
-            role="alert"
-          >
-            {{ errorMessage }}
-            <button
-              type="button"
-              class="store-button ml-3"
-              @click="loadProducts"
-            >
-              Try again
-            </button>
-          </div>
-
-          <div v-else-if="!activeProducts.length" class="store-muted py-8">
-            No matching treats. Try a different search or filter.
-          </div>
-
-          <div v-else class="store-product-grid mt-6">
-            <ProductCard
-              v-for="product in activeProducts"
-              :key="product.id"
-              :product="product"
-              :campaigns="campaignsForProduct(product)"
-              :format-price="formatCurrency"
-              :get-display-tags="getDisplayTags"
-              :get-product-variants="getProductVariants"
-              :get-selected-card-size="getSelectedCardSize"
-              :select-card-size="selectCardSize"
-              :get-selected-card-price="getSelectedCardPrice"
-              :get-selected-card-variant="getSelectedCardVariant"
-              :get-selected-stock-label="getSelectedStockLabel"
-              :is-purchasable="isPurchasable"
-              @quick-view="openQuickView"
-              @add-to-cart="addToCart($event, getSelectedCardSize($event))"
-            />
-          </div>
-        </div>
-      </section>
-
-      <NextDropsSection
-        :products="comingSoonProducts"
-        :get-display-tags="getDisplayTags"
-        :loading="isLoading"
-        :error="errorMessage"
-        @preview="openQuickView"
-        @retry="loadProducts"
-      />
-
-      <ReviewsPreviewSection />
-      <ProcessSection />
-      <IngredientsAnalysisSection :product="featuredProduct" />
-      <AboutBrandSection />
-      <ShopHelpSection />
-    </main>
+    <HomePageContent
+      :content="content" :context="pageContext"
+      @quick-view="openQuickView"
+      @add-to-cart="addToCart"
+      @select-size="selectCardSize"
+      @category="selectedCategory = $event"
+      @protein="selectedProtein = $event"
+      @sort="selectedSort = $event"
+    />
 
     <SiteFooter />
 

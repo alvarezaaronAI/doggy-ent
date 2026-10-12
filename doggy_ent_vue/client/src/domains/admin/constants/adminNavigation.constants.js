@@ -18,6 +18,7 @@ export const ADMIN_NAVIGATION = Object.freeze([
     label: 'Store & marketing',
     items: [
       { label: 'Products', to: '/admin/products', icon: 'products' },
+      { label: 'Website', to: '/admin/website', icon: 'website' },
       { label: 'Promos', to: '/admin/promos', icon: 'promos' },
       { label: 'Campaigns', to: '/admin/campaigns', icon: 'campaigns' },
     ],
@@ -25,6 +26,7 @@ export const ADMIN_NAVIGATION = Object.freeze([
   {
     label: 'Operations',
     items: [
+      { label: 'Email templates', to: '/admin/email-templates', icon: 'notifications' },
       {
         label: 'Notifications',
         to: '/admin/notifications',

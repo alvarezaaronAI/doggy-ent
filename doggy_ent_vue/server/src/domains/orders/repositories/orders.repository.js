@@ -122,7 +122,7 @@ export async function findOrderByStripePaymentIntentId(stripePaymentIntentId) {
   return mapOrder(order)
 }
 
-export async function findCustomerOrderByReference(reference) {
+export async function findCustomerOrderByReference(reference, { userId = null, viewerId = null } = {}) {
   const normalizedReference = String(reference || '').trim()
 
   if (!normalizedReference) {
@@ -131,6 +131,7 @@ export async function findCustomerOrderByReference(reference) {
 
   const order = await prisma.order.findFirst({
     where: {
+      ...(userId ? { userId } : {}),
       OR: [
         {
           orderNumber: normalizedReference,
@@ -168,7 +169,8 @@ export async function findCustomerOrderByReference(reference) {
       })
     : null
 
-  return mapCustomerOrder(order ? { ...order, promoUsage } : null)
+  const mapped = mapCustomerOrder(order ? { ...order, promoUsage } : null)
+  return mapped ? { ...mapped, accountLinked: Boolean(viewerId && order.userId === viewerId) } : null
 }
 
 export async function findOrdersByCustomerEmail(
@@ -261,7 +263,15 @@ export async function findOrderStats() {
 }
 
 export async function createOrder(orderInput) {
-  const createdOrder = await prisma.order.create({
+  const createdOrder = await prisma.$transaction(async tx => {
+    for (const item of orderInput.items) {
+      const variant = await tx.productVariant.findUnique({ where: { sku: item.sku }, include: { product: true } })
+      if (!variant || !variant.isActive || variant.product.status !== 'ACTIVE') throw Object.assign(new Error('An ordered variant is no longer available.'), { statusCode: 409 })
+      if (variant.product.sellingMode && variant.product.sellingMode !== 'INVENTORY_LIMITED') continue
+      const reserved = await tx.productVariant.updateMany({ where: { sku: item.sku, inventory: { gte: item.quantity } }, data: { inventory: { decrement: item.quantity } } })
+      if (!reserved.count) throw Object.assign(new Error('An ordered variant no longer has enough stock. Payment may be complete; contact support rather than paying again.'), { statusCode: 409 })
+    }
+    return tx.order.create({
     data: {
       orderNumber: orderInput.orderNumber,
       userId: orderInput.userId || null,
@@ -314,6 +324,7 @@ export async function createOrder(orderInput) {
       shipments: orderShipmentsInclude,
       emailDeliveries: orderEmailDeliveriesInclude,
     },
+    })
   })
 
   return mapOrder(createdOrder)
@@ -324,8 +335,9 @@ export async function updateOrderStatusById(
   status,
   {
     note = null,
-    changedByType = 'ADMIN_ENV',
-    changedBy = 'ADMIN_ENV',
+    changedByType = 'SYSTEM',
+    changedBy = null,
+    allowedFromStatuses = null,
   } = {},
 ) {
   const updatedOrder = await prisma.$transaction(async (tx) => {
@@ -340,6 +352,8 @@ export async function updateOrderStatusById(
       error.code = 'P2025'
       throw error
     }
+
+    if (allowedFromStatuses && !allowedFromStatuses.includes(existingOrder.status)) return existingOrder
 
     if (existingOrder.status !== status) {
       await tx.orderStatusHistory.create({
@@ -357,6 +371,7 @@ export async function updateOrderStatusById(
     return tx.order.update({
       where: {
         id: orderId,
+        status: existingOrder.status,
       },
       data: {
         status,
@@ -376,6 +391,9 @@ export async function updateOrderStatusById(
         shipments: orderShipmentsInclude,
         emailDeliveries: orderEmailDeliveriesInclude,
       },
+    }).catch(error => {
+      if (error.code === 'P2025') throw Object.assign(new Error('This order changed during the update. Reload it before saving again.'), { statusCode: 409 })
+      throw error
     })
   })
 

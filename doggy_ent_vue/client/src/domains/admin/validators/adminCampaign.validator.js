@@ -1,4 +1,5 @@
 import { safeCampaignLink } from '@campaigns/utils/campaignPresentation.js'
+import { getMediaAssetId } from '@storefront-content/mediaRules.js'
 
 export function validateAdminCampaignPayload(payload) {
   if (!payload.name) return 'Add a campaign name.'
@@ -15,8 +16,8 @@ export function validateAdminCampaignPayload(payload) {
   )
     return 'Campaign end must be after its start.'
   for (const key of ['image', 'beneficiaryUrl']) {
-    if (payload[key] && !safeCampaignLink(payload[key]))
-      return 'Use valid HTTPS image and partner links without credentials.'
+    if (payload[key] && !(key === 'image' && getMediaAssetId(payload[key])) && !safeCampaignLink(payload[key]))
+      return 'Choose an uploaded image or HTTPS image URL. Partner links must use HTTPS without credentials.'
   }
   if (
     payload.publicPageEnabled &&

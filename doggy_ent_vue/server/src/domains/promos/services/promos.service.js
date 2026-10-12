@@ -1,3 +1,4 @@
+import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
 import {
   getAllPromos as getAllPromosFromRepository,
   getPromoById as getPromoByIdFromRepository,
@@ -48,10 +49,7 @@ async function resolvePromoLifecycleStatuses() {
     await expireEndedPromos(currentDate)
   }
   catch (error) {
-    console.error(
-      '[promos] Failed lifecycle status resolution.',
-      error,
-    )
+    logOperationalFailure('PROMO_LIFECYCLE_FAILED', error)
   }
 }
 
@@ -324,11 +322,7 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
     }
   }
   catch (error) {
-    console.error('[promos] Failed DB promo validation lookup.', {
-      promoCode: normalizedCode,
-      customerEmail: normalizedCustomerEmail,
-      error,
-    })
+    logOperationalFailure('PROMO_VALIDATION_LOOKUP_FAILED', error)
 
     throw error
   }
@@ -353,12 +347,7 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
     )
   }
   catch (error) {
-    console.error('[promos] Failed promo usage validation lookup.', {
-      promoId: promo?.id,
-      promoCode: normalizedCode,
-      customerEmail: normalizedCustomerEmail,
-      error,
-    })
+    logOperationalFailure('PROMO_USAGE_LOOKUP_FAILED', error)
 
     throw error
   }
@@ -445,12 +434,7 @@ export async function recordPromoUsage({ code, cart, customerEmail, orderId }) {
     promo = await getPromoByCode(normalizedCode)
   }
   catch (error) {
-    console.error('[promos] Failed DB promo lookup during redemption.', {
-      promoCode: normalizedCode,
-      customerEmail: normalizedCustomerEmail,
-      orderId,
-      error,
-    })
+    logOperationalFailure('PROMO_REDEMPTION_LOOKUP_FAILED', error)
 
     throw error
   }
@@ -533,15 +517,7 @@ export async function recordPromoUsage({ code, cart, customerEmail, orderId }) {
     return promo
   }
   catch (error) {
-    console.error('[promos] Failed persistent promo usage tracking.', {
-      promoId: promo?.id,
-      promoCode: normalizedCode,
-      customerEmail: normalizedCustomerEmail,
-      orderId,
-      subtotal,
-      discountAmount,
-      error,
-    })
+    logOperationalFailure('PROMO_USAGE_WRITE_FAILED', error)
 
     throw error
   }

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 
 import {
   submitCheckoutPreview,
@@ -60,11 +60,6 @@ export function useCheckoutPreview({
         return
       }
 
-      console.log(
-        '[checkout-preview] Updated pricing preview:',
-        previewResult,
-      )
-
       checkoutPreviewResult.value = {
         ...previewResult,
       }
@@ -72,7 +67,6 @@ export function useCheckoutPreview({
     catch (error) {
       console.error(
         '[checkout-preview] Failed to refresh preview.',
-        error,
       )
       if (requestId === activePreviewRequestId) {
         checkoutPreviewResult.value = null
@@ -86,11 +80,14 @@ export function useCheckoutPreview({
   }
 
   function scheduleCheckoutPreview() {
+    activePreviewRequestId++
+    isRefreshingCheckoutPreview.value = true
     window.clearTimeout(checkoutPreviewTimer)
     checkoutPreviewTimer = window.setTimeout(() => {
       void refreshCheckoutPreview()
     }, 350)
   }
+  onBeforeUnmount(() => { activePreviewRequestId++; window.clearTimeout(checkoutPreviewTimer) })
 
   return {
     checkoutPreviewResult,

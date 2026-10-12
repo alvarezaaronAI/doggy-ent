@@ -1,6 +1,12 @@
 # Data Flow Maps
 
-Last updated: 2026-10-09
+Last updated: 2026-10-10
+
+## Image Library And Seasonal Content
+
+Authenticated admin image upload -> bounded raw request -> media controller/service/validator -> Sharp WebP/thumbnail/checksum -> repository serializable Prisma transaction -> metadata + binary tables -> safe stable image path -> selected editor field. Upload does not publish a website draft or save a product/campaign. Explicit existing Save/Publish steps remain necessary. Library name/alt/folder edits do not replace stored bytes or existing page captions.
+
+Public/editor/cart/order image rendering uses the same `mediaImageSource` resolver -> existing configured backend origin -> public immutable WebP endpoint. Relative asset IDs, rather than startup-mode hosts, are persisted. In Railway DB admin mode the local backend writes bytes to Railway PostgreSQL; the deployed backend can later serve those same bytes, after explicitly approved migrations/deployment. No browser-to-Railway admin cookie workaround or bearer fallback is added. Pricing, variant selection, checkout trust and order ownership remain unchanged. See [media library](media-library.md) and [editor](storefront-editor.md).
 
 ## Overall Request Flow
 
@@ -17,6 +23,16 @@ flowchart TB
   ProductsService --> ProductsController
   ProductsController --> Home
 ```
+
+## Published Website Content
+
+Admin `/admin/website` -> `useAdminWebsite` -> credentialed admin website API -> `requireAdminAuth` -> storefront controller/service -> validated public projection -> revision-matched Prisma repository -> `StorefrontContent`.
+
+Save draft changes only `draft`; explicit confirmed Publish atomically sets `draft`, `published`, `publishedAt` and increments `revision`. A stale write receives 409. Public `GET /api/storefront/content` returns only published fields; `useStorefrontContent` retains last known good/default presentation on failure. One cache is shared by header/announcement/footer/home. The original home and editor both render `HomePageContent` with the same section components. The editor's shopping/navigation content is inert.
+
+Catalog/variant/filter/cart/campaign data still enters the renderer through existing composables. A curated collection intersects real active filtered products with configured IDs, never substituting invented prices or stock. Actual product saves use the existing product API and are independent of website draft publication. Background/layout/content settings do not create promos or change server totals.
+
+No new env variables or provider actions. Fully local edits affect only local DB; Railway DB admin uses the existing local backend connected to Railway after the new migration is explicitly approved/applied. No Railway write/deployment was performed for this editor. See [storefront-editor.md](./storefront-editor.md).
 
 ## Storefront Product Load
 
@@ -72,27 +88,30 @@ sequenceDiagram
   Client->>API: POST /api/checkout/create-payment-intent
   API->>Stripe: Create PaymentIntent
   Stripe-->>API: clientSecret
-  API-->>Client: clientSecret
-  Client->>Stripe: confirmCardPayment
+  API-->>Client: clientSecret, trusted pricing, email-bound checkoutProof
+  Client->>Stripe: confirmCardPayment or Express Checkout confirmPayment
   Stripe-->>Client: PaymentIntent succeeded
-  Client->>API: POST /api/checkout with paymentIntentId
+  Client->>API: POST /api/checkout with paymentIntentId and checkoutProof
   API->>Stripe: Retrieve PaymentIntent
-  API->>DB: Recompute totals, create order with shipping method, decrement inventory, record promo/campaign usage
-  API->>DB: Create EmailDelivery rows
+  API->>DB: Recompute DB catalog totals, atomically create order and decrement limited stock
+  API->>DB: Record promo and campaign usage separately
   DB-->>API: Order
-  API-->>Client: Order response
-  Client->>Browser: Navigate to /order-success/:orderId
+  API-->>Client: Order and scoped receiptAccess
+  Client->>Browser: Navigate to /order-success/:reference
 ```
 
 Key files:
 
 - Client checkout view: `client/src/domains/checkout/views/CheckoutView.vue`
+- Client checkout coordinator/identity/rates: `composables/useCheckoutPage.js`, `useCheckoutIdentity.js`, `useCheckoutShipping.js`; in-place review/sign-in: `useCheckoutAuth.js`.
 - Client checkout state: `client/src/domains/checkout/composables/useCheckout.js`
 - Client preview state: `client/src/domains/checkout/composables/useCheckoutPreview.js`
 - Stripe card element: `client/src/domains/payments/components/StripeElementsForm.vue`
+- Express Checkout wallets: `client/src/domains/payments/components/StripeWalletButtons.vue`.
 - Payment service: `client/src/domains/payments/services/payment.service.js`
 - Server preview/create route: `server/src/domains/checkout/routes/checkout.routes.js`
 - Server checkout service: `server/src/domains/checkout/services/checkout.service.js`
+- Trusted item resolution: `server/src/domains/checkout/services/checkoutCatalog.service.js`; scoped proofs: `server/src/shared/utils/signedCapability.js`.
 - Server pricing: `server/src/domains/checkout/utils/checkoutPricing.js`
 - Server shipping options: `server/src/domains/checkout/constants/checkout.constants.js`
 - Stripe service: `server/src/domains/payments/services/stripe.payment.js`
@@ -131,7 +150,7 @@ Key files:
 5. Server admin orders are mounted at `/api/admin/orders` and guarded by admin auth in the orders route layer.
 6. Admin order timeline labels are centralized in `client/src/domains/admin/constants/adminOrders.constants.js`.
 7. Admin order detail shows the current status separately from the staged next status selector. Status changes persist only after Save; Cancel resets the staged selection.
-8. Status updates create `OrderStatusHistory` rows when the status changes. Until Better Auth/admin users replace the custom admin auth system, entries use `changedByType: ADMIN_ENV` and `changedBy: ADMIN_ENV`.
+8. Status updates compare the current persisted status and append history in one transaction. Authenticated changes record ADMIN and the actual admin ID; historical ADMIN_ENV remains unchanged. Concurrent conflicts return 409. Tracking cannot regress terminal order states.
 9. Admin order responses include `donationAmount`, campaign attribution rows, promo usage when recorded, same-customer order summaries, `lastStatusChange`, and `statusHistory`.
 
 ## Customer Account Flow
@@ -184,16 +203,18 @@ Important constraints:
 2. The existing admin router guard validates `/api/auth/me`.
 3. Admin customer API calls use `/api/admin/customers`, protected by `requireAdminAuth`.
 4. Server customer services read `User`, linked `Order` rows, verified-email guest matches, account events, support placeholders, review placeholders, notification preferences, and loyalty placeholders.
-5. Deactivate/reactivate actions update `User.status` and create `CustomerAccountEvent` rows with `changedByType: ADMIN_ENV`.
+5. Deactivate/reactivate actions target only CUSTOMER rows and append CustomerAccountEvent with ADMIN and the authenticated actor ID.
 6. Resend verification and password reset actions call Better Auth email APIs, which queue Resend-backed `EmailDelivery` records when provider env is configured.
 7. Admin customer detail shows recent notification delivery history from `EmailDelivery`.
 8. Admin dashboard reads order stats, customer summaries, and notification stats to show orders, customers, revenue, shipment activity, tracking summary, and notification activity.
 
 ## Notification Flow
 
+Order/payment/tracking triggers do not queue email automatically. Actual order emails start with an authenticated admin template preview and explicit confirmed Send; provider rejects operational events without internal manual approval. Essential Better Auth verification/reset and intentionally enabled welcome/security messages retain their separate automatic flow. See [manual order email architecture](checkout-and-order-email.md).
+
 ```mermaid
 sequenceDiagram
-  participant Trigger as Account, checkout, or admin action
+  participant Trigger as Essential account or confirmed admin action
   participant Email as Email service
   participant Prefs as Customer preferences
   participant DB as PostgreSQL
@@ -203,7 +224,7 @@ sequenceDiagram
   Trigger->>Email: queueEmail(payload)
   Email->>Prefs: Check category preferences when userId exists
   Email->>DB: Create EmailDelivery
-  alt Provider configured and preference allows
+  alt Explicit live send or essential account email, configured and preference allows
     Email->>Resend: Send transactional email
     Resend-->>Email: Provider id
     Email->>DB: Mark SENT
@@ -241,7 +262,7 @@ sequenceDiagram
   API-->>Customer: Customer-safe shipment and events
 ```
 
-Communications policy note: tracking/order changes should be saved separately from customer email sends. Future tracking work should require an explicit admin send action for tracking, shipped, delivered, review, support, issue-resolution, apology, promo, and marketing emails.
+Communications policy: tracking/order changes save separately without email. Received/preparing/shipped/delivered/cancelled order messages now have previewed manual sends; support/review/promo/marketing templates remain future work. No automatic operational send is added.
 
 ## Checkout Shipping Rate Flow
 
@@ -288,7 +309,7 @@ sequenceDiagram
   Admin->>Client: Save status
   Client->>API: PATCH /api/admin/orders/:orderId/status
   API->>Service: updateAdminOrderStatus(orderId, status, note)
-  Service->>Repo: updateOrderStatusById with ADMIN_ENV actor
+  Service->>Repo: Compare status and record authenticated ADMIN actor
   Repo->>DB: Read current order
   Repo->>DB: Create OrderStatusHistory if status changed
   Repo->>DB: Update Order.status
@@ -400,7 +421,7 @@ sequenceDiagram
   Domain-->>Client: Account/admin/customer data
 ```
 
-Better Auth customer accounts are already implemented. A future, explicitly approved admin-auth migration may replace custom admin sessions while preserving the dashboard. Loyalty, referrals, and expanded permissions remain future work.
+Better Auth customer accounts and the explicitly approved admin-session migration are implemented. Separate cookie prefixes preserve both experiences. Loyalty, referrals, MFA and expanded permissions remain future work. See [auth rollout](auth-roadmap.md).
 
 ## Public Brand Story And Homepage Presentation
 
@@ -430,3 +451,11 @@ The protected `/account` parent route mounts `AccountLayout.vue` once. Children 
 | Rewards / Wishlist | No feature writes | Explicit future-phase UI, no mock customer data |
 
 KeepAlive retains only the Orders child between account tabs. Sequenced detail requests prevent a slow earlier response from replacing the latest selection. Refresh reloads the list and selected detail. Sign-out exits the layout and clears cached account content. Address edits do not change existing orders. This UI pass adds no backend endpoints, schema changes, provider sends, or environment variables.
+
+## Production Audit Flow Corrections (2026-10-11)
+
+Admin login -> compatible /api/auth/login -> native Better Auth admin config -> existing credential/User/Session tables -> isolated HttpOnly cookie -> /api/auth/me confirmation -> existing dashboard. Logout -> DB deletion -> revocation check -> success; copied cookie then fails. Provisioning happens only through explicit CLI, never public signup or startup. See [auth architecture](auth-roadmap.md).
+
+Checkout finalization/replay now projects customer-safe order data. Internal status history/admin actors and internal support event metadata do not reach customer APIs. Status/tracking/customer lifecycle/support changes use the authenticated admin ID; tracking cannot regress terminal states.
+
+PaymentIntent creation/finalization still has no durable attempt or Stripe webhook recovery. Promo/campaign usage still commits after order creation, and failures are logged. The diagrams describe present request flow, not certified recovery. Supplemental mockdiagram no longer depicts automatic checkout/tracking email; operational sends require independent explicit preview/confirmation. See [launch gates](../audits/2026-10-11-production-audit.md).

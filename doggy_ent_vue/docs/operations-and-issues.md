@@ -152,3 +152,9 @@ Current limitations:
 - Internal issue capture is connected to unexpected Express 500 responses only.
 - Support reply email sending is not implemented; email remains a separate explicit future action.
 - No attachment, compensation, refund, replacement, or assignment workflow exists yet.
+
+## Audit And Privacy Follow-Up (2026-10-11)
+
+New protected admin writes record authenticated actor IDs in order/customer/support histories and safe structured route/status logs. Historical ADMIN_ENV records remain intact. Customer support projections exclude internal messages, INTERNAL_NOTE_ADDED events and private metadata; internal issue context remains admin-only.
+
+Unexpected Express error capture uses a generic summary and safe error category plus templated route, not raw exception/SQL, request URL/query, body, cookie or provider action URL. Prisma runtime query/error logging is disabled. This does not provide centralized monitoring or automatic alerts: controller-caught failures/provider reconciliation and real deployed log retention still need owner verification. See [production audit](audits/2026-10-11-production-audit.md).

@@ -11,6 +11,7 @@
   --store-giving: #edf6f0;
   background: #fff;
   color: var(--store-ink);
+  font-size: 16px;
 }
 .store-section {
   border-bottom: 1px solid var(--store-line, #deded6);

@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   PawPrint,
@@ -11,8 +11,12 @@ import {
   ChevronDown,
 } from '@lucide/vue'
 import { useAccountAuth } from '@domains/account/composables/useAccountAuth.js'
-import { BRAND_STORY_PATH } from '@storefront/constants/brandContent.js'
+import ContentLink from '@storefront/components/ContentLink.vue'
+import { useStorefrontContent } from '@storefront/composables/useStorefrontContent.js'
+import { visibleStorefrontLinks } from '@storefront-content/sectionCatalog.js'
 const props = defineProps({
+  content: Object,
+  preview: Boolean,
   cartCount: { type: Number, default: 0 },
   searchQuery: { type: String, default: '' },
 })
@@ -25,19 +29,11 @@ const accountMenuPinned = ref(false)
 const headerRef = ref(null)
 const accountMenuRef = ref(null)
 const { authenticated, loadSession, signOut, user } = useAccountAuth()
-const links = [
-  ['All Treats', 'shop'],
-  ['Next Drops', 'coming-soon'],
-  ['Made With Care', 'process'],
-  ['Ingredients', 'ingredients'],
-  ['Happy Pups', 'reviews'],
-  ['Meet the Brand', 'about'],
-  ['FAQ', 'faq'],
-]
+const { content: liveContent, loadContent } = useStorefrontContent()
+const page = computed(() => props.content || liveContent.value)
+const links = computed(() => visibleStorefrontLinks(page.value.header.links, page.value.sections))
+const searchCollection = computed(() => page.value.sections.find(block => block.visible && block.type === 'collection' && block.id === 'shop') || page.value.sections.find(block => block.visible && block.type === 'collection'))
 let closeTimer
-function destination(id) {
-  return id === 'about' ? BRAND_STORY_PATH : { path: '/', hash: '#' + id }
-}
 function firstName() {
   return String(user.value?.name || 'Friend')
     .trim()
@@ -91,11 +87,13 @@ function escape(event) {
 }
 function search() {
   closeMenus()
-  router.push({ path: '/', hash: '#shop' })
+  if (searchCollection.value) router.push({ path: '/', hash: '#' + searchCollection.value.id })
 }
 watch(() => route.fullPath, closeMenus)
 onMounted(() => {
+  if (props.preview) return
   loadSession()
+  loadContent()
   document.addEventListener('click', outside)
   document.addEventListener('keydown', escape)
 })
@@ -110,9 +108,10 @@ onBeforeUnmount(() => {
     <div class="site-header-top">
       <RouterLink to="/" class="site-brand"
         ><span class="site-mark"><PawPrint :size="23" /></span
-        ><span>Chase &amp; Evie Co.</span></RouterLink
+        ><span>{{ page.header.brandName }}</span></RouterLink
       >
       <form
+        v-if="searchCollection"
         class="site-search site-search-desktop"
         role="search"
         @submit.prevent="search"
@@ -121,7 +120,7 @@ onBeforeUnmount(() => {
         <input
           aria-label="Search treats"
           :value="props.searchQuery"
-          placeholder="Search treats, proteins, tags..."
+          :placeholder="page.header.searchPlaceholder"
           @input="emit('update:search-query', $event.target.value)"
         />
         <button type="submit" aria-label="Search collection">
@@ -202,31 +201,31 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <nav class="site-desktop-nav" aria-label="Primary">
-      <RouterLink
-        v-for="[label, id] in links"
-        :key="id"
-        :to="destination(id)"
-        >{{ label }}</RouterLink
+      <ContentLink
+        v-for="(link, index) in links"
+        :key="index"
+        :href="link.href"
+        >{{ link.label }}</ContentLink
       >
     </nav>
     <div v-if="mobileMenuOpen" id="site-mobile-menu" class="site-mobile-menu">
-      <form class="site-search" role="search" @submit.prevent="search">
+      <form v-if="searchCollection" class="site-search" role="search" @submit.prevent="search">
         <Search :size="18" aria-hidden="true" /><input
           aria-label="Search treats"
           :value="props.searchQuery"
-          placeholder="Search treats..."
+          :placeholder="page.header.searchPlaceholder"
           @input="emit('update:search-query', $event.target.value)"
         /><button type="submit" aria-label="Search collection">
           <Search :size="16" />
         </button>
       </form>
       <nav aria-label="Primary mobile">
-        <RouterLink
-          v-for="[label, id] in links"
-          :key="id"
-          :to="destination(id)"
+        <ContentLink
+          v-for="(link, index) in links"
+          :key="index"
+          :href="link.href"
           @click="closeMenus"
-          >{{ label }}</RouterLink
+          >{{ link.label }}</ContentLink
         >
       </nav>
     </div>

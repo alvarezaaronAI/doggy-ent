@@ -59,10 +59,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  fetchApi,
-  parseJsonResponse,
-} from '@shared/api/http.js'
+import { loginAdmin } from '../api/adminSession.api.js'
+import { adminReturnPath } from '../validators/adminAuth.validator.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -79,46 +77,13 @@ async function login() {
   messageType.value = 'error'
 
   try {
-    const response = await fetchApi('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value,
-      }),
-    })
-
-    const data = await parseJsonResponse(
-      response,
-      'Unable to sign in.',
-    )
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || 'Unable to sign in.')
-    }
-
-    const sessionResponse = await fetchApi('/api/auth/me')
-
-    const sessionData = await parseJsonResponse(
-      sessionResponse,
-      'Unable to verify admin session.',
-    )
-
-    if (!sessionResponse.ok || !sessionData.authenticated) {
-      throw new Error(
-        'Admin session was not established. Please try again.',
-      )
-    }
+    await loginAdmin({ email: email.value, password: password.value })
+    password.value = ''
 
     messageType.value = 'success'
     message.value = 'Signed in successfully.'
 
-    const redirectTo =
-      typeof route.query.redirect === 'string'
-        ? route.query.redirect
-        : '/admin'
+    const redirectTo = adminReturnPath(route.query.redirect)
 
     await router.push(redirectTo)
   } catch (error) {

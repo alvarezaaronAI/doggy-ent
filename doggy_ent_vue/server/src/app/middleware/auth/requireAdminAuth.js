@@ -1,15 +1,13 @@
 
 
 import {
-  getAdminFromSession,
-  getSessionCookieName,
+  getAdminFromRequest,
 } from '../../../domains/auth/services/auth.service.js'
+import { logAdminAction } from '../../../shared/utils/operationalLog.js'
 
 export async function requireAdminAuth(req, res, next) {
   try {
-    const sessionId = req.cookies?.[getSessionCookieName()]
-
-    const admin = await getAdminFromSession(sessionId)
+    const admin = await getAdminFromRequest(req)
 
     if (!admin) {
       return res.status(401).json({
@@ -18,7 +16,9 @@ export async function requireAdminAuth(req, res, next) {
       })
     }
 
+    res.set('Cache-Control', 'no-store')
     req.admin = admin
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) res.once?.('finish', () => logAdminAction(req, res.statusCode))
 
     return next()
   } catch (error) {

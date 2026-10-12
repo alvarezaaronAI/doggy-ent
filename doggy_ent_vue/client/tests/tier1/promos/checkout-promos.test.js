@@ -12,6 +12,17 @@ const {
 } = await import('../../../src/domains/checkout/composables/useCheckoutPromos.js')
 
 describe('checkout promo workflow', () => {
+  it('discards an in-flight validation after the email changes', async () => {
+    let resolve
+    promoApi.validatePromoCode.mockImplementationOnce(() => new Promise(done => { resolve = done }))
+    const customer = ref({ email: 'first@example.com' })
+    const promos = useCheckoutPromos({ customer, cartItems: ref([]), subtotal: ref(100) })
+    promos.promoCode.value = 'CHASE20'; const pending = promos.applyPromoCode()
+    customer.value.email = 'next@example.com'; await nextTick()
+    resolve({ valid: true, discountAmount: 20 }); await pending
+    expect(promos.appliedPromoCode.value).toBe(''); expect(promos.appliedPromoDiscount.value).toBe(0)
+    promoApi.validatePromoCode.mockClear()
+  })
   it('requires customer email before promo validation', async () => {
     const promos = useCheckoutPromos({
       customer: ref({

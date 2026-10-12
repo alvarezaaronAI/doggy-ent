@@ -24,6 +24,41 @@ These files add presentation/navigation only; existing pricing, APIs, auth, cart
 
 The homepage still composes the existing featured product, collection, Happy Pups, process, ingredients, about teaser, and shopping-help sections. Section headings/styles changed, not their API ownership or financial behavior.
 
+## Visual Editor Files Added 2026-10-09
+
+| File Or Group | Purpose / Dependencies / Flow |
+| --- | --- |
+| `shared/storefront/sectionCatalog.js` | Canonical typed section registry, defaults, anchors and link visibility. Consumed by generated client/server copies. |
+| `shared/storefront/contentValidation.js` | Public-content shape/size/URL/social validation shared by UI and server; no commerce or auth rules. |
+| `shared/storefront/contentProjection.js` | Explicit public-field projection; separates stored/editor metadata from customer responses. |
+| `shared/storefront/socialLinks.js` | Canonical social-profile allowlist/defaults; existing client helper reexports it. |
+| `client/scripts/sync-storefront-content.js`, `server/scripts/sync-storefront-content.js` | Build-time public-module copying. Generated `src/domains/storefront/content/` snapshots keep isolated project roots deployable. Never edit copies independently. |
+| `client/src/domains/admin/views/AdminWebsiteView.vue` | Protected layout composition; section navigation, catalog/campaign reads, renderer and inspector. |
+| `client/src/domains/admin/composables/useAdminWebsite.js` | Draft/revision/selection, explicit save/publish/cancel/restore, conflict/error and unsaved-work lifecycle. |
+| `client/src/domains/admin/api/adminWebsite.api.js` | Safe credentialed editor requests through existing HTTP helpers. |
+| `client/src/domains/admin/constants/adminWebsite.constants.js` | Field/background labels and swatches. |
+| `client/src/domains/admin/components/AdminWebsiteCanvas.vue` | Actual shared homepage/shell preview, edit handles, wide/phone mode and pane scrolling. |
+| `client/src/domains/admin/components/AdminWebsiteFields.vue` | Selected shell/section input controls; delegates repeated links/items. |
+| `client/src/domains/admin/components/AdminWebsiteLinks.vue`, `AdminWebsiteItems.vue` | Ordered link/item draft editing without embedded API work. |
+| `client/src/domains/admin/components/AdminProductCanvas.vue` | Form mapper plus actual ProductCard/ComingSoonCard, variant selection and campaign summaries; preview only. |
+| `client/src/domains/admin/components/AdminProductDetailsFields.vue` | Extracted existing catalog details fields; no payload/schema changes. |
+| `client/src/domains/storefront/Home/HomePageContent.vue` | Shared ordered/visible section renderer; public actions emitted to existing home orchestration, editor content inert. |
+| `client/src/domains/storefront/Home/sections/ProductCollectionSection.vue` | Extracted actual filters/cards/load/error/empty states and selected-variant handoff. |
+| `client/src/domains/storefront/Home/sections/ContentFeatureSection.vue` | Typed banner/story rendering, safe CTA and optional image. |
+| `client/src/domains/storefront/composables/useStorefrontContent.js` | Shared public cache, defaults/legacy public social config, invalid/error fallback, stale-read publication guard. |
+| `client/src/domains/storefront/api/storefrontContent.api.js` | Public content GET through safe JSON/error helpers. |
+| `client/src/domains/storefront/components/ContentLink.vue` | Router-aware safe internal/external links and hidden-anchor omission. |
+| `client/src/domains/storefront/utils/homeContent.js` | Active featured selection, settings/default resolution and background display transforms. |
+| `server/src/domains/storefront/routes/storefront.routes.js` | Public content read and three admin-protected editor endpoints. |
+| `server/src/domains/storefront/controllers/storefront.controller.js` | HTTP response/error boundary and no-store public cache header. |
+| `server/src/domains/storefront/services/storefront.service.js` | Typed validation/projection, default/no-write reads, publication and 409 conflicts. |
+| `server/src/domains/storefront/repositories/storefront.repository.js` | Singleton Prisma reads, unique-create and revision compare-and-write with returning rows. |
+| `server/prisma/migrations/20261009010000_storefront_content/migration.sql` | Additive JSON-content table, local applied / Railway unmodified. |
+| New client tests `website-editor`, `content-renderer`, `content-cache`; server tests `storefront-content`, `storefront-repository` | Draft lifecycle, shared renderer/filter/link/cache safety, authorization/public privacy, write/publication/conflict boundaries. |
+| `docs/architecture/storefront-editor.md` | Editing matrix, supported functions, save semantics, ownership and deployment/QA guide. |
+
+Existing `HomeView`/sections/header/footer/announcement are adapted to published settings; router/admin nav/icon adds Website; ProductCard/FormPanel/View add preview handles while retaining existing product persistence. Client Vite/jsconfig gains a local generated-content alias; both package build scripts sync the canonical public rules. Detailed changed-file inventory and command results are in the latest [handoff](../../PROJECT_HANDOFF.md).
+
 ## Root And Config
 
 | File | Purpose | Dependencies | Flow Participation |
@@ -150,8 +185,8 @@ The homepage still composes the existing featured product, collection, Happy Pup
 
 | File | Purpose | Dependencies | Flow Participation |
 | --- | --- | --- | --- |
-| `server/src/domains/auth/routes/auth.routes.js` | Login/logout/me/data-target routes. | Auth service. | Owns custom admin session endpoints. |
-| `server/src/domains/auth/services/auth.service.js` | Admin credential/session/cookie logic. | bcrypt, crypto, env. | Current custom admin auth source of truth. |
+| `server/src/domains/auth/routes/auth.routes.js` | Compatible login/logout/me/data-target endpoints. | Admin auth service, rate limiter. | Preserves dashboard calls while delegating persistence to Better Auth. |
+| `server/src/domains/auth/services/auth.service.js` | Admin input validation, native API delegation, fresh role/status projection and cookie forwarding. | Better Auth admin config, Node header adapter. | No custom signed-session implementation remains. |
 | `server/src/domains/auth/services/customerAuth.service.js` | Better Auth customer configuration. | Better Auth, Prisma adapter, `@better-auth/infra`, email payload builders. | Owns customer auth, Infrastructure dashboard plugin, role/status fields, session lookup, signup profile hooks, and response token sanitization. |
 | `server/src/domains/auth/constants/authRoles.constants.js` | Current and future role/status constants. | None. | Source of truth for CUSTOMER/ADMIN and account active/deactivated labels. |
 | `server/src/domains/account/routes/account.routes.js` | Protected customer account routes. | `requireCustomerAuth`, account controller. | Customer dashboard/profile/orders API. |
@@ -336,3 +371,98 @@ These changes continue the accepted local work; they do not replace API/auth/pay
 | `client/tests/tier2/storefront/{cart-drawer,cart-drawer-dialog}.test.js` | Vue SSR presentation and isolated dialog lifecycle regressions | Existing Vitest tiers; no DB/provider calls |
 
 HomeView, useCart pricing/storage, checkout, auth, server, schema, dependencies, and deployment/env configuration were not changed in this baseline implementation. Source files remain focused; drawer-only interaction behavior is not mixed into the view or pricing composable.
+
+## Database Media And Editor Feedback
+
+This subsequent focused phase adds uploads without rewriting the accepted editors or commerce engines. See [media library](media-library.md).
+
+| File(s) | Purpose / Responsibility | Dependencies / Flow |
+| --- | --- | --- |
+| `shared/storefront/mediaRules.js` and both generated `content/mediaRules.js` copies | Canonical UUID paths, file types/byte/pixel/edge limits and folder names | Existing content sync scripts; never edit generated copies independently |
+| `shared/storefront/contentValidation.js` and generated copies | Image-only canonical media path exception; protected destination rules retained | Website validator; media service verifies actual DB existence |
+| `client/src/shared/utils/mediaImage.js` | Resolve stable stored image/thumbnail paths against existing API origin | Shared HTTP helper; storefront/campaign/product/cart/checkout/order media |
+| `client/src/domains/admin/api/adminMedia.api.js` | Credentialed list/raw upload/metadata PATCH | Shared safe response parser; no UI or secret values |
+| `client/src/domains/admin/validators/adminImage.validator.js` | Client file-type/empty/size feedback | Canonical media rules; server remains authoritative |
+| `client/src/domains/admin/composables/useAdminMedia.js` | Upload/library state, explicit metadata save, stale-load guard and retained errors | Admin media API and validator; no page publication |
+| `client/src/domains/admin/components/AdminImageField.vue` | URL, upload/choose/clear controls, thumbnail/error/success feedback | Upload composable and library; emits chosen path/description |
+| `client/src/domains/admin/components/AdminMediaLibrary.vue` | Native modal image search/folders/pagination/metadata inspector | Library state, public-safe metadata and media resolver |
+| `client/src/domains/admin/components/AdminWebsiteAppearance.vue` | Compact selected palette/artwork and saved/unsaved feedback | Existing background constants; actual chosen image |
+| `client/src/domains/admin/{components/AdminWebsiteFields.vue,components/AdminWebsiteItems.vue,constants/adminWebsite.constants.js}` | Context-specific labels, accessibility vs captions, integrated image controls | Canonical catalog, shared image field; destination links remain links |
+| `client/src/domains/admin/{components/AdminProductDetailsFields.vue,components/AdminCampaignSectionFields.vue}` | Product/campaign upload fields without changing Save/Cancel/commerce rules | Shared image field; campaign description prefill |
+| `client/src/domains/admin/{composables/useAdminWebsite.js,components/AdminWebsiteCanvas.vue,views/AdminWebsiteView.vue}` | Changed-section comparison against saved snapshot, visible markers and artwork strip | Existing draft/revision API/shared public renderer |
+| `client/src/domains/storefront/{Home/HomePageContent.vue,utils/homeContent.js}`, `client/src/app/layouts/SiteFooter.vue` | Resolve DB artwork and fix selected-background specificity/repeat/readability | Shared renderer, scoped CSS, media helper; default no-image content preserved |
+| Product image/gallery, hero/featured/brand/gallery/story, cart/checkout/success, customer/admin order item components | Resolve uploaded image snapshots consistently without rewriting prices/variants | `mediaImageSource`; existing props and ownership-safe APIs |
+| `server/src/domains/media/routes/media.routes.js`, `controllers/media.controller.js` | Admin auth before bounded raw parser, safe HTTP JSON/image/cache responses | Existing auth/rate middleware, media service |
+| `server/src/domains/media/services/{media.service,mediaReferences.service}.js` | Upload/library/public image/details orchestration; validate content references | Separate validator/normalizer/repository; lightweight reference check avoids Sharp in checkout dependencies |
+| `server/src/domains/media/validators/media.validator.js` | Byte/type/folder/ID/filename/query/metadata validation | Canonical shared rules; safe status-coded errors |
+| `server/src/domains/media/utils/normalizeImage.js` | Decode/reencode metadata-free WebP, rotate/resize/thumbnail/checksum, bounded parallel work | Server-only Sharp + Node crypto |
+| `server/src/domains/media/mappers/media.mapper.js` | Explicit safe metadata projection and backend-relative paths | No blobs/checksum/actor fields in JSON |
+| `server/src/domains/media/repositories/media.repository.js` | Metadata search, blob reads, atomic dedup/capacity/serializable retries and reference count | Prisma; separate metadata/blob models |
+| `server/src/app.js`; storefront/product/campaign services and campaign validators | Mount public/protected media; reject missing uploaded references before writes | Existing route/service architecture and admin auth; pricing unchanged |
+| `server/prisma/schema.prisma`, `migrations/20261009020000_media_library/migration.sql` | Add `MediaAsset` / `MediaAssetData`, constraints/indexes only | Applied locally; Railway approval still required |
+| `server/package.json`, `package-lock.json` | Server Sharp and platform optional packages | Existing dependency versions unchanged |
+| `assets/seasonal/halloween-background-template.png` | Generated decorative seasonal QA/artwork template | Selected/uploaded through actual editor; no embedded runtime host |
+| Client `tests/tier2/admin/media-editor.test.js`, storefront renderer/editor tests | Resolver/env/type/label/background/changed-marker regressions | Existing Vitest/Vue SSR; no provider sends |
+| Server `tests/tier2/admin/{media-images,media-repository,media-routes}.test.js` | Raster validation/dedup/quota/retry/auth/body/cache/reference/privacy checks | Sharp/Vitest, mocked persistence and isolated local HTTP server |
+
+Further file-level media usage relations/object-storage provider/cleanup modules do not exist yet; they are future work, not implied by these filenames.
+
+## Checkout And Manual Email Follow-Up (2026-10-10)
+
+Current responsibilities supersede older checkout-success/email-resend descriptions above. See [checkout/order email architecture](checkout-and-order-email.md).
+
+| Important File(s) | Responsibility | Dependencies And Flow |
+| --- | --- | --- |
+| `shared/storefront/commercePresentation.js`; section catalog, projection and validation; both app-root generated copies | Safe commerce defaults, typed/public presentation projection | Existing JSON content, sync/build scripts; no independent generated edits |
+| Client `shared/components/{CommerceCardSurface,CommerceItemCard}.vue`, `shared/mappers/commerceItem.mapper.js` | Shared bordered variant receipt/card and campaign/promo presentation | Existing media resolver/currency/campaign badge; no pricing engine |
+| Client `shared/components/CommerceGivingNote.vue`, checkout `OrderSummary/{CheckoutTotals,CheckoutCampaignPreview}.vue` | Standard receipt cost rows and separate emerald impact card below the entire summary | Server amounts; canonical beneficiary helper also reused by email mapper; publication-only campaign metadata join and shared pop-out; zero giving omitted |
+| Client `shared/components/CommerceDialog.vue` | Native accessible modal, close/focus restoration | Checkout authentication and public campaign pop-out |
+| Client checkout `Checkout/CheckoutLayout.vue`, `OrderSummary/CheckoutBagDisclosure.vue` | Receipt First container-responsive form/bag layout | Existing real contact/shipping/delivery/payment/summary sections |
+| Client checkout `composables/{useCheckoutPage,useCheckoutIdentity,useCheckoutShipping}.js` | Thin-view coordinator, safe prefill/storage, rate selection/debounce | Existing API, promos, trusted preview, cart storage, Better Auth profile |
+| Client checkout `Checkout/CheckoutShippingSection.vue`, `composables/useCheckoutAddressReview.js` | Labeled postal autofill, optional unit, compact review/Edit and retained values/focus | Existing customer object, no provider address verification or saved-profile write |
+| Client checkout `Checkout/CheckoutSubmitSection.vue` | Yellow/brown ready action, disabled/processing states, mobile-visible submit | Explicit Boolean coordinator readiness, existing validation/payment engine; inert same-component admin preview |
+| Client checkout `composables/useCheckoutAuth.js`, `Checkout/CheckoutAuthModal.vue` | Validate/review signup and in-place session confirmation | Existing Better Auth account composable/validators; never clear bag/order |
+| Client checkout `composables/useCheckout.js`, `useCheckoutPreview.js`, `useCheckoutPromos.js` | Payment-success reuse, stale-preview prevention, email/promo invalidation | Server pricing/proof API, guarded submit and retry |
+| Client payments `components/{StripeWalletButtons,StripeElementsForm}.vue` | Actual wallet/card submission, trusted amount comparison and scoped payment proof | Stripe.js and existing PaymentIntent API; editor preview never initializes payments |
+| Client checkout `utils/receiptAccess.js`, `api/checkout.api.js` | Session-scoped receipt proof transport, safe HTTP | POST checkout stores proof; GET receipt sends scoped header, never URL |
+| Client checkout `composables/useOrderConfirmation.js`, `OrderSuccess/OrderConfirmationContent.vue`, `views/OrderSuccessView.vue` | Actual saved Soft Essentials order receipt and truthful email status | Owned/scoped API, shared cards/currency/tracking/content settings |
+| Client campaigns `composables/useCampaignQuickView.js`, `components/CampaignQuickView.vue`; `App.vue` | Shared pop-out state and one global modal renderer | Existing public API/`CampaignPageContent`; private-page gate, inert browse-only product actions |
+| Client cart item/drawer, product card/badge and account order detail components | Reuse visual surfaces and actual attribution | Existing variants/cart/auth/history ownership, no duplicate item layout |
+| Client admin `components/{AdminCommerceCanvas,AdminCommerceFields}.vue`, `constants/commercePreview.constants.js`; Website view/state | Same real commerce rendering and contextual content editor | Fictional sample only, canonical defaults, existing revision draft/publish API |
+| Client admin `views/AdminEmailTemplatesView.vue`, `composables/useAdminEmailTemplates.js`, `api/adminEmailTemplates.api.js`, `components/AdminEmailPreview.vue` | Template selection/editor, explicit Save/Cancel, debounced sample preview | Protected API, revision conflict protection, sandboxed iframe, wide/phone |
+| Client admin `components/AdminOrderEmailComposer.vue`; Order detail/view/state/notifications panel | Saved-order preview/review, default dry run, deliberate live action and activity refresh | Protected template API/proof; old blind resend removed |
+| Client router/admin navigation | Protected Email templates thirteenth tool | Existing custom admin guard; prior tools/identity/data routing preserved |
+| Server checkout `services/checkoutCatalog.service.js`, `repositories/checkout.repository.js` | Resolve ACTIVE catalog/variant/quantity/stock and actual cents prices | Prisma; used by checkout, promo and campaign public preview |
+| Server checkout controller/service; payment controller | Proof-bound finalization, DB-owned pricing, Stripe verification, no automatic order emails | Catalog/repository, promo/campaign/tax/shipping, HMAC proofs, server-side customer session |
+| Server orders repository/service/mapper/routes | Transactional conditional stock + order, payment-idempotent retries, safe owned/scoped receipt and status mapping | Prisma unique PaymentIntent, existing usage/history, no email-on-save; legacy resend 410 |
+| Server `shared/utils/signedCapability.js` | Purpose/expiry/constant-time HMAC resource capabilities | Existing server signing secret; checkout payment, receipt, manual-email preview; not an auth fallback |
+| Server emails `constants/orderEmailTemplates.constants.js`, `validators/emailTemplate.validator.js`, `mappers/orderEmail.mapper.js` | Five immutable suggestions, plain-text/placeholder bounds, escaped rich HTML/text | Saved real order snapshots, safe tracking, supported status-specific templates |
+| Server emails `routes/adminEmailTemplate.routes.js`, `controllers/emailTemplate.controller.js`, `services/emailTemplate.service.js`, `repositories/emailTemplate.repository.js` | Admin auth/rate limiting, CRUD/revision, recipient/status/actor/staleness gates and explicit send | Prisma `EmailTemplate`, orders repository, HMAC preview, provider abstraction |
+| Server emails `services/emailProvider.service.js`; shipping/order/payment trigger removals | Manual-only operational guard, forced dry run, atomic dedup/Resend idempotency, safe status/error/timeout | Existing `EmailDelivery`/preferences/provider env; essential account email retained |
+| `server/prisma/schema.prisma`, `migrations/20261010000000_manual_email_templates/migration.sql` | Additive reusable template persistence | Existing delivery/history/order models remain; local migration applied, Railway approval required |
+| Client checkout `tests/tier2/checkout/{commerce-presentation,shipping-address}.test.js` and promo tests; server checkout security/inventory and manual-email tests | Selected variants, signup/session retry, postal review/Edit/focus, Boolean submit readiness, impact publication gates, wallet finalization reuse, true receipt state and security/email gates | Vitest/Vue SSR/mocked boundaries; actual local HTTP/UI and rollback DB QA separately recorded |
+
+Views remain small; checkout coordination is split from identity/shipping/auth, APIs remain separate and server template renderer/validator/repository are separate. No new arbitrary HTML editor, bulk queue, address book, tax provider, auth rebuild or checkout engine. Existing unused legacy mobile/header/progress checkout components are retained for a later focused dead-code audit, not rendered in the current flow. Broader file-level coverage gaps listed earlier remain open.
+
+## Production Audit File Additions (2026-10-11)
+
+| File | Responsibility and dependencies | Flow participation |
+| --- | --- | --- |
+| server auth/services/adminAuth.service.js | Native Better Auth/Prisma admin config; role/status gate, isolated cookies, bounded expiry | Admin login and server guards |
+| server auth/utils/authResponse.js | Shared token projection and persistent logout verification | Customer and admin native API after hooks |
+| server auth/services/adminProvision.service.js and repositories/adminProvision.repository.js | Preflight/conflict rules and atomic ADMIN credential/event creation | Explicit CLI provisioning only, no startup hook |
+| server/scripts/provision-admin.js | Existing env loader and loopback safety/preflight/apply | Local deployment preparation; remote requires separate approval |
+| server app/middleware/auth/boundedAuthHandler.js | Native better-call Node transport with 100 KB byte cap | Both native auth surfaces before Express JSON parsing |
+| server account/validators/account.validator.js | Typed/bounded profile/address/preferences validation | Protected own-profile save |
+| server shared/utils/apiError.js | Generic DB/provider errors with explicit business 4xx preserved | Domain controllers |
+| server shared/utils/operationalLog.js | Allowlisted event/code/status and admin actor/templated route | Operational failures and protected writes |
+| server shared/utils/databaseSafety.js | Confirmed local-only destructive seed guard | Seed script only; not checkout inventory |
+| client admin/validators/adminAuth.validator.js | Admin-group-only return path | Existing admin login redirect |
+| client admin/api/adminSession.api.js | Login plus confirmed session, read/logout wrappers | Original dashboard transport, native Better Auth underneath |
+| client admin/components/AdminDataTargetBadge.vue | Actual backend target or checking/unverified state | Prevent misleading local labels |
+| server tests/tier2/admin/{better-auth-admin,customer-auth-security,admin-session-service,admin-provision,audit-security,catalog-safety}.test.js | Engine/contract/HTTP/negative security tests, no live providers | Auth/privacy/data safety regression coverage |
+| server tests/tier2/orders/audit-order-integrity.test.js | Ownership query, customer-only lifecycle, status CAS/terminal guards | Order/admin regression coverage |
+| client tests/tier2/admin/admin-auth.test.js | Session confirmation, redirect and Vercel API fallback tests | Admin/deployment contracts |
+| docs/audits/2026-10-11-production-audit.md and 2026-10-11-api-access.md | Findings, coverage, scorecard, routes and limitations | Review/launch gates |
+
+Paths labeled server/client above are rooted at server/src/domains, server/src or client/src/domains as their group indicates; full Git paths are listed in the latest handoff. Existing reusable account/admin/storefront components remain the source of UI truth. Compatibility and empty/unreachable candidates were inventoried, not blindly deleted.

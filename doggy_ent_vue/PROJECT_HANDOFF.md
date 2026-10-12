@@ -1,11 +1,11 @@
 # Doggy Ent Project Handoff
 
 Generated: 2026-06-05
-Latest update: 2026-10-09 - Approved storefront baseline applied, neutral gray hero readability tint, raised product/media styling, generous Next Drops, and preserved right-side Add to Cart drawer with keyboard/focus fixes.
+Latest update: 2026-10-11 - Production security/commerce audit and explicitly approved Better Auth admin migration. Both builds and 234 tests pass; local 21 migrations are up to date. Local admin provisioned and persisted-session/logout API checks pass. Browser acceptance and Railway rollout are not performed. Durable payment recovery and atomic promo/campaign integrity remain launch blockers. See the latest audit section and docs/audits/.
 Workspace: `/Users/nazxylix/Developer/vue-projects/doggy_ent/doggy_ent_vue`
 Current branch observed: `dev-main`
 
-This handoff is evidence-based from the repository. Anything not verified from code is called out as uncertainty.
+This handoff is evidence-based from the repository. Anything not verified from code is called out as uncertainty. Earlier numbered sections and phase logs are historical snapshots; the latest dated evidence checkpoint supersedes their old auth, test-count, migration and email descriptions.
 
 ## 1. Business Overview
 
@@ -68,7 +68,7 @@ Route inventory:
 - `/admin/promos`: admin promos, protected.
 - `/admin/campaigns`: admin campaigns, protected.
 
-Admin route protection is client-side through `/api/auth/me` and server-side only where the API route applies `requireAdminAuth`. Important risk: the current server admin orders API does not apply `requireAdminAuth` in `server/src/domains/orders/routes/orders.routes.js`.
+Admin navigation checks `/api/auth/me`; server guards remain the security authority. The current admin orders router applies `requireAdminAuth` to all routes. As of the approved 2026-10-11 migration, that guard verifies a persisted Better Auth session plus ADMIN/ACTIVE role/status. The old unguarded-orders finding is no longer current.
 
 ## 3. Server Architecture
 
@@ -5379,3 +5379,571 @@ Current behavior/source boundaries are updated in [customer experience](docs/cus
 5. Review the combined dirty tree before commit/deployment; prior server/schema/admin edits remain present. This focused client pass requires no new env variables or migration. No Railway/Vercel deployment was performed.
 
 The focused changes are ready for commit review after recorded checks, not an automatic release or full launch certification. Recommended next phase: real-device/content approval, review the combined diff, then controlled deployment and checkout/session/campaign QA. Existing local frontend at 5173 and backend at 3000 were reused without changing startup modes or secrets.
+
+## 2026-10-09 Website And Product Visual Editors
+
+### Scope And Repository Reconciliation
+
+The user requested an editable miniature storefront for product cards and a new Website admin tool controlling homepage content, footer/navigation, seasonal backgrounds, section visibility/order, and additional supported sections. Read the operating guide, handoff, relevant product/UX/customer/admin/operations/roadmap/architecture/QA documents; inspected status/diff-stat/name-status before editing and after interruptions. This phase began with a clean `dev-main` tree. Earlier phases above are historical, not a claim that their dirty trees still exist.
+
+Preserved the approved storefront baseline, shared cart/search/customer state, all existing admin tools, signed-in identity/data routing, custom admin auth, Better Auth customers, guest checkout, server-owned calculations, product variant selection, campaigns, and right-side cart drawer. No commit/push, Railway/Vercel deployment, provider send, payment, env-file edit, dependency install, or `.env.example` creation.
+
+### Delivered Behavior
+
+- `/admin/website` adds a twelfth admin tool. Left: site/section navigation and visibility/order/add controls. Middle: actual shared homepage/header/footer with edit handles and wide/phone canvas. Right: selected fields. Responsive layout stacks without horizontal overflow at tested narrow widths. Customer actions are inert inside previews.
+- Announcement, header navigation/search placeholder, footer copy/links/socials, hero copy/images/actions/badges, promises, selected featured product, curated collections, Next Drops copy, gallery, care steps, ingredient introduction, brand teaser, and shopping help are editable. All original content remains as defaults. The promise strip now has its own anchor, giving ten blocks without removing the nine original anchors.
+- Hide/show and reorder blocks. Add typed product collections, galleries, sale banners, or image/story sections, up to 24 blocks. Original singleton blocks/main collection can be hidden but not deleted. Added blocks can be removed after confirmation. Header/footer/content links omit hidden-section anchors; search targets a visible collection or disappears when none is visible.
+- Everyday/Autumn/Winter accents, original/white/warm-oat/Calm-Giving section backgrounds, and HTTPS decorative image URLs support seasonal presentation. There is no bundled pumpkin artwork, upload/media service, arbitrary HTML/CSS/JavaScript/function builder, schedule, or historic revision archive. Sale banners do not calculate discounts.
+- **Save draft** changes only editor data. **Publish website** confirms and atomically saves a public snapshot. Failed saves retain the draft; revision conflicts return 409 instead of overwriting another editor. Cancel/reload/route leave protect unsaved changes. Public reads expose allowlisted published content only and do not create or seed records.
+- Product forms now show the actual active/upcoming card with pencil controls and a focused Details/Variants/Content/Publishing inspector. Existing prices, quantities, SKU/thresholds, tags, ingredients/storage/analysis inputs, status/selling mode/feature controls, mapper, validation, Save and Cancel are preserved. Product Save updates catalog immediately, independently of Website publication. Existing unpersisted product metadata limitations noted earlier are not fixed by this UI phase.
+- Actual prices, variants, stock, ingredient facts, campaign eligibility, promo rules, and totals remain commerce-domain owned. The full `/meet-chase-evie` page remains code-owned; its homepage teaser/action are editable. Existing template/gallery labels and disabled upcoming notifications/missing social destinations remain truthful.
+
+### Architecture, Security, And Confirmed Fixes
+
+See [visual editor architecture](docs/architecture/storefront-editor.md), [file map](docs/architecture/file-map.md), [admin](docs/architecture/admin.md), [database](docs/architecture/database.md), and [data flow](docs/architecture/data-flow.md).
+
+- Canonical public-only rules/defaults/validation/projection/social checks live in `shared/storefront/`. Four generated modules in each app root are committed snapshots, not independent sources of truth. Each build synchronizes from canonical source in a full checkout, while isolated Vercel/Railway roots use the snapshots. Byte parity and isolated-root operation were checked. Actual platform dashboard root settings were not inspected.
+- New storefront server domain follows route -> controller -> service -> repository -> Prisma. `GET /api/storefront/content` is public; `GET /api/admin/storefront`, `PUT /api/admin/storefront/draft`, and `PUT /api/admin/storefront/publish` require server admin auth. Public response is `content: null` before first publication and has no draft/revision/internal timestamps.
+- Versioned/typed validation limits UTF-8 size, section/item counts, unique safe IDs, supported settings, text/images, singleton blocks, and visible content. Rejects credentials, unsafe protocols, API/admin destinations, encoded protected/dot-segment paths, control characters and unsupported social destinations. Text remains escaped; no script/template evaluation.
+- Repository uses revision-matched `updateManyAndReturn`, returning the exact atomic write rather than a racing follow-up read; concurrent first creation also maps to conflict. Publication saves draft/publication/revision/timestamp together.
+- Public content state retains default/last known good data on failed or invalid reads. A generation guard prevents an older request overwriting a new publication. There is a 60-second on-load client cache, not live push; public API uses `Cache-Control: no-store`. Repeated content API failure monitoring is still recommended.
+- Review caught a configured header link using the wrong RouterLink prop; all configurable links now use the shared safe ContentLink. Curated collections retain actual catalog filtering/search/sort. A global seasonal image no longer overrides explicit block backgrounds.
+- Live inspection caught admin heading styles recoloring the miniature storefront hero. Admin heading selectors now exclude `.storefront-ui` descendants, and the embedded storefront has an explicit base font size. Verified white hero/appropriate section sizes after the fix. Repeated hero badges use stable positional keys; brand-story URL input length now matches other URL fields.
+
+### Database And Local QA State
+
+Added `StorefrontContent`: singleton `id`, JSON `draft`, nullable JSON `published`, integer `revision`, nullable `publishedAt`, and created/updated timestamps. No existing commerce table or relation changed. Additive CREATE TABLE migration: `server/prisma/migrations/20261009010000_storefront_content/migration.sql`.
+
+Preflight loaded normal local server configuration privately and asserted a loopback database host, no failed/incomplete migrations, and the one pending content migration. Guarded local `prisma migrate deploy` succeeded; subsequent status reports **19 migrations / schema up to date**. No reset/reseed or Railway command/query occurred.
+
+Local UI QA saved a temporary holiday heading, proved reload persistence and that public content remained unchanged, then restored the baseline draft. Final local singleton is revision 2, published JSON null. No test holiday content is published. A temporary random-row PostgreSQL transaction proved exact revision-return/atomic publication and stale-write rejection, then intentionally rolled back. Product preview prices were restored without submitting Update Product. No product/customer/order records were modified.
+
+**Railway gate:** this migration is not applied or verified there. Existing `server` start runs `prisma migrate deploy`; deploying/restarting the new backend can apply it. Obtain explicit approval, confirm the database/backup and additive SQL, check migration status, then deploy through the approved process. Prior campaign migration approval is not blanket approval for this content migration. Frontend-only deployment retains defaults on unavailable content, but the editor requires the matching server/table.
+
+### Files Created
+
+Paths are repository-relative; braces enumerate grouped files. Full responsibilities/dependencies are documented in the file map.
+
+- `shared/storefront/{sectionCatalog,contentValidation,contentProjection,socialLinks}.js` and corresponding generated files in `client/src/domains/storefront/content/` and `server/src/domains/storefront/content/`.
+- `client/scripts/sync-storefront-content.js`, `server/scripts/sync-storefront-content.js`.
+- `client/src/domains/admin/api/adminWebsite.api.js`, `composables/useAdminWebsite.js`, `constants/adminWebsite.constants.js`, `views/AdminWebsiteView.vue`.
+- `client/src/domains/admin/components/{AdminWebsiteCanvas,AdminWebsiteFields,AdminWebsiteItems,AdminWebsiteLinks,AdminProductCanvas,AdminProductDetailsFields}.vue`.
+- `client/src/domains/storefront/api/storefrontContent.api.js`, `composables/useStorefrontContent.js`, `components/ContentLink.vue`, `utils/homeContent.js`, `Home/HomePageContent.vue`, `Home/sections/{ProductCollectionSection,ContentFeatureSection}.vue`.
+- `server/src/domains/storefront/{routes/storefront.routes,controllers/storefront.controller,services/storefront.service,repositories/storefront.repository}.js` and the migration above.
+- `client/tests/tier2/admin/website-editor.test.js`, `client/tests/tier2/storefront/{content-cache,content-renderer}.test.js`, `server/tests/tier2/admin/{storefront-content,storefront-repository}.test.js`.
+- `docs/architecture/storefront-editor.md`.
+
+### Files Modified
+
+- Client `package.json`, `vite.config.js`, `jsconfig.json`; shared `app/layouts/{PromoStrip,SiteHeader,SiteFooter}.vue`, `app/router/index.js`, `assets/styles/admin.css`.
+- Admin `components/{AdminIcon,AdminProductFormPanel}.vue`, `constants/adminNavigation.constants.js`, `views/AdminProductsView.vue`.
+- Products `ProductCard/ProductCard.vue`; storefront `Home/HomeView.vue`, existing ten home section components, `styles/{siteHeader,storefront}.css`, `utils/socialLinks.js` compatibility re-export.
+- Existing `client/tests/tier2/admin/admin-workspace.test.js` and `storefront/storefront-sections.test.js` expectations.
+- Server `package.json`, `prisma/schema.prisma`, `src/app.js`.
+- This handoff; `docs/{admin-experience,customer-experience,implementation-roadmap,verification-and-qa}.md` and `docs/architecture/{README,admin,data-flow,database,file-map}.md`.
+
+### Commands And Verification
+
+Build/test/syntax commands used bundled Node v24.19.0 on PATH. No lint script exists; none was invented.
+
+| Command / Check | Exact Result |
+| --- | --- |
+| `git status --short`, `git diff --stat`, `git diff --name-status` | Inspected before edits/resume; no unrelated changes reverted. |
+| Client `npm run build` | Exit 0; Vite 8.0.9, 2213 modules, including final preview CSS/link/badge fixes. |
+| Client `npm test` | Exit 0; 18 files / 77 tests. Tiers 10 + 61 + 6. Fourteen new website/render/cache tests. |
+| Server `npm run build` | Exit 0; canonical content sync and Prisma Client v6.16.2 generated. This is generation, not a server bundle. |
+| Server `npm test` | Exit 0; 17 files / 55 tests. Tiers 28 + 24 + 3. Nine new content/service/route/repository tests. |
+| `node --check` over client/server/shared/scripts/tests JavaScript | Exit 0; 247 files. Vue template/import resolution additionally covered by Vite. |
+| Guarded local `prisma migrate deploy` | Exit 0; new additive migration applied locally only. |
+| Guarded local `prisma migrate status` | Exit 0; 19 migrations, database schema up to date. |
+| Canonical/generated parity; isolated-root sync scripts | Pass; all eight generated modules equal the canonical source plus the required generated-file header, and work without the external shared directory. Temporary isolated roots removed. |
+| Local PostgreSQL rollback transaction | Pass; revision-return/atomic public snapshot and stale revision rejection, no residual QA row. |
+| Markdown/relative links/code fences and targeted secret checks | Exit 0; eleven changed/new Markdown documents and 83 changed/new files checked; no broken links/fences, env-file changes, or secret-pattern findings. |
+| `.env.example` inventory | No files, expected `rg` exit 1. |
+| `git diff --check` | Exit 0; no whitespace errors. |
+
+Two checker diagnostics were resolved without application changes: the first parity comparison omitted the intentional generated-file header; the corrected comparison passes. The first secret scan flagged three historical `rg` scan commands in this handoff as if their pattern text were database URLs; privately inspected them and exempted only those exact historical command lines. Final scan has zero findings. Existing Mermaid diagrams were not modified or rerendered in this phase.
+
+Actual local in-app browser QA used the existing frontend 5173/backend 3000 and authorized local admin login. Verified Website navigation/canvas/inspector, saved draft reload, public unchanged while draft saved, live 409 retention, banner addition/reorder, hide/show and omitted hidden anchor links, footer fields, seasonal change/restore, and wide/390px canvas. Editor widths 1440/1280/390/320 had no horizontal overflow; small preview/inspector scrolling remained bounded. A native discard confirmation paused browser automation, the user cleared it, and product/website checks then resumed. The final Website draft is clean baseline, not unsaved QA content.
+
+Actual product editor displayed the campaign-green Chicken card, correct 6 oz/18 oz prices, existing fields, and immediate unsaved price preview; values restored without saving. Actual public collection 18 oz added the correct bag at $39.99 and opened the right-side drawer; quick view 6 oz added the correct bag at $14.99. Removed only the added 18 oz test row and decremented only the test 6 oz quantity, retaining the original bag. All ten home blocks and real catalog/campaign/default shell rendered. No checkout/payment submission.
+
+Publish service/protected routes and atomic writes are covered by tests/rolled-back real DB verification. **The native Publish confirmation/final public reload was not completed end to end in the browser; keep that manual QA item open.** Product DB-save CRUD, new customer login/signup, deployed Safari cookies, real provider actions and Stripe checkout were not re-certified. Existing test tiers pass; that does not equal deployed integration proof. One transient local API fetch failure during server hot restart recovered; standard Stripe local-HTTP warnings remain, requiring HTTPS for live integration.
+
+### Configuration, Remaining Risks, And Next Step
+
+No new env variables. Existing server database/auth/provider and public client API/Stripe variables stay documented by name only; local envs were neither modified nor copied. Optional legacy public social variables are used before publication; after publication the stored footer is authoritative. Generated content modules contain public defaults/rules only, never env data. Editor components remain focused (Website view 90 lines; state 80; product panel 72; server service 35), with no duplicate header, checkout engine, or arbitrary-code builder.
+
+1. Review the local Website/product canvases and all preserved fields on real desktop/mobile/Safari, keyboard/screen reader/reduced motion, long copy, many sections, and unavailable images.
+2. In fully local mode only, save a small draft, confirm public remains unchanged, explicitly Publish, reload public home/header/footer, and use the published-version restore flow. Check two editors conflict without data loss. Do not publish temporary QA text to Railway.
+3. Approve real brand/product/gallery assets and seasonal artwork. Hosted images must be publicly accessible HTTPS; uploads, asset storage, scheduling, older revisions and expanded block types are later scoped work. Custom sections cannot add new business functions without implementation.
+4. Review migration/source/generated snapshots. Obtain explicit Railway migration/deployment approval, deploy server then matching frontend, verify protected endpoints and publication against the intended DB. Check all existing direct routes and Safari auth. No deployment was performed here.
+5. After deployment, run an approved guest/signed-in Stripe test checkout with selected variants, promo plus campaign, trusted preview totals, order/success/history and once-only inventory/usage. This phase did not change that logic or prove live payment/provider behavior.
+
+The tree is ready for focused commit review after the checks, not a production-launch certification. No commit/push. Local review servers remain running in their existing startup mode. Recommended next phase: visual/content review and local publish QA, followed by explicitly approved Railway migration and coordinated deployment/controlled integration QA.
+
+## 2026-10-10 Image Library Completion And Interrupted Server Repair
+
+This section supersedes the earlier visual-editor phase's statements that uploads were future work, local status was 19 migrations, published content was null, and Publish QA was incomplete. Earlier sections retain their historical results. Continued the combined local edits; no broad refactor, commit/push, env-file modification, Railway command/query/migration/deployment, customer email, shipment/label, payment or destructive database action.
+
+### Confirmed Server Failure And Repair
+
+Actual `DOGGY_SERVER_ENV_TARGET=LOCAL node src/server.js` exited 1 with `MODULE_NOT_FOUND` for `@prisma/client/runtime/library.js`. Installed Prisma CLI and generated output were 6.16.2 while the runtime package had become 7.10.0. The v6-generated module requested a runtime file absent from v7. This was a dependency mismatch, not evidence of database damage or a missing media migration.
+
+Pinned **both** `prisma` and `@prisma/client` to **6.16.2**, updated the lockfile with `npm install`, and explicitly generated via server `npm run build`. CLI, runtime and generated versions now match. The actual local development startup with the user's default Node 22.15.0 succeeds on port 3000; health, catalog, public content, image bytes and auth rejection were checked against this running process. Future Prisma upgrades must be coordinated rather than upgrading one package alone; regenerate/restart after changes. Install-script warnings alone do not establish generation success; the explicit generation and real startup do here.
+
+The continued tree also contains separately introduced `approve`, `ls` and `scripts` dependencies. Those unrelated additions were preserved, not used to implement the media library and not silently removed. Review their necessity separately. This feature's additional runtime dependency is Sharp for validated/optimized image processing.
+
+### Delivered Image And Editor Behavior
+
+- Actual image fields in Website, Products and Campaigns retain URL entry and add Upload image, Choose library, preview thumbnail and Clear. Button/navigation/social/partner destination URLs remain links; uploading an image does not replace their destinations.
+- Searchable/paginated library with logical folders, dimensions, size/capacity display, explicit name/accessibility-description/folder Save and Use this image. It warns that images are public and must not contain private/customer documents. Failed uploads/metadata saves retain page edits.
+- Dedicated `MediaAsset` metadata and one-to-one `MediaAssetData` binary storage in PostgreSQL, atomic writes, SHA-256 deduplication and bounded 256 MiB library capacity. No ephemeral server filesystem or secret storage. No deletion/replacement action risks breaking historical order/product image references. Object storage/CDN, formal usage/cleanup and asset versioning remain future work.
+- Protected admin upload/list/edit endpoints; public immutable optimized WebP and thumbnail endpoints. Limits: JPEG/PNG/WebP, 8 MiB input, 20 MP decoded, 2400 px edge, 2 MiB optimized output, 20 uploads/15 minutes, two concurrent transforms per process. SVG, animated, mismatched decoded types and compressed upload requests are rejected. Reencoding strips original metadata. JSON projections omit blobs, checksums and internal actor fields.
+- Stored image references are canonical `/api/media/<uuid>`, not backend hostnames. The shared client resolver uses the configured API origin in home/hero/footer/gallery/campaign, product/Quick View/admin previews, cart, checkout, success and customer/admin order items. Existing HTTPS and bundled photos remain supported. Page/product/campaign writes check that selected asset IDs exist in the chosen database.
+- Contextual labels replace generic "text" with Hero introduction, Brand story introduction, Sale details, Story paragraphs, Gallery introduction, questions/answers, care steps and photo captions. URL help distinguishes an action destination from a photograph. Hero photo remains independently editable; ineffective generic hero background controls are omitted.
+- Canvas current-selection strip shows color swatch/artwork and Edited-not-saved state. Changed-section markers clear on Save without claiming Publish. Confirmed homepage ID-specific CSS was overriding selected background colors; scoped explicit-background rules now take precedence. Global seasonal artwork repeats at page width under a reading tint, while explicit section/footer selections override it. Original no-artwork presentation remains supported.
+
+See [media architecture](docs/architecture/media-library.md), [editor architecture](docs/architecture/storefront-editor.md), [file map](docs/architecture/file-map.md), [database](docs/architecture/database.md), [admin](docs/architecture/admin.md), [data flow](docs/architecture/data-flow.md), and [QA](docs/verification-and-qa.md).
+
+### Database, Artwork And Actual Local State
+
+Added `MediaAsset` and `MediaAssetData` with additive migration `server/prisma/migrations/20261009020000_media_library/migration.sql`. Existing commerce schema and rows were not reset/reseeded. Earlier guarded preflight confirmed loopback LOCAL DB and clean migrations before applying only this additive migration locally. Resumed read-only status check confirms **20 migrations / schema up to date**. No migration was needed for the package repair.
+
+Generated decorative template: [Halloween background](assets/seasonal/halloween-background-template.png), 1983 x 793. This is AI-created seasonal artwork, not an actual product/customer photo. Live admin upload stored an optimized 215,042-byte WebP and an 8,858-byte thumbnail. Library metadata was saved as "Halloween pumpkins · background template" with an explanatory description. Reupload reused the same record; guarded local DB read confirms one asset.
+
+Actual browser Save Draft/reload preserved the image without changing public content. The user accepted the explicit local Publish confirmation; resumed DB read confirms revision 9 with the media background in both draft and published snapshots. Public reload resolves it through the local backend; actual screenshot shows pumpkins/leaves behind the ingredient section with readable copy. Previously user-published Autumn theme, hidden promise-strip selection, and other user catalog changes were preserved rather than reset to the earlier default state. Nine visible home anchors remain; the tenth promise block is hidden by the user's selection, not removed from the renderer.
+
+An initial upload against the previous still-running process failed before its generated client was reloaded. Reload/retry succeeded and deduplication was checked; its automatically captured local internal issue was not deleted. The separate resumed v6/v7 startup crash above was reproduced and fixed. Do not conflate these diagnostics with an actual failed media-table migration.
+
+### Files Created In The Media Follow-Up
+
+- `assets/seasonal/halloween-background-template.png`; `shared/storefront/mediaRules.js` and its two generated app-root snapshots.
+- `server/src/domains/media/routes/media.routes.js`, `controllers/media.controller.js`, `services/{media.service,mediaReferences.service}.js`, `repositories/media.repository.js`, `mappers/media.mapper.js`, `validators/media.validator.js`, `utils/normalizeImage.js`; additive migration above.
+- `client/src/domains/admin/api/adminMedia.api.js`, `composables/useAdminMedia.js`, `validators/adminImage.validator.js`, `components/{AdminImageField,AdminMediaLibrary,AdminWebsiteAppearance}.vue`; `client/src/shared/utils/mediaImage.js`.
+- `server/tests/tier2/admin/{media-images,media-repository,media-routes}.test.js`; `client/tests/tier2/admin/media-editor.test.js`; `docs/architecture/media-library.md`.
+
+### Files Modified In The Media Follow-Up
+
+- Server `package.json`, `package-lock.json`, `prisma/schema.prisma`, `src/app.js`, `scripts/sync-storefront-content.js`, storefront service, product/campaign services and campaign image validator.
+- Shared `contentValidation.js` and both generated snapshots; client sync script.
+- Admin Website fields/items/constants/canvas/composable, Product details fields, Campaign section fields/validator, Products table and Order detail image renderer.
+- Shared HomePageContent/SiteFooter backgrounds; home Hero/Spotlight/Brand/Gallery/ContentFeature images; product image/Quick View; cart item; checkout summary/success; account order details; campaign shared page image renderer.
+- Existing Website editor/content renderer tests; this handoff and focused admin/customer/roadmap/QA/architecture documents listed above. These files coexist with the preceding uncommitted Website/product editor changes; the full dirty tree is not a media-only diff.
+
+### Commands And Results
+
+Client/test/syntax checks use bundled Node 24.19.0 where specified; actual repair install, server build and startup also succeeded with default Node 22.15.0. No lint script exists; none was invented.
+
+| Command / Check | Result |
+| --- | --- |
+| `git status --short --branch`, `git diff --stat`, `git diff --name-status` | Inspected on resume before repair; unrelated edits preserved. |
+| Initial actual LOCAL startup | Exit 1, confirmed v6-generated/v7-runtime missing module. |
+| Server `npm install` after pinning | Exit 0; removed one package, changed one, 226 audited. Existing 15 advisories: 1 low, 3 moderate, 10 high, 1 critical. No audit-force upgrades. |
+| Server `npm run build` | Exit 0; canonical sync, explicit Prisma Client 6.16.2 generation. |
+| Server `npm test` | Exit 0; 20 files / 69 tests (28 + 38 + 3). Includes 14 new media tests. |
+| Client `npm run build` | Exit 0; Vite 8.0.9, 2222 modules. |
+| Client `npm test` | Exit 0; 19 files / 83 tests (10 + 67 + 6). Six media/editor/render follow-up tests beyond the earlier 77. |
+| `node --check` across source/scripts/tests/shared JavaScript | Exit 0; 269 files. Vue template/import resolution also covered by Vite. |
+| Earlier guarded LOCAL media migration deploy/generate | Exit 0; additive table migration only. |
+| Resumed guarded LOCAL `prisma migrate status` | Exit 0; 20 migrations, schema up to date; no Railway query. |
+| CLI/runtime/generated version inspection | All 6.16.2. |
+| Server/client `npm run dev:local` | Both running: backend 3000, frontend 5173. Backend verified LOCAL/loopback privately before writes. |
+| Actual local HTTP checks | Health/catalog/public content 200; unauthenticated admin media/content 401; public WebP 200, 215,042 bytes, correct local CORS, nosniff and immutable headers. |
+| Canonical/generated parity | Pass; five canonical modules / ten snapshots. Earlier isolated-root synchronization check also passed. |
+| Markdown/link/fence and targeted secret-pattern checks | Exit 0; twelve changed/new Markdown documents and 124 changed/new files checked, no broken links/fences or secret-pattern findings; no changed/untracked env files. This is a targeted scan, not a comprehensive security audit. |
+| `.env.example` inventory | None; expected `rg` exit 1. |
+| `git diff --check` | Exit 0; no whitespace errors. |
+
+Actual local browser checks also confirm 6 oz product card at $14.99, 18 oz card at $39.99, 6 oz Quick View, correct SKU/unit/line prices, right-side cart drawer, retained campaign attribution and original home sections. Only QA-added cart quantities were removed; original one-bag cart remains. No checkout/payment submitted. Local public image resolves and shows no horizontal overflow at the observed 578 px browser width; final real desktop/mobile/Safari and full keyboard/screen-reader checks remain separately required. The browser viewport override did not take effect in this resumed session, so requested 1440/390 dimensions are not falsely recorded as tested.
+
+### Configuration, Deployment Gate And Remaining QA
+
+No new env variables, copied secrets or env examples. Server uses existing `DATABASE_URL`, `NODE_ENV`, `PORT`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET`, `FRONTEND_URL`/`CLIENT_URL` plus existing auth/provider configuration. Client uses public `VITE_API_BASE_URL` or compatibility `VITE_API_URL` and `VITE_STRIPE_PUBLISHABLE_KEY`; modes retain local browser -> local backend in both DB targets. Normal `server/.env` was not edited or repurposed.
+
+1. Review image upload/library and explanatory fields in Website, Products and Campaigns on real desktop/mobile/Safari. The authenticated local follow-up below verifies sign-in/reload, uploads, search/folders, metadata protection, Escape/opener focus, palette and section/footer image choices. Full keyboard/screen-reader, multi-page library, invalid/private/oversized file and failed-network QA remain separate; do not describe this as full accessibility certification.
+2. Existing build/test results do not establish real Stripe, deployed sessions, customer authentication, Linux native Sharp installation or provider behavior. Run approved guest/signed-in checkout with selected variants, promo+campaign, once-only inventory/usage and customer ownership after reviewed deployment. Do not send emails/buy labels as an image test.
+3. Storage is deliberately bounded. Review DB storage/backup cost and restore procedures; no private upload, asset cleanup, usage relation, object storage/CDN or historic replacement tools are implemented. Reupload approved assets in the intended database; local UUIDs do not reference Railway assets.
+4. Obtain explicit Railway approval; verify target/backup/migration status and additive content/media SQL. Build/generate/install Sharp platform dependencies, apply through the approved deploy process, restart server, check protected upload/public images, then deploy matching frontend. Existing `start` invokes migration deploy, so do not deploy/restart casually. Content/media migrations remain unapplied/unverified on Railway in this phase.
+5. Dependency advisory triage, including reported critical/high findings and unrelated package additions, remains a launch risk. No blanket `npm audit fix --force` or unrelated dependency cleanup was performed.
+
+The repaired tree is suitable for focused commit review, not certified launch-ready. No commit/push. Recommended next phase: finish real-device authenticated editor QA, review assets/storage/dependencies, then explicitly approved coordinated deployment and controlled commerce/session regression QA.
+
+### Authenticated Local Editor Follow-Up (2026-10-10)
+
+With the user's explicit authorization, signed in through the existing local admin form using previously provided credentials; no credential values were written to files/docs, saved in a password manager or included in screenshots. Customer credentials were not used for this focused admin check. Actual login redirected to `/admin/website`; full browser reload stayed authenticated and the protected Website read completed without an alert. LOCAL DATA TARGET remained visible. The earlier request for manual sign-in is no longer an open verification item.
+
+Verified in the actual local UI:
+
+- Ingredient palette change to Calm Giving set its wrapper to `rgb(237, 246, 240)` and displayed Edited-not-saved markers. The section itself is transparent by design so the wrapper color is visible. Restoring Original section returned the draft to clean Published website state without Save/Publish.
+- Authenticated library list/thumbnail/dimensions/capacity; unmatched search empty state, matching Halloween search, Products-folder exclusion and Website-folder match. Only one image exists, so multi-page navigation remains unproven in this browser check.
+- Unsaved metadata disables Use this image and enables Save image details. Escape closes and returns focus to Choose library. Reopening retains the actual saved name, not the unsaved QA name. A Shift-Tab observation did not conclusively establish complete focus wrapping; keep full keyboard/browser-chrome/screen-reader QA open.
+- Library selection applies the canonical image immediately to the central section preview, thumbnail and artwork indicator. Clear restores the unchanged form. Post-repair upload of the same generated PNG succeeds and reports reuse/no duplicate. No new blob or metadata record is created.
+- Seasonal Clear removes the global artwork in the preview and displays the no-artwork/unsaved state. Choosing the original library image restores the exact saved background and clean state. Footer palette and artwork selections also update the actual miniature footer; every temporary selection was restored without Save/Publish.
+- Product library selection updates the actual product-card canvas to the media image while the 6 oz /18 oz prices remain $14.99 / $39.99. Update Product was never submitted. Cancel triggered the existing native Discard unsaved product changes confirmation; browser control paused and the user accepted it. Resumed observation confirms the product form closed and the unchanged seven-product library returned.
+- Campaign library selection updates the actual campaign hero canvas and inspector thumbnail to the canonical media image; the rendered hero completed loading from the configured local backend. The selected library description prefills Image description. Restored both the original photo URL and description through the form, then Cancel returned directly to the campaign list with no further discard prompt. Save campaign was never submitted; status, public-page visibility, donation rule and product eligibility were unchanged. Returned to Website with Published website displayed and Save draft/Publish disabled.
+
+Read-only guarded LOCAL DB check after these interactions confirms Website revision **9**, draft equal to published, exactly **one** image asset, the original saved Chicken product photo, and the original campaign photo and image description. No Website/product/campaign write or provider/customer action occurred in this follow-up beyond the checksum-deduplicated upload request. Screenshot evidence was captured without credentials. These are additional real UI checks, not another application-code change. Updated only this handoff and the admin guide's stale URL-only campaign wording; docs-only verification applies, so the preceding passing builds/tests were not needlessly rerun.
+
+Follow-up commands: required Git status/diff inventories inspected; local health request returned 200/OK; guarded DB read exited 0 with all unchanged-state assertions above; Markdown/link/fence and targeted secret-pattern checks passed for both modified documents; `git diff --check` exited 0. Native product-discard confirmation was not exposed by the supported dialog control and paused browser interaction. The user's acceptance resolved that interruption; product dismissal and campaign-canvas checks then completed. This was not another server failure. No saved product or campaign data was changed, no native prompt remains, and the clean Website editor is left open for review. Deployment, real-device accessibility/Safari, dependency advisories and the controlled commerce/provider QA listed above remain open; no Railway action, commit or push was performed.
+
+## 2026-10-10 Receipt First, Soft Essentials And Manual Order Email
+
+Continued the existing combined local tree after reading AGENTS/handoff and relevant product, UX, customer, admin, communications, operations, roadmap, architecture and QA guides. Git inventories were inspected before changes and on resume. Preserved prior Website/media/product/campaign/storefront edits and published Autumn content. No commit/push, env-file change, env example, Railway query/migration/deployment, real customer email, real/test charge, label/shipment purchase or destructive reset/reseed. This is implemented local source plus bounded local QA, **not launch/deployment certification**.
+
+### Delivered Customer And Admin Experience
+
+- **Receipt First checkout:** existing contact/shipping/delivery/payment/summary cards and shadows remain. Bag is open before the form on narrow containers and alongside it on wide containers. Readability/focus/borders are improved without rebuilding the checkout engine. Fixed the secure submit previously hidden below XL; it is now visible on mobile. Form/promo fields lock while processing or after completed payment, while retry remains available outside the disabled fieldset.
+- **Checkout accounts:** sign-in/create stays in a dialog on checkout. Create adds first/last name, password confirmation and a separate review/edit/confirm step; normalized email and existing Better Auth validators/APIs remain authoritative. Confirm verifies an active session and safely prefills blank fields without losing the bag or existing checkout data. A failed signup-session retry does not recreate the account. Guest checkout stays available.
+- **Actual wallets:** Stripe Express Checkout Element supports Apple Pay/Google Pay when Stripe/device/domain allows, with honest card fallback. Server-owned PaymentIntent total must equal the reviewed total before confirmation. Wallet success uses the existing payment/order coordinator; an order-network failure after success can reuse that payment rather than charge again. Website -> Checkout has independent published wallet switches; card remains available. No active-wallet transaction was performed in this phase.
+- **Shared cards:** one bordered/shadowed surface and one normalized purchased-item card supply selected variant, quantity, unit/line price, SKU, actual image/fallback and attribution across bag/checkout/confirmation/account orders. Catalog cards reuse the surface. Campaign emerald wins when both giving/promo apply; promo stays labeled. Applied order promos are not guessed public product-specific discounts. No additional product/campaign columns were needed.
+- **Campaign quick pop-out:** published campaign badges open a native dialog with the same actual `CampaignPageContent.vue` used by the public route/editor. It retains story/partner/giving/schedule/eligible products; browse actions return to shop rather than pretending to purchase inside an unconnected preview. Shared campaign reads coalesce; the cart focus trap defers to an open modal. Private/disabled campaign pages keep plain giving attribution.
+- **Soft Essentials confirmation:** saved order/variant/totals/contact/delivery/tracking, restrained color/shadows, business-funded giving, guest/account history guidance and truthful receipt destination. It does not claim an email was sent unless the stored confirmation email was provider-accepted; that still is not inbox-delivery proof. Cancelled/refunded orders do not promise preparation.
+- **Final receipt refinement:** removed duplicate Donation generated/Donation impact billing rows and the earlier detailed pre-total campaign amounts. Checkout now has Items subtotal/count, optional negative discount/code, Shipping, Estimated tax and one prominent Order total, with aligned tabular amounts. The user initially suggested arithmetic symbols but then requested the conventional industry-standard receipt look, so plus/equal markers are removed. Shared `CommerceGivingNote.vue` is now a separate soft-emerald/shadow card below the entire checkout summary and outside the confirmation financial panel, with a prominent amount, actual beneficiary/campaign and concise no-extra-cost/business-funded wording. Checkout contributions are estimated; receipts use saved attribution. Public campaign metadata joins by ID without replacing server amounts/beneficiaries; only published pages show the About campaign pop-out action. Private campaigns remain private. Zero giving is omitted. Email HTML/text use the same beneficiary rule and separate post-total thank-you. No financial calculation/schema change was required for this refinement.
+- **Postal shipping review:** labeled autofill fields, optional apartment/unit expansion, Use this address -> compact postal-address block -> Edit with retained fields and focus restoration. Completeness is presentation-only; checkout validation remains authoritative and account addresses are not silently saved. Canada gets a province/territory input instead of the US state dropdown. Existing four US state choices are retained; destination/carrier coverage is not certified. Stripe Address Element was reviewed but not installed; no address is labeled verified/deliverable.
+- **Secure action repairs:** the ready button had a blue `--brand-1` background with brown text. It now uses immutable storefront yellow/brown, a full-width lock action, visible disabled/processing states and reduced-motion spinner. Live inspection also found that the readiness expression returned an empty string for a missing field, which Vue cast to true for the Boolean component prop. Explicit `Boolean(...)` fixes the misleading enabled state; existing submit validation already rejected missing details. A regression test exercises the actual coordinator, and admin sample canvas uses the same inert button.
+- **Consistent page editor:** existing Website workspace selects Homepage/Checkout/Order confirmation. Same navigation/shared actual UI/context inspector, draft Save/Publish/Cancel, section-specific changed markers and selection scrolling. Editable copy/background/help/wallets are separate from protected live financial/customer/payment data. Real checkout components render with fictional sample/inert Stripe fields; no payment/provider is initialized in preview. Old publications safely merge canonical commerce defaults without false dirty state.
+- **Email Template Center:** protected thirteenth admin tool, five rich suggestions (received/preparing/shipped/delivered/cancelled), editable saved copies, archive/reactivation, optimistic revision, live fictional sample/wide/phone previews and explicit Save/Cancel. Validated plain-text placeholders inside server-controlled responsive HTML/text; no arbitrary HTML/code builder.
+- **Orders manual email:** choose saved/suggested template -> actual saved order/recipient preview -> review checkbox -> default dry run or deliberately enable real Send. Server rechecks status/tracking, recipient, admin actor, template revision and order/render fingerprint. A sample/unsaved/stale/expired/wrong-actor preview cannot send. Rate limit, unique reservation, provider idempotency, audit and notification preferences remain. Result/activity refresh distinguishes MOCKED/SENT/FAILED/DUPLICATE/SKIPPED. No arbitrary recipient override.
+- **No automatic operational emails:** removed checkout receipt/admin notices, failed-payment notices, order status and shipping/tracking triggers. Provider blocks operational events unless internal manual approval exists. Old blind resend endpoint returns 410. Essential Better Auth verification/reset and intentionally enabled welcome/security email stays intact. Bulk promo/support/review templates and failed-send reconciliation are not implemented here.
+
+### Verified High-Risk Repairs
+
+1. **Server pricing was not fully server-owned.** Preview calculated browser item prices; finalization trusted item names/SKUs/prices. Added catalog resolution against actual ACTIVE products/active selected-size variants, positive bounded integer quantities, combined stock checks, authoritative database cents/name/image/SKU. Checkout preview, PaymentIntent creation, finalization, public promo validation and campaign preview now share this boundary. Browser price/subtotal/SKU/line/donation/shipping amount spoofing was tested.
+2. **Anonymous reference-only receipts exposed PII.** Receipt GET now requires owning Better Auth customer or a 24-hour reference-scoped proof from successful verified checkout; response is no-store. Client stores this only in memory/sessionStorage and sends `X-Order-Receipt`, not URL/localStorage. Another reference/forgery/expiry fails. Reference-only guest bookmarks intentionally no longer reveal order contact/shipping data; verified guest recovery is future work.
+3. **Payment-ID replay could mint receipt access.** PaymentIntent creation returns an email/PaymentIntent-bound 24-hour checkout proof. Order POST checks it before finalization and still verifies Stripe. Bare PI ID/email is insufficient. Proofs are scoped resource capabilities, not admin/customer bearer-auth fallback. Existing stable server signing secrets are used; no real proof/token is logged/documented.
+4. **Inventory/order writes were separate.** Conditional limited-stock decrement and Order/OrderItems now share one Prisma transaction; made-to-order/preorder do not decrement tracked stock. Unique PaymentIntent failure rolls back decrements. Verified newly created orders are PAID. Shipping carrier/service/rate/provider is forwarded into the saved order rather than dropped. Retry finds the persisted original order before spent stock/promo revalidation.
+5. **Stale preview/payment UI:** scheduling a preview invalidates in-flight responses immediately; submission requires fresh trusted pricing before a new payment. Card and wallet compare reviewed versus server-created total, and completed payment retries do not pay again. Stripe load failures get readable fallback; sample payment fields do not load Stripe.
+
+**Still not atomic across the entire purchase:** promo/campaign usage is recorded in separate post-order operations and failures are caught. Concurrent promo limits/usage persistence, changing catalog prices/stock/carrier rates after payment, guest recovery and payment reconciliation remain launch risks. No broad reservation/webhook/fulfillment redesign was attempted. Existing timestamp-based order references and historical payment-state assumptions also need future hardening.
+
+### Persistence And Actual Local Changes
+
+Added `EmailTemplate` only: cuid id, name, event, subject, heading, body, footer, archived, revision, created/updated timestamps and event/archive index. Migration `server/prisma/migrations/20261010000000_manual_email_templates/migration.sql` is additive. Wallet/confirmation settings live in existing `StorefrontContent` JSON. `EmailDelivery` retains delivery/audit; no real email is produced by template creation.
+
+Privately verified normal local DATABASE_URL is loopback before migration/QA. Initial status showed 21 repository migrations with only the new template migration pending (expected exit 1). Guarded local `prisma migrate deploy` applied only it, exit 0. Final local status: **21 migrations/schema up to date**, exit 0. Prisma CLI/runtime/generated client remain **6.16.2**. No Railway status/query/action; earlier content/media and new email deployment still require approval.
+
+Actual local UI saved one default **Order received** copy, reload proved persistence; temporary heading edits were canceled. Actual existing PROCESSING order preview then review/default dry run created one **MOCKED preparing email activity**. Live-send checkbox remained unchecked; no provider request/email. No order status, customer, product, campaign or Website publication was modified by that check. Website remains revision 9 with original draft/publication; the contributing campaign's public page remains disabled. Existing one 6 oz bag was retained.
+
+### Files Created In This Phase
+
+- `shared/storefront/commercePresentation.js` and client/server generated snapshots.
+- Client shared `components/{CommerceCardSurface,CommerceItemCard,CommerceGivingNote,CommerceDialog}.vue`, `mappers/commerceItem.mapper.js`.
+- Client checkout `Checkout/CheckoutLayout.vue`, `OrderSummary/CheckoutBagDisclosure.vue`, `OrderSuccess/OrderConfirmationContent.vue`, `composables/{useCheckoutPage,useCheckoutIdentity,useCheckoutShipping,useCheckoutAddressReview,useCheckoutAuth,useOrderConfirmation}.js`, `utils/receiptAccess.js`.
+- Client payments `components/StripeWalletButtons.vue`; campaigns `components/CampaignQuickView.vue`, `composables/useCampaignQuickView.js`.
+- Client admin `components/{AdminCommerceCanvas,AdminCommerceFields,AdminEmailPreview,AdminOrderEmailComposer}.vue`, `constants/commercePreview.constants.js`, `api/adminEmailTemplates.api.js`, `composables/useAdminEmailTemplates.js`, `views/AdminEmailTemplatesView.vue`.
+- Server checkout `repositories/checkout.repository.js`, `services/checkoutCatalog.service.js`; shared `utils/signedCapability.js`.
+- Server emails `constants/orderEmailTemplates.constants.js`, `controllers/emailTemplate.controller.js`, `routes/adminEmailTemplate.routes.js`, `services/emailTemplate.service.js`, `repositories/emailTemplate.repository.js`, `mappers/orderEmail.mapper.js`, `validators/emailTemplate.validator.js`; additive migration above.
+- Client `tests/tier2/checkout/{commerce-presentation,shipping-address}.test.js`; server `tests/tier2/checkout/{checkout-security,order-inventory}.test.js`, `tests/tier2/admin/{manual-order-email,manual-email-provider}.test.js`.
+- `docs/architecture/checkout-and-order-email.md`.
+
+### Files Modified In This Phase
+
+- Canonical `shared/storefront/{sectionCatalog,contentProjection,contentValidation}.js`, both generated snapshots, client/server sync scripts.
+- Client `App.vue`, router, admin navigation, Website view/state, Order detail view/state/API/notification panel; Website components are prior untracked files extended here, not claimed newly invented by this phase.
+- Client cart drawer/item/focus helper, product card/campaign badge, campaign page/loader/shared campaign state, account order details.
+- Client checkout view/success view, contact/shipping/payment/submit/auth sections, order items/summary/totals/campaign-preview/promo box, preview/promo/payment coordinator/API; card Stripe component.
+- Server schema/app, checkout controller/service, payment controller, public promo router, campaign controller, order repository/service/mapper/routes, shipping service, email provider.
+- Existing client promo/admin-workspace/cart regression tests and server PaymentIntent fixtures.
+- This handoff, `docs/{ux-ui-standards,customer-experience,admin-experience,communications,implementation-roadmap,verification-and-qa}.md`, `docs/architecture/{README,data-flow,database,file-map,admin,storefront-editor}.md`.
+
+The full Git diff includes earlier unrelated approved edits/dependency repair/media work; do not treat every dirty file as new checkout/email work or revert it. Views stay thin; coordinator separates identity/shipping/auth, components/API are separate, server email validator/mapper/service/repository are distinct. Existing unused old checkout header/progress/mobile-summary components remain for a later focused dead-code review, not in the new rendering path.
+
+### Commands And Verification
+
+Default Node 22.15.0; no lint scripts exist, none invented. Commands/tests never sent real email or charged Stripe.
+
+| Command / Check | Result |
+| --- | --- |
+| `git status --short --branch`, `git diff --stat`, `git diff --name-status` | Inspected before work/resume; unrelated edits preserved. |
+| Client `npm run build` | Exit 0; Vite 8.0.9, 2255 modules; final rerun includes postal review, impact card, secure-action readiness and editor changes. |
+| Client `npm test` | Exit 0; 21 files / 105 tests (11 + 88 + 6); final rerun passed. |
+| Server `npm run build` | Exit 0; six canonical modules synced and explicit Prisma Client 6.16.2 generation. Not a server bundle. |
+| Server `npm test` | Exit 0; 24 files / 93 tests (28 + 62 + 3). Twenty-four new checkout/inventory/manual-email tests beyond 69. Total client/server: 198 tests. |
+| Guarded local `npx prisma migrate deploy` | Exit 0; only new EmailTemplate migration applied locally. |
+| Guarded local `npx prisma migrate status` | Exit 0; 21 migrations, schema up to date. |
+| Actual local HTTP/DB/UI | Checks described below, no real provider send/payment or Railway action. |
+| `node --check` across source/scripts/tests/shared JavaScript | Exit 0; 300 files. |
+| Canonical/generated parity | Exit 0; six modules / twelve app-root snapshots. |
+| `.env.example` inventory | None; expected `rg` exit 1. |
+| Actual unauthenticated template route checks | GET/create/update/preview/send all 401 before provider/persistence work. |
+| Receipt-header CORS OPTIONS | 204; local origin, credentials and `X-Order-Receipt` allowed. |
+| Mermaid CLI 11.15.0 cached tool on six architecture docs | Exit 0 for each; all 15 diagrams rendered to temporary SVGs (README 1, data-flow 11, admin 1, auth-roadmap 2; file-map/database have no charts). No repository dependency/SVG added. |
+| Markdown local-link/fence checks | Exit 0; all 15 changed/new documents checked. |
+| Targeted secret/env scan | Exit 0; 210 changed/new text files checked; zero targeted secret findings or changed env files. Historical documented `rg` pattern command lines excluded, no real values printed. |
+| `git diff --check` | Exit 0; no whitespace errors. |
+
+Resolved verification diagnostics: fixture assertions were updated for the thirteenth admin tool and mobile submit; PaymentIntent tests now provide valid required customer data rather than failing the new pre-payment validation. Shipping review tests initially used a non-SSR renderer for SSR-compiled Vue fixtures; replaced with actual composable unit tests plus proper Vue SSR field tests, all pass. Intermediate patch context failures made no partial file changes. Final whitespace/secret/docs/syntax/parity results are recorded above. Prior dependency advisories were not force-upgraded or silently dismissed.
+
+Actual local promo HTTP QA created a disposable 10% promo with one-use-per-email and short expiry. Eleven checks passed: missing email rejection; trim/lowercase; DB subtotal/discount despite forged subtotal; server preview ignored forged item/total/SKU/shipping/donation amounts; real eligible campaign giving coexisted without extra total; synthetic redemption rejected a second normalized email use; expired/invalid checks; invalid promo prevented PaymentIntent creation; unauthenticated template API rejected; anonymous reference-only order rejected. Removed only disposable promo/usage fixture rows. No PaymentIntent/provider operation was created.
+
+Actual rollback-only local Prisma transaction created fictional limited/made-to-order variants/orders, checked quantity 2 stock 3 -> 1 only for limited stock and PAID insertion, then deliberately rolled back. Post-check found no residual QA products/orders. Mock tests additionally prove guarded update/no insertion under insufficient stock and unique-error propagation; they do not prove high-load concurrency behavior.
+
+Actual browser UI used existing local services 5173/3000 and authorized existing account/admin forms. Customer sign-in remained on checkout, retained the existing 6 oz item at $14.99 and safe address prefill; actual saved owned receipt showed its saved $22.97 total/account-history link. Reviewed signup UI was visible, but no new account was created (essential email can be enabled). Mobile secure submit and unavailable-wallet/card fallback rendered. Template save/reload, immediate unsaved preview/cancel, actual-order preview and deliberate no-send recording passed. Website checkout toggles/confirmation title/palette updated the shared preview, then restored clean without Save/Publish. Narrow observed browser and wide/390px embedded canvas were inspected; full desktop/mobile/Safari viewport/device/accessibility is not claimed. Temporary owned-order QA tab was closed; original checkout/editor tabs remain.
+
+Current local contributing campaign has `publicPageEnabled = false`, so no pop-out action is shown for it. Shared renderer and publication gating pass automated tests; actual end-to-end published campaign popup remains manual QA. This gate was not bypassed or user content silently published. No actual card/Apple Pay/Google Pay payment, new signup, live Resend, Shippo purchase, deployed session or deployed provider behavior was certified.
+
+Final actual checkout screenshot confirms the conventional receipt breakdown and separate emerald impact card: selected 6 oz item $14.99, shipping $5.99, estimated tax $1.99, unchanged total $22.97; $3.00 contribution is outside the bill and outside the summary container. Actual computed colors are yellow/brown for the ready action and emerald for the impact surface, with a restrained shadow. After Boolean readiness repair, the current incomplete form has both Use this address and secure submit disabled. No fake recipient/address was entered to force review; complete review/Edit/focus is unit/SSR verified, not claimed end-to-end browser verified. No payment/promo/customer/form was submitted for this visual check. Privacy-safe cropped proof is `/tmp/doggy-commerce-qa/checkout-impact-final.png`; temporary artwork is not committed. Intermediate hot-reload failed while the new canonical export had not yet been synchronized; final client/server builds synchronized it, and refreshed UI succeeded. This transient development diagnostic is recorded rather than treated as an outstanding build failure.
+
+### Environment, Deployment And Next Gate
+
+Names only; no values copied to source/docs. Existing client `VITE_API_BASE_URL` or compatibility `VITE_API_URL`, `VITE_STRIPE_PUBLISHABLE_KEY`. Existing server `DATABASE_URL`, `NODE_ENV`, `PORT`, `CLIENT_URL`/`FRONTEND_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, optional `BETTER_AUTH_API_KEY`, `STRIPE_SECRET_KEY`. Email `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, optional `RESEND_REPLY_TO_EMAIL`; legacy `EMAIL_FROM`/`EMAIL_REPLY_TO` aliases and `EMAIL_PROVIDER`/`EMAIL_MODE` dry-run controls remain. Shipping provider variables unchanged. Wallet switches are published DB presentation, not provider keys. Stable signing secret across backend instances is required for checkout/receipt/email-preview proofs. No `.env.example` was added and normal local env was not repurposed.
+
+**Deployment blocker:** old frontend finalization requests lack `checkoutProof`. Plan a coordinated matching server/frontend rollout and handle in-flight/stale checkout clients before accepting payments. Existing server `start` automatically applies migrations; explicitly approve Railway target/backup/pending content/media/email SQL and migration/deploy first. Do not assume local status is Railway status. Stripe wallet domains/HTTPS must be configured separately; publish wallet presentation only after that review. No Railway deploy was attempted.
+
+Manual next steps:
+
+1. Review checkout/confirmation/editor/templates on desktop/mobile/Safari, long copy/variants, keyboard/native dialogs/reduced motion/screen readers. Keep all earlier admin/account/storefront functionality and data-routing identity.
+   Check postal autofill/apartment/province labels, complete review/Edit and focus/value retention without saving profile data, configured delivery regions/rates, incomplete disabled versus ready yellow/processing submit. Check impact below the entire bag even when collapsed; giving must never become a charge.
+2. Use an approved signup flow to confirm review/edit/session and retained form/bag. Enable only a reviewed public campaign and test popup from bag/checkout/receipt with focus restoration and no state loss.
+3. After matched deployment/domain review, run approved guest and signed-in Stripe **test** card/wallet flows with 6 oz/18 oz, invalid/one-per-email/expired promo, promo+campaign, server totals, once-only order/inventory/usage and post-payment network retry. Never pay again to recover an already successful payment.
+4. Verify scoped guest receipt refresh, expiry/cleared storage/non-owner rejection and privacy. Guest emailed-link/recovery remains future work; saved reference alone does not grant access.
+5. Email: suggested copy/save/archive/revision conflict, actual saved-status/tracking gate, stale preview rejection, default dry run and duplicate prevention. Save status/tracking must not send mail. Only with explicit inbox/budget approval send one real previewed message and inspect provider/client rendering; SENT is acceptance, not delivery. FAILED/pending sends need reconciliation, not blind retry.
+6. Triage existing critical/high dependency advisories and earlier unrelated dependencies; strengthen promo/campaign atomicity/reservations, post-payment reconciliation, receipt recovery and provider failure retry before claiming launch readiness.
+
+Recommended next phase: focused visual/device review and commerce/provider security QA, followed by explicitly approved coordinated migration/deployment; not a new broad refactor. [Architecture and flow](docs/architecture/checkout-and-order-email.md), [file map](docs/architecture/file-map.md), [communications policy](docs/communications.md), [QA](docs/verification-and-qa.md). The continued edits are safe for focused commit review after these local checks, not a launch or live-provider certification. No commit/push/deploy; local servers remain available.
+
+## 2026-10-11 Production Audit And Approved Better Auth Admin Migration
+
+### Authority And Scope
+
+This is the current evidence checkpoint and supersedes older custom-admin, 152-test, 20-migration and automatic-email descriptions in this historical handoff. Initial tree was clean on dev-main. The user requested the comprehensive security/commerce/architecture audit and explicitly approved: repair copied-session logout and move admin to Better Auth. No commit/push/deploy, Railway migration/provisioning, secret rotation, live email, real payment or label purchase occurred.
+
+Full deliverables:
+
+- [Production audit, Sections A-H](docs/audits/2026-10-11-production-audit.md): architecture/coverage, 29 findings, file management, commerce, exact verification, manual QA, remaining risks and 14-category scorecard.
+- [API access inventory](docs/audits/2026-10-11-api-access.md): all mounted app routes and 105 installed customer/Infra native paths with access/validation/response/limiter notes.
+- [Current auth/provisioning/rollout](docs/architecture/auth-roadmap.md): separate Better Auth customer/admin configs, migration, local data modes, variables and manual deployment gates.
+
+### Root Cause And Admin Repair
+
+The old admin cookie contained a signed session that remained valid after logout; deleting a browser cookie did not revoke copies. The approved repair replaces the custom signed/Map implementation with Better Auth database sessions on existing User/Account/Session tables, behind compatible /api/auth/login, logout, me and data-target. Native /api/admin-auth exposes only sign-in/email, sign-out and get-session. No new Prisma model/migration.
+
+- Persisted ADMIN/ACTIVE role/status required on every server-protected request; no public admin signup or bearer-token fallback.
+- Separate doggy-admin cookie prefix; HttpOnly, path /, host-only; local SameSite=Lax and production Secure/SameSite=None for current split hosts.
+- Absolute eight-hour admin expiry; refresh/cookie cache disabled. Old signed cookies rejected/cleared.
+- Native logout deletion is checked after the engine: failed DB revocation does not report success. Same failure safeguard applied to customer logout.
+- All native customer/admin JSON responses strip password/session/provider tokens, including list-sessions/change-password; transport cookies remain HttpOnly.
+- Typed admin credential validation, safe admin-only return paths and /api/auth/me confirmation before redirect.
+- Existing dashboard, thirteen tools, customer accounts, guest checkout, editor UX and signed-in/data-routing controls preserved.
+- Deliberate provisioning imports an existing bcrypt hash only into a new ADMIN credential. Future new hashes use Better Auth scrypt. CUSTOMER conflicts/overwrite refused; no startup provisioning.
+- Local npm run admin:provision preflight and -- --apply succeeded, creating only the authorized local admin/credential/provision event. Re-running does not rotate a stored credential.
+- New protected order/tracking/customer/support histories use actual ADMIN actor ID; historical ADMIN_ENV unchanged. Customer lifecycle tools cannot target ADMIN rows.
+- Better Auth customer Infra configuration stays on /api/customer-auth. Dashboard Base URL is the public backend origin represented by BETTER_AUTH_URL; Base Path /api/customer-auth. No second admin Infra integration, MFA or fine-grained role system was enabled.
+
+Better Auth does not solve Safari third-party-cookie blocking between unrelated Vercel/Railway hosts. Owned domain plus same-site API subdomain remains recommended. Production remote admin provisioning and browser acceptance are not completed.
+
+### Other Verified Repairs
+
+- Customer-safe checkout finalization/replay; internal status history/notes/actors omitted entirely. Internal support-note events and private metadata excluded from customer projection.
+- Public products hide DRAFT/ARCHIVED; protected /api/products/admin/library keeps full admin catalog with existing cents normalization.
+- Transactional product variant replacement avoids partial deletion on failed save, preserves inactive sizes and validates prices/sizes/inventory/types.
+- Bounded typed own-profile fields and preference/address validation.
+- Order references gain random suffix; concurrent status save compare-and-set returns 409 with history in one transaction. Tracking cannot regress terminal/cancelled/refunded states.
+- Native auth raw transport now capped at 100 KB for declared/chunked requests, using the existing framework's better-call Node adapter.
+- Production auth fails closed on missing/short signing secret or non-HTTPS/credential-bearing backend URL. BETTER_AUTH_URL is origin-only: an auth path/query/fragment would override the installed engine's separate basePath configs and is rejected. Localhost is not automatically trusted in production.
+- LOCAL startup refuses remote DB hosts; Railway DB mode requires a remote DATABASE_URL override. Startup command target takes precedence. Production badge says DEPLOYED DATA TARGET; failed lookup says TARGET UNVERIFIED, not LOCAL.
+- Destructive product seed requires explicit confirmed LOCAL loopback development target; never executed during audit.
+- Generic DB/provider errors, no Prisma raw query/error logging, sanitized exception capture and allowlisted structured operational/admin-write logs.
+- Resend/Shippo errors no longer persist/log raw provider text; requests use bounded provider timeouts. Shippo webhook fails closed when secret absent, with timing-safe comparison. It remains acknowledgement-only, not fulfillment/event processing.
+- Security email dedupe uses one-way action URL digest; no token/action URL persisted in metadata. Identical action dedupes; new verification links can be requested. Operational emails remain explicit preview/send.
+- Admin-triggered customer verification/reset now uses absolute validated frontend return URLs instead of relative backend paths. Production startup checks that frontend origin; live email delivery/return remains untested. Temporary local-to-Railway-DB email should stay mocked unless public auth URL/signing configuration and an approved inbox/budget have been reviewed.
+- Admin tracking links reuse safe render helper; new tracking URLs must be HTTPS without credentials.
+- Vercel static security headers and SPA rewrite exclude /api and /api/...; Font Awesome CSS has published/matched SHA512 SRI and CORS. Vite binds only loopback/trusted dev host.
+- Removed unused approve, ls, scripts packages; compatible audited lock updates; justified direct better-call transport dependency. Prisma/client remain matched 6.16.2.
+- No broad reorganization/dead-file deletion, UI redesign, payment engine rewrite or new schema.
+
+### Repository Audit Evidence
+
+Initial inventory: 567 tracked files. Later first-party inventory: 584 before final docs additions. All folders inventoried; 458 source/script Vue/JS modules parsed with zero parse failures/missing literal imports; 266 standalone source/script JS files syntax checked; six generated deployment content snapshots match canonical shared/storefront.
+
+19 empty placeholders, 24 nonempty client literal-import-unreachable candidates and server compatibility/CLI-only modules are documented, not blindly deleted. Products service directly uses Prisma and promo routes still have controller responsibilities; these established exceptions were preserved. Existing product editor notIncluded/guaranteedAnalysis/showGuaranteedAnalysis/lowStockThreshold fields still lack persisted schema columns; explicitly open functionality gap.
+
+Secret-pattern/source/build checks found no matches in inspected current first-party text/built assets, no source maps and no localhost in the application API helper build chunk. Current .env files are untracked/ignored and no .env.example exists. Git history has a prior server/.env path, but the blob is zero bytes with no assignments; this does not establish a credential leak. No full all-blob secret-history guarantee is made. No secret values were printed/copied/documented or env files modified.
+
+### Exact Commands And Results
+
+| Command/check | Final result |
+| --- | --- |
+| Initial git status, git diff --stat, git diff --name-status | Clean tree at audit start; all subsequent changes left for review |
+| client npm run build | Exit 0; Vite 8.3.4; 2263 modules; main JS 308.22 KB / 85.04 KB gzip |
+| server npm run build | Exit 0; canonical sync + Prisma Client 6.16.2 generated; repeated after final server change |
+| client npm test | Exit 0; 22 files, 109 tests: 11 tier1 + 92 tier2 + 6 tier3 |
+| server npm test | Exit 0; 31 files, 125 tests: 28 tier1 + 94 tier2 + 3 tier3 |
+| Combined | 53 files, 234 passing tests; 36 added test cases |
+| npx prisma migrate status | Exit 0; confirmed local loopback DB; 21 migrations; schema up to date |
+| npm run admin:provision | Exit 0; initial preflight/no writes; final repeat reports already provisioned/no changes |
+| npm run admin:provision -- --apply | Exit 0; confirmed local ADMIN credential/event created; no customer/password overwrite |
+| Guarded local Prisma + ephemeral HTTP smoke | Exit 0; real DB admin session/catalog read/logout deletion/copied-cookie 401; 20 anonymous protected read groups 401; 3 private-file JSON 404 probes; disallowed origin 403. Test session removed |
+| Targeted actual auth-engine tests | Pass; admin/customer role isolation, token redaction, expiry, origin/legacy cookies, copied-cookie logout and injected DB revocation failure; customer reset reuse/expiry/session revocation |
+| 266 node --check source/script modules | Exit 0; zero syntax failures |
+| Babel/Vue literal import graph | 458 parsed; no parse failures/missing literal imports |
+| Canonical content snapshots | Six modules, client/server copies: no drift |
+| npm ls --depth=0, client/server | Exit 0; no missing/extraneous direct dependencies |
+| client npm audit --json | Exit 0; zero advisories (baseline 10) |
+| server npm audit --json | Exit 1; four HIGH remaining, no critical/moderate/low (baseline 15) |
+| root npm audit --json | Exit 0; zero advisories; root has no app dependencies |
+| npm uninstall approve ls scripts --ignore-scripts | Exit 0; ten packages removed |
+| client npm audit fix --ignore-scripts | Exit 0; compatible fixes, no remaining advisories |
+| server npm audit fix --ignore-scripts | Exit 1 due four remaining Prisma tooling advisories; no force/downgrade applied |
+| npm install better-call@1.3.6 --save-exact --ignore-scripts | Exit 0; bounded auth adapter dependency justified |
+| Published Font Awesome SRI versus fetched CSS SHA512 | Match; public text-only check, no private data |
+| Markdown links/fences | 24 files; zero unclosed fences/missing local links |
+| Cached official Mermaid CLI | Exit 0; 20 diagrams -> 20 nonempty temporary SVGs; no repo dependency/output added |
+| git diff --check | Exit 0 |
+| curl --fail --silent local /api/health | Exit 0; status OK on the existing local server |
+| Browser acceptance | NOT VERIFIED: CUA URL access policy-blocked; no workaround/screenshot/browser-login claim |
+
+Intermediate test/setup failures were repaired and rerun: old ADMIN_ENV email audit expectation updated to ADMIN; a new test syntax typo fixed; an origin fixture exposed missing native first-login guard and was fixed; local smoke setup's private package import failed before session creation, replaced with exported serializeSignedCookie. Final tests/builds passed. No lint/typecheck scripts exist; none added. No clean npm ci, live provider, load benchmark, full accessibility or browser/Safari certification.
+
+### Dependency Residual Risk
+
+Server npm audit lists prisma, @prisma/config, deepmerge-ts and effect as HIGH: recursive graph exhaustion and Effect RPC context contamination propagate via Prisma CLI/config. No untrusted Effect RPC endpoint/user-controlled Prisma configuration was found, so application exploitability is not assumed. npm's force proposal changes to Prisma 6.12.0; do not downgrade/major-upgrade casually. Plan a matched CLI/client upgrade with build/migration/regression checks.
+
+### Environment And Manual Rollout
+
+Variable names only:
+
+- Server: DATABASE_URL; NODE_ENV; PORT; BETTER_AUTH_SECRET (preferred dedicated >=32-character secret); BETTER_AUTH_URL (HTTPS backend origin); CLIENT_URL and/or FRONTEND_URL (comma-separated exact frontend origins).
+- Deliberate initial admin provisioning: ADMIN_EMAIL; ADMIN_PASSWORD_HASH (bcrypt cost at least 10). These no longer rotate a provisioned DB password on restart.
+- Compatibility: ADMIN_SESSION_SECRET signing fallback; API_BASE_URL backend origin fallback.
+- Existing provider/Infra features: STRIPE_SECRET_KEY; BETTER_AUTH_API_KEY; EMAIL_PROVIDER; RESEND_API_KEY; RESEND_FROM_EMAIL; RESEND_REPLY_TO_EMAIL; SHIPPO_API_KEY or SHIPPO_API_TOKEN; SHIPPO_WEBHOOK_SECRET; existing Shippo sender/parcel variable names in architecture/provider docs.
+- Client/Vercel: VITE_API_BASE_URL or compatibility VITE_API_URL; VITE_STRIPE_PUBLISHABLE_KEY; public-only display/config variables. No VITE secret.
+- Ignored local files: server/.env remains normal local DB; server/.env.railway.local supplies remote overrides; local client env files remain public config only. No .env.example created.
+
+Temporary commands unchanged:
+1. Fully local: server npm run dev:local; client npm run dev:local.
+2. Railway DB admin: server npm run dev:railway; client npm run dev:local. Browser uses local API, not Railway backend.
+3. CLI admin provisioning uses its own normal env loading; a running Railway-mode server does not change the CLI's target. Default CLI refuses remote hosts; --allow-remote is only for a separately approved reviewed rollout.
+
+Before any separately approved Railway provisioning/deployment: confirm backup/target/schema status and admin-email conflict; provision without promotion/overwrite; deploy matching backend/frontend; expect old admin sessions to reauthenticate; test HTTPS/cookies/CORS and existing thirteen tools. server npm start runs prisma migrate deploy, not a read-only verification. No new auth migration, but any existing pending migration still needs owner approval. Vercel dashboard project root/headers/API base and Railway config were not inspected.
+
+### Remaining Launch Gates And Manual QA
+
+**Not ready for real paying customers.** Successful payment can be left without an order because finalization is browser-driven with no durable attempt/webhook recovery; prices/stock/rates/promos can change after payment. Promo/campaign usage commits separately and can race/fail after a discounted order persists. REFUNDED does not execute Stripe refunds, and tax/shipping jurisdiction/provider behavior remains uncertified.
+
+Next approved phase: durable checkout snapshot/idempotency, raw-body signed Stripe webhook/event dedupe, atomic/reserved inventory/promo/campaign attribution and post-payment/refund reconciliation. Follow with Prisma remediation, backup/restore/monitoring proof, live-provider/device QA and MFA. Do not launch or charge again as a recovery workaround.
+
+Manual next checks:
+- Local admin login/reload/restart/logout/relogin, customer denial, no cookie-copy access, all thirteen tools/identity/target labels.
+- Product public/draft privacy, failed-save stock retention, inactive 6/18 sizes, cart/quick-view/guest and signed-in checkout retained.
+- Customer ownership/profile/disabled-account, signup/reset/verification with approved inbox and email budget; no token leaks.
+- Email-before-promo, expiry/limits/email changes, campaign coexistence/server totals; concurrent purchase certification still blocked.
+- Receipt proof/reference/non-owner/expiry privacy; no internal status history/support notes or Stripe secrets.
+- Staged status/tracking, actual actors/terminal guards, no automatic email; explicit template preview/confirmation/dry-run/dedupe.
+- Real desktop/mobile/Safari, wallet/required-auth redirect/network recovery under approved Stripe test setup only after durability repair.
+- Vercel direct routes/static headers/API root, Railway target/migrations/provisioning/TLS/proxy, DB least privilege/backups/PITR/restore, operational alerts and provider reconciliation.
+
+See the full report for the 14-category scorecard. Tree is safe for focused commit review with stated risks, not automatic deployment or launch. No application files removed, no env changed, no schema/migration added, nothing committed/pushed.
+
+### Exact Files Created (21)
+
+```text
+client/src/domains/admin/validators/adminAuth.validator.js
+client/tests/tier2/admin/admin-auth.test.js
+docs/audits/2026-10-11-api-access.md
+docs/audits/2026-10-11-production-audit.md
+server/scripts/provision-admin.js
+server/src/app/middleware/auth/boundedAuthHandler.js
+server/src/domains/account/validators/account.validator.js
+server/src/domains/auth/repositories/adminProvision.repository.js
+server/src/domains/auth/services/adminAuth.service.js
+server/src/domains/auth/services/adminProvision.service.js
+server/src/domains/auth/utils/authResponse.js
+server/src/shared/utils/apiError.js
+server/src/shared/utils/databaseSafety.js
+server/src/shared/utils/operationalLog.js
+server/tests/tier2/admin/admin-provision.test.js
+server/tests/tier2/admin/admin-session-service.test.js
+server/tests/tier2/admin/audit-security.test.js
+server/tests/tier2/admin/better-auth-admin.test.js
+server/tests/tier2/admin/catalog-safety.test.js
+server/tests/tier2/admin/customer-auth-security.test.js
+server/tests/tier2/orders/audit-order-integrity.test.js
+```
+
+### Exact Files Modified (81)
+
+```text
+AGENTS.md
+PROJECT_HANDOFF.md
+README.md
+client/index.html
+client/package-lock.json
+client/src/domains/admin/api/adminProducts.api.js
+client/src/domains/admin/api/adminSession.api.js
+client/src/domains/admin/components/AdminDataTargetBadge.vue
+client/src/domains/admin/components/AdminOrderTrackingPanel.vue
+client/src/domains/admin/views/AdminLoginView.vue
+client/src/domains/checkout/composables/useCheckoutPage.js
+client/src/domains/checkout/composables/useCheckoutPreview.js
+client/src/domains/checkout/composables/useCheckoutShipping.js
+client/src/domains/payments/services/payment.service.js
+client/vercel.json
+client/vite.config.js
+docs/admin-experience.md
+docs/architecture/README.md
+docs/architecture/admin.md
+docs/architecture/auth-roadmap.md
+docs/architecture/data-flow.md
+docs/architecture/database.md
+docs/architecture/diagram.md
+docs/architecture/file-map.md
+docs/architecture/mockdiagram.md
+docs/communications.md
+docs/customer-experience.md
+docs/implementation-roadmap.md
+docs/operations-and-issues.md
+docs/verification-and-qa.md
+server/package-lock.json
+server/package.json
+server/src/app.js
+server/src/app/middleware/auth/requireAdminAuth.js
+server/src/app/middleware/auth/requireCustomerAuth.js
+server/src/app/middleware/error.middleware.js
+server/src/app/middleware/security/rateLimit.middleware.js
+server/src/config/env.js
+server/src/db/prisma.js
+server/src/db/seeds/products.seed.js
+server/src/domains/account/controllers/account.controller.js
+server/src/domains/account/services/account.service.js
+server/src/domains/auth/routes/auth.routes.js
+server/src/domains/auth/services/auth.service.js
+server/src/domains/auth/services/customerAuth.service.js
+server/src/domains/campaigns/routes/campaigns.routes.js
+server/src/domains/checkout/controllers/checkout.controller.js
+server/src/domains/checkout/services/checkout.service.js
+server/src/domains/customers/controllers/adminCustomers.controller.js
+server/src/domains/customers/repositories/adminCustomers.repository.js
+server/src/domains/customers/services/adminCustomers.service.js
+server/src/domains/emails/controllers/emailDelivery.controller.js
+server/src/domains/emails/controllers/emailTemplate.controller.js
+server/src/domains/emails/mappers/emailPayloads.mapper.js
+server/src/domains/emails/services/emailProvider.service.js
+server/src/domains/emails/services/emailTemplate.service.js
+server/src/domains/orders/controllers/orders.controller.js
+server/src/domains/orders/mappers/orders.mapper.js
+server/src/domains/orders/repositories/orders.repository.js
+server/src/domains/orders/services/orders.service.js
+server/src/domains/payments/controllers/payment.controller.js
+server/src/domains/payments/services/stripe.payment.js
+server/src/domains/products/controllers/products.controller.js
+server/src/domains/products/mappers/products.mapper.js
+server/src/domains/products/routes/products.routes.js
+server/src/domains/products/services/products.service.js
+server/src/domains/products/validators/products.validator.js
+server/src/domains/promos/services/promos.service.js
+server/src/domains/shipping/controllers/shipping.controller.js
+server/src/domains/shipping/services/shipping.service.js
+server/src/domains/shipping/services/shippo.service.js
+server/src/domains/shipping/validators/shipping.validator.js
+server/src/domains/support/controllers/support.controller.js
+server/src/domains/support/mappers/support.mapper.js
+server/src/domains/support/services/support.service.js
+server/tests/tier2/admin/internal-record-auth.test.js
+server/tests/tier2/admin/manual-email-provider.test.js
+server/tests/tier2/admin/manual-order-email.test.js
+server/tests/tier2/admin/media-routes.test.js
+server/tests/tier2/admin/public-campaigns.test.js
+server/tests/tier2/admin/storefront-content.test.js
+```

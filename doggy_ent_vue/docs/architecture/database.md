@@ -1,6 +1,6 @@
 # Database Architecture
 
-Last updated: 2026-10-09
+Last updated: 2026-10-11
 
 ## Source Of Truth
 
@@ -15,6 +15,14 @@ The Prisma schema at `server/prisma/schema.prisma` is the database source of tru
 | Deployed Railway server | Railway dashboard variables | Railway PostgreSQL database |
 
 No real `DATABASE_URL` values should be documented or committed.
+
+## Media Library Follow-Up
+
+`MediaAsset` owns indexed, searchable public-safe metadata, UUID, normalized-byte SHA-256 uniqueness, dimensions/sizes, folder, accessibility description, actor type and timestamps. `MediaAssetData` has a one-to-one cascading foreign key and two PostgreSQL `BYTEA`/Prisma `Bytes` fields for optimized WebP and thumbnail. Metadata lists do not select blobs. Atomic nested creation plus serializable capacity checking limits stored images/thumbnails to 256 MiB; duplicate normalized images reuse one record. No delete/replace API is exposed, protecting historical product/order image snapshots.
+
+Existing product/campaign image strings and storefront JSON save stable `/api/media/<uuid>` references; no commerce column is removed or retyped. Services validate these IDs against the selected database before writes. Migration `20261009020000_media_library` creates two tables/indexes/checks/FK only. Local preflight/deploy/generate/status succeeded: **20 migrations, up to date**. Earlier Railway 18-migration results below are historical; content/media migrations have not been approved/applied/verified there in this phase. No reset/reseed or Railway business write occurred.
+
+Images now persist in DB backups, increasing backup/storage/serving cost. This bounded initial backend is not unlimited object storage; future CDN/storage/usage/cleanup can be added behind stable IDs. See [media-library.md](media-library.md) for constraints, public-asset security and deployment steps.
 
 ## Models
 
@@ -93,7 +101,7 @@ Customer-editable profile extension. Stores first/last name, phone, marketing op
 
 ### CustomerAccountEvent
 
-Account lifecycle/audit foundation. Records account creation, status changes, and future internal notes/audit events. Current admin account status actions use `changedByType = ADMIN_ENV` until Better Auth admin users replace custom admin auth.
+Account lifecycle/audit foundation. Records account creation, status changes and deliberate admin provisioning. New authenticated admin status actions use `changedByType = ADMIN` and the real admin user ID; historical ADMIN_ENV entries are retained.
 
 ### CustomerSupportRequest
 
@@ -127,8 +135,8 @@ Future-proof audit record for admin order status transitions. Each row stores th
 
 Current actor behavior:
 
-- Admin status changes use `changedByType = ADMIN_ENV`.
-- `changedBy` is currently the non-secret label `ADMIN_ENV`.
+- New admin status changes use `changedByType = ADMIN` and `changedBy` is the authenticated admin ID.
+- Historical ADMIN_ENV records are not rewritten. Customer projections omit internal status history, notes and actor IDs entirely.
 - Future Better Auth work should replace this with a real admin user ID or email owned by an accounts/users table.
 
 Primary flow participation:
@@ -202,7 +210,21 @@ Historical limitation:
 
 - Orders created before this table existed may have aggregate campaign stats but no order-level attribution rows.
 
+### StorefrontContent
+
+Added 2026-10-09 for homepage visual editing, separate from catalog/commerce records. Singleton `id = home`; JSON `draft`; nullable JSON `published`; integer `revision` default 1; nullable `publishedAt`; `createdAt` and Prisma-managed `updatedAt`. Draft and published snapshots share the schema versioned public-content document. Atomic revision-matched writes prevent stale overwrites; publication saves both snapshots together. Public reads never seed data and only return the published projection.
+
+Additive `20261009010000_storefront_content` creates this table without altering existing product/customer/order schemas. Local-only preflight confirmed loopback DB target and no unfinished migration; local `prisma migrate deploy` applied this pending migration, and `prisma migrate status` reported all 19 migrations applied/schema up to date. Railway was not queried or migrated in this phase. Existing backend startup runs migration deploy; obtain explicit approval and confirm target/backup/pending migrations before deploying that change. No reset/reseed occurred. See [storefront-editor.md](./storefront-editor.md).
+
 ## Migration Notes
+
+### 2026-10-10 Manual Email Update
+
+New `EmailTemplate`: cuid ID, internal name, supported event, subject/heading/body/footer plain text, archived flag, optimistic revision and created/updated timestamps; index on event/archive. Delivery/audit rows remain in existing `EmailDelivery`, not mixed into templates or orders. Additive `20261010000000_manual_email_templates/migration.sql` creates only this table/index.
+
+Guarded LOCAL loopback preflight and apply succeeded; final `prisma migrate status` reports **21 migrations/schema up to date**. No Railway query/migration/deployment occurred here; content/media/manual-email migrations require explicit target/backup/preflight/deploy approval. Old 18/19/20 migration counts below describe their historical phases. See [checkout/order email](checkout-and-order-email.md).
+
+Wallet/confirmation editor settings use existing `StorefrontContent` JSON; no new product, order or campaign presentation columns were needed. Existing item/promo/campaign snapshots drive shared cards. Order insertion and conditional inventory decrement now share a Prisma transaction after verified payment. Usage recording remains separate after that transaction; concurrency/failure reconciliation remains a launch risk.
 
 Migrations are under `server/prisma/migrations/`.
 
@@ -242,11 +264,11 @@ Deployment rule:
 | Order issue cases | Server support domain and `CustomerSupportRequest` |
 | Order issue messages/events | Server support domain and `CustomerSupportMessage`/`CustomerSupportEvent` |
 | Internal operational issues | Server support domain and `InternalIssue`/`InternalIssueEvent` |
-| Admin customer management | Server customers domain and existing custom admin auth |
+| Admin customer management | Server customers domain and Better Auth ADMIN/ACTIVE guard; lifecycle tools cannot target ADMIN rows |
 | Email readiness payloads | Server emails domain; no real provider unless configured |
 | Promo rules and usage | Server promos domain |
 | Campaign rules and usage | Server campaigns domain and `OrderCampaignUsage` |
-| Admin sessions | Server auth domain, custom temporary implementation |
+| Admin sessions | Existing User/Account/Session tables, separate Better Auth admin configuration and cookie prefix |
 
 Migration status verified 2026-10-09:
 
@@ -254,3 +276,9 @@ Migration status verified 2026-10-09:
 - The user explicitly asked to apply the update to Railway. A secret-safe preflight loaded the existing ignored Railway DB override, confirmed the target, compared migration checksums, checked for failed migrations/partial columns, and found only the reviewed campaign migration pending.
 - `prisma migrate deploy` succeeded; all four columns and the migration record were verified. All eighteen repository migrations now match Railway, with no remaining pending migration, failed migration, or checksum mismatch. Campaign record count was unchanged. No business records were updated, and no provider action occurred.
 - This updates schema only, not deployed server/frontend code. Rebuild/redeploy reviewed code normally; do not run reset/seed commands. Future shared-database migrations still require explicit approval and preflight.
+
+## Admin Session Migration And Audit Safety (2026-10-11)
+
+The approved admin migration reuses User, Account, Session and CustomerAccountEvent; no new schema/migration. Local provisioning creates a new ADMIN credential/event only after preflight and refuses CUSTOMER conflicts/overwrites. Local 21 migrations are up to date. Railway schema status/provisioning/deployment were not checked or changed in this audit.
+
+Public product reads now exclude DRAFT/ARCHIVED; protected library preserves admin access. Product variant deletion/replacement is transactional and inactive sizes remain inactive. Order status/history uses compare-and-set, but promo/campaign usage remains outside the order transaction. Full payment recovery/reservation/atomic attribution requires a separately approved database design. Profile and notification preference writes remain separate; unsupported product editor fields still lack persisted schema columns. See [audit](../audits/2026-10-11-production-audit.md).

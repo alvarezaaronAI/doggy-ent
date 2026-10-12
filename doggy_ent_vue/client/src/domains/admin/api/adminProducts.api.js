@@ -1,12 +1,15 @@
-import { fetchProducts } from '@products/api/products.api'
 import {
   fetchApi,
   parseJsonResponse,
 } from '@shared/api/http.js'
+import { normalizeProduct } from '@products/mappers/product.mapper.js'
 
 const PRODUCTS_API_URL = '/api/products'
 
-export { fetchProducts }
+export async function fetchProducts() {
+  const products = await parseJsonResponse(await fetchApi(`${PRODUCTS_API_URL}/admin/library`), 'Unable to load the product library.')
+  return products.map(normalizeProduct)
+}
 
 export async function createProduct(payload) {
   const response = await fetchApi(PRODUCTS_API_URL, {
