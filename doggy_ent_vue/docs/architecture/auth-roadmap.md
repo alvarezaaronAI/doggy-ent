@@ -1,6 +1,6 @@
 # Auth Architecture And Roadmap
 
-Last updated: 2026-10-11
+Last updated: 2026-10-13
 
 ## Current Authentication
 
@@ -45,7 +45,7 @@ Better Auth does not eliminate Safari third-party cookie restrictions. An owned 
 
 ## Deliberate Admin Provisioning
 
-`server/scripts/provision-admin.js` uses existing environment variables and the admin provisioning service/repository. It never runs on startup. The audit provisioned only the confirmed loopback local DB.
+`server/scripts/provision-admin.js` uses existing environment variables and the admin provisioning service/repository. It never runs on startup. The 2026-10-11 audit provisioned only the confirmed loopback local DB; a separately approved, target-confirmed Railway provisioning repair completed on 2026-10-13, as recorded below.
 
 1. Confirm database identity and backup before any shared-database change.
 2. Verify migrations separately; provisioning requires existing Better Auth tables.
@@ -56,6 +56,35 @@ Better Auth does not eliminate Safari third-party cookie restrictions. An owned 
 The script refuses remote hosts by default. `--allow-remote` is an explicit safety override, not permission to use Railway: it is reserved for a separately approved, target-confirmed rollout. Default script loading uses normal server/.env; any shared rollout must supply the reviewed target explicitly rather than assuming that an unrelated running dev:railway server changes CLI configuration.
 
 Provisioning imports the existing ADMIN_PASSWORD_HASH only when creating a new ADMIN credential. It refuses an email already held by a CUSTOMER, does not promote users and does not overwrite existing admin passwords. Imported bcrypt hashes remain verifiable only in the dedicated admin configuration; newly generated hashes use Better Auth scrypt. Changing environment credentials afterward does not rotate a provisioned database credential. Account recovery, credential rotation UI and MFA are future approved work.
+
+### Owner-Run Railway Provisioning Steps
+
+These steps are not blanket permission for an agent to run shared-database writes. They were initially documentation-only; the separately approved 2026-10-13 repair executed the existing script after target, migration and backup checks. Future runs still require explicit approval. Confirm the intended production Postgres target and a usable backup first; the remote override flag permits a remote host but does not establish that it belongs to the correct Railway project. Do not reset, reseed or run migration deployment as part of account creation.
+
+1. Use the local server directory. Keep normal server/.env unchanged.
+2. Privately verify server/.env.railway.local supplies DATABASE_URL for the intended Railway Postgres, ADMIN_EMAIL for the intended admin, and ADMIN_PASSWORD_HASH for the intended login password. The hash must be valid bcrypt with cost at least 10; do not print or share it. These are provisioning inputs, not the signing secret.
+3. Run the local CLI with the explicit override and no --apply:
+
+```bash
+NODE_ENV=development \
+DOGGY_SERVER_ENV_TARGET=RAILWAY_DB \
+DOGGY_SERVER_ENV_FILE=.env.railway.local \
+npm run admin:provision -- --allow-remote
+```
+
+The development flag applies only to this local CLI process, not the deployed Railway app. It avoids production frontend-origin validation for the local override; the script starts no HTTP server. Both commands still target the selected remote database. Do not run the bare provisioning command expecting it to inherit a different server process's dev:railway mode.
+
+4. If the result is `Preflight passed; no writes`, review target/backup and deliberately create the missing admin:
+
+```bash
+NODE_ENV=development \
+DOGGY_SERVER_ENV_TARGET=RAILWAY_DB \
+DOGGY_SERVER_ENV_FILE=.env.railway.local \
+npm run admin:provision -- --allow-remote --apply
+```
+
+5. Re-run the no-write command. Expected result: `Admin is already provisioned; no changes.` If that was the initial result, skip creation and investigate status/credentials; this result alone does not validate ACTIVE status or the password. If preflight fails, stop and diagnose connectivity, required inputs or an existing account conflict; do not promote a CUSTOMER or overwrite credentials manually.
+6. Test the existing admin login with the ordinary password corresponding to the imported bcrypt hash, not the hash or signing secret. Provisioning is a database write, not a schema/code change, and requires no new deployment by itself. After a successful login response, verify me/logout/relogin and cookie persistence separately.
 
 ## Customer Sessions And Ownership
 
@@ -72,9 +101,11 @@ Admin-triggered verification/reset uses an absolute configured frontend return U
 
 The existing customer config uses `@better-auth/infra` and `dash({ apiKey: process.env.BETTER_AUTH_API_KEY })`. The Vue customer client uses dashClient(). The server key is not a Vite variable. The new admin config deliberately does not add a second Infrastructure integration.
 
-Dashboard Base URL: the configured public backend origin represented by BETTER_AUTH_URL. Dashboard Base Path: /api/customer-auth. The endpoint structure is `<backend-origin>/api/customer-auth/get-session`; the actual Railway origin and dashboard connection are not inspected in this audit.
+Dashboard Base URL: the configured public backend origin represented by BETTER_AUTH_URL. Dashboard Base Path: /api/customer-auth. The endpoint structure is `<backend-origin>/api/customer-auth/get-session`. Initial 2026-10-12 inspection found missing auth configuration; the owner's subsequent configuration/deployment recovered startup. The live Infrastructure dashboard connection remains unverified.
 
 Installed Infra exposes dashboard management and event endpoints. Dashboard management requires provider-signed JWT/API-key binding, not a customer cookie. Event endpoints require session/user or organization permission checks in the installed package. This is a separate privileged provider surface, not public signup or a replacement for the application's ADMIN guard. No Infra admin grant, provider configuration, live connection, MFA or organizational schema was enabled. See the [API matrix](../audits/2026-10-11-api-access.md).
+
+The official [Infrastructure dashboard](https://better-auth.com/dashboard) links to its provider sign-in. Sign in with the provider account that owns the existing project, or deliberately create a project if none exists; simply installing the library does not create a hosted project. Configure its Base URL as the reviewed deployed backend origin and Base Path as /api/customer-auth. Confirm that the project's server API key is represented by BETTER_AUTH_API_KEY without exposing or changing it casually. Package/plugin wiring is present, but actual dashboard project ownership, key binding and live connection remain unverified. Follow the [official setup guide](https://better-auth.com/docs/infrastructure/getting-started). The separately configured admin auth instance has no dash plugin; do not assume its login events are instrumented by the customer integration, or use dashboard account creation to bypass deliberate ADMIN provisioning.
 
 ## Temporary Data Targets
 
@@ -111,7 +142,29 @@ Variable names only; keep actual values in ignored env files or deployment dashb
 
 Production fails closed without a dedicated auth secret of at least 32 characters or HTTPS backend origin. BETTER_AUTH_URL must not include /api/customer-auth, /api/admin-auth, query or fragment: the installed engine preserves a configured URL path and would override the distinct basePath settings. The shared helper now rejects that configuration. The dev-only legacy hash fallback is not a production secret strategy.
 
-Railway has not been provisioned, migrated or deployed in this audit. Before a separately authorized rollout, check Railway migration status/backup and existing admin-email conflicts, provision the reviewed target, deploy the matching server/client, and expect existing admin sessions to require sign-in again. server npm start runs prisma migrate deploy: it is not a harmless status command. No new auth migration is required, but unrelated pending migrations must still be reviewed.
+The 2026-10-11 local audit did not provision, migrate or deploy Railway. A subsequent owner-triggered deployment was inspected read-only on 2026-10-12; see the checkpoint below. Before a separately authorized rollout, check Railway migration status/backup and existing admin-email conflicts, provision the reviewed target, deploy the matching server/client, and expect existing admin sessions to require sign-in again. server npm start runs prisma migrate deploy: it is not a harmless status command. No new auth migration is required, but unrelated pending migrations must still be reviewed.
+
+### Railway Startup Incident (2026-10-12)
+
+Connected Railway inspection confirms the production doggy-ent service is CRASHED while Postgres reports SUCCESS. Runtime logs show auth initialization rejects a missing dedicated signing secret before the HTTP listener starts. The complete variable-name inventory is missing BETTER_AUTH_SECRET and ADMIN_SESSION_SECRET, and also BETTER_AUTH_URL and API_BASE_URL. BETTER_AUTH_API_KEY is present; it does not replace either requirement. Variable values were withheld and never read, copied or documented.
+
+This is an incomplete configuration rollout after the production fail-closed checks, not justification to restore insecure secrets, remove guards or loosen CORS. Configure BETTER_AUTH_SECRET securely and BETTER_AUTH_URL as the reviewed public HTTPS backend origin before an approved redeploy. Preserve existing intended signing keys rather than casually rotating them. Confirm FRONTEND_URL/CLIENT_URL origin values in the provider dashboard; their presence alone does not prove correct CORS/cookie settings.
+
+Startup logs report 21 migrations and no pending migrations after application of the storefront content, media and manual-email template migrations. This is recorded runtime evidence, not a fresh remote migration-status/checksum or database-content check. No remote migration, variable write, provisioning or deployment was performed by this investigation. Persisted remote ADMIN provisioning remains unverified.
+
+After separately approved recovery, check public health/catalog/content/campaign responses, guest/customer sessions, admin login/me/logout/relogin and copied-cookie revocation. Verify the actual listening port/domain and frontend origins. The current split-host Safari limitation and previously documented payment/promo launch blockers remain. See the [incident handoff](../../PROJECT_HANDOFF.md#2026-10-12-railway-startup-incident-read-only-verification) for exact evidence and recovery steps.
+
+Vercel was subsequently connected too. Public storefront, admin and checkout routes return the SPA with HTTP 200; /api/health correctly returns a non-SPA 404. The public built API helper includes the expected Railway hostname, HTTPS normalization and credentialed requests. Private Vercel project/env inspection returns team-scope 403, so exact deployed env names/values, project root and deployment metadata are not verified. Authorized project-team access must be completed by the owner before those checks resume. No frontend config change or deploy is authorized or needed from the public route evidence alone.
+
+Names-only inspection of the user's ignored server/.env.railway.local confirms ADMIN_SESSION_SECRET is defined there, but BETTER_AUTH_URL/API_BASE_URL are not. Values and secret strength remain uninspected. dev:railway explicitly loads that local override; deployed npm start does not, and Git deployment cannot include the ignored file. Configure the production backend through Railway Variables, never by committing local secrets. The existing ADMIN_SESSION_SECRET fallback is valid if it meets the dedicated production-secret requirement; BETTER_AUTH_SECRET is preferred but not a mandatory rename. Better Auth is already installed and both auth configurations are mounted; no auth rebuild or reinstallation is required to address these missing settings.
+
+### Recovery And Initial Login Rejection
+
+After the owner's configuration/redeployment, Railway reports backend SUCCESS, a listener on port 8080 and 21 migrations with none pending. Public health responds 200. Credentialed storefront CORS and POST-login preflight pass. Provider HTTP logs show the owner's OPTIONS login -> 204 followed by POST login -> 401; this is not evidence that the cookie was set and then blocked.
+
+Compatibility login authenticates a persisted Better Auth credential and requires ADMIN/ACTIVE. The prior audit provisioned local Postgres only; remote provisioning remains unverified. Environment ADMIN_EMAIL/ADMIN_PASSWORD_HASH values are provisioning inputs, not direct login authority. Check the remote User/credential/role/status with a separately approved read-only target preflight before attributing the rejection to the domain split. The generic 401 also covers auth FORBIDDEN errors, so an exact underlying rejection is not certified by these logs alone.
+
+Safari cross-site session behavior remains a separate issue to test after successful login. An owned storefront domain plus same-site API subdomain is recommended, with matching HTTPS/origin/cookie settings, but cannot repair missing credentials. No account, credential, role or deployment was modified by this investigation. See the [latest handoff](../../PROJECT_HANDOFF.md#startup-recovered-admin-login-401-follow-up).
 
 Rollback must not restore the vulnerable signed-session code or publicly promote users. Keep the provisioned account inactive operationally until the corrected deployment is validated if rollout is delayed; any credential/session change requires owner approval.
 
@@ -119,6 +172,18 @@ Rollback must not restore the vulnerable signed-session code or publicly promote
 
 Real engine tests cover admin/customer signup isolation, credential checking, expiry, token sanitization, logout/copied-cookie invalidation, DB-failure logout, password-reset reuse/expiry and session revocation. A guarded local Prisma/HTTP smoke check created and removed one admin test session, verified protected catalog access and logout, and rejected 20 anonymous routes.
 
-Browser control was policy-blocked, so actual browser login/logout/relogin, desktop/mobile, Safari and deployed persistence remain manual QA. These results do not certify live Infra, email or payment providers.
+Browser control was policy-blocked during the initial 2026-10-11 audit. Actual production login and session recognition were subsequently observed on 2026-10-13; logout/relogin, desktop/mobile, Safari and extended deployed persistence remain manual QA. These results do not certify live Infra, email or payment providers.
 
-Next: manual local admin acceptance; approved same-site deployment/provisioning; admin MFA and fine-grained permission design. Durable checkout recovery and atomic promo/campaign integrity remain launch blockers ahead of real-customer traffic. Future rewards, referrals and expanded roles must build on these sessions without rebuilding the dashboard.
+### Approved Railway Account Repair (2026-10-13)
+
+The remaining initial login 401 was confirmed to be a missing production admin identity, not a demonstrated CORS block. A target-checked read-only transaction found no User for the configured ADMIN_EMAIL. All 21 migration checksums matched repository SQL, with none pending or failed. A private full database backup was created and decoded before writing; no migration ran.
+
+The existing [provisioning repository](../../server/src/domains/auth/repositories/adminProvision.repository.js) created one User (ADMIN/ACTIVE, emailVerified false), one linked credential Account, and one CustomerAccountEvent (ADMIN_PROVISIONED/SYSTEM) in a single transaction. Account.password stores the existing ADMIN_PASSWORD_HASH bcrypt hash, not a plaintext password. This preserves the existing ordinary login password. The dedicated admin verifier already supports imported bcrypt hashes; no authentication code changed. Better Auth creates the Session when the owner logs in.
+
+The CLI explicitly selected ignored server/.env.railway.local through DOGGY_SERVER_ENV_FILE and RAILWAY_DB through DOGGY_SERVER_ENV_TARGET, without modifying normal server/.env. Its target was confirmed against the connected Railway project's Postgres TCP proxy. Two existing customers, four orders and seven products remained; no customer promotion or credential overwrite occurred. Repeat provisioning reported already provisioned/no changes.
+
+Actual deployed owner login returned 200, followed by /api/auth/me 200, and the in-app browser displayed the protected dashboard with DEPLOYED DATA TARGET. Three focused admin test files passed all ten tests. Anonymous me/admin-orders still returned 401; public health/products and exact credentialed storefront CORS passed. No application source, schema, env, deployment or provider operation changed.
+
+See the [repair handoff](../../PROJECT_HANDOFF.md#2026-10-13-approved-railway-admin-provisioning-and-verification) for the exact backup, commands, database evidence and remaining QA. Do not rerun provisioning to reset a password: later changes to ADMIN_PASSWORD_HASH do not update an existing Account credential.
+
+Next: production logout/relogin/reload/expiry and Safari/mobile acceptance, reviewed same-site domain configuration, then admin MFA and fine-grained permission design. Durable checkout recovery and atomic promo/campaign integrity remain launch blockers ahead of real-customer traffic. Future rewards, referrals and expanded roles must build on these sessions without rebuilding the dashboard.

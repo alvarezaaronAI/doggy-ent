@@ -1,7 +1,7 @@
 # Doggy Ent Project Handoff
 
 Generated: 2026-06-05
-Latest update: 2026-10-11 - Production security/commerce audit and explicitly approved Better Auth admin migration. Both builds and 234 tests pass; local 21 migrations are up to date. Local admin provisioned and persisted-session/logout API checks pass. Browser acceptance and Railway rollout are not performed. Durable payment recovery and atomic promo/campaign integrity remain launch blockers. See the latest audit section and docs/audits/.
+Latest update: 2026-10-13 - Approved Railway admin repair completed. Target-confirmed read-only inspection proved the configured admin was missing; after a private database backup, the existing guarded provisioning script created only the ADMIN user, credential and provisioning event. Real deployed login and /me both returned 200 and the live dashboard loaded. All 21 migration checksums match; none pending or failed. Ten focused admin tests pass. Application code, env files, schema and deployment settings are unchanged. Safari persistence, live Infrastructure connection, private Vercel settings and earlier commerce launch gates remain separate outstanding checks.
 Workspace: `/Users/nazxylix/Developer/vue-projects/doggy_ent/doggy_ent_vue`
 Current branch observed: `dev-main`
 
@@ -5947,3 +5947,166 @@ server/tests/tier2/admin/media-routes.test.js
 server/tests/tier2/admin/public-campaigns.test.js
 server/tests/tier2/admin/storefront-content.test.js
 ```
+
+## 2026-10-12 Railway Startup Incident: Read-Only Verification
+
+This checkpoint supersedes earlier statements that Railway deployment/configuration had not been inspected. Earlier local build/test results remain historical, not newly executed checks. The user connected Railway after providing crash logs; connection alone did not authorize changing production configuration or deploying.
+
+### Confirmed Production State
+
+- Railway project: artistic-gentleness; environment: production; backend service: doggy-ent. The connected service's public domain matches the backend in the user's screenshot.
+- Latest backend deployment: 73fe0611-e0cd-4ba4-9dc3-4a06af18674d, status CRASHED, created 2026-10-12T06:53:47.782Z. Metadata identifies main commit 50a706055b002b63e28ebea26410c72149740b51, merge of pull request 28. The preceding deployment was removed during rollout.
+- Postgres latest deployment reports SUCCESS. This is service status, not a database integrity/backup certification.
+- Backend root directory is /doggy_ent_vue/server, builder RAILPACK, start command npm run start. That script executes Prisma migration deploy before importing the application. It must never be used as a read-only diagnostic command.
+- No staged environment changes were reported at inspection time.
+
+### Root Cause And Required Configuration
+
+Runtime logs repeatedly report: `A dedicated Better Auth signing secret is required in production.` The stack points to `getAuthSecret()` in [env.js](server/src/config/env.js), called when [adminAuth.service.js](server/src/domains/auth/services/adminAuth.service.js) initializes, before [server.js](server/src/server.js) starts listening.
+
+The previous production security pass introduced fail-closed configuration validation. Its deployment reached Railway without the required configuration; this is an incomplete rollout, not evidence that CORS or Prisma needs to be weakened.
+
+Required variable names and placeholder descriptions only:
+
+| Variable | Required recovery configuration |
+| --- | --- |
+| BETTER_AUTH_SECRET | Dedicated strong random signing secret, at least 32 characters, backend only. Preserve an existing intended signing secret if available; deliberate rotation invalidates signed state. |
+| BETTER_AUTH_URL | Public HTTPS backend origin only; no auth endpoint path, query, fragment or embedded credentials. |
+| FRONTEND_URL and/or CLIENT_URL | Exact allowed frontend origins and a valid primary HTTPS storefront origin. FRONTEND_URL is present, but its value was deliberately not read. |
+
+The fully rendered variable-name inventory contains neither BETTER_AUTH_SECRET nor its ADMIN_SESSION_SECRET fallback, and neither BETTER_AUTH_URL nor its API_BASE_URL fallback. No sealed variables were reported; values were withheld by the connected OAuth integration. BETTER_AUTH_API_KEY is present but is the Infrastructure dashboard key, not the signing secret.
+
+The missing secret is the observed crash. The missing auth origin is a second source-confirmed startup blocker: after the secret is configured, `getAuthBaseURL()` would reject the missing origin. A controlled local process with no env file loaded reproduced both exact errors without reading or printing secrets.
+
+The screenshot's 502/CORS failures are consistent with an unavailable backend: Railway's gateway response is not the Express application response and does not establish that the application's allowed-origin configuration is wrong. CORS/cookie behavior still needs testing after startup is restored.
+
+### Migration Evidence And Limits
+
+The uploaded logs report successful application of 20261009010000_storefront_content, 20261009020000_media_library and 20261010000000_manual_email_templates. Subsequent startup attempts, also verified through the connected deployment logs, report 21 migrations and no pending migrations. The application then crashes during auth initialization.
+
+This is log evidence at the recorded deployment time, not a newly executed remote `prisma migrate status`, checksum review, SQL audit or proof of data integrity. No agent command applied migrations or touched business records during this investigation. Remote ADMIN provisioning is still unverified and must not be assumed from the successful local provisioning.
+
+### Checks And Recovery Plan
+
+- git status: exit 0, clean dev-main tree at investigation start; git diff --stat and git diff --name-status: exit 0, empty.
+- Railway read-only list-projects/list-services/get-status/get-service-config/list-variables/list-deployments/get-logs: completed successfully; variable names only, no secret values.
+- Controlled local production-config rejection check: exit 0; reproduced the missing signing secret and missing auth origin errors. No application server was started and no database connection was made by this check.
+- Direct public health request with curl: exit 28 after 15 seconds, HTTP 000/no response received. This workstation probe did not obtain a 502 response; the crash status and exact cause are independently verified by Railway status/logs. The user's screenshot supplies the 502 evidence.
+- Markdown/local-link check: exit 0; two changed docs, 116 balanced fenced blocks and 43 existing local link targets, zero errors. No Mermaid diagram content changed. git diff --check: exit 0.
+- Changed files: this handoff and [auth rollout guide](docs/architecture/auth-roadmap.md) only. Application code, env files, schema and dependencies are unchanged. No client/server builds or test suites were rerun for these docs-only changes.
+
+Manual recovery, requiring separate owner approval for remote writes/deployment:
+
+1. Configure the two missing auth variables securely on the confirmed backend service/environment. Never paste a signing secret into chat, source or documentation. Review frontend-origin configuration separately; no existing value was inspected here.
+2. Before a redeploy, verify the target/backup and that no new migration has become pending. The normal start command runs migrations; this investigation does not authorize applying new ones. Do not roll back to the vulnerable legacy signed-session implementation.
+3. Deploy the reviewed backend, verify it listens on the configured port/public domain, then check the health, products, published content and public campaign endpoints from the storefront origin.
+4. Verify guest/customer sessions, checkout preview and existing order access without making a live charge. Run any Stripe test transaction only under separately approved sandbox QA.
+5. Verify the persisted remote ADMIN account exists through the deliberate provisioning preflight; apply provisioning only after explicit target-confirmed approval if needed. Test login, dashboard, logout and copied-cookie rejection. Safari cross-site restrictions remain a separate same-site-domain issue.
+
+Remaining risks: the backend is not repaired or redeployed in this checkpoint; origin values, post-recovery cookie/CORS behavior, remote admin provisioning, current database contents/backups and production commerce are unverified. Durable payment recovery, atomic promo/campaign integrity and the other 2026-10-11 launch gates remain. No commit or push was performed. These documentation-only edits are suitable for focused commit review, not proof of launch readiness.
+
+### Connected Vercel Follow-Up (2026-10-12)
+
+The user also connected Vercel and requested completion of the inspection. Installation/connection does not prove access to every team or authorize deployment/configuration changes.
+
+- Vercel list-projects locates doggy-ent, project prj_Ovdg6sfCJ4b4oPMKnWdyUO6VCQYW, under team_LZJto7TjluMwTBxGdbpkBl4j. list-teams returns no teams.
+- Explicitly scoped get-project and environment-variable metadata requests return 403 forbidden for alvarezaaronais-projects. The variable request used decrypt=false; no deployed values were read. This is provider-access evidence, not a repository bug. No unchanged request was retried and no permissions were changed.
+- The mapped CLI fallback is unavailable: command -v vercel exits 1. No CLI package was installed, no login/link action performed, and no environment file was pulled or overwritten.
+- Deployed root directory, build settings, deployment commit/status and environment-variable names/scopes remain unverified. An authorized owner needs to grant/reconnect project-team access and complete normal provider authorization before those private checks can resume; do not assume reauthentication alone guarantees access.
+
+Public unauthenticated HTTPS checks, without access tokens or deployment-protection bypasses:
+
+| Request | Result |
+| --- | --- |
+| Storefront / | HTTP 200; HTML contains the Vue app entry; no detected Vercel protection page |
+| Storefront /admin | HTTP 200; same SPA entry |
+| Storefront /checkout | HTTP 200; same SPA entry |
+| Storefront /api/health | HTTP 404; text/plain, not the SPA HTML entry |
+| Main entry and imported shared HTTP helper | HTTP 200; JavaScript assets retrieved |
+
+The shared HTTP helper is a separate built chunk, not the main entry. It contains the expected public Railway backend hostname, HTTPS normalization, credentials:include and non-JSON error handling. This is static public build evidence only, not a decrypted Vercel variable value or proof of authenticated runtime behavior. Source [http.js](client/src/shared/api/http.js) supports VITE_API_BASE_URL with VITE_API_URL compatibility fallback.
+
+Repository [client/vercel.json](client/vercel.json) excludes /api from the index.html fallback. Public route results are consistent with that policy, but cannot establish the private Vercel root setting. The frontend is served and directs API configuration toward the crashed Railway backend; no additional frontend rewrite change is justified by these checks.
+
+Public route/asset checks exit 0. Final Railway recheck still reports backend CRASHED/Postgres SUCCESS, with the two auth variables and both fallbacks absent. No checkout submission, login, payment, email, label, business-data write, variable edit, deployment or migration occurred. The two documentation files remain the only local edits. Final documentation verification exits 0: two files, 116 balanced fenced blocks, 45 valid local link targets, no errors; git diff --check also exits 0. Both platforms are connected, but Vercel private inspection remains externally permission-blocked and Railway recovery still requires separately approved configuration/redeployment.
+
+### Local Railway Env File Clarification
+
+The user identified server/.env.railway.local as the local secret/configuration file. A names-only inspection confirms it exists and defines ADMIN_EMAIL, ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET, DATABASE_URL, FRONTEND_URL and STRIPE_SECRET_KEY. It does not define BETTER_AUTH_SECRET, BETTER_AUTH_URL or API_BASE_URL. Values, secret length/strength and origin correctness were not inspected. git check-ignore confirms the file is ignored; git ls-files confirms neither it nor server/.env is tracked.
+
+server npm run dev:railway sets DOGGY_SERVER_ENV_FILE so the local process loads server/.env plus that override. Deployed npm start does not set that selector. The ignored local file is not included in Git-source deployment and is not automatically synchronized with Railway Variables. It is intentionally for local backend -> Railway DB use, not a deployable secret bundle. Do not commit/upload it or change production startup to depend on it.
+
+Better Auth is present: npm ls better-auth @better-auth/infra --depth=0 exits 0, and both customer/admin configurations are mounted in app.js with Prisma-backed auth. Missing production configuration must not be mistaken for a missing library, or solved by weakening the production signing requirement.
+
+Minimal owner recovery: securely configure either the preferred BETTER_AUTH_SECRET or the already-supported ADMIN_SESSION_SECRET fallback on the production backend; an existing intended strong random signing secret of at least 32 characters can be reused without exposing it in chat or rotating it unnecessarily. Also configure BETTER_AUTH_URL as the reviewed HTTPS backend origin, with no auth path. The local fallback's mere presence does not certify its strength. No secrets were read/copied, env files modified, remote variables synchronized or deployments triggered. After an approved redeploy, public API health and customer/admin auth still require verification.
+
+### Startup Recovered; Admin Login 401 Follow-Up
+
+The owner applied configuration and reported a successful deployment. Read-only verification confirms deployment 87e88dd1-75af-4090-91a1-ceae573e806b, created 2026-10-12T16:33:24.063Z, is SUCCESS; Postgres remains SUCCESS and no environment changes are pending. Runtime logs report 21 migrations, no pending migrations, and the listener running on port 8080. This supersedes the earlier CRASHED state without implying any agent-triggered deployment or migration.
+
+Provider HTTP logs for the owner's attempt at 2026-10-12T16:35:23Z show OPTIONS /api/auth/login -> 204, then POST /api/auth/login -> 401. The screenshot also shows /api/auth/me -> 401; that is expected when no valid session exists, and alone does not identify cookie failure.
+
+Read-only public probes from the actual storefront Origin:
+
+- GET /api/health -> 200, Access-Control-Allow-Origin matches the storefront, Access-Control-Allow-Credentials is true.
+- OPTIONS /api/auth/login with POST/content-type preflight -> 204, matching allowed origin, credentials true and POST allowed.
+- Probe command exits 0. No credentials, cookies or tokens were sent. No new POST login attempt or test account was created by these checks.
+
+Source evidence: Express CORS and Better Auth both use getTrustedAuthOrigins. Compatibility login calls Better Auth signInEmail and requires ADMIN/ACTIVE in the database. The route maps rejected credential/role checks and auth FORBIDDEN errors to 401, so status alone cannot establish an exact account failure. No ADMIN_AUTH_FAILED event appeared in the returned runtime log window; this does not prove absence of auth failures, since compatibility calls catch errors and expose a generic response.
+
+The production ADMIN User and credential Account have not been inspected or provisioned by this investigation. The previous audit deliberately provisioned only local Postgres. Having ADMIN_EMAIL/ADMIN_PASSWORD_HASH in Railway Variables does not create an admin account and is no longer the live login authority; changing those values does not rotate an already provisioned database credential. Missing account, conflicting CUSTOMER identity, inactive status or credential mismatch are hypotheses requiring a separately authorized, target-confirmed preflight. Do not promote a customer or reset an existing admin credential automatically.
+
+This evidence does not show a storefront CORS block for the login path. Safari's Vercel/Railway cross-site cookie restrictions remain a separate risk: investigate persistence after a successful login response, not by assuming that an initial login 401 proves cookie blocking. An owned storefront domain and same-site API subdomain still require HTTPS, exact origins, appropriate cookies and deliberate auth configuration; buying a domain alone does not repair a missing account or wrong credential.
+
+Recommended next step: authorized read-only remote admin-account/credential/role/status preflight, then separately approved safe provisioning or credential remediation if required. Only after login succeeds should live /me/cookie persistence be tested on Safari/desktop/mobile. No application change, auth weakening, remote account write, migration, deployment, email or payment was performed. The two docs remain the only local edits. Final Markdown check exits 0: 116 balanced fenced blocks, 46 valid local link targets, zero errors; git diff --check exits 0. Existing commerce launch blockers remain unchanged.
+
+### Owner Instructions For Account Creation And Infrastructure Dashboard
+
+The owner requested step-by-step instructions rather than agent execution. Source-reviewed commands are now in [Owner-Run Railway Provisioning Steps](docs/architecture/auth-roadmap.md#owner-run-railway-provisioning-steps): the local CLI explicitly selects .env.railway.local and RAILWAY_DB, with --allow-remote, first without --apply and only then with --apply after a passed preflight and confirmed target/backup. NODE_ENV=development is scoped to the local CLI only; it starts no HTTP server and must not be set on the deployed Railway app. Never run the bare script expecting it to inherit the running dev server's target. Required names are DATABASE_URL, ADMIN_EMAIL and ADMIN_PASSWORD_HASH; no values were inspected or added to docs. The provided commands were not executed against Railway.
+
+Already-provisioned output is a stop/diagnose branch, not permission to overwrite a password; it does not certify ACTIVE status or credential correctness. Failed preflight is also a stop branch. No reset, reseed, schema migration, role promotion, provider send or deployment is part of these instructions. A created account uses the password represented by the hash, not the signing secret.
+
+Official Better Auth Infrastructure docs confirm the provider dashboard at better-auth.com/dashboard, project/API-key setup and the dash plugin. Existing customer auth wiring is present on /api/customer-auth; the separate admin configuration has no dash plugin. Base URL is the reviewed backend origin and Base Path is /api/customer-auth, but no provider dashboard sign-in, project/key binding or live connection was verified. This dashboard is separate from the store's admin account and does not replace deliberate provisioning. Only the existing two docs changed; builds/tests and remote provisioning remain unexecuted.
+
+## 2026-10-13 Approved Railway Admin Provisioning And Verification
+
+The owner subsequently requested that the agent perform the repair. This checkpoint supersedes the earlier unverified remote-account state and instruction-only steps. No migration or deployment was requested or performed.
+
+### Confirmed Cause And Exact Database Change
+
+The backend was already healthy after the owner's configuration/redeployment. The remaining login rejection was not a verified CORS failure: production PostgreSQL had no User for the configured ADMIN_EMAIL. The prior admin migration switched login authority from environment credentials to persisted Better Auth User/Account/Session records. Defining ADMIN_EMAIL and ADMIN_PASSWORD_HASH alone does not create those records.
+
+Target: Railway project artistic-gentleness, production environment, Postgres service used by the doggy-ent backend. The DATABASE_URL host/port loaded from ignored server/.env.railway.local was checked in-process against the connected provider's TCP proxy. Normal server/.env was neither changed nor repurposed.
+
+The existing [provisioning script](server/scripts/provision-admin.js), [service](server/src/domains/auth/services/adminProvision.service.js) and [repository](server/src/domains/auth/repositories/adminProvision.repository.js) were executed, not edited. One Prisma transaction added:
+
+| Existing table | Added record |
+| --- | --- |
+| User | One new generated ID, normalized configured admin email, name Doggy Ent Admin, role ADMIN, status ACTIVE, emailVerified false; standard timestamps |
+| Account | One credential linked to the new User, providerId credential, accountId equal to the User ID, password containing the existing configured bcrypt hash; standard timestamps |
+| CustomerAccountEvent | One linked ADMIN_PROVISIONED event, changedByType SYSTEM, describing deliberate provisioning; standard generated fields |
+
+No plaintext password was stored. The password stays the same because ADMIN_PASSWORD_HASH was imported unchanged into Account.password; [adminAuth.service.js](server/src/domains/auth/services/adminAuth.service.js) already verifies imported bcrypt credentials. No existing customer was promoted and no existing account/password was overwritten. A Session is created by Better Auth during successful login, not by the provisioning script. Changing the environment hash later does not rotate this database credential.
+
+### Safety And Verification Evidence
+
+- Read-only Prisma transaction: admin absent; two existing users; four orders; seven products. All 21 applied migration checksums match repository SQL, with zero failed or pending migrations. No migration command ran.
+- Private pre-write full PostgreSQL custom-format backup: /Users/nazxylix/.codex/backups/doggy-ent/railway-before-admin-2026-10-13T18-51-37-225Z.dump, 91,956 bytes, permissions 0600 in a 0700 directory outside Git. PostgreSQL 18 pg_dump exited 0. pg_restore decoded the full archive to /dev/null with exit 0; this was not a database restore drill. The backup contains confidential database data and must not be committed, publicly attached or printed.
+- Explicit local CLI selectors: NODE_ENV=development, DOGGY_SERVER_ENV_TARGET=RAILWAY_DB and DOGGY_SERVER_ENV_FILE=.env.railway.local. No HTTP server was started and deployed NODE_ENV was not changed.
+- `npm run admin:provision -- --allow-remote`: exit 0, `Preflight passed; no writes.` Apply used the same existing script with --allow-remote/--apply, after rechecking the provider target and private backup fingerprint: exit 0, `Admin provisioned; no customer account or password was changed.`
+- Post-write read-only check: ADMIN/ACTIVE, exactly one credential, stored/configured hash equality true without returning either hash, one provisioning event. Three total users, still two customers, four orders and seven products. Repeat no-write provisioning: exit 0, `Admin is already provisioned; no changes.`
+- `npx vitest run tests/tier2/admin/admin-provision.test.js tests/tier2/admin/better-auth-admin.test.js tests/tier2/admin/admin-session-service.test.js`: exit 0, three test files and ten tests passed.
+- Public probes with the storefront Origin: health/products 200 JSON with exact allowed origin and credentials enabled; anonymous /api/auth/me and /api/admin/orders 401 JSON as expected. Probe exit 0; no credentials or cookies printed.
+- Railway HTTP logs at 2026-10-13T18:54:37Z show actual owner login: OPTIONS /api/auth/login 204, POST /api/auth/login 200, followed by /api/auth/me 200. The in-app browser displayed /admin, signed-in identity, DEPLOYED DATA TARGET and the loaded protected dashboard. The owner confirmed it was running.
+
+Application source, packages, env files, Prisma schema and Railway/Vercel settings were unchanged. No commit, push, deploy, customer email, payment, shipment or label operation occurred. Client/server builds and the full test suites were not rerun because no application code changed. Local edits remain limited to PROJECT_HANDOFF.md and docs/architecture/auth-roadmap.md for focused commit review.
+
+Final documentation checks: exit 0, two Markdown files, 118 balanced fenced blocks and 53 valid local link targets, zero errors. `git diff --check` exits 0; `git status --short` confirms only those two documentation files are modified. No Mermaid diagram was changed.
+
+### Remaining QA And Next Step
+
+- Manually test logout/relogin, full reload and session expiry without disrupting the current working session; copied-cookie revocation is covered by focused tests, not freshly exercised against production here.
+- Test Safari and mobile independently. Successful in-app browser login does not certify every browser's cross-site cookie persistence; owned storefront/API subdomains remain recommended.
+- Rotate credentials/secrets previously shared in chat/screenshots through a separately reviewed recovery process. Changing provisioning environment inputs is not a database password reset.
+- The backup is readable but restore recovery has not been rehearsed. Live Better Auth Infrastructure project/key connection and private Vercel configuration access remain unverified.
+- Keep the earlier durable payment recovery and atomic promo/campaign launch gates. Next phase: production auth acceptance and reviewed same-site domain configuration, then the outstanding commerce integrity work.
