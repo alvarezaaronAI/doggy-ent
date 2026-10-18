@@ -1,8 +1,49 @@
 # File Map
 
-Last updated: 2026-10-09
+## Storybook / Impact First Follow-Up (2026-10-17)
+
+- `client/src/domains/storefront/components/BrandPageContent.vue`: Storybook composition, managed static content and existing shopping route; reused by public Brand and Website UI.
+- `client/src/domains/storefront/components/BrandPortraitPanel.vue`: local two-portrait selection and managed text/photo display; depends on safe presentation defaults, template assets and StorefrontPhoto. No API writes.
+- `client/src/domains/storefront/components/StorefrontPhoto.vue`: shared image/media resolution, stable ratio/caption and failure surface for Brand/Campaign.
+- `client/src/domains/storefront/styles/brandPage.css`: scoped Storybook geometry/type and embedded-canvas breakpoints, not global Home styling.
+- `client/src/domains/campaigns/components/CampaignGivingSummary.vue`: displays actual campaign contribution/status/date/attribution facts with currency/contribution helpers; never computes checkout totals.
+- `client/src/domains/campaigns/components/CampaignExampleSections.vue`: clearly fictional, test-only programmes/partner rationale, included only by the test campaign branch.
+- `client/src/domains/campaigns/components/CampaignPageContent.vue` and `styles/campaignPage.css`: Impact First composition shared across public/editor/pop-out, retaining actual ProductCard events/variant helpers.
+- Existing `AdminWebsiteCanvas.vue` / `AdminPresentationFields.vue`: safe portrait selection/fields and the actual contribution-surface label.
+- Canonical `shared/storefront/pagePresentation.js`, `contentProjection.js`, `contentValidation.js`: backwards-compatible, bounded/allowlisted static portrait contract; generated client/server snapshots must match. Existing storefront service checks selected-library portrait references before Save/Publish.
+- `client/tests/tier2/storefront/boutique-pages.test.js` and server presentation/storefront tests: layout/data/escaping/inert preview/legacy/media regressions. Exact files/results: [checkpoint](../work-checkpoints/2026-10-17-storybook-impact-first.md).
+
+Last updated: 2026-10-15
 
 This file maps important files and folders. It is not a complete line-by-line inventory of every Vue component, but it accounts for the source files that own major behavior and data flow.
+
+## Approved Storefront Integration Files
+
+| File Or Group | Purpose / Dependencies / Flow |
+| --- | --- |
+| `shared/storefront/pagePresentation.js` | Canonical static template labels/surfaces, brand chapters, announcement compatibility; generated into both deployment roots by existing sync scripts. |
+| `shared/storefront/{sectionCatalog,contentProjection,contentValidation}.js` | Typed giving block, announcement/presentation/theme defaults, public allowlist and write validation; no business mutation. |
+| `client/src/domains/admin/constants/websiteEditor.constants.js` | Categorized page/section options and meaningful inspector labels. |
+| `client/src/domains/admin/components/AdminPresentationFields.vue` | Static labels/color/brand-story fields only; read-only product/campaign reminders and management links. |
+| `client/src/domains/admin/composables/useWebsiteCampaignPreview.js` | Load actual full public campaign for the shared preview, protect against stale async responses. |
+| `client/src/domains/admin/{views/AdminWebsiteView.vue,components/AdminWebsiteCanvas.vue,composables/useAdminWebsite.js}` | Workspace/renderer/state separation; existing revisioned save/publish/cancel preserved. |
+| `client/src/domains/admin/components/AdminProductImages.vue` | Protected image workspace: main plus four optional, existing library/uploads, alt/reorder/remove, actual shared gallery preview. |
+| `client/src/domains/admin/composables/useAdminProductImages.js` | Image draft/validation/save/error/unsaved lifecycle; calls separated adminProducts API. |
+| `server/src/domains/products/validators/productImages.validator.js` | Exact payload, safe references, maximum-four, alt text and updatedAt validation. |
+| `server/src/domains/products/services/productImages.service.js` | Media existence, missing/stale handling and mapped response; no variant replacement. |
+| `server/src/domains/products/repositories/productImages.repository.js` | Prisma image-only optimistic update/read. Existing controller/routes expose protected PATCH. |
+| `server/prisma/migrations/20261014000000_product_galleries/migration.sql` | Additive gallery/test fields and array/max-four constraint. |
+| `client/src/domains/products/utils/productGallery.js` | One ordered main-plus-optional gallery list, deduplication and empty-slot omission. |
+| `client/src/domains/products/ProductQuickView/{ProductQuickView,ProductQuickViewGallery}.vue` | Selected-price/detail UI and gallery navigation; size/cart logic stays in existing composables. |
+| `client/src/domains/storefront/composables/useAnnouncementRotation.js` | Timer/fade/manual/pause/visibility/reduced-motion lifecycle for shared PromoStrip. |
+| `client/src/domains/storefront/composables/useReviewCarousel.js` | Review-track geometry/range, native scrolling and eight-second overflow-only rotation; observes visibility/resize, pauses for interaction/reduced motion, and cleans up timers/listeners. Used only by ReviewsPreviewSection; no API/data writes. |
+| `client/src/domains/storefront/Home/sections/GivingSpotlightSection.vue` | Real active public-campaign summary and existing detail destination; no invented financial totals. |
+| `client/src/domains/storefront/{components/BrandPageContent.vue,constants/sampleReviews.js}` | Shared public/editor brand template; separately labeled fictional review presentation, not review persistence. |
+| `server/src/domains/campaigns/mappers/publicCampaign.mapper.js` | Preserve safe uploaded media references as well as HTTPS campaign photos in public responses. |
+| `assets/brand/` | Generated template masters/placement documentation, catalog/gallery provenance and non-secret integration reports. |
+| `client/vercel.json` | Explicit Vite/build/dist at actual client root; security headers and API-excluding SPA fallback. |
+
+New focused Vitest files cover product galleries, announcement lifecycle, image-only API behavior and presentation contracts. Existing checkout-security/public-campaign tests include test-product denial and uploaded campaign images. See [editor architecture](storefront-editor.md) and [handoff](../../PROJECT_HANDOFF.md) for current deployment/QA boundaries.
 
 ## Homepage And Brand Follow-Up Files
 
@@ -466,3 +507,22 @@ Views remain small; checkout coordination is split from identity/shipping/auth, 
 | docs/audits/2026-10-11-production-audit.md and 2026-10-11-api-access.md | Findings, coverage, scorecard, routes and limitations | Review/launch gates |
 
 Paths labeled server/client above are rooted at server/src/domains, server/src or client/src/domains as their group indicates; full Git paths are listed in the latest handoff. Existing reusable account/admin/storefront components remain the source of UI truth. Compatibility and empty/unreachable candidates were inventoried, not blindly deleted.
+
+## Approved Composition Reconciliation (2026-10-15)
+
+| File / Group | Responsibility And Dependencies | Flow |
+| --- | --- | --- |
+| `client/src/domains/storefront/components/StorefrontStoryCard.vue` | Shared typed photo/reading item and chapter/grid styles; media resolver | Home, Brand, Campaign, editor |
+| `client/src/domains/storefront/styles/storefront.css` | Shared storefront colors/controls, responsive product grid, section typography, functional filter toolbar and monogram styling; uses immutable brand aliases | Home, Brand, Campaign, editor; page-specific styles do not duplicate section title sizes |
+| `client/src/domains/storefront/components/BrandPageContent.vue` | Complete origin/pair/journey/moments/values composition; presentation labels and generated templates | Public Brand and Website UI |
+| `client/src/domains/campaigns/components/CampaignPageContent.vue` and `styles/campaignPage.css` | Partner/programmes/why, giving sidebar, configured product order; real rules stay Campaign-owned, demo programmes test-only | Public page, campaign pop-out, editor |
+| `client/src/domains/products/utils/productVisibility.js` | Shared public collection status predicate; no search state or writes | Catalog/filter/editor agreement |
+| `client/src/domains/products/ProductCard/NextDropCard.vue` | Compact unavailable test-drop item with real preview action | Next Drops |
+| `client/src/domains/storefront/Home/sections/` and `styles/home.css` | Nine approved visible sections, bounded compact grid, paired closing columns, individual care/review items | Public Home and same editor renderer |
+| `client/src/app/layouts/SiteHeader.vue`, `SiteFooter.vue` | Shared compact nav/account/search/cart and shop/help/social footer | All storefront/account pages and inert editor shell |
+| `shared/storefront/sectionCatalog.js`, `pagePresentation.js` and generated snapshots | Approved defaults, typed static labels; explicit published values still win | Both client/server content contracts |
+| `client/tests/tier2/storefront/approved-design.test.js` | Seven focused composition/header/campaign/visibility/variant/default tests | Regression verification |
+| `assets/brand/test-products/design-reconciliation-report.json` | Non-secret reversible legacy archive metadata and publication/backup result | Audit/recovery, not runtime seeding |
+| `docs/work-checkpoints/2026-10-15-approved-ui-reconciliation.md` | Milestone state, exact recovery/deployment steps and verified/unverified boundaries | Interrupted work recovery |
+
+See the [full dirty-tree manifest](../../assets/brand/test-products/integration-file-manifest.json) for retained earlier integration files/assets as well; not every listed file was newly created in this correction. Existing deeper file-level coverage gaps remain those noted earlier.

@@ -1,10 +1,26 @@
 # Database Architecture
 
-Last updated: 2026-10-11
+Last updated: 2026-10-15
+
+## Approved Gallery Integration Checkpoint
+
+Local and approved Railway databases both have 22 completed migrations after `20261014000000_product_galleries`. Older migration counts below describe their dated phases, not the current state. Full private custom-format backups preceded each database operation and decoded successfully; recovery by restore has not been rehearsed.
+
+Product now owns `galleryImages` JSON (ordered `{ image, alt }`, default empty) and `isTestProduct` Boolean (default false). A database check requires an array of at most four additional images. The protected image-only endpoint additionally validates fields, safe references, required descriptions, media existence and updatedAt conflicts. Existing product/variant identity, pricing, inventory, order snapshots and relationships are unchanged.
+
+The eight existing test fixtures were flagged and received 32 additional media records, rather than adding duplicate products. Original record preservation was checked. Separate approved StorefrontContent publication and a fictional campaign use the existing schema; no partner/programme table or review records are introduced. Final exact counts and deployment evidence live in [handoff](../../PROJECT_HANDOFF.md#2026-10-15-approved-design-integration-and-deployment).
 
 ## Source Of Truth
 
 The Prisma schema at `server/prisma/schema.prisma` is the database source of truth. Runtime database access goes through the Prisma singleton at `server/src/db/prisma.js`.
+
+## Prisma Toolchain Compatibility
+
+The current CLI (`prisma`) and runtime package (`@prisma/client`) are both pinned to exact 6.16.2 in server/package.json and its lockfile. The schema uses prisma-client-js and the existing singleton constructor. Update both packages together only as a reviewed compatibility/major-upgrade change, then regenerate the client and verify server imports/build/tests. Do not use a newer runtime package with an older generator.
+
+On 2026-10-13, updating only @prisma/client to 7.10.0 caused generation to fail on a missing PostgreSQL WASM runtime file and server import to fail on runtime/library.js. Restoring the matching runtime repaired those failures without changing schema or data. A regression test checks manifest/lock/installed/generated versions and the actual singleton import. [Exact repair evidence](../../PROJECT_HANDOFF.md#2026-10-13-partial-prisma-upgrade-compatibility-repair).
+
+Local migration status remains 21 applied/up to date. No migration was applied in this repair; Railway's deployed schema was not re-queried. Its prior approved 2026-10-13 checksum verification is recorded in the handoff. Four high-severity CLI/configuration dependency audit entries remain; version alignment is not security remediation. A full Prisma 7 upgrade must review adapters, configuration, generation/import paths, pooling/TLS and auth/database integration before deployment.
 
 ## Data Source Modes
 
@@ -282,3 +298,9 @@ Migration status verified 2026-10-09:
 The approved admin migration reuses User, Account, Session and CustomerAccountEvent; no new schema/migration. Local provisioning creates a new ADMIN credential/event only after preflight and refuses CUSTOMER conflicts/overwrites. Local 21 migrations are up to date. Railway schema status/provisioning/deployment were not checked or changed in this audit.
 
 Public product reads now exclude DRAFT/ARCHIVED; protected library preserves admin access. Product variant deletion/replacement is transactional and inactive sizes remain inactive. Order status/history uses compare-and-set, but promo/campaign usage remains outside the order transaction. Full payment recovery/reservation/atomic attribution requires a separately approved database design. Profile and notification preference writes remain separate; unsupported product editor fields still lack persisted schema columns. See [audit](../audits/2026-10-11-production-audit.md).
+
+## Current Testing Catalog Reconciliation (2026-10-15)
+
+Railway has 22 completed migrations, no pending/failed migration or checksum mismatch. No schema change was needed in the design correction. Product galleries/test protection were applied in the prior approved additive gallery migration. Final counts: Product 15, ProductVariant 30, User 3, Order 4, Promo 1, Campaign 2, MediaAsset 41.
+
+Seven legacy products were soft-archived, not deleted; seven saved order-item references remain. Eight existing test products were reused with four optional photos/two zero-stock variants each. All sixteen variants fail the real checkout resolver. The fictional test campaign uses fixed $2 per eligible order on Chicken/Salmon/Bundle, with zero attributed usage/payout; the original campaign is untouched. Presentation revision 5 has equal draft/published snapshots and hides old promise/help sections. Private full backups before both guarded publication changes decoded successfully (2,706,857 and 2,707,158 bytes); no restore drill occurred. See [archive report](../../assets/brand/test-products/design-reconciliation-report.json) and [checkpoint](../work-checkpoints/2026-10-15-approved-ui-reconciliation.md). Do not replay apply scripts or delete historical media/records merely to remove them from storefront display.

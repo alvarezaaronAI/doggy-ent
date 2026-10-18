@@ -1,7 +1,7 @@
 # Doggy Ent Project Handoff
 
 Generated: 2026-06-05
-Latest update: 2026-10-13 - Approved Railway admin repair completed. Target-confirmed read-only inspection proved the configured admin was missing; after a private database backup, the existing guarded provisioning script created only the ADMIN user, credential and provisioning event. Real deployed login and /me both returned 200 and the live dashboard loaded. All 21 migration checksums match; none pending or failed. Ten focused admin tests pass. Application code, env files, schema and deployment settings are unchanged. Safari persistence, live Infrastructure connection, private Vercel settings and earlier commerce launch gates remain separate outstanding checks.
+Latest update: 2026-10-17 - Owner approved deploying the accepted Modern Boutique Home, Storybook Brand and Impact First Campaign follow-up. Release preflight passes: client build/145 tests, server build/139 tests, 22 Railway migrations complete with no pending/checksum drift, and unchanged revision 5/test-product protection. Deployment is in progress, not yet claimed live. Follow [the deployment checkpoint](docs/work-checkpoints/2026-10-17-approved-layout-deployment.md) for exact recovery; [implementation evidence](docs/work-checkpoints/2026-10-17-storybook-impact-first.md) remains available. No new DB publication/migration, env/schema/dependency change, commit or push is planned.
 Workspace: `/Users/nazxylix/Developer/vue-projects/doggy_ent/doggy_ent_vue`
 Current branch observed: `dev-main`
 
@@ -6110,3 +6110,460 @@ Final documentation checks: exit 0, two Markdown files, 118 balanced fenced bloc
 - Rotate credentials/secrets previously shared in chat/screenshots through a separately reviewed recovery process. Changing provisioning environment inputs is not a database password reset.
 - The backup is readable but restore recovery has not been rehearsed. Live Better Auth Infrastructure project/key connection and private Vercel configuration access remain unverified.
 - Keep the earlier durable payment recovery and atomic promo/campaign launch gates. Next phase: production auth acceptance and reviewed same-site domain configuration, then the outstanding commerce integrity work.
+
+## 2026-10-13 Partial Prisma Upgrade Compatibility Repair
+
+### Confirmed Cause And Scope
+
+The owner reported server errors after updating Prisma. Initial git status was clean on dev-main; commit 35c61c0 upgraded @prisma/client from pinned 6.16.2 to ^7.10.0, while prisma remained 6.16.2. The schema/config and server singleton still use the existing Prisma 6 setup. `npm ls prisma @prisma/client --depth=0` confirmed those different installed versions.
+
+Two failures were reproduced without database writes:
+
+- `npx prisma generate`: exit 1, missing @prisma/client/runtime/query_engine_bg.postgresql.wasm-base64.js.
+- Importing server/src/db/prisma.js: exit 1, missing @prisma/client/runtime/library.js. This fails before a database query and explains server initialization failure with this package combination.
+
+`npx prisma validate` already passed, so no schema repair or migration was justified. [Prisma's official upgrade guide](https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7) requires upgrading the CLI/client together and reviewing breaking runtime/adapter/configuration changes. A major upgrade was not implemented as an incidental crash repair.
+
+### Files And Exact Fix
+
+- [server/package.json](server/package.json): restored @prisma/client to exact 6.16.2, matching the CLI; preserved the owner's added allowScripts configuration and all unrelated dependencies/scripts.
+- [server/package-lock.json](server/package-lock.json): synchronized that package change and removed the unused Prisma 7 runtime-utils dependency. `npm install --ignore-scripts --no-audit --no-fund` exited 0, removed one package and changed one package; generation was explicitly run afterward.
+- Added [prisma-toolchain.test.js](server/tests/tier3/utils/prisma-toolchain.test.js): three regression tests check exact matching pins, manifest/lock/installed consistency, generated client version and successful server singleton import without a database query. Existing tier3 runner picks it up; no new script or lint configuration.
+- Updated this handoff, [database architecture](docs/architecture/database.md) and [QA guide](docs/verification-and-qa.md) with the compatibility rule, evidence and remaining upgrade work.
+
+The agent did not commit or push. During verification, the checkout advanced to owner-authored commit 92ad29f (prisma update patch), containing the dependency fix and new test; it was left intact. Documentation updates remain separate for review.
+
+### Verification Results
+
+| Check | Exact result |
+| --- | --- |
+| npm ls prisma @prisma/client --depth=0 | Exit 0; both 6.16.2 |
+| npm run build in server | Exit 0; canonical content synchronized, Prisma Client 6.16.2 generated |
+| npx prisma generate after repair | Exit 0; Client 6.16.2 generated |
+| npm test in server | Exit 0; tier1 28, tier2 94, tier3 6: 128 tests across 32 files |
+| node --check over server src/scripts/tests | Exit 0; 167 JavaScript files, zero failures |
+| Guarded local prisma migrate status | Exit 0; 21 migrations, database schema up to date |
+| Real local app import/listen/read-only HTTP | Exit 0; health/products/public campaigns/storefront content 200 JSON; anonymous me/admin orders 401 JSON |
+| npm audit --omit=dev --json | npm exit 1; four high-severity findings, zero critical; no audit fix applied |
+| Connected Railway status/log inspection | Backend/Postgres SUCCESS; no pending changes; filtered missing-module build/runtime results empty on the existing deployment |
+
+The local checks explicitly selected LOCAL with no Railway override and verified the loopback database target before connecting. The temporary smoke server listened on an available loopback port and was closed; Prisma disconnected. No user dev server was stopped, no session/login was created, no provider send/payment/label occurred and no Railway database connection/write was made. Schema, migrations, normal server/.env and server/.env.railway.local were not edited. The source/config uses the existing environment loader; no secret values or response bodies were printed. No .env.example exists or was created.
+
+Railway inspection still reports the previously successful deployment 87e88dd1-75af-4090-91a1-ceae573e806b. This is not evidence that the newly committed repair has deployed. No production startup command was run, because npm start includes prisma migrate deploy. No Railway migration/status SQL check was needed or performed for a schema-unchanged dependency repair; the earlier 21-migration remote checksum verification remains historical evidence. Client build/tests were not rerun because no client or shared source changed.
+
+Documentation validation: exit 0, three files, 114 balanced fenced blocks, 71 existing local link targets and zero errors. git diff --check exits 0. No Mermaid diagram changed. Final local status contains only the three documentation updates after the owner's patch commit; they are suitable for focused review.
+
+### Remaining Risks And Manual QA
+
+Four high-severity audit entries remain: deepmerge-ts (recursive merge stack exhaustion), effect (concurrent RPC context isolation), and their dependency parents @prisma/config/prisma. These are findings in the installed CLI/configuration dependency graph, not proof that the public application exposes those vulnerable operations. This compatibility repair does not certify security or fix them. Plan a tested, matching Prisma upgrade with driver/config/connection-pool/TLS review; do not run npm audit fix --force or update only one Prisma package.
+
+Restart the selected local backend with dev:local or dev:railway as appropriate, then manually verify admin sign-in, the data-target badge, catalog loading and checkout preview without submitting payment. Before deploying the repair, review the matching package/lock change and confirm the intended branch/service and pending migration safety separately. Do not reset/reseed data or reprovision the admin. Safari's cross-site cookie issue is unrelated and still needs the same-site domain work. The focused repair and tests are suitable for commit review; remaining security and commerce gates still block a launch-readiness claim.
+
+## 2026-10-13 Website UI And Storefront Preview-Only Checkpoint
+
+### Owner Direction And Scope
+
+The owner asked to return to the earlier interactive example and approval loop, inspired by the supplied portfolio reference. This supersedes the interpretation that the latest request approved application implementation. All application source edits and new source/test files from that mistaken attempt were backed out with scoped patches; existing owner/previous-agent Prisma repair and documentation edits were preserved. Git status confirms no tracked client, server, shared or configuration changes from this pass. No rollback of database data was needed because none was written.
+
+The preview is task-owned outside application source:
+`/Users/nazxylix/.codex/visualizations/2026/06/01/019e859b-b6f3-78e0-b7ab-540ffb37b24b/website-ui-mosaic-preview.html`.
+It is a self-contained design example, not a deployed site or live Vue editor. The unapproved implementation diff is retained separately in the same task folder as `unapproved-implementation.patch` for recovery only, not as an approved plan to apply wholesale.
+
+### What The Mockup Shows
+
+- Eight compact sample product cards using generated packaging concepts; stable 6 oz / 18 oz selection, yellow attribute tags, bordered surfaces and subtle shadows. Eligible sample cards have soft emerald giving surfaces. Fixtures were not inserted into either database.
+- Distinct Home, Campaign and Chase & Evie pages. Home retains hero, featured treat, All Treats, giving spotlight, Next Drops, Happy Pups, Made With Care, ingredient promise, Meet Brand and footer. Campaign is story/impact-led rather than a FAQ wall. Brand uses origin-story and illustrative Labrador imagery, not fabricated real dog biographies.
+- A unified Website UI editor example: compact grouped navigation on the left, selected section or full-page canvas in the middle, contextual fields on the right. Seven primary navigation entries expose business subsections without extending a flat tool list. Business CRUD remains conceptually separate from presentation editing.
+- Explicit preview-only signed-in/data-routing context. Save/Cancel operate on in-memory sample drafts; Publish and real uploads are disabled. Sample Add to Bag feedback leaves the user's real cart untouched. This does not certify working product/campaign/brand persistence.
+- Six primary brand colors: Blue `#2F57B7`, Yellow `#F2DE5C`, Kraft `#CDAA7E`, Cacao `#6A3C2B`, Oat `#F3E8D2`, Campaign Emerald `#17634C`; giving tint `#EDF6F0`. Emerald is reserved for giving contexts, not a replacement for the brand palette.
+
+Generated review assets and provenance are in [assets/brand/README.md](assets/brand/README.md): Labrador pair/portrait templates, sample packaging contact sheet and original Labrador-head/paw monogram master/optimized copy. All are unapplied; the monogram is intentionally not used in the preview or live website. Seamless tiling has not been certified. Generated templates must not be represented as actual Chase/Evie photography or customer reviews.
+
+### Verification After Source Restoration
+
+| Check | Result |
+| --- | --- |
+| `git status`, `git diff --stat`, `git diff --name-status` | Existing three docs modified; only new `assets/brand/` untracked; no application source diff |
+| `npm run build` in client | Exit 0; canonical content synchronized and Vite build completed |
+| `npm test` in client | Exit 0; tier1 11, tier2 92, tier3 6: 109 tests |
+| `npm run build` in server | Exit 0; canonical content synchronized and Prisma Client 6.16.2 generated |
+| `npm test` in server | Exit 0; tier1 28, tier2 94, tier3 6: 128 tests |
+| `node --check` over server src/scripts/tests | Exit 0; 167 JavaScript files, zero failures |
+| Preview JavaScript / inline asset validation | Script parsed; embedded asset JSON parsed; under 1 MB; no fetch/XHR/WebSocket requests |
+| Browser: Home / Campaign / Brand | Eight Home sample cards; three Campaign cards; distinct page content; observed images loaded and no horizontal overflow |
+| Browser: contextual editing | Product introduction updates canvas; Cancel restores prior copy; Save keeps only preview draft; Publish disabled; test copy restored |
+| Browser: navigation / variants | Opening Orders closes Catalog; mobile navigation expands; 18 oz feedback uses $39.99 and 6 oz uses $14.99 for the first sample card; real bag unchanged |
+| Browser: narrow layouts | Tested 320 and 390 browser viewport overrides; renderer inner widths 288 and 358; no root horizontal overflow; responsive single-column layout; viewport restored |
+| Preview console | No error or warning entries returned during checks |
+
+No new lint script was introduced. No environment values were read/copied into this preview, no .env.example was created, and no DB migration, remote variable change, publication, payment, provider send or deployment occurred. These automated suites and mockup checks do not constitute fresh live checkout/auth acceptance tests.
+
+### Existing Architecture Findings And Next Implementation Boundary
+
+Source audit confirms that current Website UI, product and campaign editors do not yet share all editing chrome or save ownership. Website content has its own draft/publish flow; product/campaign saves update canonical records. The full Brand page is still code-owned even though its homepage teaser is editable. Current product auto-fit grid sizing can stretch a small catalog into overly wide cards.
+
+Important verified risk for a future visual editor: [updateProductById](server/src/domains/products/services/products.service.js) currently deletes/recreates ProductVariant records on full product updates. A new wording/photo-only save must not invoke that full replacement path or change variant IDs, stock, pricing or SKU. A narrow presentation-only update is a proposed follow-up, not retained implementation from this pass. Campaign donation and promo rules must similarly remain server-owned business data.
+
+Next step: obtain design approval on the three page compositions, compact card sizing and unified editor workflow, then implement in focused increments using existing Vue components and allowlisted content blocks. Do not import fixtures into live commerce or apply the recovery diff wholesale.
+
+Manual design QA: review all four preview screens; click page/section selectors and canvas edit handles; try copy, visibility and density changes; compare Home/Campaign/Brand at desktop/mobile widths; confirm soft giving cards remain recognizable and sample actions are clearly not live. Implementation QA later must additionally verify real draft/publish behavior, variant identity preservation, cart/checkout, campaign calculations and server authorization.
+
+The repository is suitable for documentation/assets commit review only for this new work; application source remains unchanged from the starting state. No commit or push was performed. Production auth/domain, Prisma tooling security and commerce integrity risks from earlier checkpoints remain outstanding.
+
+Final documentation/preview validation: exit 0; four Markdown files, 228 balanced fence lines, 73 existing local link targets, zero errors; one executable preview script and one asset JSON block parsed, 419,806 bytes total. `git diff --check` exits 0. The .env.example inventory returned no matches. Temporary preview serving and reference tabs were cleaned up; the in-conversation preview remains available for approval.
+
+## 2026-10-14 Refined Preview And Approved Railway Test Catalog
+
+### Request Reconciliation
+
+The owner approved the mockup direction and requested further examples, not another unreviewed application rewrite. A newer self-contained preview is saved as `website-ui-refined-preview.html` in the same task-owned visualization directory as the previous mockup. The old approved example is preserved. Client/server/shared source, auth, checkout, routes, schema and deployment configuration were not changed.
+
+The owner first chose a separate Railway test environment. Read-only connected-provider inspection found only production in Doggy Ent's `artistic-gentleness` project. The owner then explicitly changed direction: use the current Railway/Vercel testing deployment, label all additions as test products, and make them non-purchasable. No new environment/service/cost, production-data clone or deployment was created. This separate approved catalog operation must not be confused with the disconnected visual editor.
+
+### Revised Design Coverage
+
+- Admin: all ten subsections stay visible under grouped navigation on desktop; all thirteen existing tools remain represented. The navigation contains no form fields. Page/component and section controls sit in the main workspace, followed by canvas and contextual appearance tools. Mobile has a single navigation disclosure.
+- Ownership: product names/photos/descriptions/ingredients/variants/prices/stock are read-only in Website UI. Campaign/partner/story/programme/rule/product/date content is read-only there too. Static labels, section visibility, colours, shadows, density and seasonal styling are local preview changes. No API request, database save, upload or publication is possible in the preview. Existing application editors have not been migrated to this new boundary.
+- Product pop-out: larger packaging/detail split, shared size/price selection, Ingredients & details, Serving & storage and Campaign impact views, clear close action, Escape, contained Tab cycling and backdrop close. An initial popup position/cropping issue was repaired by letting the overlay size to its content and scrolling its opening position into view. Website UI includes Product pop-out for static label/appearance editing; product-owned details stay locked.
+- Home: existing hero/featured/compact eight-product collection retained. After Products, giving, Next Drops, preparation, ingredients, gallery and brand story have separate headings/boundaries with associated peer content cards, rather than mixing unrelated sections in the same mosaic. The original Labrador monogram is visible at 0.11 opacity in the preview background only.
+- Shared header/footer: one renderer reused across Home/Campaign/Brand. The shop-focused footer groups Shop & discover, Here to help, and social profiles; the approved Instagram destination remains. Unconfigured policies/support destinations and TikTok/YouTube remain explicitly unconnected placeholders, not invented real policies or accounts. A removed Lucide Instagram brand icon caused preview warnings; replaced with supported Camera plus the visible Instagram label/link.
+- Campaign: new black/yellow Labrador imagery, fictional Meadow Haven introduction, programmes, why-this-partner story, transparent business-funded giving explanation and eligible treats. No real partner, rescue case, financial outcome or payout is claimed. These extra content slots illustrate a future Campaign-owned content contract, not new persisted campaign fields.
+- Brand: origin story, paired portrait slots, suggested journey chapters, everyday gallery and values. Captions identify generated templates and explain real-photo replacements. No dog biography, milestone, nutrition certification or verified review is invented.
+- Seasonal examples: everyday, Halloween/Autumn and Christmas/Winter changes affect static wording/tinted non-giving card surfaces/borders without enabling a promo. Campaign eligibility remains an independent fixture property; emerald giving surfaces are not overwritten by holiday styling.
+
+[Image placement guide](assets/brand/image-placement-guide.md) maps each photograph/pattern/packshot to page, section, purpose and replacement guidance, with generation prompts/provenance. [Artwork README](assets/brand/README.md) now distinguishes preview-only Labrador/background assets from the separately uploaded Railway test-product images.
+
+### Exact Railway Additions And Safety
+
+Target reverified through the connected Railway provider: project `artistic-gentleness`, production environment, existing Postgres service for doggy-ent. Ignored `server/.env.railway.local` loaded only by an explicitly selected local operation; the connection matched the reviewed provider TCP proxy/database. No env file, secret value, remote variable or auth credential was changed or copied into docs.
+
+Read-only preflight: all 21 migration names/checksums/finished states match local SQL; no failed/pending migration and no migration command run. The configured persisted admin was ADMIN/ACTIVE. Initial counts: 7 products, 3 users, 4 orders, 1 promo, 1 campaign, 0 media assets. No prior `[TEST]` records conflicted.
+
+A full private PostgreSQL 18 custom-format backup was made before any write, outside Git in the task backup directory, with 0700 directory / 0600 file permissions. `pg_dump` exit 0; 93,423 bytes. Full `pg_restore --file=/dev/null` archive decoding exit 0; no restore to a database was attempted. Restore recovery is still not rehearsed.
+
+One serializable transaction added eight Product rows, sixteen ProductVariant rows, eight MediaAsset metadata rows and eight MediaAssetData image/thumbnail rows. Reused the current product validator/mapper and bounded Sharp image normalization, respected the 256 MiB library capacity, and fingerprint-checked preservation of all preexisting products/variants and StorefrontContent. No existing product or variant was deleted/replaced. User/order/promo/campaign counts remained unchanged. The transaction was additive, not a reseed.
+
+Every new product name begins `[TEST]`, has TEST PRODUCT / NOT FOR SALE tags and explanatory placeholder descriptions/ingredients/care. Both sizes have zero stock, positive sample prices, inventory-limited selling, unique CE-QA-20261013-prefixed SKUs and featured false. The batch name reflects preparation on October 13; insertion completed October 14.
+
+| New Test Product | Status |
+| --- | --- |
+| Chicken Breast Jerky | ACTIVE, zero inventory |
+| Beef Jerky | OUT_OF_STOCK |
+| Turkey Jerky | COMING_SOON |
+| Salmon Bites | ACTIVE, zero inventory |
+| Lamb Jerky | DRAFT |
+| Training Bites | COMING_SOON |
+| Pumpkin Bites | DRAFT |
+| Weekend Bundle | ARCHIVED |
+
+Final counts: 15 products, 3 users, 4 orders, 1 promo, 1 campaign, 8 media assets. Product/media IDs, exact statuses, cents prices, SKUs and safe image references are recorded in [fixture report](assets/brand/test-products/railway-fixture-report.json); [fixture plan](assets/brand/test-products/catalog-plan.json) contains no secrets. Public image paths are backend-relative `/api/media/<uuid>`, never a stored local/deployment origin. Media folder/name/alt text identify the test packaging and replacement purpose. No dummy campaign or customer was inserted.
+
+### Commands And Verification
+
+| Check | Exact Result |
+| --- | --- |
+| `git status`, `git diff --stat`, `git diff --name-status` | Existing dirty docs preserved; new assets/docs only; no application source diff |
+| Connected Railway project/environment/service/domain reads | Correct existing project/production/Postgres/backend identified; no provisioning/deployment |
+| Guarded test-catalog operation without apply | Exit 0; target/checksum/admin/collision preflight passed; no writes |
+| Same guarded operation with `--apply` | Exit 0; private backup decoded, atomic additions complete, preservation checks pass |
+| `resolveCheckoutItems` against every stored test size | All 16 attempts rejected with 400; no Stripe call, payment or order |
+| Public deployed catalog/image probes | 200 catalog; 5 public test products, 3 Draft/Archived hidden; all 8 WebP image HEAD requests 200 |
+| Actual client `normalizeProduct` + `isPurchasable` over public test products | Exit 0; all 10 returned variants disabled/non-purchasable |
+| `npm test` in server | Exit 0; tier1 28, tier2 94, tier3 6: 128 tests across 32 files |
+| `node --check` on guarded operation | Exit 0 |
+| Preview executable script and inline assets | Parse; below 1 MB; no fetch/XHR/WebSocket calls |
+| Browser: desktop navigation/ownership | 10 subsections visible; 0 nav edit fields; selectors inside workspace; Product/Campaign content locked |
+| Browser: static editing | Pop-out introduction changes canvas; Cancel restores; winter surface changes while giving tint remains independent |
+| Browser: shared pages | Home/Campaign/Brand images loaded, identical shared header/footer text, no horizontal overflow at 1248 inner width |
+| Browser: mobile | 320/390 overrides, 288/358 inner widths; no Home/Campaign/Brand/editor overflow; navigation disclosure works; 334-wide popup fits at 390; Escape works; viewport restored |
+
+No client/server build or Prisma generate was required/rerun in this preview/catalog pass because application source/schema did not change. Earlier build evidence is historical, not new certification. An asset-preparation import used the old Sharp path and was corrected to the installed package export. A client probe initially used a nonexistent mapper export, then was corrected to the actual normalizeProduct function; the corrected probe passes. A transient browser node-resolution timeout was recovered from a fresh state snapshot. No application defect or uncompleted command is inferred from these corrected tooling mistakes.
+
+### Remaining Work And Commit Review
+
+- Review the revised interactive design, then separately approve application implementation. The actual app still uses its existing UI and DB-backed website-content draft/publish workflow. The request for static appearance publishing without DB writes needs a deliberate persistence/publication decision; this preview does not silently substitute the old DB-saving editor.
+- New Campaign partner/programme/story slots are illustrative only. Persisting them in Campaign management needs a focused content contract and, if justified, separately approved additive schema/migration work; no schema addition happened here.
+- Non-purchasability is verified in current status/inventory rules, not enforced by a permanent `isTest` schema flag. Never add stock or switch these test records to made-to-order/preorder. Archive/retire public test records before a real-customer launch; do not delete referenced media blindly.
+- Review real portraits, partner approvals, product photography/packaging/ingredients, business policies and support destinations before publication. Full screen-reader/real-device/Safari QA remains unverified; no real payment/provider action was needed or performed.
+- Previously documented auth/domain, Prisma tooling advisories and payment/promo/campaign integrity launch gates remain unresolved. This design/test-data pass is not launch certification.
+
+Manual next checks: refresh the Vercel testing storefront and Admin Products; confirm `[TEST]` names/tags, sold-out/unavailable actions, upcoming previews and hidden Draft/Archived records. Review all four design-preview screens, open a product popup, change 6 oz/18 oz, inspect the shared footer and subtle pattern, and try static labels/seasonal colours without expecting a real save. Do not place a payment or publish placeholder partner content.
+
+Repository edits are suitable for documentation/generated-asset review only; application source remains unchanged. Railway test-data changes already occurred under explicit approval and must not be rerun blindly. No commit, push, deploy, migration, customer email, payment, label or shipment occurred.
+
+Final checkpoint validation: exit 0; six Markdown files, 228 balanced fence lines and 102 existing local link targets; eight text/JSON files checked for secret-like values, zero findings; final preview 688,260 bytes with parsed script/asset JSON and no network APIs. `git diff --check` exits 0; no .env.example matches. A fresh browser preview returned zero warning/error entries after the supported-icon fix. Forward/reverse Tab stayed inside the popup; Escape closed it and restored focus to the correct Quick View opener, not the separate featured-product action. Temporary viewport/server/testing tabs were cleaned up; the in-conversation example remains available. No application source change or background operation remains from this pass.
+
+## 2026-10-14 Preview Polish And Optional Product Galleries
+
+### Scope And Approval Boundary
+
+The owner requested another interactive preview round before application approval: smaller footer, fading top announcements, simpler Website UI section navigation, stronger Made with Care, seven sample reviews, distinct Home/Campaign/Brand compositions, prominent pop-out pricing and optional product galleries. This is a design proposal, not an applied redesign. The owner subsequently asked for a progress breakdown; this checkpoint reconciles that request with actual files and verification.
+
+No client/server/shared/config/schema source, dependencies or environment files changed. No Railway write, upload, migration, deployment, commit, push, payment, provider send or real review creation occurred in this round. The previously approved eight non-purchasable Railway testing products and their main images were not rerun or changed. Existing application Website publication still uses its established DB-backed content workflow; deciding how to publish static appearance without DB writes remains open.
+
+The new sibling preview is `website-ui-polished-preview.html` in the task-scoped visualization directory. Original mosaic/refined examples are preserved. The prototype has no fetch, XHR, WebSocket or API save. Its Save/Cancel and sample gallery operations are local memory only; it never claims real upload/publication success.
+
+### Requested Changes And Actual State
+
+| Request | Preview Result | Application State |
+| --- | --- | --- |
+| Smaller footer with similar shopping/help/social content | Compact three-column desktop/footer wrapping on mobile, smaller readable text, existing official Lucide icons | Not applied |
+| Rotating top header | Three editable messages, 5.5-second gentle fade-out/in, Previous/Next/Pause, visibility and rotation controls under Header & footer | Not applied |
+| Easier Website UI navigation | Expanded business nav preserved; duplicate section-button strip removed; two categorized native selectors plus canvas handles | Not applied |
+| More eye-catching Made with Care | Preparation photo alongside concise icon-led process items and story action | Not applied; photo remains illustrative |
+| Seven compact reviews | Rating/title/body/name/date/product/size/photo; every entry and section labelled fictional; future submission action explains its pending status | Real customer reviews are not implemented by this round |
+| Less repetitive page layouts | Home uses care/reviews/paired closing sections, Campaign programmes plus giving sidebar, Brand journey alongside everyday imagery | Not applied; all existing mock content areas retained |
+| Product pop-out pricing/gallery | Larger selected-size price, main image plus four optional thumbnails, vertical desktop/wrapping horizontal mobile rail | Actual gallery still uses single Product.image |
+| Admin optional detail images | Catalog -> Products proposal: select sample product, choose/remove/reorder up to four optional images, explicit local Save/Cancel | Real upload/API/gallery persistence remains unconnected |
+
+The compact shared product-card renderer, size choices, original six brand colours, campaign eligibility tint and subtle Labrador monogram are retained. The same header/footer functions serve all three mock pages. Website UI cannot edit Product/Campaign-owned content; the proposed image manager is deliberately in Products rather than static presentation controls. Tailwind remains the actual application's styling system; no new framework or icon dependency was installed for the mockup.
+
+### Files And Asset Provenance
+
+- Created 32 WebP detail templates in [product-galleries](assets/brand/product-galleries/README.md), four per sample product. The linked placement table lists every file; [manifest.json](assets/brand/product-galleries/manifest.json) records roles and explicit non-upload status.
+- Created gallery README with generation prompt set, replacement guidance, image-role context and implementation boundaries.
+- Updated [image placement guide](assets/brand/image-placement-guide.md), [editor architecture](docs/architecture/storefront-editor.md), [QA guide](docs/verification-and-qa.md) and this handoff. Prior dirty database/docs/assets work was preserved.
+- Created task-local preview, asset-preparation and verification helpers outside application source. Built-in image generation produced eight related four-view sets, with targeted Chicken/Bundle breed corrections; existing Sharp made crops and optimized review copies. No API key was read or added.
+
+These images are not approved packaging, actual manufacturing photography, real Chase/Evie portraits or customer proof. Before publication, replace/review them and partner/review content. No generated lifestyle image is presented as a verified customer submission.
+
+### Commands And Verification
+
+| Check | Result |
+| --- | --- |
+| `git status --short`, `git diff --stat`, `git diff --name-status` | Exit 0; prior dirty docs/assets preserved; no application-source changes |
+| `node prepare-polished-assets.mjs` (task-local helper) | Exit 0; 32 saved crops, eight four-image galleries, optimized self-contained preview |
+| `node check-polished-preview.mjs` (task-local helper) | Exit 0; 962,825 bytes, valid fragment/script/asset JSON, all 32 embedded 360x360 WebPs decode, no network APIs |
+| Same helper's isolated timer checks | Normal state has one rotation interval; reduced-motion and hidden-page states have none |
+| Bundled `render.py --serve --port 61919` | Preview served for browser checks; temporary process is stopped at completion |
+| Browser: desktop Home/Campaign/Brand | 1248 inner width, images loaded, no horizontal overflow; footer approximately 184px tall on each page |
+| Browser: intermediate width | 1024 viewport/992 inner width: Home/Campaign/Brand/Website UI have no horizontal overflow |
+| Browser: mobile widths | 390/320 viewport with 358/288 inner width: all four screens fit; mobile image editor fits; 334-wide popup fits at 390 with horizontal thumbnails |
+| Browser: all eight product galleries | Five thumbnails each (main plus four), images load, selected lifestyle image retained on size change, all eight 6 oz sample prices correct, no popup overflow |
+| Browser: selected pricing | Chicken 6 oz $14.99 /18 oz $39.99; sample Add reports selected variant/price without altering actual bag |
+| Browser: optional images | Zero optional images yields main-only gallery; Cancel restores four. Saved three-image state survives product switching; subsequent Cancel restores saved state; final sample reset to four |
+| Browser: editor ownership/navigation | Zero edit fields in nav, zero duplicated section strips, categorized page/section groups; product image workspace remains separate |
+| Browser: static editing/feedback | Announcement wording updates canvas; Cancel restores; footer gray surface updates visible footer and Cancel restores oat |
+| Browser: announcement fade | New message and partial-opacity fade observed; manual navigation and Pause work; automatic rotation observed between checks |
+| Browser: popup keyboard | Forward/reverse Tab remain in dialog; Escape closes and restores correct opener |
+| Fresh browser console after icon repair | Zero warning/error entries |
+
+A missing Lucide YouTube-brand name in an intermediate mock was replaced with a supported circle-play icon. A fresh preview initially restored the last editor screen from saved host choices, so an announcement locator was absent; inspecting the current UI and navigating Home resolved that lookup. A source-location query initially used nonexistent guessed paths, then was corrected from the actual file inventory. These were resolved preview/tooling issues, not application build failures.
+
+No client/server build, application test suite or Prisma command was required/rerun because corresponding source/schema did not change. Prior test/build results are historical, not new launch certification. Real-device/Safari/screen-reader/reduced-motion browser acceptance remains manual; isolated timer checks do not prove OS/browser preference behavior on every device.
+
+### Remaining Work And Next Review
+
+1. Review this round's three pages, announcement motion, smaller footer, seven fictional reviews and product pop-out. Try Catalog -> Products sample gallery; uploads and real saves are intentionally disabled/unconnected.
+2. Approve the design before application implementation. Resolve static appearance persistence/publication explicitly; the existing DB-backed editor must not silently substitute for the newer no-business-DB-write request.
+3. Implement a focused Product-owned gallery contract after approval. Current Prisma Product has only `image`; `ProductQuickViewGallery.vue` displays it. Enforce at most four optional images server-side, preserve order/alt text/main-image fallback, reuse protected media storage and keep checkout/order snapshots unchanged.
+4. Avoid full replacement product updates for image-only saves: existing `products.service.js` deletes/recreates variants during that update. Preserve variant IDs, prices, inventory and historical order links.
+5. Customer review submission, moderation, ownership and verified-purchase rules remain a future connected feature. Never publish these seven fictional reviews as real proof.
+6. Original payment recovery/promo concurrency, auth/domain, dependency tooling, backup/restore and provider launch gates remain unresolved by this preview pass.
+
+Edits are suitable for documentation/generated-asset review only, not a claim of completed application rollout or launch readiness. No commit or push.
+
+Final checks: task-local `check-preview-docs.mjs` exits 0 with seven Markdown files, 228 balanced fence lines, 144 existing local link targets and ten text/JSON files scanned with zero secret-pattern findings. `git diff --check` exits 0. `git diff --name-only -- client server shared` exits 0 with no paths. The `.env.example` inventory has no matches (the normal `rg` no-match exit 1). The preview checker was rerun successfully at 962,825 bytes. Temporary browser viewport overrides were reset during testing; final browser inventory shows only the user's existing admin-login tab, with no remaining preview tab. After the turn/runtime transition the temporary server session no longer existed; `lsof` confirms no listener on its port 61919. No required verification process remains running.
+
+## 2026-10-15 Approved Design Integration And Deployment
+
+This checkpoint supersedes the preview-only implementation boundaries above. The owner approved integration, separate presentation persistence in StorefrontContent, an additive gallery migration after backup/preflight, test-only Railway data, and direct deployment to both existing services after checks. No commit or push is authorized or performed.
+
+### Integration Checkpoint
+
+- Application implementation now includes compact product cards, five-view product galleries (main plus up to four optional images), rotating announcements, compact shared footer, photo-led care, seven explicitly fictional review examples, distinct Campaign/Brand compositions, subtle Labrador monogram, and unified categorized Website UI controls.
+- Static copy/appearance uses the existing revisioned StorefrontContent draft/publish record. Product prices, variants, stock, campaign eligibility, contribution rules and checkout totals remain domain-owned. The gallery workspace belongs to Products, not Website UI, and uses an authenticated image-only optimistic update rather than replacing variants.
+- Additive migration `20261014000000_product_galleries` adds Product.galleryImages and Product.isTestProduct with an array/max-four database constraint. Applied locally and on the explicitly approved Railway target after private full backups and migration/checksum preflight. Both have 22 completed migrations. Backups decoded successfully; no restore rehearsal was performed.
+- Eight previously created test products are reused, not duplicated. Their 32 optional gallery images were added to the media library; media count changed from 8 to 40. All eight have a permanent test flag, zero inventory and inventory-limited selling. Server checkout rejects test products regardless of selling mode; original business records were preservation-checked.
+- Client build passes; client tests total 115 (11/98/6). Server build/Prisma generation pass; server tests total 136 (28/102/6). A final uploaded-campaign-image mapper regression was fixed and tested. Earlier 135 counts predate that additional regression test.
+- Actual local admin session, shared popup/gallery size retention, preview copy/Cancel, and reversible image-only reorder/save were exercised against the Railway DB through a local backend. Temporary gallery ordering was restored. No payment, email or shipment occurred.
+- First Railway upload `09759eb8-7334-412b-b2fb-4122336e7cda` is SUCCESS. A follow-up upload includes the final campaign image-path repair. Vercel staged production `dpl_Hfn4NZPinqympWum9kWHiPZp4RMV` is READY but not yet promoted at this checkpoint. Final publication, live responsive checks and release results are recorded below when completed.
+
+No environment file was changed or uploaded. Actual Vercel project root is `doggy_ent_vue/client`; its vercel.json explicitly selects Vite/build/dist and retains API-excluding SPA fallback and security headers. Existing public API compatibility variable VITE_API_URL is retained; VITE_API_BASE_URL is canonical. No new environment variable is required.
+
+### Final Rollout And Request Completion
+
+The approved design is now application code and is live, not merely a mockup. Railway final deployment `88450128-aa78-4bb0-97e7-9f1db8acd5fd` is SUCCESS. Vercel final deployment `dpl_9v5GE4g81Ly86keE7sCcRYRqkXp5` is READY and was successfully promoted to [the storefront](https://doggy-ent.vercel.app). CLI inspection of that alias resolves to the final deployment. Earlier staged IDs above are superseded. Railway startup reports 22 migrations, no pending migrations, and a running server; there is no crash in the returned startup log.
+
+| Requested Area | Delivered |
+| --- | --- |
+| Admin navigation | Expanded grouped subsections; identity/data routing retained; no editing fields in business nav. |
+| Website UI | Categorized page/component and section selectors, shared real preview, contextual static wording/appearance tools, draft/Cancel/Publish boundaries. |
+| Home | Hero/featured/collection/Next Drops/care/reviews/ingredients/brand/help retained, compact cards, giving spotlight, subtle monogram, photo-led care and smaller shared footer. |
+| Product pop-out | Prominent selected-size price, main photo plus four optional thumbnails, details/care views and existing campaign/cart behavior. |
+| Product management | Protected image-only gallery editor with upload/library reuse, optional zero-to-four entries, ordering/alt text and stale-save protection without variant replacement. |
+| Campaign | Distinct reading layout with partner story, giving explanation and eligible treats; actual campaign content remains Campaign-owned. |
+| Brand | Shared storefront shell, suggested origin/portrait/story chapters and generated-template replacement guidance. |
+| Announcements | Three editable messages, gentle rotation, Previous/Next/Pause and hidden/reduced-motion cleanup. |
+| Testing content | Existing eight test products reused, 32 optional detail images, seven clearly fictional review examples and one explicitly fictional giving campaign. |
+
+Separate presentation storage means the existing StorefrontContent record, as specifically approved; it does not mean no database persistence. Website UI saves/publishes only validated presentation JSON. Products/Campaigns remain the source of truth for business content, images, prices, stock, programme eligibility and contribution rules. Arbitrary executable page sections, scheduled publication and real customer review submission/moderation are not implemented.
+
+### Final Database State And Safety
+
+Read-only final Railway preflight: 22 applied migrations with matching local checksums, no pending/failed entries; Product 15, ProductVariant 30, User 3, Order 4, Promo 1, Campaign 2, MediaAsset 41. The eight flagged test products all retain four gallery images, two zero-inventory variants and unchanged main images. Original users/orders/promos/products/variants and the original June Donation campaign were preservation-checked. All sixteen test-size checkout resolutions were rejected; no Stripe call/order was needed.
+
+New `[TEST] Meadow Haven Giving` at `/campaigns/test-meadow-haven-giving` is explicitly fictional, references only the eight test products, uses sample 5% business-funded giving and claims no actual charity relationship, donation or payout. It uses the existing Campaign content schema, not a new programme model. The uploaded image is the 41st media record. [Publication report](assets/brand/test-products/presentation-integration-report.json) records the initial revision 1; subsequent reversible draft QA advanced revision to 3. Final draft equals published, and the initial publishedAt remains unchanged: temporary wording was never published.
+
+Full private backups before gallery operations: local 354,459 bytes and Railway 297,028 bytes; before presentation publication, Railway 2,521,791 bytes. Each dump and full archive decode exited 0. Files remain outside Git with private permissions. No restore rehearsal, destructive migration, reseed, real payment, email, label or shipment occurred.
+
+### Commands And Final Verification
+
+| Command / Check | Exact Result |
+| --- | --- |
+| `git status --short`, `git diff --stat`, `git diff --name-status` | Exit 0; existing dirty work preserved; no commit/push. |
+| Client `npm run build` | Exit 0; Vite 8.3.4, 2,283 modules. Final hero focal-position correction included. |
+| Client `npm test` | Exit 0; 115 tests across 24 files: tier1 11, tier2 98, tier3 6. |
+| Server `npm run build` | Exit 0; canonical snapshot sync and Prisma Client 6.16.2 generation. |
+| Server `npm test` | Exit 0; 136 tests across 34 files: tier1 28, tier2 102, tier3 6. |
+| `node --check` over server src/scripts/tests | 173 JavaScript files, no failures. |
+| Read-only local/Railway migration preflight | Both 22 completed, no pending; checksums match. Final Railway counts above. |
+| Guarded approved migration/gallery/publication helpers | Exit 0; backup/preservation/fixture checks passed; not startup seeds. Do not rerun their apply modes blindly. |
+| Railway CLI upload/status/startup log | Final deployment SUCCESS; no pending migrations; server listening. |
+| Vercel staged build, promotion and alias inspection | Final deployment READY; promotion exit 0; public alias resolves to final ID. |
+| Public HTTP/asset/CORS probes | Home/Brand/test campaign/admin-editor/checkout SPA routes 200; fake `/api` stays 404; backend public reads 200; unauthenticated auth/me 401; exact storefront CORS/credentials retained. 25 public fixture image references and campaign image 200. |
+| Live browser | Home/Brand/Campaign rendered with loaded images/no desktop horizontal overflow; gallery/selected price/unavailable test action and shared shell checked; final warning/error log read returned zero entries. |
+| Actual local admin against Railway DB | Login/persisted session, data target badge, static edit/Cancel and reversible draft save/reload/restore, gallery reorder/save/reopen/restore passed. |
+| Real cart | Original Chicken 6 oz and 18 oz produced separate correct-size rows; state survived Brand navigation. Only temporary QA lines removed afterward. |
+
+No lint script exists in either package; none was invented. Both generated storefront snapshots match canonical shared files. Final Markdown/local-link/fence/JSON/secret-pattern and whitespace checks are recorded in the completion result. Those checks are bounded pattern validation, not a claim of an exhaustive secret/security audit.
+
+One QA interruption came from a temporary local server that had loaded an older presentation module before the final canonical sync. Its stale response failed the new allowlist, while the deployed response passed. Restarting only that task-owned server loaded the current contract; the actual draft save/reload/restore then passed. No allowlist was weakened. The final campaign mapper also needed an exact `/api/media/<uuid>` image-path exception; regression coverage now accepts legitimate uploaded media and rejects other unsafe relative paths. Wide hero/Brand photo framing was corrected before the final promotion.
+
+### Remaining Risks And Manual Acceptance
+
+1. Current responsive overrides did not reliably produce requested 320/390 CSS viewports. Actual narrow-device, Safari, full keyboard/screen-reader and OS reduced-motion acceptance remain open; historical mockup tests are not current-app mobile proof.
+2. Generated portraits/packaging/preparation images, fictional reviews and the fictional partner are testing content. Replace/review or retire them before real-customer launch; no verified-purchase review system is implied.
+3. Run an explicitly approved guest and signed-in Stripe test checkout, promo-plus-campaign, retry/recovery and wallet/device QA. This phase did not place payments or send providers. Earlier checkout reconciliation/concurrency/refund/tax/shipping launch gates remain open.
+4. Safari cross-site cookie limitations and owned-domain/API-subdomain rollout remain; local frontend -> local backend -> Railway DB is still the temporary admin workflow. No bearer fallback/security weakening was added.
+5. Existing Prisma tooling advisories, backup restore rehearsal and production monitoring still need their separate focused phases.
+6. These services were deployed directly from a filtered local release, without committing or pushing. A later Git-triggered deployment can overwrite them until the owner reviews and commits the matching source. No env/dependency/build/cache/private backup files were uploaded.
+
+Manual acceptance: review all three live pages and every homepage section; open product details/change sizes/photos; confirm test records cannot add; try the actual cart drawer with a normal product; inspect the small shared footer, giving page and rotating-header Pause. In admin, confirm data routing first, use Website UI for static wording/appearance and Products for optional images, then test draft versus deliberate publication and stale edits. Review real mobile/Safari before calling the visual phase accepted.
+
+Full current file inventory (including retained prior-pass assets/docs): [integration file manifest](assets/brand/test-products/integration-file-manifest.json). Responsibility/replacement guides: [file map](docs/architecture/file-map.md), [editor](docs/architecture/storefront-editor.md), [image placements](assets/brand/image-placement-guide.md), [database](docs/architecture/database.md), [QA](docs/verification-and-qa.md). The tree is ready for focused commit review, not launch certification. No commit or push was performed.
+
+Final closeout checks were rerun after documentation: both builds exit 0; all 115 client and 136 server tests pass; 173 server syntax checks and 14 generated snapshot comparisons pass. An initial byte-for-byte snapshot probe omitted the documented generated-file header and falsely reported mismatches; comparison against the sync script's actual header-plus-source contract passes without application edits. Earlier intermediate Vite HMR export warnings resolved after both canonical sync/builds and refresh; no such error appeared in the final live log read. Documentation validation exits 0: 12 Markdown files, 230 balanced fence lines, 186 existing local links, 17 text/JSON secret-pattern scans, zero findings. `git diff --check` exits 0. No changed/untracked environment file or client/server .env.example exists. Current review inventory is 62 modified and 116 untracked files (178 total, including prior-pass generated assets/docs).
+
+Temporary QA tabs and only the task-owned 5174/3101 processes were closed/stopped deliberately (SIGTERM/143); listener check returned no matches. Original user 5173/3000 services were not stopped. The final public storefront tab remains open and the actual live Home/Campaign screenshots are saved in the task artifacts. No verification/deployment command remains running and no native confirmation remains pending.
+
+## 2026-10-15 Full Approved UI Reconciliation: In Progress
+
+The owner correctly reported that the previous deployment retained legacy layouts and products. The prior completion statement above is superseded for visual parity. The approved polished mock, not the old storefront or a partial integration, is authoritative. Progress and exact recovery steps are maintained in [the reconciliation checkpoint](docs/work-checkpoints/2026-10-15-approved-ui-reconciliation.md), including data preservation, current verification, pending deployment and unverified acceptance. Read that checkpoint before continuing; do not replay completed database operations.
+
+### Final Reconciliation Result
+
+The full polished composition is now deployed. The previous partial integration mixed new cards/galleries with old page composition, published copy and legacy products. Current source replaces those compositions, updates the separately approved presentation record and archives old products. A fresh-load fallback also briefly showed old hero/navigation; canonical defaults now use the new design. Actual admin QA found its ACTIVE-only filter hid three approved cards; catalog/filter/editor now share `productVisibility.js`.
+
+| Approved Area | Current Implementation |
+| --- | --- |
+| Shared shell | Compact Shop/Giving/Our story navigation, quiet Sign in/bag controls, expandable real search, rotating announcement, shared smaller shop/help/social footer. Real auth/cart remain connected. |
+| Home | Nine visible configured sections: brand-led hero, featured packaging, ordered eight compact products, giving photo/copy, compact Next Drops, care photo/individual steps, seven explicitly fictional reviews, ingredient/brand paired closing columns. Subtle monogram; no public legacy promise/help bands. |
+| Campaign | Full partner story/photo, three test-only programme rows, why-partner content, giving sidebar, three eligible products in configured order. Same renderer in campaign pop-out and editor. |
+| Brand | Complete origin, two portrait templates, journey, everyday moments, values and closing action. Same public/editor renderer. |
+| Product pop-out | Main plus four optional photos, vertical desktop rail, prominent selected price, size/details/care and unavailable test protection. |
+| Website UI | Existing grouped business nav with no edit fields; main-workspace categorized page/section selectors, shared canvas and contextual inspector. Same eight-product visibility as storefront. Product/campaign business values remain read-only here. |
+
+The static appearance owner is StorefrontContent, as explicitly approved, not Product/Campaign business writes. Existing Product image-only gallery editing remains protected, optimistic and separate. Hidden historical sections remain available/labelled Hidden in admin rather than silently deleting editor capability. Not every suggested partner/programme paragraph is an editable business field; arbitrary executable sections, scheduled publishing and customer review submission/moderation remain unimplemented.
+
+### Final Railway Data And Safety
+
+- Final publication revision 5; draft equals published. Old promise/help hidden; Shopping help points to the existing account-help route. Test campaign introduction/story reflects the approved fictional Meadow Haven example and is explicitly labelled testing.
+- Seven legacy products soft-archived, not permanently deleted. Seven historical order-item references remain valid. Legacy media is not rendered in the approved storefront but is retained where history/recovery may reference it. See [archive/publication report](assets/brand/test-products/design-reconciliation-report.json) for reversible IDs/previous state.
+- Eight existing flagged testing products reused: Chicken, Beef, Turkey, Salmon, Lamb, Training, Pumpkin, Bundle. Four optional photos each, two zero-stock variants each. All sixteen variants rejected by the real checkout resolver without Stripe/provider requests. Beef is out-of-stock; Pumpkin/Bundle coming-soon; the others active. All remain unpurchasable regardless of status/selling-mode UI.
+- Test campaign is fixed $2 per eligible order on Chicken/Salmon/Bundle only, with zero usage/payout. Original June campaign, original variants, users, orders, order items, promos and unrelated business data preservation-checked across both guarded writes.
+- Final counts remain Product 15, ProductVariant 30, User 3, Order 4, Promo 1, Campaign 2, MediaAsset 41. Twenty-two migrations complete with matching checksums; none pending. No migration/reset/reseed in this correction.
+- Before the two guarded data changes, full private backups of 2,706,857 and 2,707,158 bytes were created and fully decoded successfully. No restore rehearsal. Backups stay outside Git with private permissions. Apply helpers have revision/usage/concurrency gates and must not be replayed.
+
+### Final Deployments
+
+Railway `7714b914-cd87-4e7c-ab84-264abdd3637b` is SUCCESS. Startup logs report 22 migrations, no pending migrations and server running on port 8080. Vercel `dpl_2E6UaeyT6QHFq589zMts7WWzygvN` is READY and was promoted successfully; inspecting [the public alias](https://doggy-ent.vercel.app) resolves to it. Earlier IDs in this checkpoint are superseded. The final staged app HTML was verified with authenticated `vercel curl` before promotion. Existing Vercel root remains `doggy_ent_vue/client`; Railway root remains `/doggy_ent_vue/server`. No new env variable is required; existing API-origin/compatibility variables and auth/provider configuration are unchanged.
+
+During deployment, an unlinked CLI invocation accidentally created an extra Vercel `release` project instead of using `doggy-ent`. The live project was not replaced by that invocation. The accidental project and its deployment were explicitly removed; a subsequent inspect returns project_not_found. Correct project/team/root were then verified before every consequential release. Linking generated a local env file outside the repository; it was deleted unread before source upload. Application env files were never changed or uploaded. Filtered releases excluded secrets, dependencies, build outputs, Git data and private backups. No commit/push.
+
+### Commands And Verification
+
+| Command / Check | Final Result |
+| --- | --- |
+| `git status --short`, `git diff --stat`, `git diff --name-status` | Exit 0 before edits; prior dirty work preserved. |
+| Client `npm run build` | Exit 0; Vite 8.3.4, 2,296 modules. |
+| Client `npm test` | Exit 0; 122 tests in 25 files: 11/105/6 by tier. |
+| Server `npm run build` | Exit 0; canonical sync and Prisma Client 6.16.2 generation. |
+| Server `npm test` | Exit 0; 136 tests in 34 files: 28/102/6 by tier. |
+| `node --check` over server src/scripts/tests | 173 files, zero failures. |
+| Canonical header-plus-source snapshot comparison | 14 comparisons, zero mismatches. |
+| Built client text secret-pattern scan | 55 JS/CSS/HTML assets, zero findings; bounded pattern scan, not exhaustive security proof. |
+| Read-only Railway preflight/catalog guard | 22 complete/checksum-matching migrations, no pending; 7 archived/7 historical references; 8 test products/16 rejected variants; revision 5 equal draft/published. |
+| Public reads/CORS/assets/routing | Product/content/campaign 200; exact storefront CORS plus credentials; unauthenticated auth/me 401. Forty distinct product/campaign image URLs 200/image content. Home/Brand/Campaign/admin-editor/checkout SPA routes 200; fake `/api` stays 404, not index.html. |
+| Deployment commands | Railway upload/SUCCESS; Vercel staged READY, authenticated app HTML, promotion and alias inspection all passed. |
+| Actual public browser | Nine Home sections, ordered eight products/three emerald cards, full Campaign/Brand content, no failed images or horizontal overflow on wide desktop. Popup 18 oz/$39.99 retained through fifth photo; Escape restores opener. Giving opens shared pop-out. Real empty cart drawer opens; Turkey search yields one item and clears back to eight. Final warning/error log read zero entries. |
+| Actual deployed admin | Login/session/Website UI passed; identity/data routing retained, eight preview cards, zero nav form fields. Brand/Campaign page selection keeps clean Save disabled. No editor Save/Publish/business edit performed in final acceptance. |
+| Responsive local browser | Actual CSS widths 358/477/582 and wide 1910 checked without horizontal overflow; compact menu/search and cart open. Exact requested viewport overrides were not reproduced reliably. |
+
+Intermediate failures were resolved before final deployment: a brittle SSR assertion omitted Vue's scoped attributes; tests expecting visible legacy promise/help were updated to the expressly approved hidden state. No validator or purchase guard was weakened. Latest complete suites above pass. Neither package has a lint script; none invented. No real payment, email, label, shipment or new customer signup was performed.
+
+### Files And Future Recovery
+
+Full [199-file dirty-tree manifest](assets/brand/test-products/integration-file-manifest.json) includes 77 modified and 122 untracked files, including retained earlier integration/generated assets; it is not a claim that all were created in this correction. New focused files include StorefrontStoryCard, complete BrandPageContent, NextDropCard, shared productVisibility, seven-case approved-design tests and the non-secret reconciliation report. Changes span Home sections/styles, Campaign renderer/styles, header/footer, Quick View, admin preview, canonical/generated presentation defaults and focused docs. [File map](docs/architecture/file-map.md) explains responsibilities.
+
+AGENTS now requires durable milestone checkpoints for long/interrupted work. Credit cutoffs cannot be reliably predicted; save progress continuously rather than waiting for a final response. Read [the dated checkpoint](docs/work-checkpoints/2026-10-15-approved-ui-reconciliation.md) first on a future refresh. It records actual completion, deployment IDs, safe data state, artifacts, commands and honest unverified work without secrets.
+
+### Remaining Acceptance And Risks
+
+1. Owner visual review of all three live pages and Website UI against the exact polished mock is still required. Real-device Safari/iPhone, screen reader, full keyboard/focus and OS reduced-motion testing remain manual; emulation is not device certification.
+2. All public products are intentionally test-only/unpurchasable. Reviews, partner/programmes and generated photos are explicitly fictional/templates. Replace them with reviewed real content and deliberately approved sellable records before real launch. Do not remove test protection as a cosmetic edit.
+3. Browser auth succeeds in this test environment; existing Safari cross-site cookie/owned-domain work is not solved by the visual redesign. Existing checkout recovery/atomic attribution/tax/shipping/provider/restore/monitoring launch gates remain open. No end-to-end payment was claimed here.
+4. Direct deployments can be overwritten by a later Git-triggered deployment until the owner reviews/commits matching source. No commit or push is performed. Current source is suitable for focused commit review, not launch certification.
+5. Local normal DB content was not overwritten with Railway presentation/catalog. To inspect the same testing data locally, use the documented local frontend -> local backend -> Railway DB mode, not browser admin CRUD directly to Railway.
+
+Next recommended phase: visual/device acceptance against this release, then a focused approved real-content/catalog setup and the existing payment-reliability launch gates. Do not restart a speculative redesign from the old site.
+
+Final closeout: documentation checks pass (14 Markdown files, 236 balanced fence lines, 201 existing local links, 20 bounded secret-pattern scans/zero findings), `git diff --check` passes, and no changed/untracked environment or .env.example exists. Final public bundle and six 200/404 route probes match the promoted release. Actual refreshed editor has all eight cards; final Home has no failed images or warning/error console entries. Only task-owned reference/API/Vite listeners and reference/local/editor tabs were closed; original user services/tabs remain. The final public Home tab is left open. No required command/deployment remains pending. Screenshots: `reconciled-home-live.jpg`, `reconciled-campaign-live.jpg`, `reconciled-brand-live.jpg` in the dated task artifact root recorded in the checkpoint.
+
+## 2026-10-15 Product Card Density And Heading Readability
+
+The owner requested shorter/wider product cards and section title/copy backgrounds. This is a focused visual follow-up, not a new redesign or business-data change. Work and recovery steps are tracked in [the density checkpoint](docs/work-checkpoints/2026-10-15-storefront-density.md). The previous release remains live until separately published; local verification/results follow below.
+
+- Implemented a responsive minimum-width grid, shallower uncropped 3:2 product photos, tighter internal gaps and readable product titles. Same 1,112 px collection content width: first-row cards changed from approximately 266 x 719 px to 360 x 644 px. Exact height remains content-dependent; no fields are truncated or removed.
+- Added opaque white heading/copy bands with a restrained blue edge, including collection filters in the same reading area. Shared styles cover Home, Campaign, Brand and editor renderers. Kept existing item shadows, brand colors and emerald campaign treatment. Editor density labels now truthfully describe maximum columns, not guaranteed exact counts.
+- Changed eleven client files (components/sections/styles plus one test) and six documentation files, enumerated in the checkpoint. No server, schema, API, env, dependency or business-data change in this follow-up.
+- Client `npm run build`: exit 0, Vite 8.3.4, 2,296 modules. Client `npm test`: exit 0, 123 tests/25 files (11/106/6). The first new test failed on default title capitalization; the fixture now supplies explicit copy and the complete suite passed. No lint script exists. Server checks/Prisma generation were not required for client-only edits.
+- Browser: actual Railway-backed catalog reads through the local API; all eight photos loaded. Card 18 oz shows $39.99 and opens Quick View with the same selection; Quick View 6 oz shows $14.99. Test purchasing stays disabled. Filter selection narrowed the collection correctly. All seven Home and five each Campaign/Brand heading bands are opaque white; no failed images or page overflow observed. Responsive CSS widths 388/582 and desktop 1910 fit without horizontal overflow. No application error console entries; Stripe.js gives its expected local-HTTP HTTPS advisory.
+- Local preview: `http://localhost:5174/#shop`, through task-owned API port 3101 (Railway DB read-only catalog checks). Original services on 5173/3000 were not changed. Screenshot: `storefront-density-desktop.jpg` in the task artifact directory recorded in the checkpoint. No new deploy, commit, push, migration, publication, provider send or payment. Previous live releases remain unchanged.
+- Remaining manual QA: owner visual acceptance, real Safari/phone, long product copy and narrow editor canvas/density choices. Shared renderer reuse is verified from source/tests, not a fresh live authenticated editor Save/Publish. Test-only catalog prevents end-to-end purchase QA. Current focused edits are ready for commit review within the existing dirty tree, not launch certification.
+
+## 2026-10-15 Section Typography And Aesthetic Follow-Up
+
+The owner accepted product card proportions but requested a more cohesive section heading/copy treatment across pages. This local-only follow-up is tracked in [the typography checkpoint](docs/work-checkpoints/2026-10-15-storefront-type-polish.md). Preserve the approved product cards, all content, shared storefront/editor behavior and business data. No new deployment is implied.
+
+- Replaced hard blue-edged white heading bars with unframed introductions aligned with their content. Standardized section titles at 26 px/650, introductory text at 16 px with readable line length/spacing, and story item title/body hierarchy. Softer 4.5% monogram opacity preserves the artwork without competing as strongly with text. Collection filters have a compact white 8 px rounded toolbar; existing content item corners/shadows and all brand/giving colors remain.
+- Shared section rules now live in `storefront.css`; Home's conflicting 24/30 px title overrides were removed. Review heading copy uses the same rules as other section introductions. Empty eyebrow elements are omitted. Brand closing text shares section typography. ProductCard files/size/pricing/purchase logic and hero/header/footer/account/checkout/admin layouts were not changed.
+- Ten client files and seven documentation files changed in this follow-up, enumerated in the checkpoint. No new application component/API, schema, dependency, environment requirement or business-data write.
+- Client `npm run build`: exit 0, Vite 8.3.4, 2,296 modules. Client `npm test`: exit 0, 124 tests in 25 files (11/107/6). `git diff --check`: passed. No lint script exists; none invented. No server build/Prisma generation required for client-only edits.
+- Browser: seven Home, five Campaign and six Brand section headings have the same computed 26 px/650 type, including Brand closing. Wide Home first-row products remain approximately 360 x 644 px at the same content width. Card 18 oz/$39.99 opens Quick View with matching size/price; test purchase stays disabled. Home/Campaign/Brand fit at actual CSS width 388 without heading/page overflow; desktop widths 895/1910 checked. No application console error entries observed. No fresh authenticated editor publish, checkout payment or provider action was performed.
+- Local preview remains `http://localhost:5174/#ingredients` (API 3101); no listener/env reconfiguration or restart in this follow-up. Screenshot `section-polish-preview.jpg` plus Home/Campaign/Brand desktop examples are in the artifact root recorded in the checkpoint. Previous live deployments remain unchanged. No commit/push.
+- Remaining acceptance: owner visual direction, real Safari/phone/screen reader, long edited text and narrow Website UI canvas. Shared public/editor code is reused; a fresh authenticated visual editor session was not run. Focused source is ready for commit review in the existing dirty tree, not launch certification.
+
+## 2026-10-16 Selected Modern Boutique Home Sections
+
+The owner approved the Modern Boutique layouts for Made With Care, Ingredient Promise and The Pair Behind the Name only. Those layouts are implemented locally: photo/ordered process, pale yellow icon-led ingredient promise, and full-width photo/story teaser. Existing managed copy/images/links and Product-owned ingredients/storage remain connected. Other sections, accepted product proportions, shared header/footer, Campaign/Brand pages and business behavior stay unchanged.
+
+- Reviews keep all seven existing detailed fictional entries, with larger two-across desktop/one-across narrow cards and a contained native scroll-snap track. Eight-second rotation only runs with overflow and a visible section; hover/focus/hidden tabs/reduced motion/editor mode stop it. Manual navigation/dragging pauses until explicitly restarted. Previous/Next/Pause/Play remain available as appropriate. The future-review notice sits below, not in the rotation.
+- New focused composable `useReviewCarousel.js` owns timing/geometry/lifecycle. Six client files were modified, one composable and two test files created; [the checkpoint](docs/work-checkpoints/2026-10-16-boutique-home-sections.md) lists exact files, commands, screenshots and recovery instructions.
+- Client `npm run build`: exit 0, Vite 8.3.4/2,297 modules. Client `npm test`: exit 0, 137 tests/27 files (11/120/6). Targeted 13 new SSR/lifecycle regressions pass. No lint script exists. Server/Prisma checks are not required for client-only edits.
+- Actual local browser: nine sections/eight products/seven reviews retained; larger cards, working manual navigation/Pause and real ingredient Quick View at 6 oz/$14.99. No page overflow at actual CSS widths 2149/846/582/388; wide track 1,112 px/cards about 544 px, narrow track/card 352 px. Images loaded; final application error log empty. Shared editor autoplay=false verified with SSR, not a fresh authenticated editor session.
+- Viewport overrides differed from requested dimensions and narrow captures were blank despite valid DOM geometry; normal restored captures render correctly. Real phone/Safari/touch/screen-reader, OS reduced motion, long edited copy and narrow Website UI acceptance remain manual. Fictional photos/reviews/test catalog and prior launch gates remain unchanged.
+- Preview: `http://localhost:5174/#ingredients`, existing API 3101. No DB write/publication, deployment, environment/schema/dependency change, new image, provider action, commit or push. Focused edits are ready for review in the existing dirty tree, not launch certification. The previous live release is unchanged.
+
+Closeout: documentation/fence/local-link checks passed (7 Markdown files, 228 fence lines, 133 local links); composable syntax and whitespace checks passed. Sixteen-file bounded secret-pattern scan found no matches, changed env count is zero, and no env examples exist. Normal local proof screenshots are linked from the checkpoint; narrow blank captures were discarded. Browser viewport restored, product pop-out closed, original local services/tab retained, and all required checks finished.
+
+## 2026-10-17 Storybook Brand And Impact First Campaign
+
+The owner approved Storybook and Impact First from the new boutique examples. Both are integrated locally. Brand has one managed origin, selectable portraits, numbered chapters, everyday photo/story, pale-yellow values and the real shopping invitation. Campaign shows its configured contribution immediately after the hero, partner narrative, test-only programme/why sections, giving steps and unchanged eligible ProductCards. Public pages, pop-out and admin reuse the same renderers. Accepted Home/header/footer/cart/auth/checkout remain unchanged.
+
+- Website UI adds exactly two allowlisted portrait presentation records with names, introductions, stories, upload/library/URL images and descriptions. Old publications/drafts receive safe defaults; nested projection and selected-media existence checks protect saves. Local canvas portrait selection is enabled while navigation remains inert. No schema/migration or new env variable. Server contract must deploy before the new client saves; no publication or deployment was performed here.
+- Focused components keep composition, local portrait state, contribution facts, test-only story examples and shared photo fallback separate. Exact new/modified files, operations, limitations and recovery are in [the checkpoint](docs/work-checkpoints/2026-10-17-storybook-impact-first.md).
+- Client build exits 0 (Vite 8.3.4, 2,305 modules); all 145 tests/28 files pass. Server build exits 0 (canonical sync/Prisma Client 6.16.2); all 139 tests/34 files pass. Syntax checks cover 173 server JS files; six changed generated snapshots match. No lint script exists. Whitespace/docs/link/fence checks and bounded 32-file secret scan pass; no env files/examples changed.
+- Actual local browser verifies portrait photo/name/story switching, the real $2 per eligible order, three loaded eligible cards, 18 oz/$39.99 Quick View handoff, and Impact First inside the real campaign pop-out. Home keeps nine sections/eight products/seven reviews. Desktop and actual 388 px DOM fit without horizontal overflow; no failed selected-page images or captured app error entries. Read-only public content returns two properly allowlisted portraits.
+- Only the task-owned API 3101 was restarted to load current contracts; Vite 5174 and original user services remain. No DB write/publication, auth provisioning/login, provider send, payment, migration, commit or push. The existing live release remains unchanged.
+- Remaining manual acceptance: actual authenticated Website UI portrait edits/Cancel/draft reload/publication, Catalog canvas, long copy/photo failures, real phone/Safari/keyboard/screen reader/reduced motion and post-deployment guest/signed-in checkout. Template photos/personality/milestones, fictional partner/reviews and intentionally unpurchasable test products remain; do not mistake this visual completion for launch certification. Focused changes are ready for commit review. Next: owner/editor/device approval and a deliberately approved matching backend-first/frontend rollout, then payment-reliability launch gates.

@@ -3,6 +3,7 @@ import {
   normalizeProductIds,
 } from '../utils/campaigns.utils.js'
 import { isSafeCampaignUrl } from '../validators/campaigns.validator.js'
+import { getMediaAssetId } from '../../storefront/content/mediaRules.js'
 
 export function mapPublicCampaignSummary(campaign) {
   return {
@@ -23,7 +24,7 @@ export function mapPublicCampaignPage(campaign) {
     ...mapPublicCampaignSummary(campaign),
     description: campaign.description || '',
     story: campaign.story || '',
-    image: isSafeCampaignUrl(campaign.image) ? campaign.image || null : null,
+    image: getMediaAssetId(campaign.image) || isSafeCampaignUrl(campaign.image) ? campaign.image || null : null,
     imageAlt: campaign.imageAlt || '',
     beneficiaryUrl: isSafeCampaignUrl(campaign.beneficiaryUrl)
       ? campaign.beneficiaryUrl || null

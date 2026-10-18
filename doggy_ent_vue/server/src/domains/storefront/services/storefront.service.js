@@ -27,7 +27,7 @@ export async function saveStorefrontContent(input, publish = false) {
   const validation = validateStorefrontContent(input.content)
   if (validation) throw fail(validation)
   const content = projectStorefrontContent(input.content)
-  await assertMediaImagesExist([content.theme.backgroundImage, content.footer.backgroundImage, ...content.sections.flatMap(block => [block.settings.image, block.settings.backgroundImage, ...(block.settings.items || []).map(item => item.image)])])
+  await assertMediaImagesExist([content.theme.backgroundImage, content.footer.backgroundImage, content.presentation.brand.heroImage, ...content.presentation.brand.portraits.map(item => item.image), ...content.sections.flatMap(block => [block.settings.image, block.settings.backgroundImage, ...(block.settings.items || []).map(item => item.image)])])
   const row = await writeStorefrontContent(input.revision, {
     draft: content,
     ...(publish ? { published: content, publishedAt: new Date() } : {}),

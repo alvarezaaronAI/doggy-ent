@@ -17,12 +17,12 @@ const props = defineProps({
       {{ props.product.category }}
     </p>
 
-    <h3 class="mt-2 text-xl font-semibold break-words">
+    <h3 class="product-card-title mt-2 text-xl font-semibold break-words">
       {{ props.product.name }}
     </h3>
   </div>
 
-  <div class="mt-3 flex flex-wrap gap-2">
+  <div class="product-card-tags mt-3 flex flex-wrap gap-2">
     <span
       v-for="tag in props.tags.slice(0, 2)"
       :key="tag"
@@ -32,11 +32,11 @@ const props = defineProps({
     </span>
   </div>
 
-  <p class="mt-3 text-sm store-muted">
+  <p class="product-card-description mt-3 text-sm store-muted">
     {{ props.product.shortDescription }}
   </p>
 
-  <p class="mt-3 text-xs store-muted">
+  <p class="product-card-facts mt-3 text-xs store-muted">
     {{ props.product.protein }}
     <span v-if="props.product.cut"> • {{ props.product.cut }}</span>
   </p>

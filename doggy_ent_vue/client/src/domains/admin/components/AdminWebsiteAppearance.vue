@@ -4,7 +4,7 @@ import { mediaImageSource } from '@shared/utils/mediaImage.js'
 import { WEBSITE_BACKGROUNDS } from '../constants/adminWebsite.constants.js'
 const props = defineProps({ draft: { type: Object, required: true }, selected: String, changed: Boolean })
 const block = computed(() => props.draft.sections.find(item => item.id === props.selected))
-const settings = computed(() => props.selected === 'theme' ? props.draft.theme : props.selected === 'footer' ? props.draft.footer : block.value?.settings)
+const settings = computed(() => props.draft.presentation?.[props.selected] || (props.selected === 'theme' ? props.draft.theme : props.selected === 'footer' ? props.draft.footer : block.value?.settings))
 const palette = computed(() => WEBSITE_BACKGROUNDS.find(item => item.value === settings.value?.background))
 const artwork = computed(() => settings.value?.backgroundImage || '')
 const seasonalLabel = computed(() => ({ original: 'Everyday', autumn: 'Autumn', winter: 'Winter' })[props.draft.theme.season])

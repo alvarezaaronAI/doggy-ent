@@ -5,14 +5,21 @@ import SiteHeader from '@app/layouts/SiteHeader.vue'
 import SiteFooter from '@app/layouts/SiteFooter.vue'
 import PromoStrip from '@app/layouts/PromoStrip.vue'
 import HomePageContent from '@storefront/Home/HomePageContent.vue'
+import BrandPageContent from '@storefront/components/BrandPageContent.vue'
+import CampaignPageContent from '@campaigns/components/CampaignPageContent.vue'
+import ProductQuickView from '@products/ProductQuickView/ProductQuickView.vue'
+import ProductCard from '@products/ProductCard/ProductCard.vue'
+import { formatCurrency } from '@shared/utils/currency.js'
 import AdminWebsiteAppearance from './AdminWebsiteAppearance.vue'
 import '@storefront/styles/storefront.css'
 import '@storefront/styles/home.css'
-const props = defineProps({ draft: { type: Object, required: true }, context: { type: Object, required: true }, selected: String, changedSections: { type: Array, default: () => [] } })
+const props = defineProps({ draft: { type: Object, required: true }, context: { type: Object, required: true }, page: { type: String, default: 'home' }, product: Object, campaign: Object, selected: String, changedSections: { type: Array, default: () => [] } })
 provide('storefrontSections', computed(() => props.draft.sections))
+provide('storefrontPresentation', computed(() => props.draft))
 defineEmits(['select'])
 const phone = ref(false)
 const canvas = ref(null)
+const cardBindings = computed(() => Object.fromEntries(['getDisplayTags','getProductVariants','getSelectedCardSize','selectCardSize','getSelectedCardPrice','getSelectedCardVariant','getSelectedStockLabel','isPurchasable'].map(key => [key, props.context[key]])))
 function scrollToSection(id) {
   if (id === 'theme') { canvas.value?.scrollTo({ top: 0, behavior: 'instant' }); return }
   const target = canvas.value?.querySelector(`[data-edit-section="${CSS.escape(id)}"]`) || canvas.value?.querySelector('#' + CSS.escape(id))
@@ -23,7 +30,7 @@ defineExpose({ scrollToSection })
 <template>
   <div class="website-canvas-tool">
     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--admin-line)] bg-white p-3">
-      <span class="text-xs text-[var(--admin-muted)]">Homepage draft</span>
+      <span class="text-xs text-[var(--admin-muted)]">{{ page }} · presentation draft · shopping disabled</span>
       <div class="flex gap-2" role="group" aria-label="Preview width">
         <button type="button" class="admin-button" :aria-pressed="!phone" aria-label="Wide preview" title="Wide preview" @click="phone = false"><Monitor :size="16" /></button>
         <button type="button" class="admin-button" :aria-pressed="phone" aria-label="Phone preview" title="Phone preview" @click="phone = true"><Smartphone :size="16" /></button>
@@ -40,7 +47,14 @@ defineExpose({ scrollToSection })
           <button type="button" class="website-shell-edit" :aria-pressed="selected === 'header'" @click="$emit('select', 'header')"><Pencil :size="14" />Header &amp; links</button>
           <div inert><SiteHeader :content="draft" preview /></div>
         </div>
-        <HomePageContent :content="draft" :context="context" editable :active-section="selected" :changed-sections="changedSections" @select-section="$emit('select', $event)" />
+        <HomePageContent v-if="['home','shell'].includes(page)" :content="draft" :context="context" editable :active-section="selected" :changed-sections="changedSections" @select-section="$emit('select', $event)" />
+        <div v-else :inert="page !== 'brand'" class="p-4">
+          <BrandPageContent v-if="page === 'brand'" :content="draft" preview />
+          <CampaignPageContent v-else-if="page === 'campaign' && campaign" :content="draft" :campaign="campaign" :products="context.products" />
+          <ProductQuickView v-else-if="page === 'quick' && product" :product="product" :content="draft" is-open preview />
+          <div v-else-if="page === 'cards' && product" class="mx-auto max-w-[270px]"><ProductCard :product="product" v-bind="cardBindings" :format-price="formatCurrency" :campaigns="context.campaignsForProduct(product)" /></div>
+          <p v-else class="p-8 store-muted">No public record available for this preview. Create it in Catalog first.</p>
+        </div>
         <div data-edit-section="footer" class="website-shell-block">
           <button type="button" class="website-shell-edit" :aria-pressed="selected === 'footer'" @click="$emit('select', 'footer')"><Pencil :size="14" />Footer &amp; links{{ !draft.footer.visible ? ' · Hidden' : '' }}</button>
           <div inert><SiteFooter :content="draft" preview /></div>

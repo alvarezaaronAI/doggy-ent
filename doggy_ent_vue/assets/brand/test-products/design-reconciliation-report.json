@@ -1,0 +1,60 @@
+{
+  "appliedAt": "2026-10-15T16:55:19.636Z",
+  "archived": [
+    {
+      "id": "cmpx0zcv60000l31m8939dt9l",
+      "name": "Chicken Breast Jerky",
+      "previousStatus": "ACTIVE",
+      "previousFeatured": true
+    },
+    {
+      "id": "cmpx0zcvq0003l31mit08khmn",
+      "name": "Beef Jerky",
+      "previousStatus": "ACTIVE",
+      "previousFeatured": false
+    },
+    {
+      "id": "cmpx0zcw20006l31mvc0ng809",
+      "name": "Turkey Jerky",
+      "previousStatus": "DRAFT",
+      "previousFeatured": false
+    },
+    {
+      "id": "cmpx0zcwe0009l31mrokg6wmg",
+      "name": "Lamb Jerky",
+      "previousStatus": "DRAFT",
+      "previousFeatured": false
+    },
+    {
+      "id": "cmpx0zcwr000cl31mh3u635c7",
+      "name": "Training Bites",
+      "previousStatus": "COMING_SOON",
+      "previousFeatured": false
+    },
+    {
+      "id": "cmpx0zcx3000fl31mcgg6eb6j",
+      "name": "Seasonal Drop",
+      "previousStatus": "COMING_SOON",
+      "previousFeatured": false
+    },
+    {
+      "id": "cmq4k690n000iup3s26t0gudf",
+      "name": "Duck Jerky",
+      "previousStatus": "DRAFT",
+      "previousFeatured": false
+    }
+  ],
+  "publicApprovedProducts": 8,
+  "deletedRows": 0,
+  "orderItemsPreserved": 7,
+  "revision": 5,
+  "protectedDataPreserved": true,
+  "backupArchiveVerified": true,
+  "finalPresentationAt": "2026-10-16T02:32:01.599Z",
+  "hiddenLegacySections": [
+    "promise",
+    "help"
+  ],
+  "finalBackupBytes": 2707158,
+  "finalBackupDecoded": true
+}

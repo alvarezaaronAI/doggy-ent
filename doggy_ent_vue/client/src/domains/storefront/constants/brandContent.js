@@ -1,5 +1,10 @@
-import heroTemplate from '../../../assets/images/storefront-hero-template.jpg'
-import seasonalTemplate from '../../../assets/images/storefront-seasonal-template.jpg'
+import heroTemplate from '../../../assets/images/brand/labrador-pair-template.webp'
+import adventureTemplate from '../../../assets/images/brand/brand-labs-adventure-template.webp'
+import blackLabTemplate from '../../../assets/images/brand/campaign-black-lab-template.webp'
+import yellowLabTemplate from '../../../assets/images/brand/partner-yellow-lab-template.webp'
+import preparationTemplate from '../../../assets/images/brand/galleries/chicken-preparation-v1.webp'
+
+export const BRAND_IMAGES = { home: heroTemplate, adventure: adventureTemplate, partner: yellowLabTemplate, campaign: blackLabTemplate, preparation: preparationTemplate }
 
 export const BRAND_STORY_PATH = '/meet-chase-evie'
 
@@ -17,14 +22,12 @@ export const BRAND_STORY = {
   portraits: [
     {
       name: 'Chase',
-      image:
-        'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1000&auto=format&fit=crop',
+      image: blackLabTemplate,
       alt: 'Illustrative dog portrait for Chase',
     },
     {
       name: 'Evie',
-      image:
-        'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?q=80&w=1000&auto=format&fit=crop',
+      image: yellowLabTemplate,
       alt: 'Illustrative dog portrait for Evie',
     },
   ],
@@ -33,12 +36,12 @@ export const BRAND_STORY = {
 export const BRAND_GALLERY = [
   {
     image: heroTemplate,
-    alt: 'Illustrative white dog enjoying the outdoors',
+    alt: 'Illustrative Labrador pair in a garden',
     caption: 'For everyday adventures.',
   },
   {
-    image: seasonalTemplate,
-    alt: 'Illustrative corgi portrait against an orange backdrop',
+    image: adventureTemplate,
+    alt: 'Illustrative Labrador pair on a woodland walk',
     caption: 'For the little moments.',
   },
 ]

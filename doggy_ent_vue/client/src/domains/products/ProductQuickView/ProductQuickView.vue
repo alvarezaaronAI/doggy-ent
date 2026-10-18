@@ -15,8 +15,12 @@ import ProductQuickViewInfoGrid from './ProductQuickViewInfoGrid.vue'
 import ProductQuickViewNotIncluded from './ProductQuickViewNotIncluded.vue'
 import ProductQuickViewAnalysis from './ProductQuickViewAnalysis.vue'
 import ProductQuickViewStorage from './ProductQuickViewStorage.vue'
+import { pagePresentation, PRESENTATION_COLORS } from '@storefront-content/pagePresentation.js'
+import { useStorefrontContent } from '@storefront/composables/useStorefrontContent.js'
 
 const props = defineProps({
+  preview: Boolean,
+  content: Object,
   product: {
     type: Object,
     default: null,
@@ -28,6 +32,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'add-to-cart'])
+const { content: publishedContent } = useStorefrontContent()
+const labels = computed(() => pagePresentation(props.content || publishedContent.value).quick)
+const infoTab = ref('details')
 
 const {
   getProductVariants,
@@ -126,6 +133,7 @@ watch(
         ? props.product.selectedSize
         : variants.value[0]?.size || ''
       quantity.value = 1
+      if (props.preview) return
       previousFocus = document.activeElement
       document.addEventListener('keydown', handleDialogKeys)
       await nextTick()
@@ -181,7 +189,7 @@ function getDisplayTags(product) {
 }
 
 function addProductToCart() {
-  if (!props.product || !selectedVariant.value || !isPurchasable.value) return
+  if (props.preview || !props.product || !selectedVariant.value || !isPurchasable.value) return
 
   emit('add-to-cart', {
     ...props.product,
@@ -200,42 +208,46 @@ function addProductToCart() {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport to="body" :disabled="preview">
     <div
       v-if="isOpen && product"
-      class="fixed inset-0 z-[140] flex items-center justify-center px-4 py-6"
+      :class="preview ? 'product-quick-preview' : 'fixed inset-0 z-[140] flex items-center justify-center px-4 py-6'"
     >
       <div
-        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        v-if="!preview" class="absolute inset-0 bg-black/50 backdrop-blur-sm"
         @click="emit('close')"
       ></div>
 
       <section
         ref="dialog"
-        role="dialog"
-        aria-modal="true"
+        :role="preview ? 'region' : 'dialog'"
+        :aria-modal="preview ? undefined : true"
         :aria-label="product.name + ' quick view'"
-        class="relative z-[150] max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-lg bg-white shadow-2xl"
+        class="product-quick-panel relative w-full max-w-5xl overflow-y-auto rounded-lg bg-white shadow-2xl"
+        :class="preview ? '' : 'z-[150] max-h-[92vh]'"
+        :style="{ backgroundColor: PRESENTATION_COLORS[labels.background] }"
       >
         <button
-          class="absolute right-4 top-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-700 bg-white text-stone-400 hover:border-emerald-400"
+          v-if="!preview" class="absolute right-4 top-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-700 hover:border-blue-700"
           aria-label="Close quick view"
           @click="emit('close')"
         >
           <i class="fa-solid fa-xmark"></i>
         </button>
 
-        <div class="grid gap-0 md:grid-cols-2">
+        <div class="product-quick-layout grid gap-0 md:grid-cols-2">
           <ProductQuickViewGallery :product="product" />
 
           <div class="p-6 md:p-8">
+            <p class="store-eyebrow">{{ labels.title }}</p>
+            <p class="store-muted mt-2 text-sm">{{ labels.introduction }}</p>
             <ProductQuickViewHeader
               :product="product"
               :tags="getDisplayTags(product)"
             />
 
             <ProductQuickViewSizeSelector
-              v-if="product.status === 'active'"
+              v-if="variants.length"
               :variants="variants"
               :selected-size="selectedSize"
               :selected-stock-label="selectedStockLabel"
@@ -247,23 +259,7 @@ function addProductToCart() {
               @update-size="selectedSize = $event"
             />
 
-            <div
-              v-else
-              class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4"
-            >
-              <p
-                class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400"
-              >
-                Coming Soon
-              </p>
-              <h3 class="mt-2 font-extrabold text-[var(--brand-4)]">
-                This product is not available yet
-              </h3>
-              <p class="mt-2 text-sm text-stone-300">
-                Pricing, sizes, and launch details will be announced when this
-                treat goes live.
-              </p>
-            </div>
+            <p v-if="product.status === 'coming-soon'" class="mt-4 text-sm store-muted">Coming soon. This product is not available yet.</p>
 
             <ProductQuickViewQuantity
               v-if="product.status === 'active' && isPurchasable"
@@ -274,27 +270,7 @@ function addProductToCart() {
               @decrease="decreaseQuantity"
             />
 
-            <div
-              v-if="
-                product.status === 'active' &&
-                isInventoryLimited(product) &&
-                !isPurchasable
-              "
-              class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_55%,white)] p-4"
-            >
-              <p
-                class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400"
-              >
-                {{ selectedStockLabel }}
-              </p>
-              <h3 class="mt-2 font-extrabold text-[var(--brand-4)]">
-                This size is not available right now
-              </h3>
-              <p class="mt-2 text-sm text-stone-300">
-                Choose another size if available, or check back for restock
-                updates.
-              </p>
-            </div>
+            <p v-if="product.isTestProduct" class="mt-4 text-sm store-muted">Testing product · illustrative content · not for sale.</p>
 
             <ProductQuickViewActions
               :is-purchasable="isPurchasable"
@@ -302,6 +278,11 @@ function addProductToCart() {
               @add-to-cart="addProductToCart"
             />
 
+            <div class="mt-7 flex flex-wrap gap-2 border-b border-stone-200 pb-3" role="group" aria-label="Product information">
+              <button type="button" class="store-button text-xs" :aria-pressed="infoTab === 'details'" @click="infoTab = 'details'">{{ labels.detailsLabel }}</button>
+              <button type="button" class="store-button text-xs" :aria-pressed="infoTab === 'care'" @click="infoTab = 'care'">{{ labels.careLabel }}</button>
+            </div>
+            <div v-show="infoTab === 'details'">
             <ProductQuickViewInfoGrid :product="product" />
 
             <ProductQuickViewNotIncluded
@@ -313,8 +294,10 @@ function addProductToCart() {
               v-if="hasGuaranteedAnalysis"
               :analysis="product.guaranteedAnalysis"
             />
+            </div>
 
             <ProductQuickViewStorage
+              v-show="infoTab === 'care'"
               :storage-feeding="product.storageFeeding"
             />
           </div>
@@ -323,3 +306,20 @@ function addProductToCart() {
     </div>
   </Teleport>
 </template>
+<style scoped>
+.product-quick-panel { color: #443d36; }
+.product-quick-panel { max-width:940px; padding:24px; }
+.product-quick-layout { gap:24px; }
+.product-quick-layout > div { padding:0; }
+.product-quick-panel :deep(.product-detail-gallery) { padding:0; background:transparent; grid-template-columns:56px minmax(0,1fr); gap:10px; }
+.product-quick-panel :deep(.product-detail-thumbnails button) { width:56px; height:56px; }
+.product-quick-panel :deep(.product-detail-main > img) { box-shadow:none; border:1px solid #dbe2dd; }
+@media(max-width:640px) { .product-quick-panel { padding:18px; } .product-quick-panel :deep(.product-detail-gallery) { grid-template-columns:minmax(0,1fr); } .product-quick-panel :deep(.product-detail-thumbnails button) { width:44px; height:44px; } }
+.product-quick-panel :deep(.text-stone-300), .product-quick-panel :deep(.text-stone-400) { color: #625b52; }
+.product-quick-panel :deep(.border-stone-800), .product-quick-panel :deep(.border-stone-700) { border-color: #e1d3c2; }
+.product-quick-panel :deep(.rounded-2xl) { border-radius: 8px; }
+.product-quick-panel :deep(.text-emerald-400) { color: var(--brand-1); }
+.product-quick-panel :deep(.bg-emerald-400) { background: var(--brand-2); border-color: var(--brand-1); }
+.product-quick-panel :deep(.text-lg) { font-size: 28px; line-height: 1.3; }
+@container website-preview (max-width:700px) { .product-quick-layout { grid-template-columns: minmax(0,1fr); } }
+</style>

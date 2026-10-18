@@ -18,7 +18,7 @@
 }
 .store-inner {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1168px;
   margin-inline: auto;
   padding: 48px 24px;
   min-width: 0;
@@ -31,6 +31,50 @@
 }
 .store-muted {
   color: var(--store-muted, #59655e);
+}
+.story-heading {
+  min-width: 0;
+  margin-bottom: 24px;
+}
+.story-heading h2 {
+  max-width: 32ch;
+  margin: 0;
+  color: var(--storefront-brand-4);
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: 0;
+  overflow-wrap: break-word;
+}
+.story-heading > p:not(.store-eyebrow),
+.story-heading-copy > p:not(.store-eyebrow) {
+  max-width: 64ch;
+  margin-top: 10px;
+  color: #46534b;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.story-heading .store-eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+.collection-filter-toolbar {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #d8dcd5;
+  border-radius: 8px;
+  background: #fff;
+}
+.collection-filter-toolbar p {
+  color: var(--storefront-brand-1);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .store-button {
   display: inline-flex;
@@ -97,7 +141,7 @@
   border-color: #b4d7c6;
 }
 .store-product-media {
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 1;
   width: 100%;
   object-fit: cover;
 }
@@ -163,6 +207,16 @@
 }
 .store-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  gap: 24px;
+  --store-card-gap: 16px;
+  --store-card-width: calc((100% - (var(--store-card-columns, 4) - 1) * var(--store-card-gap)) / var(--store-card-columns, 4));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(300px, var(--store-card-width))), 1fr));
+  gap: 16px;
 }
+.store-product-card .store-product-media { display:block; aspect-ratio:3/2; object-fit:contain; background:#f2f4f1; }
+.store-product { font-size:13px; }
+.store-product h3 { font-size:16px; line-height:1.3; }
+.store-product .store-button { font-size:12px; padding:8px; }
+.store-product .store-size { font-size:12px; min-width:54px; padding:5px 10px; }
+.store-product .store-product-tag { font-size:11px; padding:4px 9px; }
+.store-pattern { position:relative; isolation:isolate; background:color-mix(in srgb,var(--storefront-brand-5) 55%,white); }
+.store-pattern::before { content:''; position:absolute; inset:0; z-index:-1; pointer-events:none; background:url('../../../assets/images/brand/labrador-monogram-v1.webp') repeat; background-size:360px; opacity:.045; }

@@ -13,8 +13,9 @@ const fields = computed(() => props.block ? Object.keys(SECTION_CATALOG[props.bl
     <template v-if="selected === 'announcement'">
       <h2>Announcement bar</h2>
       <label class="flex items-center gap-2"><input v-model="draft.announcement.visible" type="checkbox" />Show announcement</label>
-      <label class="admin-field">Announcement message above navigation<textarea v-model="draft.announcement.text" rows="3" maxlength="300"></textarea></label>
-      <label class="admin-field">Optional destination<input v-model="draft.announcement.href" placeholder="/#shop or https://..." /></label>
+      <label class="flex items-center gap-2"><input v-model="draft.announcement.rotate" type="checkbox" />Fade between messages automatically</label>
+      <fieldset v-for="(message, index) in draft.announcement.messages" :key="index" class="space-y-3 border-t border-[var(--admin-line)] pt-3"><legend>Message {{ index + 1 }}</legend><label class="admin-field">Message above navigation<textarea v-model="message.text" rows="3" maxlength="300"></textarea></label><label class="admin-field">Optional destination<input v-model="message.href" placeholder="/#shop or https://..." /></label><button v-if="draft.announcement.messages.length > 1" type="button" class="admin-button" @click="draft.announcement.messages.splice(index, 1)">Remove message</button></fieldset>
+      <button type="button" class="admin-button" :disabled="draft.announcement.messages.length >= 3" @click="draft.announcement.messages.push({ text: 'A little something new.', href: '' })">Add message ({{ draft.announcement.messages.length }}/3)</button>
     </template>
     <template v-else-if="selected === 'header'">
       <h2>Header &amp; navigation</h2>
@@ -35,6 +36,9 @@ const fields = computed(() => props.block ? Object.keys(SECTION_CATALOG[props.bl
     </template>
     <template v-else-if="selected === 'theme'">
       <h2>Seasonal appearance</h2>
+      <label class="flex items-center gap-2"><input v-model="draft.theme.monogram" type="checkbox" />Subtle Labrador monogram</label>
+      <label class="admin-field">Maximum collection columns<select v-model="draft.theme.columns"><option value="4">Up to four columns</option><option value="3">Up to three columns</option></select></label>
+      <p class="admin-muted text-xs">Fewer columns appear when needed to keep each product card comfortable to read.</p>
       <label class="admin-field">Season<select v-model="draft.theme.season"><option value="original">Everyday</option><option value="autumn">Autumn</option><option value="winter">Winter</option></select></label>
       <AdminImageField v-model="draft.theme.backgroundImage" label="Homepage seasonal background artwork" folder="website" help="Repeats behind homepage reading sections. Explicit section backgrounds take priority; the hero keeps its own photo. Clear to restore the original background." />
     </template>
@@ -57,9 +61,10 @@ const fields = computed(() => props.block ? Object.keys(SECTION_CATALOG[props.bl
       <label v-if="block.type === 'spotlight'" class="admin-field">Featured treat<select v-model="block.settings.productId"><option value="">Use catalog featured product</option><option v-for="product in products.filter(p => p.status === 'active')" :key="product.id" :value="product.id">{{ product.name }}</option></select></label>
       <fieldset v-if="block.type === 'collection'" class="space-y-3">
         <legend class="font-medium">Products · none selected shows all</legend>
-        <label v-for="product in products.filter(p => p.status === 'active')" :key="product.id" class="flex items-start gap-2"><input v-model="block.settings.productIds" :value="product.id" type="checkbox" />{{ product.name }}</label>
+        <label v-for="product in products.filter(p => ['active','out-of-stock'].includes(p.status) || p.isTestProduct && p.status === 'coming-soon')" :key="product.id" class="flex items-start gap-2"><input v-model="block.settings.productIds" :value="product.id" type="checkbox" />{{ product.name }}</label>
       </fieldset>
       <AdminWebsiteItems v-if="Array.isArray(block.settings.items)" :items="block.settings.items" :type="block.type" />
+      <label v-if="block.type === 'gallery'" class="flex items-start gap-2"><input v-model="block.settings.sampleReviews" type="checkbox" />Show seven explicitly fictional review examples (testing only)</label>
       <fieldset v-if="block.type !== 'hero'">
         <legend class="mb-2 font-medium">Section background</legend>
         <div class="flex flex-wrap gap-2">

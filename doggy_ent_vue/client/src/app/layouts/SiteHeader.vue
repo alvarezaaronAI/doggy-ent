@@ -24,6 +24,7 @@ const emit = defineEmits(['open-cart', 'update:search-query'])
 const route = useRoute()
 const router = useRouter()
 const mobileMenuOpen = ref(false)
+const searchOpen = ref(false)
 const accountMenuOpen = ref(false)
 const accountMenuPinned = ref(false)
 const headerRef = ref(null)
@@ -110,8 +111,11 @@ onBeforeUnmount(() => {
         ><span class="site-mark"><PawPrint :size="23" /></span
         ><span>{{ page.header.brandName }}</span></RouterLink
       >
+      <nav class="site-desktop-nav" aria-label="Primary">
+        <ContentLink v-for="(link, index) in links" :key="index" :href="link.href">{{ link.label }}</ContentLink>
+      </nav>
       <form
-        v-if="searchCollection"
+        v-if="searchCollection && searchOpen"
         class="site-search site-search-desktop"
         role="search"
         @submit.prevent="search"
@@ -128,6 +132,7 @@ onBeforeUnmount(() => {
         </button>
       </form>
       <div class="site-actions">
+        <button v-if="searchCollection" type="button" class="site-control site-search-toggle" aria-label="Toggle search" :aria-expanded="searchOpen" @click="searchOpen = !searchOpen"><Search :size="18" /></button>
         <div
           ref="accountMenuRef"
           class="site-account"
@@ -140,7 +145,7 @@ onBeforeUnmount(() => {
             to="/account/sign-in"
             class="site-control"
             aria-label="Sign in to account"
-            ><User :size="18" /><span class="site-account-label"
+            ><User :size="18" class="site-account-icon" /><span class="site-account-label"
               >Sign in</span
             ></RouterLink
           >
@@ -184,9 +189,7 @@ onBeforeUnmount(() => {
           aria-controls="cart-drawer"
           @click="emit('open-cart')"
         >
-          <ShoppingBag :size="20" /><span class="site-count">{{
-            cartCount
-          }}</span>
+          <ShoppingBag :size="18" /><span class="site-bag-label">Bag</span><span class="site-count">{{ cartCount }}</span>
         </button>
         <button
           type="button"
@@ -200,14 +203,6 @@ onBeforeUnmount(() => {
         </button>
       </div>
     </div>
-    <nav class="site-desktop-nav" aria-label="Primary">
-      <ContentLink
-        v-for="(link, index) in links"
-        :key="index"
-        :href="link.href"
-        >{{ link.label }}</ContentLink
-      >
-    </nav>
     <div v-if="mobileMenuOpen" id="site-mobile-menu" class="site-mobile-menu">
       <form v-if="searchCollection" class="site-search" role="search" @submit.prevent="search">
         <Search :size="18" aria-hidden="true" /><input

@@ -1,0 +1,218 @@
+{
+  "batch": "CE-QA-20261013",
+  "target": "Railway artistic-gentleness / production",
+  "appliedAt": "2026-10-14T07:38:17.953Z",
+  "created": [
+    {
+      "id": "cmv7ssr1z0000uphcb42nh1xr",
+      "name": "[TEST] Chicken Breast Jerky",
+      "status": "ACTIVE",
+      "slug": "test-chicken-breast-jerky",
+      "image": "/api/media/8164b920-b711-402c-aa23-32b84aabd6c5",
+      "mediaId": "8164b920-b711-402c-aa23-32b84aabd6c5",
+      "localAsset": "chicken.webp",
+      "variants": [
+        {
+          "size": "6 oz",
+          "sku": "CE-QA-20261013-CHICKEN-6OZ",
+          "inventory": 0,
+          "price": 1499
+        },
+        {
+          "size": "18 oz",
+          "sku": "CE-QA-20261013-CHICKEN-18OZ",
+          "inventory": 0,
+          "price": 3999
+        }
+      ],
+      "sellingMode": "INVENTORY_LIMITED"
+    },
+    {
+      "id": "cmv7ssr6r0003uphcqh84q9hw",
+      "name": "[TEST] Beef Jerky",
+      "status": "OUT_OF_STOCK",
+      "slug": "test-beef-jerky",
+      "image": "/api/media/3cb5fcbd-17e4-420a-8cce-19fb342eb64e",
+      "mediaId": "3cb5fcbd-17e4-420a-8cce-19fb342eb64e",
+      "localAsset": "beef.webp",
+      "variants": [
+        {
+          "size": "6 oz",
+          "sku": "CE-QA-20261013-BEEF-6OZ",
+          "inventory": 0,
+          "price": 1799
+        },
+        {
+          "size": "18 oz",
+          "sku": "CE-QA-20261013-BEEF-18OZ",
+          "inventory": 0,
+          "price": 4399
+        }
+      ],
+      "sellingMode": "INVENTORY_LIMITED"
+    },
+    {
+      "id": "cmv7ssr9y0006uphcv6cccugl",
+      "name": "[TEST] Turkey Jerky",
+      "status": "COMING_SOON",
+      "slug": "test-turkey-jerky",
+      "image": "/api/media/ded4ae25-537c-4a53-a352-9e5b455c553c",
+      "mediaId": "ded4ae25-537c-4a53-a352-9e5b455c553c",
+      "localAsset": "turkey.webp",
+      "variants": [
+        {
+          "size": "6 oz",
+          "sku": "CE-QA-20261013-TURKEY-6OZ",
+          "inventory": 0,
+          "price": 1699
+        },
+        {
+          "size": "18 oz",
+          "sku": "CE-QA-20261013-TURKEY-18OZ",
+          "inventory": 0,
+          "price": 4199
+        }
+      ],
+      "sellingMode": "INVENTORY_LIMITED"
+    },
+    {
+      "id": "cmv7ssrd40009uphc58iuf6b5",
+      "name": "[TEST] Salmon Bites",
+      "status": "ACTIVE",
+      "slug": "test-salmon-bites",
+      "image": "/api/media/93e222b9-6fcf-4e1a-8a54-48d51868c830",
+      "mediaId": "93e222b9-6fcf-4e1a-8a54-48d51868c830",
+      "localAsset": "salmon.webp",
+      "variants": [
+        {
+          "size": "6 oz",
+          "sku": "CE-QA-20261013-SALMON-6OZ",
+          "inventory": 0,
+          "price": 1899
+        },
+        {
+          "size": "18 oz",
+          "sku": "CE-QA-20261013-SALMON-18OZ",
+          "inventory": 0,
+          "price": 4699
+        }
+      ],
+      "sellingMode": "INVENTORY_LIMITED"
+    },
+    {
+      "id": "cmv7ssrg7000cuphcnkjlfc5a",
+      "name": "[TEST] Lamb Jerky",
+      "status": "DRAFT",
+      "slug": "test-lamb-jerky",
+      "image": "/api/media/aeb42ca0-c99a-4f56-97c4-a0f1a786b912",
+      "mediaId": "aeb42ca0-c99a-4f56-97c4-a0f1a786b912",
+      "localAsset": "lamb.webp",
+      "variants": [
+        {
+          "size": "6 oz",
+          "sku": "CE-QA-20261013-LAMB-6OZ",
+          "inventory": 0,
+          "price": 1999
+        },
+        {
+          "size": "18 oz",
+          "sku": "CE-QA-20261013-LAMB-18OZ",
+          "inventory": 0,
+          "price": 4899
+        }
+      ],
+      "sellingMode": "INVENTORY_LIMITED"
+    },
+    {
+      "id": "cmv7ssrjg000fuphcbie6nbcb",
+      "name": "[TEST] Training Bites",
+      "status": "COMING_SOON",
+      "slug": "test-training-bites",
+      "image": "/api/media/51aa8380-917a-4578-becf-815b552d2723",
+      "mediaId": "51aa8380-917a-4578-becf-815b552d2723",
+      "localAsset": "training.webp",
+      "variants": [
+        {
+          "size": "6 oz",
+          "sku": "CE-QA-20261013-TRAINING-6OZ",
+          "inventory": 0,
+          "price": 1299
+        },
+        {
+          "size": "18 oz",
+          "sku": "CE-QA-20261013-TRAINING-18OZ",
+          "inventory": 0,
+          "price": 3299
+        }
+      ],
+      "sellingMode": "INVENTORY_LIMITED"
+    },
+    {
+      "id": "cmv7ssrmk000iuphcbbr5g7rg",
+      "name": "[TEST] Pumpkin Bites",
+      "status": "DRAFT",
+      "slug": "test-pumpkin-bites",
+      "image": "/api/media/d08f42fa-7029-4714-8ee4-850f2f00a176",
+      "mediaId": "d08f42fa-7029-4714-8ee4-850f2f00a176",
+      "localAsset": "pumpkin.webp",
+      "variants": [
+        {
+          "size": "6 oz",
+          "sku": "CE-QA-20261013-PUMPKIN-6OZ",
+          "inventory": 0,
+          "price": 1399
+        },
+        {
+          "size": "18 oz",
+          "sku": "CE-QA-20261013-PUMPKIN-18OZ",
+          "inventory": 0,
+          "price": 3499
+        }
+      ],
+      "sellingMode": "INVENTORY_LIMITED"
+    },
+    {
+      "id": "cmv7ssrpp000luphcauh85j62",
+      "name": "[TEST] Weekend Bundle",
+      "status": "ARCHIVED",
+      "slug": "test-weekend-bundle",
+      "image": "/api/media/94f2a87a-782b-4a56-8807-1604c9cae247",
+      "mediaId": "94f2a87a-782b-4a56-8807-1604c9cae247",
+      "localAsset": "bundle.webp",
+      "variants": [
+        {
+          "size": "6 oz",
+          "sku": "CE-QA-20261013-BUNDLE-6OZ",
+          "inventory": 0,
+          "price": 2499
+        },
+        {
+          "size": "18 oz",
+          "sku": "CE-QA-20261013-BUNDLE-18OZ",
+          "inventory": 0,
+          "price": 5499
+        }
+      ],
+      "sellingMode": "INVENTORY_LIMITED"
+    }
+  ],
+  "countsBefore": {
+    "products": 7,
+    "users": 3,
+    "orders": 4,
+    "promos": 1,
+    "campaigns": 1,
+    "media": 0
+  },
+  "countsAfter": {
+    "products": 15,
+    "users": 3,
+    "orders": 4,
+    "promos": 1,
+    "campaigns": 1,
+    "media": 8
+  },
+  "checkoutRejections": 16,
+  "existingCatalogAndContentPreserved": true,
+  "backupVerified": true
+}

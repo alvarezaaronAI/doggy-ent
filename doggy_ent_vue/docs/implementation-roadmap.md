@@ -1,5 +1,17 @@
 # Implementation Roadmap
 
+## 2026-10-17 Approved Boutique Page Integration
+
+Storybook Brand and Impact First Campaign are integrated locally, alongside the accepted Modern Boutique Home follow-up. Safe editable portrait presentation extends existing JSON storage without a schema migration; shared public/editor/pop-out components retain business rules. Both builds and full suites pass (145 client, 139 server). Next: owner/editor/real-device acceptance, then a separately approved matching backend-first/frontend rollout. No new deployment/publication or payment/provider action occurred. See [checkpoint](work-checkpoints/2026-10-17-storybook-impact-first.md); original launch gates remain.
+
+## 2026-10-15 Approved Storefront Rollout
+
+The approved polished preview is now integrated and deployed to the existing Railway backend and Vercel storefront. This supersedes older preview-only and pending-deployment notes below. Home/Campaign/Brand share the actual header/footer and presentation contract; Website UI edits static presentation without changing commerce facts. Product-owned galleries support four optional images through protected image-only saves. The eight approved testing products are permanently non-purchasable. Local and Railway migration histories both have 22 completed entries.
+
+Completed verification includes client/server builds, 115 client tests, 136 server tests, 173 server syntax checks, real local admin draft/reload/restore and image-only saves against Railway, public page/media/API/CORS checks, and live desktop gallery/cart/navigation checks. Exact rollout IDs, command results and limits are in the [handoff](../PROJECT_HANDOFF.md#2026-10-15-approved-design-integration-and-deployment).
+
+Next: owner acceptance on real mobile/Safari and keyboard/screen-reader behavior, replacement or retirement of generated/fictional testing content, combined source review, then the existing checkout recovery/idempotency/concurrency launch gates. Direct CLI deployments do not commit source: a subsequent Git-triggered deployment could overwrite this release until the reviewed changes are committed/pushed by the owner. No commit/push is performed in this phase. Real customer review submission/moderation, arbitrary page layouts and scheduled seasonal publishing remain future work.
+
 ## 2026-10-10 Checkout And Order Email Status
 
 Implemented locally: Receipt First checkout, in-place reviewed signup/sign-in, shared bordered/giving/promo item cards, published-campaign pop-out using the real renderer, Stripe Express Checkout wallet support with admin switches, Soft Essentials confirmation and shared Website commerce editor. Verified pricing/receipt flaws were repaired: DB-owned variant prices/SKUs, email-bound payment proof, owned/scoped guest receipt reads and atomic stock/order writes.
@@ -169,3 +181,7 @@ Run required verification, update PROJECT_HANDOFF.md and relevant docs, and prov
 This supersedes the earlier future-only admin-auth direction: the user explicitly approved Better Auth admin migration. It is implemented locally behind compatible endpoints with deliberate provisioning and no dashboard rebuild. Accept browser login/logout/persistence before any separately approved Railway provisioning/deployment. MFA/fine-grained roles remain future work.
 
 The next launch-critical phase is durable CheckoutAttempt/payment idempotency, verified Stripe webhook recovery and atomic inventory/promo/campaign attribution, with post-payment reconciliation/refunds. The current browser-only finalization and separate usage commits are not launch-certified. No SQL for this next phase was added. Validate tax/shipping destinations, resolve Prisma tooling advisories, confirm backups/restore/monitoring and perform approved sandbox/device QA before real-customer launch. Dead files, cosmetic cleanup and new loyalty features have lower priority. See [audit and scorecard](audits/2026-10-11-production-audit.md).
+
+## Approved Design Acceptance (2026-10-15)
+
+The polished three-page mock is the current visual authority, not the prior flat storefront. Complete source/data reconciliation and direct deployment are tracked in [the checkpoint](work-checkpoints/2026-10-15-approved-ui-reconciliation.md). Next: owner compares Home/Campaign/Brand and Website UI against that exact mock on real desktop/mobile/Safari. Then replace fictional content with reviewed content and deliberately introduce approved sellable products; do not remove test guards as a styling change. Production payment recovery, atomic attribution, provider/tax/shipping validation and restore/monitoring remain higher-risk launch work. No commit/push is performed by this design phase.

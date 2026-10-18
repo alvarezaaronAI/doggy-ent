@@ -8,6 +8,12 @@ import {
 import {
   validateProductPayload,
 } from '../validators/products.validator.js'
+import { saveProductImages } from '../services/productImages.service.js'
+
+export async function updateProductImages(req, res, next) {
+  try { res.json(await saveProductImages(req.params.id, req.body)) }
+  catch (error) { next(error) }
+}
 
 function sendProductValidationError(req, res) {
   const validationError = validateProductPayload(req.body)

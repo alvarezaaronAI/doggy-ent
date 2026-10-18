@@ -1,33 +1,32 @@
 <script setup>
-import { sectionSettings } from '@storefront-content/sectionCatalog.js'
-import ContentLink from '@storefront/components/ContentLink.vue'
-defineProps({ product: Object, id: { type: String, default: 'ingredients' }, settings: { type: Object, default: () => sectionSettings('ingredients') } })
+import { ScanLine, PackageCheck, ClipboardCheck, MessageCircle, ArrowUpRight } from "@lucide/vue";
+import { sectionSettings } from "@storefront-content/sectionCatalog.js";
+import ContentLink from "@storefront/components/ContentLink.vue";
+defineProps({
+  product: Object,
+  id: { type: String, default: "ingredients" },
+  settings: { type: Object, default: () => sectionSettings("ingredients") },
+});
+defineEmits(["quick-view"]);
 </script>
 <template>
-  <section :id="id" class="store-section bg-[#f8faf8]">
-    <div class="store-inner grid gap-8 md:grid-cols-2">
+  <section :id="id" class="store-section home-ingredients-section">
+    <div class="store-inner home-ingredients-layout">
+      <header class="story-heading home-boutique-heading">
+        <p v-if="settings.eyebrow" class="store-eyebrow">{{ settings.eyebrow }}</p>
+        <h2>{{ settings.title }}</h2>
+        <p>{{ settings.text }}</p>
+        <button v-if="product" type="button" class="home-boutique-link" @click="$emit('quick-view')">Explore product details <ArrowUpRight :size="17" aria-hidden="true" /></button>
+        <ContentLink v-else :href="settings.buttonUrl" class="home-boutique-link">{{ settings.buttonLabel }} <ArrowUpRight :size="17" aria-hidden="true" /></ContentLink>
+      </header>
       <div>
-        <p class="store-eyebrow">{{ settings.eyebrow }}</p>
-        <h2 class="mt-3 text-3xl font-bold">{{ settings.title }}</h2>
-        <p class="store-muted mt-4 leading-relaxed">
-          {{ settings.text }}
-        </p>
-      </div>
-      <div class="border-l-4 border-[var(--brand-2)] pl-6">
-        <h3 class="font-bold">{{ product?.name || 'Our treats' }}</h3>
-        <p class="mt-3 text-lg">
-          {{
-            product?.ingredients ||
-            'Ingredient details are listed with each product.'
-          }}
-        </p>
-        <p
-          v-if="product?.storageFeeding"
-          class="store-muted mt-4 whitespace-pre-line text-sm leading-relaxed"
-        >
-          {{ product.storageFeeding }}
-        </p>
-        <ContentLink :href="settings.buttonUrl" class="store-button mt-5">{{ settings.buttonLabel }}</ContentLink>
+        <div class="home-ingredient-points">
+          <article class="home-ingredient-point"><ScanLine :size="21" aria-hidden="true" /><div><h3>Ingredients, clearly listed.</h3><p>{{ product?.ingredients || 'Ingredients and analysis stay with each real product, not in a blanket storefront claim.' }}</p></div></article>
+          <article class="home-ingredient-point"><PackageCheck :size="21" aria-hidden="true" /><div><h3>The right size for you.</h3><p>Compare bag sizes, prices and availability before you add.</p></div></article>
+          <article class="home-ingredient-point"><ClipboardCheck :size="21" aria-hidden="true" /><div><h3>A little care goes a long way.</h3><p>{{ product?.storageFeeding || 'Storage, feeding guidance and freshness information can be reviewed before choosing a treat.' }}</p></div></article>
+          <article class="home-ingredient-point"><MessageCircle :size="21" aria-hidden="true" /><div><h3>A little help when needed.</h3><ContentLink href="/account/help" class="home-boutique-link">Shopping help <ArrowUpRight :size="15" aria-hidden="true" /></ContentLink></div></article>
+        </div>
+        <p v-if="product?.isTestProduct" class="home-ingredient-disclaimer">Sample presentation; replace with approved product information.</p>
       </div>
     </div>
   </section>

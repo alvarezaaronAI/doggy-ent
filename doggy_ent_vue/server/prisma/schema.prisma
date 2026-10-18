@@ -59,6 +59,8 @@ model Product {
   cut            String?
   category       String?
   image          String?
+  galleryImages  Json          @default("[]")
+  isTestProduct  Boolean       @default(false)
   ingredients    String?
   texture        String?
   bestFor        String?

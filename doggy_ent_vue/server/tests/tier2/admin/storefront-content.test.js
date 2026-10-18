@@ -2,9 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import express from 'express'
 import { createDefaultStorefrontContent } from '../../../src/domains/storefront/content/sectionCatalog.js'
 import { validateStorefrontContent, isSafeContentUrl } from '../../../src/domains/storefront/content/contentValidation.js'
+import { projectStorefrontContent } from '../../../src/domains/storefront/content/contentProjection.js'
 const repo = vi.hoisted(() => ({ findStorefrontContent: vi.fn(), writeStorefrontContent: vi.fn() }))
+const media = vi.hoisted(() => ({ countMediaIds: vi.fn() }))
 const auth = vi.hoisted(() => ({ getAdminFromRequest: vi.fn(), getSessionCookieName: () => 'admin-session' }))
 vi.mock('../../../src/domains/storefront/repositories/storefront.repository.js', () => repo)
+vi.mock('../../../src/domains/media/repositories/media.repository.js', () => media)
 vi.mock('../../../src/domains/auth/services/auth.service.js', () => auth)
 const { getAdminStorefrontContent, getPublicStorefrontContent, saveStorefrontContent } = await import('../../../src/domains/storefront/services/storefront.service.js')
 const { default: routes } = await import('../../../src/domains/storefront/routes/storefront.routes.js')
@@ -16,7 +19,7 @@ describe('website content validation and publishing', () => {
     repo.findStorefrontContent.mockResolvedValue(null)
     const draft = await getAdminStorefrontContent()
     expect(draft.revision).toBe(0)
-    expect(draft.draft.sections).toHaveLength(10)
+    expect(draft.draft.sections).toHaveLength(11)
     expect(validateStorefrontContent(draft.draft)).toBe('')
     expect(await getPublicStorefrontContent()).toEqual({ content: null })
     expect(repo.writeStorefrontContent).not.toHaveBeenCalled()
@@ -32,17 +35,29 @@ describe('website content validation and publishing', () => {
     const content = createDefaultStorefrontContent()
     repo.writeStorefrontContent.mockResolvedValue({ draft: content, revision: 2 })
     await saveStorefrontContent({ revision: 1, content })
-    expect(repo.writeStorefrontContent).toHaveBeenCalledWith(1, { draft: content })
+    expect(repo.writeStorefrontContent).toHaveBeenCalledWith(1, { draft: projectStorefrontContent(content) })
   })
   it('publishes the validated snapshot atomically and retains the same draft', async () => {
     const content = createDefaultStorefrontContent()
     repo.writeStorefrontContent.mockResolvedValue({ draft: content, published: content, revision: 3 })
     await saveStorefrontContent({ revision: 2, content }, true)
-    expect(repo.writeStorefrontContent).toHaveBeenCalledWith(2, { draft: content, published: content, publishedAt: expect.any(Date) })
+    expect(repo.writeStorefrontContent).toHaveBeenCalledWith(2, { draft: projectStorefrontContent(content), published: projectStorefrontContent(content), publishedAt: expect.any(Date) })
   })
   it('rejects concurrent edits instead of overwriting newer content', async () => {
     repo.writeStorefrontContent.mockResolvedValue(null)
     await expect(saveStorefrontContent({ revision: 1, content: createDefaultStorefrontContent() })).rejects.toMatchObject({ statusCode: 409 })
+  })
+  it('checks portrait uploads in the selected media library before saving', async () => {
+    const id = '11111111-1111-4111-8111-111111111111'
+    const content = createDefaultStorefrontContent()
+    content.presentation.brand.portraits[0].image = '/api/media/' + id
+    media.countMediaIds.mockResolvedValue(0)
+    await expect(saveStorefrontContent({ revision: 0, content })).rejects.toMatchObject({ statusCode: 400 })
+    expect(repo.writeStorefrontContent).not.toHaveBeenCalled()
+    expect(media.countMediaIds).toHaveBeenCalledWith([id])
+    media.countMediaIds.mockResolvedValue(1)
+    repo.writeStorefrontContent.mockResolvedValue({ draft: content, revision: 1 })
+    await expect(saveStorefrontContent({ revision: 0, content })).resolves.toMatchObject({ revision: 1 })
   })
   it('rejects unsafe URLs, custom scripts/settings, duplicate anchors, incomplete images, and hidden-all pages before writing', async () => {
     for (const change of [

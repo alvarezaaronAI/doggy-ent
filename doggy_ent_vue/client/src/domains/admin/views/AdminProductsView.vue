@@ -1,5 +1,6 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import AdminProductImages from '../components/AdminProductImages.vue'
 import AdminProductFormPanel from '../components/AdminProductFormPanel.vue'
 import AdminProductsTable from '../components/AdminProductsTable.vue'
 import AdminPageHeader from '../components/AdminPageHeader.vue'
@@ -37,6 +38,8 @@ const {
   submitProduct,
   successMessage,
 } = useAdminProducts()
+const imageProduct = ref(null)
+async function imagesSaved() { imageProduct.value = null; await loadProducts() }
 const metrics = computed(() => [
   {
     label: 'Active',
@@ -78,7 +81,7 @@ onMounted(loadProducts)
       eyebrow="Catalog"
     >
       <button
-        v-if="!showForm"
+        v-if="!showForm && !imageProduct"
         type="button"
         class="admin-button admin-primary"
         @click="openCreateForm"
@@ -96,8 +99,9 @@ onMounted(loadProducts)
     >
       {{ successMessage }}
     </p>
+    <AdminProductImages v-if="imageProduct" :key="imageProduct.id" :product="imageProduct" @close="imageProduct = null" @saved="imagesSaved" />
     <AdminProductFormPanel
-      v-if="showForm"
+      v-else-if="showForm"
       :category-options="PRODUCT_CATEGORIES"
       :form="form"
       :product-id="editingProductId"
@@ -166,6 +170,7 @@ onMounted(loadProducts)
         :is-deleting="isDeleting"
         @delete="deleteProduct($event.id, $event.name)"
         @edit="startEdit"
+        @images="imageProduct = $event"
       />
       <section
         v-if="lowStock.length && !isLoading"

@@ -24,9 +24,9 @@ describe('website editor explicit drafts', () => {
     expect(editor.draft.value.sections.at(-2).id).toBe(id)
     editor.selectedBlock.value.visible = false
     editor.removeSection(id)
-    expect(editor.draft.value.sections).toHaveLength(10)
+    expect(editor.draft.value.sections).toHaveLength(11)
     editor.addSection('hero')
-    expect(editor.draft.value.sections).toHaveLength(10)
+    expect(editor.draft.value.sections).toHaveLength(11)
     expect(api.saveWebsiteDraft).not.toHaveBeenCalled()
   })
   it('retains drafts on failed saves and conflict errors', async () => {

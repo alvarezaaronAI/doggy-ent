@@ -1,33 +1,34 @@
 <script setup>
-import { Leaf, Flame, Package } from '@lucide/vue'
+import { ArrowUpRight, Heart } from '@lucide/vue'
 import { sectionSettings } from '@storefront-content/sectionCatalog.js'
+import { BRAND_IMAGES } from '../../constants/brandContent.js'
+import { mediaImageSource } from '@shared/utils/mediaImage.js'
+import ContentLink from '../../components/ContentLink.vue'
 defineProps({ id: { type: String, default: 'process' }, settings: { type: Object, default: () => sectionSettings('process') } })
-const icons = [Leaf, Flame, Package]
 </script>
 <template>
-  <section :id="id" class="store-section">
-    <div class="store-inner">
-      <p class="store-eyebrow">{{ settings.eyebrow }}</p>
-      <h2 class="mt-3 text-3xl font-bold">{{ settings.title }}</h2>
-      <p class="store-muted mt-3">
-        {{ settings.text }}
-      </p>
-      <div class="mt-8 grid gap-8 md:grid-cols-3">
-        <div
-          v-for="(step, index) in settings.items"
-          :key="index"
-          class="home-process-step"
-        >
-          <component
-            :is="icons[index % icons.length]"
-            :size="28"
-            class="text-[#17664d]"
-            aria-hidden="true"
-          />
-          <p class="store-muted mt-4 text-xs">0{{ index + 1 }}</p>
-          <h3 class="mt-2 text-lg font-bold">{{ step.title }}</h3>
-          <p class="store-muted mt-3 leading-relaxed">{{ step.text }}</p>
+  <section :id="id" class="store-section home-care-section">
+    <div class="store-inner home-care-layout">
+      <figure class="home-care-photo">
+        <div class="relative">
+          <img :src="mediaImageSource(settings.image || BRAND_IMAGES.preparation)" :alt="settings.imageAlt" loading="lazy" />
+          <span class="home-care-photo-label">Small batches. Thoughtful details.</span>
         </div>
+        <figcaption v-if="!settings.image">Illustrative preparation photo, not the actual kitchen.</figcaption>
+      </figure>
+      <div class="home-care-copy">
+        <header class="story-heading home-boutique-heading">
+          <p v-if="settings.eyebrow" class="store-eyebrow flex items-center gap-2"><Heart :size="15" aria-hidden="true" />{{ settings.eyebrow }}</p>
+          <h2>{{ settings.title }}</h2>
+          <p>{{ settings.text }}</p>
+        </header>
+        <ol class="home-process-list">
+          <li v-for="(step, index) in settings.items" :key="index" class="home-process-step">
+            <span class="home-process-number" aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+            <div><h3>{{ step.title }}</h3><p>{{ step.text }}</p></div>
+          </li>
+        </ol>
+        <ContentLink href="/meet-chase-evie" class="home-boutique-link">Our process <ArrowUpRight :size="17" aria-hidden="true" /></ContentLink>
       </div>
     </div>
   </section>

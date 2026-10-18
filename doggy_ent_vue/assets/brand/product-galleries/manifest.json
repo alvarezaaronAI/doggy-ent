@@ -1,0 +1,264 @@
+{
+  "date": "2026-10-14",
+  "method": "built-in image generation; contact-sheet crops with existing Sharp",
+  "images": [
+    {
+      "product": "chicken",
+      "role": "texture",
+      "file": "chicken-texture-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "chicken",
+      "role": "pack-angle",
+      "file": "chicken-pack-angle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "chicken",
+      "role": "preparation",
+      "file": "chicken-preparation-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "chicken",
+      "role": "lifestyle",
+      "file": "chicken-lifestyle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "beef",
+      "role": "texture",
+      "file": "beef-texture-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "beef",
+      "role": "pack-angle",
+      "file": "beef-pack-angle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "beef",
+      "role": "preparation",
+      "file": "beef-preparation-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "beef",
+      "role": "lifestyle",
+      "file": "beef-lifestyle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "turkey",
+      "role": "texture",
+      "file": "turkey-texture-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "turkey",
+      "role": "pack-angle",
+      "file": "turkey-pack-angle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "turkey",
+      "role": "preparation",
+      "file": "turkey-preparation-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "turkey",
+      "role": "lifestyle",
+      "file": "turkey-lifestyle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "salmon",
+      "role": "texture",
+      "file": "salmon-texture-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "salmon",
+      "role": "pack-angle",
+      "file": "salmon-pack-angle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "salmon",
+      "role": "preparation",
+      "file": "salmon-preparation-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "salmon",
+      "role": "lifestyle",
+      "file": "salmon-lifestyle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "lamb",
+      "role": "texture",
+      "file": "lamb-texture-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "lamb",
+      "role": "pack-angle",
+      "file": "lamb-pack-angle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "lamb",
+      "role": "preparation",
+      "file": "lamb-preparation-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "lamb",
+      "role": "lifestyle",
+      "file": "lamb-lifestyle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "training",
+      "role": "texture",
+      "file": "training-texture-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "training",
+      "role": "pack-angle",
+      "file": "training-pack-angle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "training",
+      "role": "preparation",
+      "file": "training-preparation-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "training",
+      "role": "lifestyle",
+      "file": "training-lifestyle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "pumpkin",
+      "role": "texture",
+      "file": "pumpkin-texture-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "pumpkin",
+      "role": "pack-angle",
+      "file": "pumpkin-pack-angle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "pumpkin",
+      "role": "preparation",
+      "file": "pumpkin-preparation-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "pumpkin",
+      "role": "lifestyle",
+      "file": "pumpkin-lifestyle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "bundle",
+      "role": "texture",
+      "file": "bundle-texture-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "bundle",
+      "role": "pack-angle",
+      "file": "bundle-pack-angle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "bundle",
+      "role": "preparation",
+      "file": "bundle-preparation-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    },
+    {
+      "product": "bundle",
+      "role": "lifestyle",
+      "file": "bundle-lifestyle-v1.webp",
+      "illustrative": true,
+      "approvedProductPhoto": false,
+      "uploadedToDatabase": true
+    }
+  ],
+  "integratedAt": "2026-10-15",
+  "databaseTarget": "Railway production testing"
+}

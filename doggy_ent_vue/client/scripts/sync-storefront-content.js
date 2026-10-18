@@ -3,7 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 const source = fileURLToPath(new URL('../../shared/storefront/', import.meta.url))
 const destination = fileURLToPath(new URL('../src/domains/storefront/content/', import.meta.url))
-const files = ['sectionCatalog.js', 'contentValidation.js', 'contentProjection.js', 'socialLinks.js', 'mediaRules.js', 'commercePresentation.js']
+const files = ['sectionCatalog.js', 'contentValidation.js', 'contentProjection.js', 'socialLinks.js', 'mediaRules.js', 'commercePresentation.js', 'pagePresentation.js']
 const header = '// Generated from shared/storefront. Edit the canonical file, then run client and server builds.\n'
 fs.mkdirSync(destination, { recursive: true })
 for (const file of files) {
