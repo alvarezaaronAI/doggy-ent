@@ -24,7 +24,7 @@ export function isInventoryLimited(product) {
 }
 
 export function isPurchasable(product, variant) {
-  if (!product || product.status !== 'active' || !variant) return false
+  if (!product || product.isTestProduct || product.status !== 'active' || !variant) return false
 
   if (canIgnoreInventory(product)) return true
 
@@ -44,6 +44,7 @@ export function limitQuantity(product, requestedQuantity, availableQuantity) {
 }
 
 export function getStockLabel(product, variant) {
+  if (product?.isTestProduct) return 'Test product · not for sale'
   if (!variant) return 'Unavailable'
 
   const mode = getSellingMode(product)

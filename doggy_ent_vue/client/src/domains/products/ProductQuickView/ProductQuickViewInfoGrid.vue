@@ -17,7 +17,7 @@ const props = defineProps({
         <div>
           <h3 class="font-extrabold">Ingredients</h3>
           <p class="mt-2 text-sm text-stone-300">
-            {{ product.ingredients || 'Single ingredient. No salt, no sugar, no glycerin, no preservatives.' }}
+            {{ product.ingredients || 'Product ingredient details have not been provided yet.' }}
           </p>
         </div>
       </div>
@@ -29,7 +29,7 @@ const props = defineProps({
         <div>
           <h3 class="font-extrabold">Texture</h3>
           <p class="mt-2 text-sm text-stone-300">
-            {{ product.texture || 'Firm jerky texture that can be broken into smaller pieces.' }}
+            {{ product.texture || 'Texture details have not been provided yet.' }}
           </p>
         </div>
       </div>
@@ -41,7 +41,7 @@ const props = defineProps({
         <div>
           <h3 class="font-extrabold">Best For</h3>
           <p class="mt-2 text-sm text-stone-300">
-            {{ product.bestFor || 'Training rewards, bigger dogs, picky pups, and simple-ingredient routines.' }}
+            {{ product.bestFor || 'Review the product details to choose a suitable treat.' }}
           </p>
         </div>
       </div>
@@ -53,7 +53,7 @@ const props = defineProps({
         <div>
           <h3 class="font-extrabold">Freshness</h3>
           <p class="mt-2 text-sm text-stone-300">
-            {{ product.freshness || 'Best enjoyed within 14–21 days after opening. Keep sealed for freshness.' }}
+            {{ product.freshness || 'Follow the approved storage guidance supplied with your product.' }}
           </p>
         </div>
       </div>

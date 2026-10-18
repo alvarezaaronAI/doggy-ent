@@ -38,36 +38,16 @@ const emit = defineEmits(['update-size'])
 </script>
 
 <template>
-  <div class="mt-6 rounded-2xl border border-stone-800 bg-[color-mix(in_srgb,var(--brand-5)_48%,white)] p-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h3 class="font-extrabold text-[var(--brand-4)]">Choose Size</h3>
-        <p class="mt-1 text-sm text-stone-300">
-          Select a size before adding to cart.
-        </p>
-      </div>
-
-      <p class="text-right text-sm font-semibold text-stone-400">
-        {{ selectedStockLabel }}
-        <span class="block text-lg font-extrabold text-[var(--brand-4)]">
-          {{ formatCurrency(unitPrice) }}
-        </span>
-      </p>
-    </div>
-
-    <div class="mt-4 flex flex-wrap gap-2">
+  <div class="mt-5">
+    <div class="quick-selected-price"><strong>{{ formatCurrency(unitPrice) }}</strong><span>{{ selectedSize }} · {{ selectedStockLabel }}</span></div>
+    <p class="mt-4 text-xs font-semibold">Choose a bag size</p>
+    <div class="mt-2 flex flex-wrap gap-2">
       <button
         v-for="variant in variants"
         :key="variant.size"
-        class="rounded-full border px-4 py-2 text-sm font-extrabold transition"
-        :class="[
-          selectedSize === variant.size
-            ? 'border-emerald-400 bg-emerald-400 text-[var(--brand-4)] shadow-sm'
-            : 'border-stone-700 bg-white text-stone-700 hover:border-emerald-400',
-          isInventoryLimited(product) && (variant.stockStatus === 'out-of-stock' || Number(variant.quantity || 0) <= 0)
-            ? 'opacity-60'
-            : ''
-        ]"
+        type="button"
+        class="store-size"
+        :aria-pressed="selectedSize === variant.size"
         @click="emit('update-size', variant.size)"
       >
         {{ variant.size }}
@@ -79,3 +59,4 @@ const emit = defineEmits(['update-size'])
     </p>
   </div>
 </template>
+<style scoped>.quick-selected-price { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; border-block:1px solid #d9e2dd; padding:14px 0; }.quick-selected-price strong { font-size:32px; color:var(--storefront-brand-4); font-variant-numeric:tabular-nums; }.quick-selected-price span { color:#62726b; font-size:12px; }</style>

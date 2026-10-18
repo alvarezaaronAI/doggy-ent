@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { fetchProducts } from '@products/api/products.api'
+import { isCollectionProduct } from '../utils/productVisibility.js'
 
 export function useProducts() {
   const products = ref([])
@@ -22,7 +23,7 @@ export function useProducts() {
 
   const availableCategories = computed(() => {
     const categories = products.value
-      .filter((product) => product.status === 'active')
+      .filter(isCollectionProduct)
       .map((product) => product.category)
       .filter(Boolean)
 
@@ -31,7 +32,7 @@ export function useProducts() {
 
   const availableProteins = computed(() => {
     const proteins = products.value
-      .filter((product) => product.status === 'active')
+      .filter(isCollectionProduct)
       .map((product) => product.protein)
       .filter(Boolean)
 
@@ -43,7 +44,7 @@ export function useProducts() {
   )
 
   const storefrontProducts = computed(() =>
-    products.value.filter((product) => product.status !== 'coming-soon'),
+    products.value.filter(isCollectionProduct),
   )
 
   return {

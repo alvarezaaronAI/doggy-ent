@@ -17,7 +17,7 @@
   background: #fff;
 }
 .store-brand .brand-pair {
-  background: #f0f4fc;
+  background: #fff;
 }
 .store-brand .brand-story-copy {
   max-width: 600px;
@@ -48,9 +48,15 @@
   color: #59655e;
 }
 .store-brand .brand-value {
+  border: 1px solid #deceb7;
   border-top: 3px solid var(--brand-1);
-  padding-top: 24px;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 5px 16px #34230d0c;
 }
+.brand-page-content .brand-pair .store-inner { max-width: 900px; }
+.brand-page-content .brand-portrait { aspect-ratio: 1; }
+.brand-page-content .brand-origin .store-inner { border-block: 1px solid #deceb7; }
 .store-brand .brand-value > svg {
   color: var(--brand-1);
 }

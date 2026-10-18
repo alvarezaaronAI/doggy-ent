@@ -54,6 +54,11 @@ afterEach(async () => {
   }
 })
 describe('safe public campaigns', () => {
+  it('preserves uploaded image references and rejects other relative or credential-bearing images', () => {
+    const image = '/api/media/11111111-1111-4111-8111-111111111111'
+    expect(mapPublicCampaignPage({ ...campaign, image }).image).toBe(image)
+    for (const image of ['/api/auth/me', '/admin', 'javascript:alert(1)', 'https://user:pass@example.test/photo']) expect(mapPublicCampaignPage({ ...campaign, image }).image).toBeNull()
+  })
   it('allowlists public fields and never returns customer/order attribution or internal revenue', () => {
     const row = {
       ...campaign,

@@ -1,5 +1,33 @@
 # Verification And QA
 
+## Storybook And Impact First QA (2026-10-17)
+
+Both builds pass (client Vite 2,305 modules; server Prisma Client 6.16.2 generation). Complete suites pass: 145 client tests/28 files and 139 server tests/34 files. Eight new client cases cover managed single-origin composition, escaped portraits, template/failure states, inert preview navigation, real fixed/percentage/inactive giving, eligible ordering/test guards and editor controls. Three server cases cover legacy portrait defaults, nested allowlists/bounds/URLs and media-library existence before saving. No actual database write or provider request.
+
+Actual local desktop: portrait selection changes photo/story, real configured $2 rule precedes partner content, all three eligible cards load, 18 oz/$39.99 opens actual Quick View at that size/price, and the Home campaign pop-out reuses Impact First. Home retains nine sections/eight products/seven reviews. No failed selected-page images/captured application errors or desktop overflow. At actual CSS width 388 px, both page layouts stack with no heading/page horizontal overflow. Viewport overrides are not real-device certification.
+
+Manual: sign in to Website UI (no active session during this pass), change both portraits/photos and surface colors, use local selector/Cancel, then deliberately verify draft Save/reload/Publish against the approved target. Check Catalog campaign handles, long copy, failed photos, active/paused/ended fixed/percentage campaigns, pop-out focus/scroll, real Safari/phone/reduced-motion/screen-reader, shared bag/auth/search and approved guest/signed-in checkout after reviewed rollout. Backend contract must deploy before the new client saves. No migration/new env variable needed. See [complete evidence and recovery](work-checkpoints/2026-10-17-storybook-impact-first.md).
+
+## Selected Modern Boutique Home QA (2026-10-16)
+
+Local client build passes (2,297 modules); all 137 tests/27 files pass (11/120/6). Thirteen focused SSR/lifecycle cases cover managed care/brand content, actual product ingredients/storage/Quick View, all seven detailed fictional reviews, retained gallery fallback, editor autoplay=false, overflow/visibility gating, eight-second advance, manual wrap/Pause, focus/hover/hidden tab/reduced motion, late-loaded tracks, resize and cleanup. No new lint script or server/Prisma run is required.
+
+Actual local browser retains nine sections/eight products, loaded care/brand/review images and no application error entries. Manual review navigation/Pause and the ingredient action opening actual 6 oz/$14.99 Quick View work. Responsive DOM checks at actual widths 2149/846/582/388 show no horizontal page overflow; two 544 px cards fit a 1,112 px wide track and one 352 px card fits the narrow track. Selected-section descendants stay within the 388 px viewport. Viewport override screenshots were blank on narrow captures despite valid DOM; normal restored captures show the actual page. Do not claim real-phone painting/Safari/accessibility certification from those geometry checks.
+
+Manual next checks: compare only the three approved layouts; check long edited text, replacement imagery and custom background overrides; swipe/keyboard/Previous/Next/Pause/Play, screen reader and OS reduced motion; inspect the narrow Website UI canvas and confirm inert/no-rotation behavior and explicit Save/Publish boundaries. All review examples remain fictional. No DB publication, deployment, provider send or payment occurred. See [proof and recovery](work-checkpoints/2026-10-16-boutique-home-sections.md).
+
+## Approved Storefront Integration (2026-10-15)
+
+The design is now connected application code, not only an HTML preview. Exact commands/results and release IDs are in the latest handoff. Client build and all 115 tests pass; server build/Prisma 6.16.2 generation and all 136 tests pass. Server syntax checks cover 173 JavaScript files. New regressions cover gallery validation/max-four, protected image PATCH, stale updates, presentation allowlists/legacy announcements, rotation lifecycle and test-product checkout rejection.
+
+Browser checks exercised local admin -> local backend -> approved Railway DB, real gallery reorder/save/restore, static preview edit/Cancel, popup size/image retention, 6 oz/18 oz distinct cart rows and shared cart across Brand navigation. Temporary cart additions and gallery reordering were restored. No real payment or provider action occurred.
+
+Final live rollout passed: Vercel Home/Brand/Campaign/admin-editor/checkout direct routes return 200; a nonexistent Vercel `/api` route stays 404 rather than receiving index.html. Railway public catalog/content/campaign reads return 200 with the exact storefront CORS origin and credential support; anonymous auth/me returns the expected 401. All 25 public testing-product image references and the uploaded campaign image respond 200. Live desktop Home/Brand/Campaign had no failed images or horizontal overflow; final public browser warning/error log read returned no entries. The Website UI reversible draft test persisted across reload, was restored without publishing, and now has draft equal to publication at revision 3. Migration/checksum reads confirm 22 completed and no pending migrations on Railway. Deployment IDs are in the handoff.
+
+Manual release acceptance: inspect Home/Campaign/Brand on actual desktop/mobile/Safari; check all original sections, selected size prices, compact cards, five popup photographs, green eligible cards, pause/manual announcement controls, compact shared footer and monogram. In Website UI confirm draft/reload versus explicit publication and read-only business facts. In Products check zero through four gallery slots, upload/error/Cancel and stale-save handling. Test products must stay unavailable even if their stock or selling mode changes. Do not mistake fictional review/partner templates for real proof.
+
+Browser viewport overrides did not consistently match the requested CSS viewport in this integration session. Historical mockup mobile evidence is not proof of current 320/390-pixel app behavior; actual narrow-device acceptance remains required. Full accessibility, reduced-motion OS settings, live Stripe guest/signed-in checkout and Safari cross-site auth are not certified by these unit/local checks.
+
 ## Receipt First And Manual Order Email QA (2026-10-10)
 
 Latest exact commands/results live in [handoff](../PROJECT_HANDOFF.md). Existing test suites cover DB-resolved selected-size prices/SKUs, quantities/drafts/overselling, proof expiry/forgery/reference/owner binding, conditional stock transaction, reviewed signup/session retry, once-only wallet payment executor, server promo email invalidation, template escaping/revision/status/tracking/actor/stale/confirmation/recipient gates and provider no-send/dedup. This is not live Stripe/Resend or concurrency/load certification.
@@ -71,6 +99,12 @@ If a previous run ended because of credits, rate limits, timeout, interruption, 
 - Reconcile mismatches between checklist, final report, handoff, and actual files.
 
 ## Required Verification By Change Type
+
+### Prisma Package Updates
+
+Keep prisma and @prisma/client on the same exact reviewed version; updating only the runtime can break generation and every server import. Check npm ls, regenerate explicitly, run server build/tests and confirm the actual app imports. The existing tier3 suite includes [toolchain regression tests](../server/tests/tier3/utils/prisma-toolchain.test.js) for manifest/lock/installed/generated consistency and the real singleton import without a database query.
+
+Use a target-confirmed read-only migration status check when appropriate, not npm start: startup runs migration deployment. The 2026-10-13 compatibility repair passed 128 server tests, 167 syntax checks, local 21-migration status and local read-only API/anonymous guard checks. No schema, data, auth credentials or provider actions changed. See the [repair checkpoint](../PROJECT_HANDOFF.md#2026-10-13-partial-prisma-upgrade-compatibility-repair). Prisma tooling advisories remain unresolved; do not claim a downgrade/alignment is a security upgrade or apply audit fix --force without reviewed compatibility work.
 
 Client changes:
 
@@ -276,3 +310,39 @@ Local admin provisioning is deliberate, not startup automation. Recheck original
 All architecture Mermaid fences were rendered with the cached official CLI, including supplemental diagram files; old automatic-email arrows were corrected to the manual-send policy. Markdown/fences/local path links and secret-pattern/build scans were rerun. No live provider request, charge, label, shared DB migration or customer-data write is permitted during automated QA.
 
 Unresolved launch gates: closed-browser/redirect/failed-finalization payment recovery, concurrent promo claims and attribution, truthful refund/payment ledger, tax/shipping business validation, Prisma tooling advisories, approved wallet/provider QA, DB backups/restore and monitoring evidence.
+
+## Approved Test Catalog And Appearance Preview (2026-10-14)
+
+The owner explicitly approved additive testing products in the current Railway production environment, because the storefront is still a testing deployment, with `[TEST]` labels and no purchasing. This is not blanket authorization for automated shared-DB mutation, migration, seeding, provider sends or deployment. Eight new records/images cover all five ProductStatus values; inventory-limited zero-stock variants were rejected by the real server resolver, and the actual client helper disables every public variant. Existing catalog/content/customers/orders/promos/campaigns were preserved. A private pre-write backup decoded successfully; no restore drill was performed.
+
+Manual acceptance: refresh deployed catalog/admin; confirm five public test records and three hidden Draft/Archived records, both sizes unavailable, all eight image paths render, existing seven products unchanged and no accidental featured selection. Never add inventory or use made-to-order/preorder for these fixtures. Retire public testing products before real-customer launch; review media references before deletion.
+
+The revised appearance editor is a disconnected design preview, not retained application source. Verified desktop and 320/390 mock layouts, shared header/footer, static label editing/cancel, read-only Product/Campaign fields, expanded navigation, monogram and product pop-out. Full application integration, static publication without DB writes, real-device/Safari/screen-reader acceptance and future Campaign content persistence remain separate work. See the [checkpoint](../PROJECT_HANDOFF.md#2026-10-14-refined-preview-and-approved-railway-test-catalog) for exact commands, results and limitations.
+
+### Subsequent Preview Polish And Optional Galleries
+
+This review round changes no application source or DB data. Check the compact shared footer, fading announcement messages with pause/manual controls, simplified categorized editor selectors, photo-led Made with Care, seven clearly fictional reviews and distinct Home/Campaign/Brand compositions. No review may be represented as verified or published without real approved customer evidence.
+
+In the Catalog Products example, try zero through four optional images, image choice/removal/reorder, Save/Cancel and switching products. The pop-out should omit empty slots, preserve selected size when changing images, show the correct selected price and restore focus on Escape. Desktop has a left rail; mobile has a wrapping horizontal rail. Upload and real persistence remain unconnected, not successful mock API operations. Gallery images must remain Product-owned, never editable as business records through Website UI.
+
+Executed checks and file-size/asset/DOM/timer results are in [the latest checkpoint](../PROJECT_HANDOFF.md#2026-10-14-preview-polish-and-optional-product-galleries). Browser emulation is not real Safari/touch/screen-reader acceptance. Before implementing, approve the visual direction, decide static-publication persistence, review the product gallery contract and replace generated photos/reviews/partner facts before any real-customer publication.
+
+## Full Approved Design Reconciliation (2026-10-15)
+
+The prior preview-only and partial-release statements above are historical. Current source is connected and directly deployed after approval; exact release IDs/results live in [the resumable checkpoint](work-checkpoints/2026-10-15-approved-ui-reconciliation.md). Current automated baselines: client 122/25 files, server 136/34 files, both builds, 173 server syntax files and 14 canonical snapshot comparisons. Read-only Railway preflight: 22 complete migrations/checksums, no pending; seven archived legacy products/seven historical item references retained, eight test products/all sixteen variants rejected. Public image checks cover 40 distinct product/campaign URLs. No payment/provider action occurred.
+
+Manual acceptance: hard-refresh all three pages; verify exactly nine visible Home sections, ordered eight compact test products and three giving cards; no old promise/help band, no old catalog images. Open Quick View, switch 6/18 oz/photos/tabs, close by Escape and verify focus. Open campaign pop-out; confirm configured contribution is not a bill charge. Test compact sign-in/bag/search and mobile menu. Inspect Brand/Campaign complete compositions, small shared footer and announcement Pause. In Website UI confirm same catalog, contextual static controls, no editing in business nav, hidden sections labelled and no business mutation on preview. Existing product gallery Save/Cancel/stale-save coverage remains; do not publish QA text automatically.
+
+Browser checks at actual CSS widths 358/477/582 and wide desktop are useful but not proof of exact 320/390/device Safari, screen-reader or OS reduced-motion behavior. Review templates/fake reviews/fictional partner before real launch. All public catalog items are deliberately unpurchasable testing records; a fresh approved real/test sellable product is needed for end-to-end payment QA. Original launch gates remain open.
+
+### Local Density And Heading Follow-Up
+
+Current local-only client baseline is 123 passing tests in 25 files (11/106/6 by tier) and a successful Vite build. The additional SSR test keeps collection copy/filters together while preserving the separate loading state. Actual read-only browser checks cover wider/shorter cards, 6/18 oz prices and Quick View selection, filters, complete images, and shared Home/Campaign/Brand heading surfaces. Settled CSS widths 388/582/1910 have no horizontal overflow; viewport override dimensions are not exact device emulation. Local HTTP produces the expected Stripe.js HTTPS advisory, not an application error; no payment/provider request was submitted.
+
+Before publishing, visually review the [local iteration](work-checkpoints/2026-10-15-storefront-density.md) on a real phone/Safari, long product titles/copy and a narrow Website UI canvas. Confirm the maximum-column setting adapts without hiding fields and giving remains distinct. No server/Prisma code changed, no server suite or migration ran, and no editor Save/Publish or business write occurred. Previous deployment/launch limitations remain open.
+
+### Section Typography Follow-Up
+
+The product proportions were accepted; section styling was refined again locally. Final client build passes; 124 tests/25 files pass (11/107/6). Added coverage omits empty eyebrow markup and preserves the collection toolbar/loading boundary. Browser checks confirm Home/Campaign/Brand section titles share 26 px/650-weight type and have no heading/page overflow at actual 388 px CSS width. Wide Home still has approximately 360 x 644 px first-row product cards. Card 18 oz/$39.99 still opens Quick View with 18 oz/$39.99; test purchase stays disabled. Desktop Home/Brand/Campaign were visually inspected; no application console errors observed. No server/schema/env/provider/deployment work occurred.
+
+Owner approval of this typography direction, real-device Safari/touch/screen reader, long edited copy and narrow authenticated editor canvas remain manual. Existing test-only data and launch gates are unchanged. Exact files/screenshots/recovery are in [the typography checkpoint](work-checkpoints/2026-10-15-storefront-type-polish.md).

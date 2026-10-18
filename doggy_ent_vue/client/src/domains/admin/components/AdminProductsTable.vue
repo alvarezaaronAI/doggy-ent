@@ -5,8 +5,9 @@ import { formatAdminProductPrice } from '../utils/adminProducts.formatters'
 import AdminProductStatusBadge from './AdminProductStatusBadge.vue'
 import AdminProductVariantCell from './AdminProductVariantCell.vue'
 import AdminIcon from './AdminIcon.vue'
+import { Images } from '@lucide/vue'
 defineProps({ products: { type: Array, required: true }, isDeleting: Boolean })
-defineEmits(['delete', 'edit'])
+defineEmits(['delete', 'edit', 'images'])
 </script>
 <template>
   <p v-if="!products.length" class="admin-state">
@@ -70,6 +71,7 @@ defineEmits(['delete', 'edit'])
           </td>
           <td>
             <div class="flex gap-1">
+              <button type="button" class="admin-icon-button" :aria-label="'Edit photographs for ' + product.name" title="Edit product photographs" @click="$emit('images', product)"><Images :size="16" /></button>
               <button
                 type="button"
                 class="admin-icon-button"

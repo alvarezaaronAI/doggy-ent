@@ -14,10 +14,6 @@ const props = defineProps({
 </script>
 
 <template>
-  <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">
-    Quick View
-  </p>
-
   <h2 class="mt-2 text-3xl font-extrabold">
     {{ props.product.name }}
   </h2>

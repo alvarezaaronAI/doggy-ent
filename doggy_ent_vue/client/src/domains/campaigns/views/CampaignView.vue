@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import SiteHeader from '@app/layouts/SiteHeader.vue'
 import SiteFooter from '@app/layouts/SiteFooter.vue'
+import PromoStrip from '@app/layouts/PromoStrip.vue'
 import CampaignPageContent from '../components/CampaignPageContent.vue'
 import { useCampaignPage } from '../composables/useCampaignPage.js'
 import { useProducts } from '@products/composables/useProducts.js'
@@ -37,6 +38,7 @@ onMounted(() => {
 </script>
 <template>
   <div class="storefront-ui min-h-screen">
+    <PromoStrip />
     <SiteHeader
       :cart-count="itemCount"
       v-model:search-query="searchQuery"

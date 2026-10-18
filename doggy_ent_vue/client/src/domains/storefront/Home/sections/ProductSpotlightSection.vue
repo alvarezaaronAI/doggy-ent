@@ -1,8 +1,7 @@
 <script setup>
 import { mediaImageSource } from '@shared/utils/mediaImage.js'
 import { computed } from 'vue'
-import { Package, ShoppingBag } from '@lucide/vue'
-import ProductCampaignBadge from '@products/ProductCard/ProductCampaignBadge.vue'
+import { Package, ShoppingBag, ArrowRight } from '@lucide/vue'
 import ProductCardVariantSelector from '@products/ProductCard/ProductCardVariantSelector.vue'
 import { useProductVariants } from '@products/composables/useProductVariants'
 import { formatCurrency } from '@shared/utils/currency'
@@ -14,7 +13,7 @@ const props = defineProps({
   id: { type: String, default: 'spotlight' },
   settings: { type: Object, default: () => sectionSettings('spotlight') },
 })
-const emit = defineEmits(['add-to-cart', 'select-size'])
+const emit = defineEmits(['add-to-cart', 'select-size', 'quick-view'])
 const {
   getProductVariants,
   getVariantBySize,
@@ -28,10 +27,9 @@ const variant = computed(() =>
 <template>
   <section :id="id" class="store-section">
     <div class="store-inner">
-      <p class="store-eyebrow">{{ settings.eyebrow }}</p>
       <div
         v-if="featuredProduct"
-        class="mt-5 grid gap-8 md:grid-cols-2 md:items-center"
+        class="home-feature"
       >
         <div class="spotlight-image">
           <img
@@ -42,21 +40,13 @@ const variant = computed(() =>
           />
           <Package v-else :size="48" aria-hidden="true" />
         </div>
-        <div class="min-w-0">
-          <h2 class="text-3xl font-bold">{{ featuredProduct.name }}</h2>
+        <div class="home-feature-copy min-w-0">
+          <p class="store-eyebrow">{{ settings.eyebrow }}</p>
+          <h2 class="text-3xl font-bold">{{ settings.title || featuredProduct.name }}</h2>
           <p class="store-muted mt-4 leading-relaxed">
-            {{ featuredProduct.shortDescription }}
+            {{ settings.text || featuredProduct.shortDescription }}
           </p>
-          <div class="mt-4 flex flex-wrap gap-2">
-            <span
-              v-for="tag in featuredProduct.tags"
-              :key="tag"
-              class="store-product-tag"
-              >{{ tag }}</span
-            >
-          </div>
-          <ProductCampaignBadge :campaigns="campaigns" />
-          <div class="mt-6 border-t border-[#d6ddd4] pt-5">
+          <div class="mt-5">
             <ProductCardVariantSelector
               :product="featuredProduct"
               :variants="getProductVariants(featuredProduct)"
@@ -71,7 +61,7 @@ const variant = computed(() =>
                 getSelectedStockLabel(featuredProduct, variant)
               }}</span>
             </div>
-            <button
+            <div class="flex flex-wrap gap-2"><button
               type="button"
               class="store-button store-button-primary w-full sm:w-auto"
               :disabled="!isPurchasable(featuredProduct, variant)"
@@ -83,7 +73,7 @@ const variant = computed(() =>
                   ? 'Add to Cart'
                   : 'Unavailable'
               }}
-            </button>
+            </button><button type="button" class="store-button" @click="emit('quick-view', featuredProduct)">A closer look <ArrowRight :size="16" /></button></div>
           </div>
         </div>
       </div>
@@ -95,15 +85,19 @@ const variant = computed(() =>
 </template>
 <style scoped>
 .spotlight-image {
-  aspect-ratio: 4/3;
+  height: 310px;
+  width: 100%;
+  min-width: 0;
   background: #f3f5f2;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: 8px;
-  border: 1px solid #dfd2bd;
-  box-shadow: 0 12px 30px rgba(67, 46, 27, 0.11);
 }
+.home-feature { display:grid; grid-template-columns:300px minmax(0,1fr); align-items:center; border:1px solid #d4ded7; border-radius:8px; background:white; box-shadow:0 8px 22px #243e3210; overflow:hidden; }
+.home-feature-copy { padding:24px; }
+@media(max-width:620px) { .home-feature { grid-template-columns:minmax(0,1fr); } .spotlight-image { aspect-ratio:1.6; } }
+@container website-preview (max-width:620px) { .home-feature { grid-template-columns:minmax(0,1fr); } }
+.spotlight-image { align-self:stretch; height:auto; min-height:300px; }
 .spotlight-image img {
   width: 100%;
   height: 100%;

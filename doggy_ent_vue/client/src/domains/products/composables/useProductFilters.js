@@ -4,6 +4,7 @@ import {
   getProductVariantPrice,
 } from '../utils/productVariants'
 import { useStorefrontSearch } from '@storefront/composables/useStorefrontSearch.js'
+import { isCollectionProduct } from '../utils/productVisibility.js'
 
 export function useProductFilters(products) {
   const { searchQuery } = useStorefrontSearch()
@@ -15,7 +16,7 @@ export function useProductFilters(products) {
     const normalizedSearch = searchQuery.value.trim().toLowerCase()
 
     let filteredProducts = products.value.filter((product) => {
-      if (product.status !== 'active') {
+      if (!isCollectionProduct(product)) {
         return false
       }
 

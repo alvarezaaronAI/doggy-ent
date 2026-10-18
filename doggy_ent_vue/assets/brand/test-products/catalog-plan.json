@@ -1,0 +1,15 @@
+{
+  "batch": "CE-QA-20261013",
+  "purpose": "Owner-approved design test products. Not for sale. Never overwrite existing products.",
+  "safety": {"sellingMode": "INVENTORY_LIMITED", "inventory": 0, "featured": false},
+  "products": [
+    {"name":"Chicken Breast Jerky","asset":"chicken.webp","status":"ACTIVE","category":"Jerky","protein":"Chicken","prices":[14.99,39.99]},
+    {"name":"Beef Jerky","asset":"beef.webp","status":"OUT_OF_STOCK","category":"Jerky","protein":"Beef","prices":[17.99,43.99]},
+    {"name":"Turkey Jerky","asset":"turkey.webp","status":"COMING_SOON","category":"Jerky","protein":"Turkey","prices":[16.99,41.99]},
+    {"name":"Salmon Bites","asset":"salmon.webp","status":"ACTIVE","category":"Jerky","protein":"Salmon","prices":[18.99,46.99]},
+    {"name":"Lamb Jerky","asset":"lamb.webp","status":"DRAFT","category":"Jerky","protein":"Lamb","prices":[19.99,48.99]},
+    {"name":"Training Bites","asset":"training.webp","status":"COMING_SOON","category":"Training","protein":"Demo","prices":[12.99,32.99]},
+    {"name":"Pumpkin Bites","asset":"pumpkin.webp","status":"DRAFT","category":"Seasonal","protein":"Demo","prices":[13.99,34.99]},
+    {"name":"Weekend Bundle","asset":"bundle.webp","status":"ARCHIVED","category":"Bundle","protein":"Demo","prices":[24.99,54.99]}
+  ]
+}

@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import StorefrontHero from '../../../src/domains/storefront/components/StorefrontHero.vue'
 import HeroSection from '../../../src/domains/storefront/Home/sections/HeroSection.vue'
 import NextDropsSection from '../../../src/domains/storefront/Home/sections/NextDropsSection.vue'
+import ProductCollectionSection from '../../../src/domains/storefront/Home/sections/ProductCollectionSection.vue'
 import { BRAND_STORY_PATH } from '../../../src/domains/storefront/constants/brandContent.js'
 
 const renderDrops = (props = {}) =>
@@ -13,6 +14,40 @@ const renderDrops = (props = {}) =>
   )
 
 describe('storefront section presentation', () => {
+  it('groups collection copy and filters in one reading surface without hiding catalog state', async () => {
+    const html = await renderToString(
+      createSSRApp(ProductCollectionSection, {
+        settings: {
+          eyebrow: 'The collection',
+          title: 'Browse the treats',
+          text: 'Choose their next favourite.',
+          productIds: [],
+        },
+        context: {
+          activeProducts: [],
+          availableCategories: ['all', 'Jerky'],
+          availableProteins: ['all', 'Chicken'],
+          selectedCategory: 'all',
+          selectedProtein: 'all',
+          selectedSort: 'featured',
+          isLoading: true,
+        },
+      }),
+    )
+    const headingEnd = html.indexOf('</header>')
+    expect(html).toContain('<header class="story-heading">')
+    expect(html).toContain('Browse the treats')
+    expect(html).toContain('Choose their next favourite.')
+    expect(html).toContain('aria-label="Protein"')
+    expect(html).toContain('aria-label="Sort by"')
+    expect(html).toContain('collection-filter-toolbar')
+    expect(html.indexOf('Browse the treats')).toBeLessThan(headingEnd)
+    expect(html.indexOf('Choose their next favourite.')).toBeLessThan(headingEnd)
+    expect(html.indexOf('aria-label="Protein"')).toBeLessThan(headingEnd)
+    expect(html.indexOf('aria-label="Sort by"')).toBeLessThan(headingEnd)
+    expect(html.indexOf('Loading treats...')).toBeGreaterThan(headingEnd)
+  })
+
   it('uses the actual featured product for hero copy, tags and shopping destination', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
@@ -69,6 +104,21 @@ describe('storefront section presentation', () => {
     expect(html).toContain('role="status"')
     expect(html).toContain('Loading upcoming treats...')
     expect(html).not.toContain('More good things are on the way.')
+  })
+
+  it('does not leave an empty eyebrow above a section title', async () => {
+    const html = await renderDrops({
+      settings: {
+        eyebrow: '',
+        title: 'Next Drops',
+        text: 'A first look at what comes next.',
+        buttonUrl: '/#shop',
+        buttonLabel: 'Explore the treats',
+      },
+    })
+    expect(html).toContain('Next Drops')
+    expect(html).toContain('A first look at what comes next.')
+    expect(html).not.toContain('class="store-eyebrow"')
   })
 
   it('distinguishes a failed catalog request from an empty catalog', async () => {

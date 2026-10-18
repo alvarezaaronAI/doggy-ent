@@ -8,7 +8,7 @@ export async function resolveCheckoutItems(items) {
     const product = products.find(row => row.id === String(item?.productId || item?.id || ''))
     const variant = product?.variants.find(row => row.size === item?.size && row.isActive)
     const quantity = Number(item?.quantity)
-    if (!product || product.status !== 'ACTIVE' || !variant || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 999) throw invalid('A product, size or quantity is no longer available. Review your bag.')
+    if (!product || product.isTestProduct || product.status !== 'ACTIVE' || !variant || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 999) throw invalid('A product, size or quantity is no longer available. Review your bag.')
     const requested = (quantities.get(variant.sku) || 0) + quantity
     quantities.set(variant.sku, requested)
     if ((!product.sellingMode || product.sellingMode === 'INVENTORY_LIMITED') && variant.inventory < requested) throw invalid('There is not enough stock for ' + product.name + ', ' + variant.size + '.')

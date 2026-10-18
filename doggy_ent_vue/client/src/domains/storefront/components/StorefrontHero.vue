@@ -64,8 +64,8 @@ watch(
   isolation: isolate;
   display: flex;
   align-items: center;
-  min-height: min(500px, calc(100svh - 210px));
-  padding-block: 44px;
+  min-height: 320px;
+  padding-block: 46px;
   background: #304639;
   color: white;
 }
@@ -75,7 +75,7 @@ watch(
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 65% center;
+  object-position: 75% top;
   z-index: -2;
 }
 .store-hero-shade {
@@ -95,27 +95,27 @@ watch(
   padding-block: 0;
 }
 .store-hero-content {
-  max-width: 550px;
+  max-width: 630px;
 }
 .store-hero-eyebrow {
-  color: var(--brand-2);
-  font-size: 14px;
+  color: white;
+  font-size: 12px;
   font-weight: 700;
 }
 h1 {
   margin-top: 16px;
   color: white;
-  font-size: 48px;
-  font-weight: 800;
-  line-height: 1.12;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.18;
   overflow-wrap: anywhere;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 .store-hero-description {
-  max-width: 440px;
-  margin-top: 18px;
+  max-width: 500px;
+  margin-top: 14px;
   color: white;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.6;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
 }
@@ -133,9 +133,12 @@ h1 {
 .store-hero-supporting {
   margin-top: 24px;
 }
+@media (min-width: 1400px) {
+  .store-hero > img { object-position: 65% 18%; }
+}
 @media (max-width: 639px) {
   .store-hero {
-    min-height: min(490px, calc(100svh - 160px));
+    min-height: 320px;
     padding-block: 32px;
   }
   .store-hero > img {

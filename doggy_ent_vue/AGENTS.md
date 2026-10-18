@@ -30,6 +30,7 @@ Before editing:
 - Separate confirmed issues from uncertain risks.
 - Do not commit or push unless the user explicitly asks.
 - Update `PROJECT_HANDOFF.md` and relevant docs when behavior, architecture, flows, environment requirements, or verification results change.
+- For long or interrupted work, maintain a dated checkpoint under `docs/work-checkpoints/` and link it from `PROJECT_HANDOFF.md`. Update it at implementation, data, verification and deployment milestones with completed/unverified work, exact next steps and task-owned operations. Never include secrets. Credit cutoffs cannot reliably be predicted; do not wait for the final response to save progress.
 
 ## Architecture Rules
 

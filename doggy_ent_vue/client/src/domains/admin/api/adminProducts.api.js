@@ -6,6 +6,12 @@ import { normalizeProduct } from '@products/mappers/product.mapper.js'
 
 const PRODUCTS_API_URL = '/api/products'
 
+export async function saveProductImages(id, payload) {
+  return normalizeProduct(await parseJsonResponse(await fetchApi(`${PRODUCTS_API_URL}/${id}/images`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  }), 'Unable to save product images.'))
+}
+
 export async function fetchProducts() {
   const products = await parseJsonResponse(await fetchApi(`${PRODUCTS_API_URL}/admin/library`), 'Unable to load the product library.')
   return products.map(normalizeProduct)

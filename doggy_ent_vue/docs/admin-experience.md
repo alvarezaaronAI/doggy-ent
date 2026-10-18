@@ -1,5 +1,17 @@
 # Admin Experience Requirements
 
+## Storybook Portrait Presentation (2026-10-17, Local)
+
+Website UI -> Chase & Evie story adds two named portrait records: selection-button name, personality introduction, story, photograph URL/upload/library and description. Defaults keep older drafts usable. Its real Storybook canvas permits local Chase/Evie selection so both records can be inspected; navigation stays inert and no selection writes data. Explicit Save/Cancel/Publish, revision gates, media authorization and business-data separation remain unchanged. Campaign presentation's surface control now names the contribution panel it changes, not the entire page. Impact First remains shared with public page/pop-out and Catalog campaign canvas. Actual authenticated persistence QA is still manual in this pass; see [checkpoint](work-checkpoints/2026-10-17-storybook-impact-first.md).
+
+Current storefront visual authority is the approved polished three-page mock. See [reconciliation checkpoint](work-checkpoints/2026-10-15-approved-ui-reconciliation.md) for connected rollout and evidence. Website UI owns static presentation through main-workspace page/section selection, shared inert preview and contextual inspector; business navigation remains field-free. Product/campaign business edits and gallery saves stay in their owning domains. Preview and public collection use the same status predicate, including out-of-stock and clearly labelled coming-soon testing products. Hidden legacy blocks are labelled Hidden in editing, never shown as public sections.
+
+## Website UI Integration (2026-10-15)
+
+Website UI groups static Home, Campaign, Brand, shared header/footer, product-card/pop-out, checkout and confirmation presentation controls. Expanded grouped business navigation contains no edit fields; categorized page/section selectors, shared preview and contextual tools are inside the workspace. Existing identity and data-routing indicators remain visible. Explicit draft/save/publish/cancel and conflict protection remain mandatory.
+
+Keep catalog/price/stock CRUD in Products and partner/story/eligibility/rules in Campaigns. Product image management lives in Products, with reusable library/upload fields and a maximum of four optional detail images. Its dedicated optimistic image-only endpoint preserves variant identity and stock. Website UI only changes template labels/colors, not Product/Campaign facts. See [editor architecture](architecture/storefront-editor.md) and the latest handoff for verified persistence/deployment and remaining manual checks.
+
 ## Checkout And Manual Email Editors (2026-10-10)
 
 Website now includes Homepage, Checkout and Order confirmation selection, using the established left navigation/shared canvas/right inspector and explicit draft Save/Publish/Cancel. Checkout edits heading/introduction/wallet switches. Soft Essentials confirmation edits appearance/next/help copy, never financial/customer/payment/receipt state. Changed-section markers and selection scrolling reflect the actual draft. Embedded sample checkout never initializes Stripe or submits orders.

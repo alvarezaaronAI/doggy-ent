@@ -6,6 +6,7 @@ import {
   BRAND_VALUES,
 } from '@storefront/constants/brandContent.js'
 const icons = { leaf: Leaf, flame: Flame, heart: Heart }
+defineProps({ settings: Object })
 const failedPortraits = ref({})
 </script>
 
@@ -14,10 +15,10 @@ const failedPortraits = ref({})
     <div class="store-inner grid gap-8 md:grid-cols-2 md:gap-16">
       <div>
         <p class="store-eyebrow">Our beginning</p>
-        <h2 class="brand-heading">Two dogs. A simple idea.</h2>
+        <h2 class="brand-heading">{{ settings?.storyTitle || 'Two dogs. A simple idea.' }}</h2>
       </div>
       <div class="brand-story-copy">
-        <p v-for="paragraph in BRAND_STORY.paragraphs" :key="paragraph">
+        <p v-for="paragraph in settings ? settings.story.split(/\n\s*\n/) : BRAND_STORY.paragraphs" :key="paragraph">
           {{ paragraph }}
         </p>
       </div>

@@ -6,8 +6,12 @@ import { formatCurrency } from '@shared/utils/currency.js'
 import { sectionSettings } from '@storefront-content/sectionCatalog.js'
 const props = defineProps({ context: { type: Object, required: true }, settings: { type: Object, default: () => sectionSettings('collection') }, id: { type: String, default: 'shop' } })
 const displayedProducts = computed(() => {
-  const active = props.context.activeProducts.filter(product => product.status === 'active')
-  if (props.settings.productIds.length) return active.filter(product => props.settings.productIds.includes(product.id))
+  const active = props.context.activeProducts.filter(product => ['active', 'out-of-stock'].includes(product.status) || product.isTestProduct && product.status === 'coming-soon')
+  if (props.settings.productIds.length) {
+    const selected = active.filter(product => props.settings.productIds.includes(product.id))
+    return !props.context.selectedSort || props.context.selectedSort === 'featured'
+      ? selected.sort((a,b) => props.settings.productIds.indexOf(a.id) - props.settings.productIds.indexOf(b.id)) : selected
+  }
   return active
 })
 defineEmits(['quick-view', 'add-to-cart', 'category', 'protein', 'sort'])
@@ -15,10 +19,11 @@ defineEmits(['quick-view', 'add-to-cart', 'category', 'protein', 'sort'])
 <template>
   <section :id="id" class="store-section">
     <div class="store-inner">
-      <p class="store-eyebrow">{{ settings.eyebrow }}</p>
+      <header class="story-heading"><p v-if="settings.eyebrow" class="store-eyebrow">{{ settings.eyebrow }}</p>
       <h2 class="mt-3 text-3xl font-bold">{{ settings.title }}</h2>
       <p v-if="settings.text" class="store-muted mt-3 whitespace-pre-line">{{ settings.text }}</p>
-      <ProductFilters v-if="id === 'shop'" :available-categories="context.availableCategories" :available-proteins="context.availableProteins" :selected-category="context.selectedCategory" :selected-protein="context.selectedProtein" :selected-sort="context.selectedSort" @update:selected-category="$emit('category', $event)" @update:selected-protein="$emit('protein', $event)" @update:selected-sort="$emit('sort', $event)" />
+      <ProductFilters v-if="id === 'shop'" class="collection-filter-toolbar" :available-categories="context.availableCategories" :available-proteins="context.availableProteins" :selected-category="context.selectedCategory" :selected-protein="context.selectedProtein" :selected-sort="context.selectedSort" @update:selected-category="$emit('category', $event)" @update:selected-protein="$emit('protein', $event)" @update:selected-sort="$emit('sort', $event)" />
+      </header>
       <p v-if="context.campaignError" class="store-muted mt-4 text-sm" role="status">Giving details are temporarily unavailable. <button type="button" class="store-button ml-2" @click="context.loadCampaigns">Reload giving details</button></p>
       <p v-if="context.isLoading" class="store-muted mt-8" role="status">Loading treats...</p>
       <div v-else-if="context.errorMessage" class="mt-8 rounded border border-red-200 bg-red-50 p-4 text-red-700" role="alert">{{ context.errorMessage }}<button type="button" class="store-button ml-3" @click="context.loadProducts">Try again</button></div>

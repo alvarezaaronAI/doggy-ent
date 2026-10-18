@@ -1,8 +1,30 @@
 # Customer Experience Requirements
 
+## Approved Storybook And Impact First (2026-10-17, Local)
+
+The owner approved the new full Brand/Campaign examples after the focused Modern Boutique Home pass. Brand now uses a single origin introduction, selectable Chase/Evie portraits, numbered story chapters, a photograph/story moment, pale-yellow values and the existing shopping invitation. Campaign leads with its actual configured contribution directly below the hero, then partner story, clearly fictional testing programmes, giving steps and unchanged eligible products. Fixed/percentage, inactive schedule/status and generated-not-paid distinctions remain truthful. Same campaign renderer in pop-out and admin; shared header/footer/cart/auth/checkout and accepted Home are unchanged.
+
+Portraits are editable static presentation with upload/library/URL images and safe defaults for older publications. Template photography/personality/chapter text remains labelled. This is local integration only; authenticated editor persistence, real device/Safari/keyboard/screen-reader and post-deployment checkout acceptance remain manual. See [current evidence](work-checkpoints/2026-10-17-storybook-impact-first.md).
+
 This document governs customer account, profile, order, checkout, shipping, and support experiences. Preserve guest checkout and the storefront’s existing brand feel.
 
+## Selected Modern Boutique Sections (2026-10-16, Local)
+
+Only Made With Care, Ingredient Promise and the homepage pair teaser adopt the selected Modern Boutique composition: photo/ordered process, pale yellow icon-led promise, and full-width photo/story. Existing managed wording/images/links and product ingredients/storage remain authoritative. The separate Brand/Campaign pages, products, giving, Next Drops, header/footer and commerce flows are unchanged.
+
+Detailed reviews retain rating, title, body, author/date, product/size/photo and fictional labels in larger two-across desktop/one-across narrow cards. Native horizontal scrolling contains extra entries. Previous/Next and Pause/Play accompany eight-second overflow-only autoplay, which stops offscreen, in hidden tabs, for hover/focus, reduced motion and Website UI preview. Manual navigation/drag pauses until explicitly restarted. The future-review notice remains outside rotation. These are still sample reviews, not customer submissions/verified purchases.
+
+This is local source, not a new publication/deployment. See the [checkpoint](work-checkpoints/2026-10-16-boutique-home-sections.md) for verification and real-device/editor acceptance limits.
+
 ## Calm Giving Storefront
+
+### Approved Design Integration (2026-10-15)
+
+The approved compact-card/polished preview is now implemented in the Vue app, with all original Home content areas retained. The grid caps desktop card width rather than stretching a few products. Product pop-out has a prominent selected-size price, main photograph plus up to four optional detail images, desktop vertical/mobile wrapping thumbnail navigation, information/care sections and the existing cart actions. Changing photographs does not reset selected size. Test items are clearly labeled and cannot be purchased.
+
+Home adds a real-campaign giving spotlight, photo-led care, optional explicitly fictional sample reviews, paired closing content and subtle Labrador monogram. Brand uses an introduction, origin/pair section and story chapters; Campaign uses its actual managed introduction/partner/story/rules beside a giving explanation. Shared header/footer/cart/auth remain single sources of truth. Announcement rotation supports manual navigation/Pause and respects reduced motion. Template photos are identified and need business approval before a real-customer launch.
+
+Static appearance/copy is managed in Website UI; Products owns catalog facts/gallery and Campaigns owns partner/story/eligibility/rules. The owner explicitly approved using separate StorefrontContent presentation storage. This does not let previews mutate business records or change server-owned totals. Historical dated baseline descriptions below remain useful context; exact rollout/verification is in the latest handoff.
 
 Implemented 2026-10-09. Home retains the hero, featured product, collection, Next Drops, Happy Pups/social proof area, Made With Care, Ingredient Promise, Meet the Brand, and shopping help. Sections are fluid full-width bands with a constrained inner layout; yellow, blue, brown, and oat brand accents remain. Emerald tints identify products in currently eligible campaigns, not every product.
 
@@ -270,3 +292,15 @@ Customer auth remains Better Auth and guest checkout remains available. All nati
 Checkout finalization/replay now uses the same customer-safe order projection as receipt/account lookups. Internal status history, admin notes/actors and internal support-note events/metadata are not exposed. Existing customer pages do not consume internal timelines, so presentation is preserved. Guest opt-in saved details remain in localStorage and receipt capability in same-tab sessionStorage; neither is a substitute for authenticated ownership. Shared-device privacy and expiring guest-link recovery remain follow-up work.
 
 See [production audit](audits/2026-10-11-production-audit.md) for payment recovery and promotion concurrency blockers. No new UI redesign or provider transaction was performed; actual desktop/mobile/Safari acceptance is pending.
+
+## Approved Storefront Reconciliation (2026-10-15)
+
+The approved polished Home/Campaign/Brand compositions now replace the partial legacy layout. Home has nine visible configured sections; header/footer/account/search/cart are shared. The public catalog consists of eight approved labelled test products; seven legacy records are archived with historical order references retained. Test items remain unavailable in UI and rejected by server checkout, including made-to-order override attempts covered by existing tests. No real customer review or partner claim is implied.
+
+Quick View retains selected size/price while browsing main plus four optional images. Compact product giving strips open the existing campaign pop-out; receipt/checkout badges retain detailed contribution text. Upcoming test items also appear in the approved collection; regular upcoming products remain separate/unpurchasable. Website UI and storefront share product visibility rules rather than hiding out-of-stock/upcoming test records in the editor. Default/loading presentation uses the new brand-led layout, not the old hero/nav. See [checkpoint](work-checkpoints/2026-10-15-approved-ui-reconciliation.md) for release evidence and manual Safari/device/payment acceptance.
+
+### Local Density And Readability Follow-Up
+
+Product cards are wider/shorter without removing content or changing size, price or purchase behavior. Complete product photographs fit within a shallower frame. Section titles and introductions have opaque white reading surfaces; collection controls share that surface rather than sitting on the monogram. Established colors, item shadows and giving accents remain. This local-only iteration still needs owner and real-device visual acceptance; no Railway catalog/content was changed. See [verification and recovery](work-checkpoints/2026-10-15-storefront-density.md).
+
+The owner accepted the product cards but requested a more cohesive title/copy treatment. The next local iteration removes the hard heading bars, aligns section introductions with the items below, standardizes typography and softens the monogram rather than adding nested section cards. The collection toolbar has a white rounded reading surface; existing item shadows/radii remain. Home, Campaign and Brand share this treatment, including their editor renderers. No customer/auth/checkout/business behavior or content was changed; review the [new typography preview](work-checkpoints/2026-10-15-storefront-type-polish.md) before deployment.

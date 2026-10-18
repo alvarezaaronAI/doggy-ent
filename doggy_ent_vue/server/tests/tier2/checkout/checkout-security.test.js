@@ -26,6 +26,12 @@ describe('trusted checkout catalog and guest receipt security', () => {
     catalog.findCheckoutProducts.mockResolvedValue([{ ...product, sellingMode: 'MADE_TO_ORDER', variants: [{ ...product.variants[0], inventory: 0 }] }])
     expect(await resolveCheckoutItems([{ id: 'p', size: '6 oz', quantity: 2 }])).toHaveLength(1)
   })
+  it('rejects labelled testing products even when inventory or selling mode permits purchase', async () => {
+    for (const sellingMode of ['INVENTORY_LIMITED', 'MADE_TO_ORDER', 'PREORDER']) {
+      catalog.findCheckoutProducts.mockResolvedValue([{ ...product, sellingMode, isTestProduct: true }])
+      await expect(resolveCheckoutItems([{ id:'p', size:'6 oz', quantity:1, isTestProduct:false }])).rejects.toMatchObject({ statusCode:400 })
+    }
+  })
   it('rejects forged, expired and wrong-purpose capabilities', () => {
     const proof = signCapability('order-receipt', { reference: 'CE-1' })
     expect(readCapability(proof, 'order-receipt').reference).toBe('CE-1')

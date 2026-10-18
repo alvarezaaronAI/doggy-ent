@@ -3,6 +3,7 @@ import { onBeforeRouteLeave } from 'vue-router'
 import { createSection, SECTION_CATALOG } from '@storefront-content/sectionCatalog.js'
 import { validateStorefrontContent } from '@storefront-content/contentValidation.js'
 import { commercePresentation } from '@storefront-content/commercePresentation.js'
+import { pagePresentation, announcementMessages } from '@storefront-content/pagePresentation.js'
 import { fetchWebsiteDraft, saveWebsiteDraft } from '../api/adminWebsite.api.js'
 import { createDefaultClientStorefrontContent, useStorefrontContent } from '@storefront/composables/useStorefrontContent.js'
 
@@ -16,6 +17,7 @@ export function useAdminWebsite() {
     if (!draft.value || !saved.value) return []
     const baseline = JSON.parse(saved.value)
     const changed = ['announcement', 'header', 'footer', 'theme', 'checkout'].filter(key => JSON.stringify(draft.value[key]) !== JSON.stringify(baseline[key]))
+    for (const area of Object.keys(draft.value.presentation)) if (JSON.stringify(draft.value.presentation[area]) !== JSON.stringify(baseline.presentation?.[area])) changed.push(area)
     const confirmationAreas = { confirmation: ['title', 'introduction', 'background'], 'confirmation-next': ['nextTitle', 'nextText'], 'confirmation-help': ['helpTitle', 'helpText', 'helpLabel', 'helpUrl'] }
     for (const [area, fields] of Object.entries(confirmationAreas)) if (fields.some(key => draft.value.confirmation?.[key] !== baseline.confirmation?.[key])) changed.push(area)
     draft.value.sections.forEach((block, index) => {
@@ -29,10 +31,11 @@ export function useAdminWebsite() {
   const { usePublishedContent } = useStorefrontContent()
   function accept(data) {
     if (data.revision === 0) data = { ...data, draft: createDefaultClientStorefrontContent() }
-    draft.value = clone({ ...data.draft, ...commercePresentation(data.draft) })
+    const normalize = value => ({ ...value, ...commercePresentation(value), presentation: pagePresentation(value), announcement: { ...value.announcement, messages: announcementMessages(value.announcement) } })
+    draft.value = clone(normalize(data.draft))
     saved.value = JSON.stringify(draft.value)
     revision.value = data.revision
-    published.value = data.published ? clone({ ...data.published, ...commercePresentation(data.published) }) : null
+    published.value = data.published ? clone(normalize(data.published)) : null
     publishedAt.value = data.publishedAt
     if (!['announcement', 'header', 'footer', 'theme', 'checkout', 'confirmation', 'confirmation-next', 'confirmation-help'].includes(selected.value) && !draft.value.sections.some(block => block.id === selected.value)) selected.value = draft.value.sections[0]?.id || 'header'
   }

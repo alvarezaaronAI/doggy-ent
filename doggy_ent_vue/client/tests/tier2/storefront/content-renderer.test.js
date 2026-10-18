@@ -56,11 +56,12 @@ describe('shared storefront and product editor rendering', () => {
   })
   it('retains all original content areas and real product fields', async () => {
     const html = await render(HomePageContent, { content: createDefaultStorefrontContent(), context })
-    for (const id of ['hero', 'spotlight', 'shop', 'coming-soon', 'reviews', 'process', 'ingredients', 'about', 'faq']) expect(html).toContain(`id="${id}"`)
+    for (const id of ['hero', 'spotlight', 'shop', 'coming-soon', 'reviews', 'process', 'ingredients', 'about']) expect(html).toContain(`id="${id}"`)
+    expect(html).not.toContain('id="faq"')
     expect(html).toContain('Catalog ingredients')
     expect(html).toContain('Catalog description')
     expect(html).not.toContain('home-edit-handle')
-    expect(html).toContain('id="promise"')
+    expect(html).not.toContain('id="promise"')
   })
   it('renders edited content, hides sections and filters orphaned navigation', async () => {
     const content = createDefaultStorefrontContent()

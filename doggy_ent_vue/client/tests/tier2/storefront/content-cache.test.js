@@ -11,7 +11,10 @@ describe('published storefront content cache', () => {
     const { useStorefrontContent } = await import('../../../src/domains/storefront/composables/useStorefrontContent.js')
     const state = useStorefrontContent()
     await state.loadContent({ force: true })
-    expect(state.content.value.sections).toHaveLength(10)
+    expect(state.content.value.sections).toHaveLength(11)
+    expect(state.content.value.header.links.map(link => link.label)).toEqual(['Shop', 'Giving', 'Our story'])
+    expect(state.content.value.sections[0].settings.title).toBe('Chase & Evie Co.')
+    expect(state.content.value.sections.filter(block => block.visible).map(block => block.type)).not.toContain('help')
     expect(state.contentError.value).toBe('Unavailable')
   })
 
