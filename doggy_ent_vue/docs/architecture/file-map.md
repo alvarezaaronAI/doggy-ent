@@ -1,5 +1,22 @@
 # File Map
 
+## Prelaunch Foundation (2026-10-20)
+
+| Files | Responsibility and dependencies | Flow |
+| --- | --- | --- |
+| Git-root `AGENTS.md`, `.codex/agents/*.toml` | Route to application rules; six narrow inherited-permission agent roles | Scoped development/review, not app runtime |
+| Git-root `.agents/skills/shop-git-workflow/SKILL.md` | Portable Git audit/approval workflow referencing engineering docs | Called by Git steward or explicit skill request |
+| `project-workflow.json`, `VERSION`, `CHANGELOG.md` | Current branch conventions and unreleased product version baseline | Source/release planning, not package/runtime metadata |
+| `scripts/git-preflight.mjs`, `.test.mjs` | Node built-ins inspect Git and optionally fetch; isolated repo tests | No stage/commit/merge/push/deploy |
+| Git-root `.github/PULL_REQUEST_TEMPLATE.md`, `workflows/quality.yml` | Review record, pinned-action read-only client/server verification | Hosted run awaits publication; no deploy job |
+| `client/src/domains/policies/content/policyPages.js` | Static draft facts/sections, supplied public contact and route catalog | Router and plain-text renderer; no database |
+| Policies `views/PolicyView.vue`, `components/PolicyContent.vue` | Thin page composition and focused accessible content/navigation | Whitelisted public routes, shared shell |
+| Policies `components/PolicyShell.vue` | Existing header/footer/cart/search composables, no duplicate auth logic | Same browser bag and session-aware navigation |
+| Policies `composables/usePolicyMetadata.js` | Draft title/robots lifecycle, cleanup on exit | Noindex hint, not access control |
+| Policies `components/StorageNotice.vue`, `composables/useStorageNotice.js`, `utils/storageNotice.js` | Nonblocking notice, admin suppression, safe acknowledgment/revision persistence | App -> browser revision only, no marketing consent |
+| `client/tests/tier2/storefront/policy-pages.test.js` | SSR draft/navigation/escaping, storage safety and metadata lifecycle | Provider/DB-free regression suite |
+| `docs/engineering/`, `docs/prelaunch/`, dated work checkpoint | Agent instructions, Git education, phased data/legal/launch decisions and evidence | Durable task memory and owner acceptance |
+
 ## Data Routing And Session Repair (2026-10-18)
 
 - `client/src/shared/components/DevelopmentRoutingPanel.vue`: development-only global target/status details; lazy-loaded by App, calls the routing composable, never switches targets.

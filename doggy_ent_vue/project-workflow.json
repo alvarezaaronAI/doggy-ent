@@ -1,0 +1,6 @@
+{
+  "integrationBranch": "dev-main",
+  "productionBranch": "main",
+  "defaultBranchPrefix": "",
+  "releaseVersionFile": "VERSION"
+}

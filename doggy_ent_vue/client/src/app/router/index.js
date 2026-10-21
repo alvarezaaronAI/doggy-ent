@@ -19,8 +19,15 @@ import AdminInternalIssuesView from '../../domains/admin/views/AdminInternalIssu
 import CheckoutView from '../../domains/checkout/views/CheckoutView.vue'
 import OrderSuccessView from '../../domains/checkout/views/OrderSuccessView.vue'
 import AdminLoginView from '../../domains/admin/views/AdminLoginView.vue'
+import { POLICY_PAGES } from '../../domains/policies/content/policyPages.js'
 
 const routes = [
+  ...Object.entries(POLICY_PAGES).map(([pageKey, page]) => ({
+    path: page.path,
+    name: `policy-${pageKey}`,
+    component: () => import('../../domains/policies/views/PolicyView.vue'),
+    props: { pageKey },
+  })),
   {
     path: '/',
     name: 'home',

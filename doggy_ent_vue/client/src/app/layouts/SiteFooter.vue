@@ -36,11 +36,12 @@ onMounted(() => { if (!props.preview) loadContent() })
         </nav>
       </div>
       <div><h2 class="mb-2 text-xs font-semibold">Shop &amp; discover</h2><nav aria-label="Footer shop"><ContentLink v-for="(link, index) in shopLinks" :key="index" :href="link.href">{{ link.label }}</ContentLink></nav></div>
-      <div><h2 class="mb-2 text-xs font-semibold">Here to help</h2><nav aria-label="Footer help"><ContentLink v-for="(link, index) in helpLinks" :key="index" :href="link.href">{{ link.label }}</ContentLink><ContentLink href="/account">Your account</ContentLink><span class="footer-policy-placeholder" aria-disabled="true">Shipping &amp; returns · coming soon</span><span class="footer-policy-placeholder" aria-disabled="true">Privacy &amp; terms · coming soon</span></nav></div>
+      <div><h2 class="mb-2 text-xs font-semibold">Here to help</h2><nav aria-label="Footer help"><ContentLink v-for="(link, index) in helpLinks" :key="index" :href="link.href">{{ link.label }}</ContentLink><ContentLink href="/account">Your account</ContentLink><RouterLink to="/shipping-returns" :inert="preview || undefined">Shipping &amp; returns</RouterLink><RouterLink to="/contact" :inert="preview || undefined">Contact</RouterLink></nav></div>
     </div>
     <div class="site-footer-bottom">
       <p>&copy; {{ new Date().getFullYear() }} {{ footer.brandName }}</p>
       <p>{{ footer.tagline }}</p>
+      <nav aria-label="Footer policies"><RouterLink to="/privacy" :inert="preview || undefined">Privacy</RouterLink><RouterLink to="/terms" :inert="preview || undefined">Terms</RouterLink><RouterLink to="/cookies" :inert="preview || undefined">Cookies &amp; storage</RouterLink><RouterLink to="/accessibility" :inert="preview || undefined">Accessibility</RouterLink></nav>
     </div>
   </footer>
 </template>
@@ -94,7 +95,6 @@ onMounted(() => { if (!props.preview) loadContent() })
 }
 .site-footer-inner > div:not(:first-child) nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:0 12px; }
 .site-footer-inner > div:not(:first-child) nav a { justify-content:flex-start; }
-.footer-policy-placeholder { font-size:11px; line-height:1.6; color:#686960; padding-block:6px; }
 .site-footer .site-footer-social { margin-top:8px; gap:12px; }
 .site-footer .site-footer-social a {
   font-size: 12px;

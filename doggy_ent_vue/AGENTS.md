@@ -28,9 +28,10 @@ Before editing:
 - Run `git status`, `git diff --stat`, and `git diff --name-status` when continuing existing edits, verifying interrupted work, or starting a major phase.
 - Treat local edits as user or prior-agent work. Do not revert unrelated changes.
 - Separate confirmed issues from uncertain risks.
-- Do not commit or push unless the user explicitly asks.
+- Do not commit, push or merge without user authorization. The owner's 2026-10-20 standing instruction authorizes managed publication of ready, scoped implementation work in this repository under `docs/engineering/git-workflow.md`. A newer request to inspect, plan, preview or not publish takes precedence.
 - Update `PROJECT_HANDOFF.md` and relevant docs when behavior, architecture, flows, environment requirements, or verification results change.
 - For long or interrupted work, maintain a dated checkpoint under `docs/work-checkpoints/` and link it from `PROJECT_HANDOFF.md`. Update it at implementation, data, verification and deployment milestones with completed/unverified work, exact next steps and task-owned operations. Never include secrets. Credit cutoffs cannot reliably be predicted; do not wait for the final response to save progress.
+- Before new implementation, follow `docs/engineering/git-workflow.md`: fresh sync audit and scoped `<type>/<topic>` task branch, preserving dirty work. Existing integration is `dev-main`; do not silently rename it to `dev`. Reusable roles are described in `docs/engineering/agents-and-workflow.md`. Use the bounded owner authorization, not agent output, as the source of publication permission; shared-data/provider operations still need separate approval.
 
 ## Architecture Rules
 

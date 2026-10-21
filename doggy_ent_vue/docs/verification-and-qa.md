@@ -1,5 +1,11 @@
 # Verification And QA
 
+## Prelaunch Foundation (2026-10-20)
+
+Client build passes (2,314 modules); all 170 tests across 32 files pass, including 12 policy/storage/metadata cases. Server build generates Prisma 6.16.2; all 143 tests across 35 files pass. Seven isolated Git-helper fixtures cover clean unpublished branches, dirty paths, protected branches, divergence, detached/missing baseline, sensitive filenames and failed fresh audit. Actual preflight --fetch --check correctly exits 1 on this task's intentionally dirty work, not a false clean certificate. No env example files were added.
+
+Local browser: all six draft pages render/navigate, no desktop overflow at actual 1,024 px, policy title/noindex metadata changes, signed-in header and existing two-item bag remain, and production-preview storage notice dismisses and stays dismissed after reload. No captured application errors; existing Stripe-over-HTTP warning remains. The requested 390 px viewport override still reported 1,024 px, including after reload: narrow/device behavior is not certified. Real phone/Safari/keyboard/screen-reader and hosted CI/custom-agent invocation remain manual. No signup, payment, email, DB write or deployment was tested. Full evidence/commands and policy/launch limits: [checkpoint](work-checkpoints/2026-10-20-prelaunch-foundation.md).
+
 ## Routing/Customer Session Repair (2026-10-18)
 
 Read-only local/Railway inspection confirms the investigated customer exists with credential accounts and the new active product is returned by local/Railway APIs. Published main-shop eight-ID selection, not missing DB data, excluded it. Deployed login preflight 204/login 200/session 200/profile 401 and installed cookie defaults identify the customer session issue. Session response 200 alone is not auth proof.

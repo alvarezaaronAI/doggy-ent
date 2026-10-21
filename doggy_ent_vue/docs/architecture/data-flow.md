@@ -1,5 +1,11 @@
 # Data Flow Maps
 
+## Draft Information Pages And Storage Notice (2026-10-20)
+
+Whitelisted public route -> thin PolicyView -> plain-text policy content/PolicyContent -> existing header/footer/cart/search/auth components. No policy data API, customer submission or database write. Draft title/noindex metadata is installed on entry and restored on exit. App-level StorageNotice -> versioned acknowledgment utility -> localStorage revision only; dismissal does not change marketing consent, cart or auth. Optional analytics/advertising remains unimplemented, not enabled by acknowledging this notice. See [inventory](../prelaunch/policy-and-storage-inventory.md).
+
+Project agents/skill -> explicit scoped task -> Git preflight with optional fetch -> human-reviewed branch/PR -> non-deploying CI. Agent definitions are instructions, not access grants or scheduled workers. Future customer-data flows/models are proposals in the [strategy](../prelaunch/customer-data-strategy.md), not new production pipelines.
+
 Last updated: 2026-10-10
 
 ## Image Library And Seasonal Content
