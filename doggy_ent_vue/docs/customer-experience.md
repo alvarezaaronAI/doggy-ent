@@ -1,5 +1,11 @@
 # Customer Experience Requirements
 
+## 2026-10-20 Prelaunch Data And Policy Direction
+
+Keep signup short and guest checkout available. Proposed pet/preferences questions are optional/skippable/editable, not signup requirements. Orders and marketing consent remain separate. No tracker, incentive, OAuth provider or profile model was enabled here. Existing versus proposed storage is described in the [data strategy](prelaunch/customer-data-strategy.md).
+
+Public information pages share the storefront shell and explicit draft status until approved. Storage acknowledgment is not marketing consent and does not clear the bag or change auth. See [policy inventory](prelaunch/policy-and-storage-inventory.md) for provider/retention gaps and owner decisions.
+
 ## Data/Session Clarification (2026-10-18)
 
 The main All treats collection includes newly published eligible products after saved Featured ordering loads; extra curated collections keep their selection. Draft/archived/test-purchase protections remain. Local development alone has a backend-confirmed routing panel on every route; customers on production do not see database diagnostics.

@@ -12,6 +12,8 @@ The eight existing test fixtures were flagged and received 32 additional media r
 
 ## Source Of Truth
 
+Prelaunch 2026-10-20 adds no model or migration. Existing identity/profile/preferences/orders/support/review/loyalty foundations and proposed Pet/CustomerPreference/ConsentEvent storage are separated in the [customer-data strategy](../prelaunch/customer-data-strategy.md). Proposed names are not existing tables; review consent/retention/ownership and approval before implementing them.
+
 The Prisma schema at `server/prisma/schema.prisma` is the database source of truth. Runtime database access goes through the Prisma singleton at `server/src/db/prisma.js`.
 
 ## Prisma Toolchain Compatibility
