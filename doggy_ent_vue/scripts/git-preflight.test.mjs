@@ -17,7 +17,7 @@ function fixture(run) {
     git('commit', '--allow-empty', '-m', 'chore: fixture baseline')
     git('update-ref', 'refs/remotes/origin/dev-main', 'HEAD')
     git('update-ref', 'refs/remotes/origin/main', 'HEAD')
-    git('switch', '-c', 'codex/feat/test')
+    git('switch', '-c', 'feat/test')
     run(directory, git)
   } finally { rmSync(directory, { recursive: true, force: true }) }
 }
@@ -50,7 +50,7 @@ test('ahead and divergent histories are distinguished without resetting work', (
   git('switch', 'dev-main')
   git('commit', '--allow-empty', '-m', 'fix: integration fixture')
   git('update-ref', 'refs/remotes/origin/dev-main', 'HEAD')
-  git('switch', 'codex/feat/test')
+  git('switch', 'feat/test')
   const result = inspectRepository({ cwd })
   assert.equal(result.integration.diverged, true)
   assert.equal(result.integration.behind, 1)
@@ -76,4 +76,48 @@ test('detached head and missing integration are explicit blockers', () => fixtur
 
 test('failed fresh audit never silently reports cached refs as current', () => fixture(cwd => {
   assert.throws(() => inspectRepository({ cwd, fetch: true }), /No origin remote/)
+}))
+
+test('primary branch lag is reported from a task without changing refs', () => fixture((cwd, git) => {
+  git('branch', 'main')
+  git('commit', '--allow-empty', '-m', 'feat: remote fixture')
+  git('update-ref', 'refs/remotes/origin/main', 'HEAD')
+  const before = git('show-ref')
+  const result = inspectRepository({ cwd })
+  assert.equal(result.primaryBranches.find(branch => branch.branch === 'main').state, 'behind')
+  assert.equal(result.primaryBranches.find(branch => branch.branch === 'main').behind, 1)
+  assert.equal(result.primaryBranches.find(branch => branch.branch === 'dev-main').state, 'synchronized')
+  assert.equal(git('show-ref'), before)
+}))
+
+test('primary local work and divergence are never labelled synchronized', () => fixture((cwd, git) => {
+  git('commit', '--allow-empty', '-m', 'feat: local fixture')
+  git('branch', 'main')
+  assert.equal(inspectRepository({ cwd }).primaryBranches.find(branch => branch.branch === 'main').state, 'ahead')
+  git('switch', 'dev-main')
+  git('commit', '--allow-empty', '-m', 'fix: remote fixture')
+  git('update-ref', 'refs/remotes/origin/main', 'HEAD')
+  git('switch', 'feat/test')
+  const before = git('show-ref')
+  const branch = inspectRepository({ cwd }).primaryBranches.find(branch => branch.branch === 'main')
+  assert.equal(branch.state, 'diverged')
+  assert.equal(branch.ahead, 1)
+  assert.equal(branch.behind, 1)
+  assert.equal(git('show-ref'), before)
+}))
+
+test('missing primary refs are explicit, not zero-lag successes', () => fixture((cwd, git) => {
+  let branch = inspectRepository({ cwd }).primaryBranches.find(branch => branch.branch === 'main')
+  assert.equal(branch.state, 'missing-local')
+  assert.equal(branch.ahead, null)
+  git('branch', 'main')
+  git('update-ref', '-d', 'refs/remotes/origin/main')
+  branch = inspectRepository({ cwd }).primaryBranches.find(branch => branch.branch === 'main')
+  assert.equal(branch.state, 'missing-remote')
+  assert.equal(branch.behind, null)
+}))
+
+test('legacy task names remain readable without being the default', () => fixture((cwd, git) => {
+  git('branch', '-m', 'codex/feat/legacy')
+  assert.deepEqual(inspectRepository({ cwd }).blockers, [])
 }))
