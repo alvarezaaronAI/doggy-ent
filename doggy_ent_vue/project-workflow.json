@@ -1,6 +1,6 @@
 {
   "integrationBranch": "dev-main",
   "productionBranch": "main",
-  "defaultBranchPrefix": "codex/",
+  "defaultBranchPrefix": "",
   "releaseVersionFile": "VERSION"
 }

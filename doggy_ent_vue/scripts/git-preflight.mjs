@@ -21,9 +21,9 @@ function exists(cwd, ref) {
   return git(cwd, ['rev-parse', '--verify', '--quiet', ref], [0, 1]).status === 0
 }
 
-function comparison(cwd, ref) {
-  if (!exists(cwd, ref)) return null
-  const [ahead, behind] = git(cwd, ['rev-list', '--left-right', '--count', `HEAD...${ref}`])
+function comparison(cwd, ref, localRef = 'HEAD') {
+  if (!exists(cwd, ref) || !exists(cwd, localRef)) return null
+  const [ahead, behind] = git(cwd, ['rev-list', '--left-right', '--count', `${localRef}...${ref}`])
     .output.trim().split(/\s+/).map(Number)
   return { ref, ahead, behind, diverged: ahead > 0 && behind > 0 }
 }
@@ -41,6 +41,17 @@ export function inspectRepository({ cwd = process.cwd(), fetch = false } = {}) {
   const upstream = upstreamResult.status === 0 ? comparison(root, upstreamResult.output.trim()) : null
   const integration = comparison(root, `origin/${configuration.integrationBranch}`)
   const production = comparison(root, `origin/${configuration.productionBranch}`)
+  const primaryBranches = [...new Set([configuration.integrationBranch, configuration.productionBranch])].map(name => {
+    const localRef = `refs/heads/${name}`
+    const remoteRef = `refs/remotes/origin/${name}`
+    const localCommit = exists(root, localRef) ? git(root, ['rev-parse', localRef]).output.trim() : null
+    const remoteCommit = exists(root, remoteRef) ? git(root, ['rev-parse', remoteRef]).output.trim() : null
+    const difference = comparison(root, remoteRef, localRef)
+    const state = !localCommit ? 'missing-local' : !remoteCommit ? 'missing-remote'
+      : difference.diverged ? 'diverged' : difference.ahead ? 'ahead'
+        : difference.behind ? 'behind' : 'synchronized'
+    return { branch: name, localCommit, remoteCommit, ahead: difference?.ahead ?? null, behind: difference?.behind ?? null, state }
+  })
   const tracked = git(root, ['ls-files', '-z']).output.split('\0').filter(Boolean)
   const staged = git(root, ['diff', '--cached', '--name-only', '-z']).output.split('\0').filter(Boolean)
   const riskyPaths = [...new Set([...tracked, ...staged].filter(path => sensitivePath.test(path)))]
@@ -60,7 +71,7 @@ export function inspectRepository({ cwd = process.cwd(), fetch = false } = {}) {
     : null
   return {
     branch, sourceCommit: git(root, ['rev-parse', 'HEAD']).output.trim(),
-    fetchedNow: fetch, hasOrigin, dirty, upstream, integration, production,
+    fetchedNow: fetch, hasOrigin, dirty, upstream, integration, production, primaryBranches,
     sameProductionTree, sensitivePathCount: riskyPaths.length, blockers,
     notes: [
       ...(!fetch ? ['Remote refs are cached. Use --fetch for a fresh synchronization audit.'] : []),
