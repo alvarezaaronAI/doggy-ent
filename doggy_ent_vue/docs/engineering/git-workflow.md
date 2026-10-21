@@ -22,6 +22,8 @@ Before either merge:
 
 Git steward owns the single Git mutation stream, even when QA/release agents supply evidence. After integration/release, fetch and fast-forward clean local main and dev-main against their own upstreams, verify the active task branch against its remote, and record checks/deployment results in the handoff/checkpoint. Main and dev-main may have different merge commit SHAs while their file trees match. A release failure must be reported; never say a successful merge proves a healthy deployment.
 
+Documentation-only post-release evidence can be merged into dev-main and included in the next website release. Do not repeatedly redeploy production merely to record a deployment's final IDs. Each primary branch must still match its own GitHub upstream; explain any integration-only documentation delta.
+
 ## Branches
 
 | Purpose | Agent branch |
