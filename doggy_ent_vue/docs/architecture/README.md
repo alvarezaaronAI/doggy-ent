@@ -1,5 +1,7 @@
 # Doggy Ent Architecture
 
+Prelaunch workflow/data planning (2026-10-20): [agent roles](../engineering/agents-and-workflow.md), [Git/releases](../engineering/git-workflow.md), [data strategy](../prelaunch/customer-data-strategy.md), [policy/storage inventory](../prelaunch/policy-and-storage-inventory.md). These add no database tables, OAuth providers or production deployment; proposed infrastructure is labelled.
+
 Last updated: 2026-10-11
 
 This directory documents how the Doggy Ent Vue storefront, admin dashboard, Express API, Prisma database, Stripe integration, and temporary local admin workflows fit together. It is evidence-based from the repository; future plans are labeled as future work.

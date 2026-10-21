@@ -1,5 +1,9 @@
 # Implementation Roadmap
 
+## 2026-10-20 Prelaunch Foundation And Next Sequence
+
+Project agents, Git preflight, PR/CI conventions and an unreleased 0.1.0 baseline are prepared. Existing `dev-main` remains integration and `main` production source. New policy/help routes are drafts pending approval. No OAuth, customer tracking/profile schema, migration or deployment is added. The [prelaunch plan](prelaunch/README.md) orders commerce reliability, privacy decisions, customer auth UX, progressive profiling, reviews and finally Google/Apple convenience. See [data strategy](prelaunch/customer-data-strategy.md), [policy/storage inventory](prelaunch/policy-and-storage-inventory.md) and [checkpoint](work-checkpoints/2026-10-20-prelaunch-foundation.md). Setup is not hosted CI or launch acceptance.
+
 ## 2026-10-17 Approved Boutique Page Integration
 
 Storybook Brand and Impact First Campaign are integrated locally, alongside the accepted Modern Boutique Home follow-up. Safe editable portrait presentation extends existing JSON storage without a schema migration; shared public/editor/pop-out components retain business rules. Both builds and full suites pass (145 client, 139 server). Next: owner/editor/real-device acceptance, then a separately approved matching backend-first/frontend rollout. No new deployment/publication or payment/provider action occurred. See [checkpoint](work-checkpoints/2026-10-17-storybook-impact-first.md); original launch gates remain.
