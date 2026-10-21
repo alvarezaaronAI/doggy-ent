@@ -32,7 +32,7 @@ Do not run all six for a typo. Start with one or two relevant roles; subagents c
 - [Git workflow](git-workflow.md): branch, Conventional Commit/PR and version conventions, educational command examples.
 - Application `scripts/git-preflight.mjs`: read-only inspection plus optional fetch; tested against isolated Git fixtures.
 - Git-root `.github/PULL_REQUEST_TEMPLATE.md`: What/Why/How/Testing/Risks/Rollback/Release.
-- Git-root `.github/workflows/quality.yml`: client/server builds and tiers, helper tests, Node 22.15.0, read-only repository token, pinned action SHAs. PRs into dev-main/main or manual trigger. No deployment, migration, customer DB, provider key or external send. Hosted execution is unverified until the owner publishes and runs it.
+- Git-root `.github/workflows/quality.yml`: client/server builds and tiers, helper tests, Node 22.15.0, read-only repository token, pinned action SHAs. PRs into dev-main/main or manual trigger. No deployment, migration, customer DB, provider key or external send. First hosted Ubuntu execution passed on PR #31; see [publication evidence](../work-checkpoints/2026-10-20-first-agent-publication.md).
 - [Launch and data roadmap](../prelaunch/README.md): gates before real sales; policies remain drafts.
 
 CI is not branch protection. After the first hosted run, the owner should require its successful client/server checks and PR review on main/dev-main, disable force pushes/deletion, and consider protecting workflow changes. Those remote settings were not changed. CI uses the pull-request event, never a privileged pull-request-target checkout. See [GitHub secure workflow guidance](https://docs.github.com/en/actions/reference/security/secure-use).

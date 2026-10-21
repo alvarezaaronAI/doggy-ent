@@ -20,7 +20,13 @@ Owner asked to add the agents and manage the first overall GitHub push. This aut
 
 ## Publication State
 
-In progress. No commit/push/PR has occurred at this checkpoint. Next: finish review and secret/docs checks, stage explicit paths, inspect staged scope, commit, push the task branch, open the dev-main PR, attach it to this chat and verify hosted CI. Keep main untouched. If CI fails, diagnose/fix in this branch and rerun; never mark a failing run passed or silently disable a check.
+- Source commit: `1a2952225c6552118f96550ec0175a9c12c92dc9`, `feat: add prelaunch agents and policy foundation` (43 files).
+- Explicit-path staging and staged whitespace/scope review passed. No env, package/lock, schema, build artifact or dump was included.
+- Pushed `codex/chore/prelaunch-foundation` with upstream tracking; fresh preflight confirms branch/upstream equal, integration ahead 1/behind 0 and no blockers. Production main is unchanged; its older merge-history divergence is not auto-rebased.
+- Opened and attached [PR #31](https://github.com/alvarezaaronAI/doggy-ent/pull/31) targeting dev-main, with What/Why/How/Testing/Risks/Rollback/version notes. No production PR/merge/tag.
+- Hosted Quality [run 1](https://github.com/alvarezaaronAI/doggy-ent/actions/runs/39544585250) **passed** on source `1a29522`: client job `119039747131` and server job `119039746850`, including clean Ubuntu npm ci, both builds/tests and isolated helper tests. No failure or disabled check. This verifies the workflow beyond the earlier local/YAML-only milestone.
+- GitHub's Vercel integration also reports success for this source commit. This is an integration status, not manual production/device/checkout certification; main remains unchanged.
+- Publish these evidence notes as a separate docs-only commit, then verify the final PR-head checks and local/upstream synchronization. PR remains open for integration review; no merge, release tag or branch deletion is performed.
 
 ## Remaining Acceptance
 
