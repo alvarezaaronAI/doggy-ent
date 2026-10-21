@@ -12,39 +12,47 @@ const session = ref(null)
 const user = ref(null)
 const loading = ref(false)
 const error = ref('')
+let sessionGeneration = 0
 
 export function useAccountAuth() {
   const authenticated = computed(() => Boolean(user.value?.id))
 
   async function loadSession() {
+    const generation = ++sessionGeneration
     loading.value = true
     error.value = ''
 
     try {
       const data = await fetchCustomerSession()
-      session.value = data?.session || null
-      user.value = data?.user || data?.session?.user || null
+      if (generation !== sessionGeneration) return user.value
+      const confirmedUser = data?.session && (data.user || data.session.user)
+      user.value = confirmedUser?.id ? confirmedUser : null
+      session.value = user.value ? data.session : null
 
       return user.value
     }
     catch {
+      if (generation !== sessionGeneration) return user.value
       session.value = null
       user.value = null
 
       return null
     }
     finally {
-      loading.value = false
+      if (generation === sessionGeneration) loading.value = false
     }
   }
 
   async function signIn(credentials) {
+    sessionGeneration++
     loading.value = true
     error.value = ''
 
     try {
       await signInCustomer(credentials)
-      return await loadSession()
+      const signedInUser = await loadSession()
+      if (!signedInUser) throw new Error('Your sign-in was accepted, but your browser session could not be confirmed. Check that this site uses the intended backend and allows its sign-in cookies. Your bag is unchanged.')
+      return signedInUser
     }
     catch (signInError) {
       error.value = signInError.message || 'Unable to sign in.'
@@ -56,6 +64,7 @@ export function useAccountAuth() {
   }
 
   async function signUp(credentials) {
+    sessionGeneration++
     loading.value = true
     error.value = ''
 
@@ -73,12 +82,14 @@ export function useAccountAuth() {
   }
 
   async function signOut() {
+    sessionGeneration++
     try {
       await signOutCustomer()
     }
     finally {
       session.value = null
       user.value = null
+      loading.value = false
     }
   }
 

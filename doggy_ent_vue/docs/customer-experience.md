@@ -1,5 +1,11 @@
 # Customer Experience Requirements
 
+## Data/Session Clarification (2026-10-18)
+
+The main All treats collection includes newly published eligible products after saved Featured ordering loads; extra curated collections keep their selection. Draft/archived/test-purchase protections remain. Local development alone has a backend-confirmed routing panel on every route; customers on production do not see database diagnostics.
+
+Sign-in must confirm an actual session and user before redirecting. Accepted credentials without a retained browser session show an actionable error without losing the bag; standalone account creation explains session failure without inviting duplicate signup. Stale anonymous reads cannot overwrite a newer sign-in/sign-out. Customer cookie settings now match existing split-site admin requirements, without bypassing browser third-party-cookie restrictions. Sign-in/create UI redesign remains separate. See [repair evidence](work-checkpoints/2026-10-18-data-routing-and-customer-session.md).
+
 ## Approved Storybook And Impact First (2026-10-17, Local)
 
 The owner approved the new full Brand/Campaign examples after the focused Modern Boutique Home pass. Brand now uses a single origin introduction, selectable Chase/Evie portraits, numbered story chapters, a photograph/story moment, pale-yellow values and the existing shopping invitation. Campaign leads with its actual configured contribution directly below the hero, then partner story, clearly fictional testing programmes, giving steps and unchanged eligible products. Fixed/percentage, inactive schedule/status and generated-not-paid distinctions remain truthful. Same campaign renderer in pop-out and admin; shared header/footer/cart/auth/checkout and accepted Home are unchanged.

@@ -1,5 +1,14 @@
 # File Map
 
+## Data Routing And Session Repair (2026-10-18)
+
+- `client/src/shared/components/DevelopmentRoutingPanel.vue`: development-only global target/status details; lazy-loaded by App, calls the routing composable, never switches targets.
+- `client/src/shared/composables/useDevelopmentRouting.js` and `shared/api/development.api.js`: real backend health verification, origins/instance/check time and fail-unverified behavior. No customer/provider data.
+- `server/src/shared/services/developmentContext.service.js`: non-production read-only DB connection probe and allowlisted startup target. Used by existing health route; production returns no diagnostics.
+- `client/src/domains/products/utils/collectionProducts.js`: shared main-shop Featured ordering versus extra-section curation, with existing visibility guards. Used by actual public/editor collection renderer.
+- `server/src/domains/auth/utils/sessionCookies.js`: customer/admin cookie policy; separate existing prefixes, production None/Secure and local Lax, always HttpOnly/root path/no Domain.
+- `client/src/domains/account/composables/useAccountAuth.js`: session proof after sign-in and generation-gated reads; signup retry remains available to checkout. Standalone create view explains session failure without duplicate signup.
+
 ## Storybook / Impact First Follow-Up (2026-10-17)
 
 - `client/src/domains/storefront/components/BrandPageContent.vue`: Storybook composition, managed static content and existing shopping route; reused by public Brand and Website UI.

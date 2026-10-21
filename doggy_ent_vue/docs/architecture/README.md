@@ -6,6 +6,8 @@ This directory documents how the Doggy Ent Vue storefront, admin dashboard, Expr
 
 ## Project Shape
 
+Development modes, backend-confirmed routing diagnostics, main-shop versus curated visibility and the latest customer-session repair: [Development Data Routing](development-data-routing.md).
+
 Doggy Ent is a Vue 3 + Vite storefront and admin app backed by an Express 5 API, Prisma, PostgreSQL, Better Auth, and Stripe. Customers browse products, choose variants, use the cart, validate promos, pay through Stripe, and view an order receipt. Guest checkout remains available. Customer and admin authentication use separate Better Auth configurations on `/api/customer-auth` and `/api/admin-auth`; the existing admin dashboard keeps its `/api/auth` compatibility calls. See the [production audit](../audits/2026-10-11-production-audit.md) for launch blockers and verification limits.
 
 ```mermaid

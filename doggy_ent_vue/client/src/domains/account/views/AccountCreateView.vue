@@ -129,11 +129,14 @@ async function submit() {
   }
 
   try {
-    await signUp({
+    const createdUser = await signUp({
       ...form,
       email: normalizeAccountEmail(form.email),
     })
-
+    if (!createdUser) {
+      message.value = 'Your account was created, but your browser session could not be confirmed. Use Sign in to continue; do not create the account again. Your bag is unchanged.'
+      return
+    }
     router.push(getRedirectTarget() || '/account')
   }
   catch (error) {

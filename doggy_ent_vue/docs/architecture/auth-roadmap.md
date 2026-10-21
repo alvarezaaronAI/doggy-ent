@@ -1,6 +1,10 @@
 # Auth Architecture And Roadmap
 
-Last updated: 2026-10-13
+Last updated: 2026-10-18
+
+## Customer Cookie And Routing Repair
+
+Local repair aligns customer cookies with the existing admin deployment policy through `sessionCookies.js`: production None/Secure/HttpOnly/root path, local Lax/HttpOnly, no Domain attribute. Customer previously inherited Lax even for split-site production. Logged production login 200 followed by profile 401 and confirmed account presence distinguish this incident from the older missing-admin-account issue. Client now requires a session/user after login and ignores stale session reads. CORS/role/ownership/revocation remain; Safari third-party-cookie blocking is not bypassed. No auth redesign, password change, migration or bearer fallback. See [routing architecture](development-data-routing.md) and [repair evidence](../work-checkpoints/2026-10-18-data-routing-and-customer-session.md) for current deployment/verification status.
 
 ## Current Authentication
 
