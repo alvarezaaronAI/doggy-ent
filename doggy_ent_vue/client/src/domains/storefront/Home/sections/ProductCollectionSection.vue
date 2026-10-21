@@ -4,16 +4,11 @@ import ProductCard from '@products/ProductCard/ProductCard.vue'
 import ProductFilters from '@products/ProductFilters/ProductFilters.vue'
 import { formatCurrency } from '@shared/utils/currency.js'
 import { sectionSettings } from '@storefront-content/sectionCatalog.js'
+import { collectionProducts } from '@products/utils/collectionProducts.js'
 const props = defineProps({ context: { type: Object, required: true }, settings: { type: Object, default: () => sectionSettings('collection') }, id: { type: String, default: 'shop' } })
-const displayedProducts = computed(() => {
-  const active = props.context.activeProducts.filter(product => ['active', 'out-of-stock'].includes(product.status) || product.isTestProduct && product.status === 'coming-soon')
-  if (props.settings.productIds.length) {
-    const selected = active.filter(product => props.settings.productIds.includes(product.id))
-    return !props.context.selectedSort || props.context.selectedSort === 'featured'
-      ? selected.sort((a,b) => props.settings.productIds.indexOf(a.id) - props.settings.productIds.indexOf(b.id)) : selected
-  }
-  return active
-})
+const displayedProducts = computed(() => collectionProducts(props.context.activeProducts, {
+  productIds: props.settings.productIds, id: props.id, sort: props.context.selectedSort,
+}))
 defineEmits(['quick-view', 'add-to-cart', 'category', 'protein', 'sort'])
 </script>
 <template>

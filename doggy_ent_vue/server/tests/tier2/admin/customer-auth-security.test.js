@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { betterAuth } from 'better-auth'
 import { memoryAdapter } from 'better-auth/adapters/memory'
 import { customerAuth } from '../../../src/domains/auth/services/customerAuth.service.js'
+import { sessionCookieOptions } from '../../../src/domains/auth/utils/sessionCookies.js'
 
 const origin = 'http://localhost:5173', baseURL = 'http://localhost:3000'
 const password = 'audit-only-password-123'
@@ -21,6 +22,25 @@ beforeEach(() => {
   })
 })
 describe('real customer auth engine with isolated provider-free fixtures', () => {
+  it('uses host-only HttpOnly local cookies and secure cross-site production cookies without weakening origins', async () => {
+    const local = await request('/sign-up/email', { name: 'Fixture', email: 'cookie@example.test', password })
+    const attributes = response => response.headers.getSetCookie().map(value => value.split(';').slice(1).join(';')).join(';')
+    expect(attributes(local)).toContain('HttpOnly')
+    expect(attributes(local)).toContain('SameSite=Lax')
+    expect(attributes(local)).not.toContain('Domain=')
+    const productionURL = 'https://api.example.test', productionOrigin = 'https://shop.example.test'
+    // The engine otherwise skips origin checks under NODE_ENV=test.
+    auth = betterAuth({ ...customerAuth.options, baseURL: productionURL, secret: 'audit-only-signing-secret-not-for-deployment', trustedOrigins: [productionOrigin], plugins: [], database: memoryAdapter({ user: [], account: [], session: [], verification: [] }), databaseHooks: {}, advanced: { ...sessionCookieOptions(true), disableOriginCheck: false } })
+    const makeRequest = (origin, cookie = '') => auth.handler(new Request(productionURL + '/api/customer-auth/sign-up/email', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) }, body: JSON.stringify({ name: 'Fixture', email: 'production-cookie@example.test', password }) }))
+    const production = await makeRequest(productionOrigin)
+    expect(production.status).toBe(200)
+    expect(attributes(production)).toContain('SameSite=None')
+    expect(attributes(production)).toContain('Secure')
+    expect(attributes(production)).toContain('HttpOnly')
+    expect(attributes(production)).not.toContain('Domain=')
+    expect((await makeRequest('https://untrusted.example.test', cookies(production))).status).toBe(403)
+    expect(customerAuth.options.advanced).toEqual(sessionCookieOptions(process.env.NODE_ENV === 'production'))
+  })
   it('does not report customer logout success if database revocation fails', async () => {
     const signup = await request('/sign-up/email', { name: 'Audit Fixture', email: 'fixture@example.test', password })
     const context = await auth.$context

@@ -1,5 +1,9 @@
 # Approved Layout Deployment
 
+## Superseded On 2026-10-18
+
+Backend upload `aead1833-9e6a-49a1-8fc4-e5b94121d325` and staged frontend `dpl_D5qTwStakzBPfL4YLQkfwNX8sjdK` completed while work was interrupted; the staged frontend was not promoted by this task. The owner committed the local UI as `8ebac7e` and main subsequently deployed newer Railway `10b295a0-73c4-4efd-9ac8-d8ac30a3002b` and live Vercel `dpl_3UzKU825vpZeTuvLoTTZAbtMtLUN`. Do not overwrite those with the older staged release or compare the old DB baseline as if the owner's subsequent product edits were agent changes. The current request is [routing/session investigation](2026-10-18-data-routing-and-customer-session.md).
+
 ## Scope And Recovery
 
 Owner explicitly approved deployment of the accepted Modern Boutique Home follow-up, Storybook Brand and Impact First Campaign layouts. Deploy matching backend presentation contracts before the frontend to the existing Railway doggy-ent production service and Vercel doggy-ent project. No commit/push, fixture replay, content publication, provider send, payment or new migration is authorized in this release.

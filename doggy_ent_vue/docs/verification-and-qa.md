@@ -1,5 +1,15 @@
 # Verification And QA
 
+## Routing/Customer Session Repair (2026-10-18)
+
+Read-only local/Railway inspection confirms the investigated customer exists with credential accounts and the new active product is returned by local/Railway APIs. Published main-shop eight-ID selection, not missing DB data, excluded it. Deployed login preflight 204/login 200/session 200/profile 401 and installed cookie defaults identify the customer session issue. Session response 200 alone is not auth proof.
+
+Focused regressions cover main-shop inclusion/Featured order, explicit sorting/search, extra curation, private/upcoming guards; backend-confirmed/unknown/unreachable development targets; production diagnostic suppression and safe DB failures; real installed engine local/production cookie flags, retained origin checks, customer-only roles/token sanitation/revocation; null/failed/stale client session reads. Exact complete-suite/build/browser evidence: [checkpoint](work-checkpoints/2026-10-18-data-routing-and-customer-session.md).
+
+Owner follow-up: actual local customer sign-in reached the protected `/account` workspace and survived a full page refresh; Sign out remained available, the backend-confirmed target remained RAILWAY_DB and captured browser errors were empty. No password/token/contact data was inspected, no logout was performed and no fresh account was created. This closes local form acceptance only, not deployed cross-site Chrome/Safari or extended expiry testing.
+
+Manual: verify server dev:local + client dev:local reports LOCAL, then stop/restart server dev:railway with same client and confirm RAILWAY DB; refresh shop and verify newly created active products; check extra curated sections/filters and test-product rejection. On the matching deployed repair, verify Chrome sign-in/session/profile/logout/reload and Safari separately. No password reset, new account, Stripe payment, provider send or database mutation is authorized by diagnostics.
+
 ## Storybook And Impact First QA (2026-10-17)
 
 Both builds pass (client Vite 2,305 modules; server Prisma Client 6.16.2 generation). Complete suites pass: 145 client tests/28 files and 139 server tests/34 files. Eight new client cases cover managed single-origin composition, escaped portraits, template/failure states, inert preview navigation, real fixed/percentage/inactive giving, eligible ordering/test guards and editor controls. Three server cases cover legacy portrait defaults, nested allowlists/bounds/URLs and media-library existence before saving. No actual database write or provider request.

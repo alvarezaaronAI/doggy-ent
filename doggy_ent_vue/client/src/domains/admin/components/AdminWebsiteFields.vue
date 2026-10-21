@@ -5,6 +5,7 @@ import { WEBSITE_FIELD_LABELS, WEBSITE_BACKGROUNDS, websiteFieldLabel, websiteFi
 import AdminWebsiteLinks from './AdminWebsiteLinks.vue'
 import AdminWebsiteItems from './AdminWebsiteItems.vue'
 import AdminImageField from './AdminImageField.vue'
+import { isCollectionProduct } from '@products/utils/productVisibility.js'
 const props = defineProps({ draft: { type: Object, required: true }, selected: String, block: Object, products: { type: Array, default: () => [] } })
 const fields = computed(() => props.block ? Object.keys(SECTION_CATALOG[props.block.type].defaults).filter(key => WEBSITE_FIELD_LABELS[key]) : [])
 </script>
@@ -60,8 +61,9 @@ const fields = computed(() => props.block ? Object.keys(SECTION_CATALOG[props.bl
       <label v-if="block.type === 'hero'" class="admin-field">Badges · comma separated<input :value="block.settings.tags.join(', ')" placeholder="Empty uses product badges" @input="block.settings.tags = $event.target.value.split(',').map(tag => tag.trim()).filter(Boolean)" /></label>
       <label v-if="block.type === 'spotlight'" class="admin-field">Featured treat<select v-model="block.settings.productId"><option value="">Use catalog featured product</option><option v-for="product in products.filter(p => p.status === 'active')" :key="product.id" :value="product.id">{{ product.name }}</option></select></label>
       <fieldset v-if="block.type === 'collection'" class="space-y-3">
-        <legend class="font-medium">Products · none selected shows all</legend>
-        <label v-for="product in products.filter(p => ['active','out-of-stock'].includes(p.status) || p.isTestProduct && p.status === 'coming-soon')" :key="product.id" class="flex items-start gap-2"><input v-model="block.settings.productIds" :value="product.id" type="checkbox" />{{ product.name }}</label>
+        <legend class="font-medium">{{ block.id === 'shop' ? 'Featured product order' : 'Collection products' }}</legend>
+        <p class="admin-muted text-xs">{{ block.id === 'shop' ? 'All published catalog products appear here. Selected products appear first with Featured sorting; newly published products follow. Draft and archived products stay hidden.' : 'Only selected products appear. Leave the selection empty to show all published catalog products.' }}</p>
+        <label v-for="product in products.filter(isCollectionProduct)" :key="product.id" class="flex items-start gap-2"><input v-model="block.settings.productIds" :value="product.id" type="checkbox" />{{ product.name }}</label>
       </fieldset>
       <AdminWebsiteItems v-if="Array.isArray(block.settings.items)" :items="block.settings.items" :type="block.type" />
       <label v-if="block.type === 'gallery'" class="flex items-start gap-2"><input v-model="block.settings.sampleReviews" type="checkbox" />Show seven explicitly fictional review examples (testing only)</label>

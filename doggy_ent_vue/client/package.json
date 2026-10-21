@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:local": "VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode admin-local",
-    "dev:railway": "VITE_ADMIN_DATA_TARGET=RAILWAY_DB VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode railway",
+    "dev:railway": "npm run dev:local",
     "build": "node scripts/sync-storefront-content.js && vite build",
     "preview": "vite preview",
     "test": "npm run tiertest1 && npm run tiertest2 && npm run tiertest3",

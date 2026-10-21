@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import { getDevelopmentContext } from './shared/services/developmentContext.service.js'
 import { boundedAuthHandler } from './app/middleware/auth/boundedAuthHandler.js'
 import productsRoutes from './domains/products/routes/products.routes.js'
 import promosRoutes from './domains/promos/routes/promos.routes.js'
@@ -80,8 +81,14 @@ app.use(express.json({
 app.use(cookieParser())
 app.set('trust proxy', 1)
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' })
+app.get('/api/health', async (_req, res) => {
+  const development = await getDevelopmentContext()
+  res.set('Cache-Control', 'no-store')
+  res.status(development?.databaseConnected === false ? 503 : 200).json({
+    status: development?.databaseConnected === false ? 'UNAVAILABLE' : 'OK',
+    message: 'Server is running',
+    ...(development ? { development } : {}),
+  })
 })
 
 app.use('/api/products', productsRoutes)

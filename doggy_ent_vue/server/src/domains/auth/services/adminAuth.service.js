@@ -7,6 +7,7 @@ import { prisma } from '../../../db/prisma.js'
 import { getAuthBaseURL, getAuthSecret, getTrustedAuthOrigins } from '../../../config/env.js'
 import { sanitizeReturnedAuthResponse, verifySessionRevocation } from '../utils/authResponse.js'
 import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
+import { sessionCookieOptions } from '../utils/sessionCookies.js'
 
 export function createAdminAuth({ database, findUser, secret, baseURL, trustedOrigins, production = false }) {
   return betterAuth({
@@ -17,8 +18,7 @@ export function createAdminAuth({ database, findUser, secret, baseURL, trustedOr
     baseURL, secret, trustedOrigins, database,
     advanced: {
       cookiePrefix: 'doggy-admin',
-      useSecureCookies: production,
-      defaultCookieAttributes: { httpOnly: true, sameSite: production ? 'none' : 'lax', secure: production, path: '/' },
+      ...sessionCookieOptions(production),
     },
     emailAndPassword: {
       enabled: true,

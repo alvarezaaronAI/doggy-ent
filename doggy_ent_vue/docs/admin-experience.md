@@ -1,5 +1,9 @@
 # Admin Experience Requirements
 
+## Routing And Main Shop Visibility (2026-10-18)
+
+Local development has a global backend-confirmed routing panel across storefront/account/admin, independent of the authenticated admin badge. Frontend dev:railway is only a compatibility alias; server startup selects DB. Website UI main shop product choices are now labelled Featured product order: all eligible published products appear, selected ones first. Additional collections remain selected-only. This prevents newly created products silently disappearing behind the old main-shop ID selection. No product/content record is changed by these presentation rules. See [routing guide](architecture/development-data-routing.md).
+
 ## Storybook Portrait Presentation (2026-10-17, Local)
 
 Website UI -> Chase & Evie story adds two named portrait records: selection-button name, personality introduction, story, photograph URL/upload/library and description. Defaults keep older drafts usable. Its real Storybook canvas permits local Chase/Evie selection so both records can be inspected; navigation stays inert and no selection writes data. Explicit Save/Cancel/Publish, revision gates, media authorization and business-data separation remain unchanged. Campaign presentation's surface control now names the contribution panel it changes, not the entire page. Impact First remains shared with public page/pop-out and Catalog campaign canvas. Actual authenticated persistence QA is still manual in this pass; see [checkpoint](work-checkpoints/2026-10-17-storybook-impact-first.md).

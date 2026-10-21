@@ -33,6 +33,7 @@ import {
 import { getAuthBaseURL, getAuthSecret, getTrustedAuthOrigins } from '../../../config/env.js'
 import { sanitizeReturnedAuthResponse, verifySessionRevocation } from '../utils/authResponse.js'
 import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
+import { sessionCookieOptions } from '../utils/sessionCookies.js'
 
 export const customerAuth = betterAuth({
   appName: 'Doggy Ent',
@@ -42,6 +43,7 @@ export const customerAuth = betterAuth({
   secret: getAuthSecret(),
   baseURL: getAuthBaseURL(),
   trustedOrigins: getTrustedAuthOrigins(),
+  advanced: sessionCookieOptions(process.env.NODE_ENV === 'production'),
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
