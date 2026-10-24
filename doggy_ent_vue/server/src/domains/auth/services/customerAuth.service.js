@@ -34,6 +34,7 @@ import { getAuthBaseURL, getAuthSecret, getTrustedAuthOrigins } from '../../../c
 import { sanitizeReturnedAuthResponse, verifySessionRevocation } from '../utils/authResponse.js'
 import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
 import { sessionCookieOptions } from '../utils/sessionCookies.js'
+import { deliverCustomerPasswordReset } from './customerRecovery.service.js'
 
 export const customerAuth = betterAuth({
   appName: 'Doggy Ent',
@@ -69,13 +70,15 @@ export const customerAuth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
     requireEmailVerification: false,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({
       user,
       url,
     }) => {
-      await queueEmail(
+      await deliverCustomerPasswordReset(
         buildPasswordResetEmail({
           user,
           url,

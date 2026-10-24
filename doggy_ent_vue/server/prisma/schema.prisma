@@ -385,9 +385,77 @@ model User {
   reviews                ProductReview[]
   loyaltyLedger          LoyaltyLedger[]
   notificationPreference CustomerNotificationPreference?
+  pets                   Pet[]
 
   @@index([role])
   @@index([status])
+}
+
+model Pet {
+  id                 String                 @id @default(cuid())
+  userId             String
+  nickname           String                 @db.VarChar(60)
+  lifeStage          PetLifeStage?
+  sizeBand           PetSizeBand?
+  weightGrams        Int?
+  weightUnit         String?                @db.VarChar(2)
+  weightUpdatedAt    DateTime?
+  proteinPreferences PetProteinPreference[] @default([])
+  treatPurpose       PetTreatPurpose?
+  treatPurposes      PetTreatPurpose[]      @default([])
+  breedId            String?                @db.VarChar(64)
+  isMixed            Boolean                @default(false)
+  birthdayMonth      Int?
+  birthdayDay        Int?
+  birthdaySetAt      DateTime?
+  archivedAt         DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo PetPhoto?
+
+  @@index([userId, createdAt])
+  @@index([userId, archivedAt, createdAt])
+}
+
+model PetPhoto {
+  petId       String   @id
+  bytes       Bytes
+  contentType String   @default("image/webp") @db.VarChar(32)
+  updatedAt   DateTime @updatedAt
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+}
+
+enum PetLifeStage {
+  PUPPY
+  ADULT
+  SENIOR
+}
+
+enum PetSizeBand {
+  SMALL
+  MEDIUM
+  LARGE
+  GIANT
+}
+
+enum PetProteinPreference {
+  CHICKEN
+  BEEF
+  TURKEY
+  DUCK
+  LAMB
+  SALMON
+}
+
+enum PetTreatPurpose {
+  TRAINING
+  REWARD
+  ENRICHMENT
+  BONDING
+  EVERYDAY
 }
 
 model Session {

@@ -1,6 +1,36 @@
 # Database Architecture
 
-Last updated: 2026-10-15
+Last updated: 2026-10-23
+
+## Optional Pet Weight
+
+Migration `20261023010000_optional_pet_weight` adds nullable `Pet.weightGrams` (integer), `weightUnit` (LB/KG preference) and `weightUpdatedAt`. A validated check permits all-null or a complete 100..250000 gram/unit/date tuple. These are technical input bounds, not medical or size-eligibility rules. No prior field, timestamp, row, photo or relation is backfilled/changed. This migration is applied locally and on the approved Railway target after fresh decoded full backups: 25 matching complete histories, none pending; prior Product/Order/User/Pet/PetPhoto/CustomerAccountEvent projections preserved.
+
+One canonical shared unit/conversion module is copied into isolated client/server deployment roots by existing build sync scripts. The strict API accepts only paired grams/unit or omission; timestamps remain server-owned. Create/changed measurement sets the date in the existing Serializable transaction, clearing removes all three, unit-only change preserves measurement time, no-op preserves profile time/history, and old clients omitting weight preserve it. Account events record only field names, never measurements. UI can edit/delete current weight; this is not a historical weighing ledger, inferred size, feeding calculator or reward/fraud signal. [Backup/persistence/constraint evidence and release limits](../work-checkpoints/2026-10-23-pet-weight.md).
+
+## Connected Pet Fields And Private Photos
+
+Additive migration 20261023000000_photo_led_pet_profiles extends existing Pet with nullable canonical breedId, independent isMixed, optional birthdayMonth/day + server birthdaySetAt, server archivedAt and a multi-purpose enum array. Legacy scalar treatPurpose/old values remain; migration backfills the new array without changing prior fields/timestamps. BONDING is an additional supported purpose; legacy EVERYDAY is preserved. New fields omitted by an old update are not cleared. A paired-calendar check includes February 29 without collecting a birth year. API birthdays cannot change/clear after their first save; checks occur inside each Serializable retry.
+
+PetPhoto is a private one-to-one cascading row containing optimized WebP bytes, fixed content type and update time, not a public MediaAsset. Uploads accept only bounded non-animated JPEG/PNG/WebP, verify decoded format/pixels, strip metadata, orient/resize and cap output at 1 MiB. Ten profiles per owner includes archives; photographs are replaced, explicitly removable and cascaded by pet/account removal. No image URL, source EXIF/location, original file or duplicate ownership column is stored. Access requires a fresh owned customer session; reads are private/no-store/nosniff. Current limits are not a global storage/CDN system.
+
+Existing CustomerAccountEvent also records archive/restore/photo-change/removal facts with generic messages, timestamps/tenure and field names only. Photo bytes, breed/date/preference values never enter history. No permanent risk score, reward ledger, provider action or admin raw metadata export. Retention/disposal/privacy handling remain prelaunch decisions. The approved migration is applied locally and on Railway after fresh decoded backups: 24 complete matching migrations, none pending, prior records preserved. Real loopback persistence/ownership/calendar/archive/private-photo HTTP/rollback/concurrency/cascade checks pass; no shared fixtures. [Current checkpoint](../work-checkpoints/2026-10-23-connected-photo-led-pets.md) has exact evidence; the older no-migration/preview statements below describe the earlier history-only slice. Source/UI deployment remains separate.
+
+## Pet Activity Facts (2026-10-23, Local Code)
+
+Pet.createdAt already records when a pet was added; updatedAt records its most recent material profile edit. The existing CustomerAccountEvent table now receives PET_CREATED, PET_UPDATED and PET_DELETED from the Pet repository in the same Serializable transaction as the mutation, with up to three P2034 conflict attempts. A failed audit write fails the mutation; missing/foreign-owned rows and unchanged values create no event. Reordering the protein set is not a material edit and does not refresh updatedAt.
+
+Event createdAt/actor come from the server/session. Versioned metadata contains only petId, original petCreatedAt, petUpdatedAt, profileAgeSeconds at the event and allowlisted changed field names. No nickname, image, breed/birthday/preferences values, credentials, IP or fingerprint snapshot. Pet removal deletes its row while keeping that account's minimal history; User deletion still cascades account events. Full verified account-erasure flows, audit/backup retention and disposal are not implemented by this change.
+
+This enables future account-scoped add/remove counts and elapsed remove-to-add analysis without storing duplicate counters or subjective fraud flags. No historical removal backfill, cross-account identity matching, automated risk decision, incentive or discount is enabled. Existing events before rollout are incomplete; updatedAt alone cannot reconstruct old edits/removals. Admin activity projection still strips metadata; no new customer history endpoint or generic metadata export was added.
+
+No schema/new model/migration is required; the earlier Pet schema migration remains separate from this local implementation. Shared DB was not written or rechecked in this pass. See [current checkpoint](../work-checkpoints/2026-10-23-pet-activity-and-account-theme.md) for tests and rollout limits.
+
+## Optional Pet Profiles
+
+Migration `20261020000000_optional_pet_profiles` adds only Pet, four preference enums, the owner/date index, nonempty nickname/protein-count checks and a cascading User foreign key. There are no changes to products, orders, money, credentials or existing customer rows. Pet has CUID identity, userId, nickname (60 maximum), optional lifeStage/sizeBand/treatPurpose, proteinPreferences (six allowed choices), and timestamps. Public responses exclude userId and auth relations. Ten pets per owner are enforced by serializable service creation with conflict retry, not by a database row-count constraint.
+
+Local and approved Railway application/status/backup evidence lives in the [current checkpoint](../work-checkpoints/2026-10-20-customer-auth-experience.md); historical 22-migration counts below predate this slice. Local real-data fixture tests verify ownership, CRUD, concurrent cap and delete cascade. No remote fixture customers/pets are created. Explicit pet removal and User deletion remove active rows; deactivation, backup expiry and complete account erasure remain separate lifecycle decisions.
 
 ## Approved Gallery Integration Checkpoint
 
@@ -12,7 +42,7 @@ The eight existing test fixtures were flagged and received 32 additional media r
 
 ## Source Of Truth
 
-Prelaunch 2026-10-20 adds no model or migration. Existing identity/profile/preferences/orders/support/review/loyalty foundations and proposed Pet/CustomerPreference/ConsentEvent storage are separated in the [customer-data strategy](../prelaunch/customer-data-strategy.md). Proposed names are not existing tables; review consent/retention/ownership and approval before implementing them.
+Initial prelaunch planning on 2026-10-20 added no model. The subsequent approved Pet slice above is implemented; CustomerPreference/ConsentEvent remain proposals in the [customer-data strategy](../prelaunch/customer-data-strategy.md). Review consent/retention/ownership and approval before implementing further tables.
 
 The Prisma schema at `server/prisma/schema.prisma` is the database source of truth. Runtime database access goes through the Prisma singleton at `server/src/db/prisma.js`.
 

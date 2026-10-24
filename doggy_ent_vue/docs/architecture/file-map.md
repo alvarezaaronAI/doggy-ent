@@ -1,5 +1,42 @@
 # File Map
 
+## Optional Weight Follow-Up (2026-10-23)
+
+`shared/pets/petWeight.js` owns canonical units, input bounds and conversion/formatting; existing client/server sync scripts produce deployment-root-safe `petWeight.generated.js` copies. AccountPetChoices/Editor/Card and account petProfile constants/mapper/validator own Size hints, optional weight/unit, no-drift payload and card display. Server Pet validator/DTO/repository/activity mapper own the strict paired input, measurement date and field-name-only atomic history. Schema plus `20261023010000_optional_pet_weight/migration.sql` add nullable grams/unit/date with a paired check. Client pet-weight and server pets-weight tests plus existing validation/service/repository tests cover this contract. [Exact files and migration/QA evidence](../work-checkpoints/2026-10-23-pet-weight.md).
+
+## Connected Photo-Led Pets (2026-10-23)
+
+| Files | Responsibility |
+| --- | --- |
+| Account AccountPetsView/AccountPetsSection, AccountPetCard, AccountPetEditor | Real owned photo-led pack, direct inline Edit, archive/restore and separate confirmed privacy removal |
+| Account AccountPetBreedPicker, AccountPetChoices | Searchable canonical breed choices, independent mix and labelled visual radio choices |
+| Account AccountPetPhoto, accountPets.api, useAccountPets | Private authenticated blob reads/revocation, explicit profile/photo saves and duplicate-safe partial-upload recovery |
+| Account petProfile constants/mapper/validator, tests/tier2/account/photo-led-pets.test.js | Purpose/birthday choices, explicit payload, calendar/photo checks, complete escaped card/editor regressions |
+| shared/pets/petCatalog.js and client/server sync-storefront-content scripts | Canonical stable breed IDs/aliases and deployment-root-safe generated copies |
+| Server pets services/petPhoto.service.js, routes/controller/repository/mappers/validator | Owned private raster normalization/transport/persistence, immutable birthdays, archive and atomic minimal history |
+| Prisma schema and migrations/20261023000000_photo_led_pet_profiles | Additive rich profile fields, preserved scalar/backfill, constraints/index and cascading private PetPhoto |
+| Server tests/tier2/account/pets*.test.js | DTO/ownership/limits/calendar/archive/photo/transaction/privacy and migration-contract regressions |
+
+Exact checks, target and rollout: [checkpoint](../work-checkpoints/2026-10-23-connected-photo-led-pets.md). Prior auth/history work below is preserved.
+
+## Customer Auth And Optional Pets (2026-10-21)
+
+| Files | Responsibility |
+| --- | --- |
+| Account `components/AccountShell.vue`, `Account{TextField,PasswordField,FormErrors,PasswordGuidance}.vue`, `styles/account-auth.css` | Shared centered entry shell/monogram, hints, soft valid/invalid states, password controls and first-error focus |
+| Account `views/Account{SignIn,Create,ForgotPassword,ResetPassword}View.vue` | Thin form/review/recovery composition; no raw reset-token field |
+| Account `composables/useAccountEntry.js`, `useAccountRecovery.js`, `useAccountFieldValidation.js`, `utils/accountNavigation.js` | Form/review state, touched/submitted validation, safe return, session-confirmed navigation, readiness/proof lifecycle; existing useAccountAuth invalidates cache after reset |
+| Account `api/accountAuth.api.js`, `validators/account.validators.js` | Credentialed native API requests/status-aware safe errors and email/password validation |
+| Account `views/AccountPetsView.vue`, `components/AccountPetsSection.vue`, `AccountPetEditor.vue`, `composables/useAccountPets.js` | Separate protected Pets destination, optional owned panel, editor/confirmation and async state; existing route/nav catalogs include Pets |
+| Account `api/accountPets.api.js`, `constants/petProfile.constants.js`, `mappers/petProfile.mapper.js` | Pet request transport, bounded choices, form clones and explicit payload transforms |
+| Server auth `routes/customerRecovery.routes.js`, `controllers/customerRecovery.controller.js`, `services/customerRecovery.service.js` | Public readiness, pre-engine delivery guard, provider-result checks; no new provider configuration |
+| Server `domains/pets/{routes,controllers,services,repositories,validators,mappers,constants}` | Account-authenticated owner CRUD, strict validation, serializable cap, safe response DTO |
+| Server Pets `mappers/petsActivity.mapper.js`, `repositories/pets.repository.js` | Allowlisted minimal activity facts and atomic add/edit/remove audit writes using existing CustomerAccountEvent; no new schema |
+| Server `tests/tier2/account/pets-{activity,repository,routes}.test.js` | Privacy-safe history, transaction-only delegates/retries, ownership, removal/re-add and simulated audit-failure rollback contracts |
+| `server/prisma/schema.prisma`, `migrations/20261020000000_optional_pet_profiles/migration.sql` | Additive Pet/enums/index/check/FK; existing User relation |
+| Client/server `tests/tier2/account/` | Entry/session/recovery/ownership/DTO/concurrency-contract and SSR regressions |
+| Git-root `.codex/agents/customer_experience.toml` | Seventh focused reusable role; original six preserved |
+
 ## Prelaunch Foundation (2026-10-20)
 
 | Files | Responsibility and dependencies | Flow |
@@ -39,7 +76,7 @@
 - Canonical `shared/storefront/pagePresentation.js`, `contentProjection.js`, `contentValidation.js`: backwards-compatible, bounded/allowlisted static portrait contract; generated client/server snapshots must match. Existing storefront service checks selected-library portrait references before Save/Publish.
 - `client/tests/tier2/storefront/boutique-pages.test.js` and server presentation/storefront tests: layout/data/escaping/inert preview/legacy/media regressions. Exact files/results: [checkpoint](../work-checkpoints/2026-10-17-storybook-impact-first.md).
 
-Last updated: 2026-10-15
+Last updated: 2026-10-23
 
 This file maps important files and folders. It is not a complete line-by-line inventory of every Vue component, but it accounts for the source files that own major behavior and data flow.
 

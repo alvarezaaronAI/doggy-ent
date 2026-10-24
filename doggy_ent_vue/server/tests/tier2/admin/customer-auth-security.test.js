@@ -22,6 +22,32 @@ beforeEach(() => {
   })
 })
 describe('real customer auth engine with isolated provider-free fixtures', () => {
+  it('enforces the configured password bounds before storing any credential', async () => {
+    expect(customerAuth.options.emailAndPassword.minPasswordLength).toBe(8)
+    expect(customerAuth.options.emailAndPassword.maxPasswordLength).toBe(128)
+    for (const invalidPassword of ['short', 'x'.repeat(129)]) {
+      const response = await request('/sign-up/email', { name: 'Fixture', email: 'bounds@example.test', password: invalidPassword })
+      expect(response.status).toBe(400)
+      expect(db.user).toHaveLength(0); expect(db.account).toHaveLength(0)
+    }
+  })
+  it('preserves full/single Unicode names and stores only a verified password hash privately', async () => {
+    for (const [index, name] of ['Alex', '李 明', 'Renée O’Connor'].entries()) {
+      const email = `name-${index}@example.test`
+      const signup = await request('/sign-up/email', { name, email, password })
+      expect(signup.status).toBe(200)
+      const payload = await signup.json()
+      expect(payload.user.name).toBe(name); expect(payload).not.toHaveProperty('token')
+      const credential = db.account.find(account => account.userId === payload.user.id)
+      expect(credential.password).toBeTypeOf('string'); expect(credential.password).not.toBe(password)
+      expect(JSON.stringify(payload)).not.toContain(credential.password)
+      const context = await auth.$context
+      expect(await context.password.verify({ hash: credential.password, password })).toBe(true)
+      expect(await context.password.verify({ hash: credential.password, password: 'wrong-fixture-password' })).toBe(false)
+      expect((await request('/sign-in/email', { email, password })).status).toBe(200)
+      expect((await request('/sign-in/email', { email, password: 'wrong-fixture-password' })).status).toBe(401)
+    }
+  })
   it('uses host-only HttpOnly local cookies and secure cross-site production cookies without weakening origins', async () => {
     const local = await request('/sign-up/email', { name: 'Fixture', email: 'cookie@example.test', password })
     const attributes = response => response.headers.getSetCookie().map(value => value.split(';').slice(1).join(';')).join(';')

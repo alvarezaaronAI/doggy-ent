@@ -12,6 +12,19 @@ Use these standards for storefront, account, checkout, and admin UI work. Preser
 - Do not introduce another major styling framework.
 - Do not hardcode an entirely new design system without first auditing the current one.
 
+## Shared Styling And Icons
+
+Owner reaffirmed this project-wide convention on 2026-10-21. It applies to storefront, account, checkout and admin work, including reusable components and designs that will be integrated later:
+
+- **Tailwind:** the main application styling system for layout, spacing, colors, borders, shadows, responsive behavior and interaction states. Reuse existing brand tokens; Tailwind is not the icon source. Keep custom CSS only where it is justified by the existing system or cannot be expressed cleanly with utilities.
+- **Lucide:** prefer the installed `@lucide/vue` components for new interface controls and supporting UI symbols, using existing shared wrappers where available. Keep consistent size, stroke and alignment within a control group.
+- **Font Awesome:** reuse the existing shared Font Awesome resource for brand/social logos and consistent existing interface uses. Do not add duplicate loaders or switch established controls solely to change libraries.
+- Use these resources deliberately, not all three icon styles in every component. Avoid mixing filled and outline treatments for equivalent peer actions. Do not introduce another icon package or hand-draw icons already available in the approved resources without a demonstrated need.
+- Decorative icons are hidden from assistive technology. Icon-only controls need accessible names and tooltips where meaning is unfamiliar; important field/action text stays visible. Keep focus, touch targets and reduced-motion behavior.
+- Disconnected conversation previews use their supported supplied icon runtime (Lucide here), without injecting extra CDN loaders. Connected Vue implementation must use the application's actual Tailwind/shared-icon resources; a preview is not proof that the application was migrated.
+
+The existing application has both Lucide component imports and a shared Font Awesome stylesheet in client/index.html. This convention does not require a broad migration, dependency update or redesign; improve touched surfaces within scope.
+
 ## Visual System
 
 ### Storybook And Impact First Approval (2026-10-17)

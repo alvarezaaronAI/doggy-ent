@@ -69,6 +69,10 @@ Require:
 
 ## Automatic Email Safeguards
 
+Customer recovery now exposes only `passwordResetAvailable` through GET `/api/customer-auth/readiness`, with no-store caching. The same provider readiness guard rejects native POST `/api/customer-auth/request-password-reset` before account lookup/token creation when delivery is disabled or mocked. Existing customer-auth rate limiting remains. No new env variables are required; existing server-only provider configuration controls readiness.
+
+The reset callback accepts only SENT or an identical previously SENT delivery. Better Auth deliberately masks callback failures behind the same account-independent request response, so the UI says request received/attempted send and gives fallback guidance, never guarantees delivery. Provider acceptance is not inbox delivery. Actual security-email delivery/link QA requires an approved inbox/budget; automated checks intercept requests or use mock delivery only. Operational-email manual-send policy is unchanged.
+
 Even essential automatic emails must:
 
 - Be idempotent when applicable.

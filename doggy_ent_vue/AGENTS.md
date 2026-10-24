@@ -70,9 +70,13 @@ The product should feel modern, premium, trustworthy, clear, and alive. Build co
 
 Tailwind is the main styling system. Do not introduce another major styling framework. Use purposeful, subtle motion and respect `prefers-reduced-motion`.
 
+Across storefront, accounts, checkout and admin, use the existing Tailwind, Font Awesome and Lucide resources. Tailwind owns styling; prefer Lucide for new interface controls and Font Awesome for brand/social logos, preserving consistent existing uses. Reuse shared icon components, keep accessible labels and do not add another icon library or hand-draw equivalent icons. See `docs/ux-ui-standards.md` for the project-wide convention; this is not permission for a broad icon/style replacement.
+
 ## Security And Secrets
 
 Never expose secrets.
+
+For provider incidents and credential rotation, use the [security response runbook](docs/security/incident-response.md) and active checkpoint. Start with read-only inventory; source-publication permission does not authorize shared credential, session, provider or network changes.
 
 - Do not commit `.env`, `.env.local`, `.env.production`, local Railway env files, or files containing real secrets.
 - Do not create `.env.example` files unless the user explicitly asks.

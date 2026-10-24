@@ -2,6 +2,7 @@ export const ACCOUNT_NAV_ITEMS = [
   { label: 'Overview', to: '/account', icon: 'fa-table-cells-large' },
   { label: 'Orders', to: '/account/orders', icon: 'fa-box' },
   { label: 'Profile', to: '/account/profile', icon: 'fa-user' },
+  { label: 'Pets', to: '/account/pets', icon: 'fa-paw' },
   { label: 'Addresses', to: '/account/addresses', icon: 'fa-location-dot' },
   { label: 'Order help', to: '/account/help', icon: 'fa-comment' },
   { label: 'Rewards', to: '/account/rewards', icon: 'fa-gift', future: true },

@@ -10,6 +10,7 @@ import checkoutRoutes from './domains/checkout/routes/checkout.routes.js'
 import paymentRoutes from './domains/payments/routes/payment.routes.js'
 import ordersRoutes from './domains/orders/routes/orders.routes.js'
 import authRoutes from './domains/auth/routes/auth.routes.js'
+import customerRecoveryRoutes from './domains/auth/routes/customerRecovery.routes.js'
 import accountRoutes from './domains/account/routes/account.routes.js'
 import adminCustomersRoutes from './domains/customers/routes/adminCustomers.routes.js'
 import adminEmailDeliveryRoutes from './domains/emails/routes/adminEmailDelivery.routes.js'
@@ -65,6 +66,7 @@ app.use(cors({
 }))
 
 app.use('/api/customer-auth', customerAuthRateLimiter)
+app.use('/api/customer-auth', customerRecoveryRoutes)
 app.all('/api/customer-auth/*splat', boundedAuthHandler(customerAuth))
 app.use('/api/admin-auth/sign-in/email', adminLoginRateLimiter)
 app.use('/api/admin-auth', customerAuthRateLimiter)
