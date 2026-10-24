@@ -1,5 +1,7 @@
 {
   "scripts": {
+    "security:preflight": "node scripts/security-preflight.mjs",
+    "test:security-preflight": "node --test scripts/security-preflight.test.mjs",
     "test": "npm run tiertest1 && npm run tiertest2 && npm run tiertest3",
     "tiertest1": "npm run tiertest1:server && npm run tiertest1:client",
     "tiertest2": "npm run tiertest2:server && npm run tiertest2:client",

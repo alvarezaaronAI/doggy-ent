@@ -1,6 +1,6 @@
 # Project Agents And Workflow
 
-Updated: 2026-10-21. These seven local, reusable Codex role definitions are not hosted bots, scheduled jobs or new services running in the storefront. They inherit the parent session's access; instructions are not a security sandbox. No global settings, paid agent runtime or provider credentials are installed.
+Updated: 2026-10-24. These eight local, reusable Codex role definitions are not hosted bots, scheduled jobs or new services running in the storefront. They inherit the parent session's access; instructions are not a security sandbox. No global settings, paid agent runtime or provider credentials are installed.
 
 ## Roles
 
@@ -13,6 +13,7 @@ Updated: 2026-10-21. These seven local, reusable Codex role definitions are not 
 | `customer_experience` | Implement repeatable sign-in/create/recovery/profile UX, safe checkout return and shared bag/session behavior | Preserve Better Auth/guest checkout; coordinate privacy with data steward; no independent shared-data/provider/release authority | Use customer_experience to improve a customer journey and verify it with isolated fixtures. |
 | `docs_curator` | Reconcile architecture, handoff, command evidence and resumable checkpoints | No invented verification/deployment claims | Use docs_curator to update the handoff and checkpoint from the verified changes. |
 | `release_operator` | Verify source/deployment parity, existing targets, startup effects, rollback and post-release health | Managed existing-site releases; migrations/provider changes and 1.0 acceptance stay separate | Use release_operator to verify the main-triggered Railway/Vercel rollout for this ready change. |
+| `security_responder` | Triage official advisories, inventory affected credentials, plan and verify approved remediation with resumable receipts | Read-only first; explicit credential/DB/session/provider/network approval, no secret output or unrelated release; human security handoffs remain | Use security_responder to review this advisory and the incident checkpoint, then plan the affected rotations without showing values. |
 
 Definitions: Git-root `.codex/agents/*.toml`. A repository-level AGENTS.md points into this application's operating guide. Agent files inherit the model instead of pinning a paid/possibly unavailable one. Ask explicitly to use named agents or delegate; simply saving definitions does not launch them. A new session/reload may be needed for discovery. This pass validates files against the documented schema, not a running custom-agent dispatch in this already-open session.
 
@@ -28,12 +29,13 @@ The [official custom-agent guide](https://learn.chatgpt.com/docs/agent-configura
 
 The main agent coordinates these roles during an active task; saved definitions are not a bot watching GitHub when Codex is closed. Git steward owns mutations so two agents never race merges. Failed checks, dirty/divergent work, unexpected changes, unresolved review blockers or unapproved shared-data/provider effects stop the release. Capability or another agent's confidence is not approval. Do not ask repeatedly for actions already covered by the owner's bounded instruction. Follow the workflow's full gates and exceptions.
 
-Do not run all seven for a typo. Start with one or two relevant roles; subagents consume extra tokens and coordination time. The original six remain; customer_experience is a focused implementation partner, not a replacement for customer_data_steward. Save checkpoints during long work because credit/time limits cannot reliably be predicted. Agent outputs are proposals/evidence, not approval from the human. CI is deterministic verification, not an AI agent.
+Do not run all eight for a typo. Start with one or two relevant roles; subagents consume extra tokens and coordination time. The original six and customer_experience remain; security_responder adds incident-specific triage, not independent mutation permission. Save checkpoints during long work because credit/time limits cannot reliably be predicted. Agent outputs are proposals/evidence, not approval from the human. CI is deterministic verification, not an AI agent.
 
 ## Installed Supporting Pieces
 
 - [Git workflow](git-workflow.md): branch, Conventional Commit/PR and version conventions, educational command examples.
 - Application `scripts/git-preflight.mjs`: read-only inspection plus optional fetch; tested against isolated Git fixtures.
+- [Security response runbook](../security/incident-response.md): issuer/consumer mapping, scoped rotation, verification/revocation, recovery and interruption receipts. `npm run security:preflight -- --check` inventories local env names/presence and source references without values, network calls or writes; `npm run test:security-preflight` exercises synthetic redaction/safety fixtures. A clean result does not certify deployed secrets or complete a rotation.
 - Git-root `.github/PULL_REQUEST_TEMPLATE.md`: What/Why/How/Testing/Risks/Rollback/Release.
 - Git-root `.github/workflows/quality.yml`: client/server builds and tiers, helper tests, Node 22.15.0, read-only repository token, pinned action SHAs. PRs into dev-main/main or manual trigger. No deployment, migration, customer DB, provider key or external send. First hosted Ubuntu execution passed on PR #31; see [publication evidence](../work-checkpoints/2026-10-20-first-agent-publication.md).
 - [Launch and data roadmap](../prelaunch/README.md): gates before real sales; policies remain drafts.
@@ -46,4 +48,4 @@ Initial connection check: Git fetch works and local `gh` is absent. The owner co
 
 Copy the Git-root `.codex/agents`, `.agents/skills/shop-git-workflow`, PR template and relevant engineering docs. Adapt the root guide, application path, integration/production branches, commands and provider safety rules. Copy the preflight script with `project-workflow.json`; run its fixture tests. Update CI working directories/Node/toolchain/lockfiles, and inspect the new project's tests before enabling CI. Never copy env files, tokens, customer data, remote project IDs or blindly reuse deployment approval. A new GitHub connector/CLI session needs that repository's authorization; these files cannot grant it.
 
-Optional later additions: accessibility specialist after core flows stabilize; dependency/security triage on request; fulfillment/provider operator after manual shipping/email acceptance. Avoid autonomous customer-service or marketing send agents until permissions, audit, recipient review and manual-send policy are ready.
+Optional later additions: accessibility specialist after core flows stabilize; fulfillment/provider operator after manual shipping/email acceptance. Use security_responder for bounded dependency/advisory triage rather than another duplicate role. Avoid autonomous customer-service or marketing send agents until permissions, audit, recipient review and manual-send policy are ready.

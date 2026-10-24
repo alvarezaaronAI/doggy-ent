@@ -76,6 +76,8 @@ Across storefront, accounts, checkout and admin, use the existing Tailwind, Font
 
 Never expose secrets.
 
+For provider incidents and credential rotation, use the [security response runbook](docs/security/incident-response.md) and active checkpoint. Start with read-only inventory; source-publication permission does not authorize shared credential, session, provider or network changes.
+
 - Do not commit `.env`, `.env.local`, `.env.production`, local Railway env files, or files containing real secrets.
 - Do not create `.env.example` files unless the user explicitly asks.
 - If a prior pass created `client/.env.example` or `server/.env.example`, remove them unless the user explicitly asks to keep them.
