@@ -1,6 +1,6 @@
 # Project Agents And Workflow
 
-Updated: 2026-10-20. These are local, reusable Codex role definitions, not hosted bots, scheduled jobs or new services running in the storefront. They inherit the parent session's access; instructions are not a security sandbox. No global settings, paid agent runtime or provider credentials are installed.
+Updated: 2026-10-21. These seven local, reusable Codex role definitions are not hosted bots, scheduled jobs or new services running in the storefront. They inherit the parent session's access; instructions are not a security sandbox. No global settings, paid agent runtime or provider credentials are installed.
 
 ## Roles
 
@@ -10,6 +10,7 @@ Updated: 2026-10-20. These are local, reusable Codex role definitions, not hoste
 | `qa_engineer` | Run proportionate builds/tests and reproduce customer journeys on desktop/narrow layouts | No real users, payments, email, shipments or shared writes without approval | Use qa_engineer to test signup return-to-checkout and bag persistence with isolated fixtures. |
 | `commerce_guardian` | Find pricing, idempotency, inventory, promo/campaign, ownership and authorization risks | Review first, no live transactions or migrations | Use commerce_guardian to review this checkout change and return blockers with tests. |
 | `customer_data_steward` | Map existing data, optional profiling, consent, minimization, retention and deletion gaps | No customer exports, new trackers or legal certification | Use customer_data_steward to design an optional pet questionnaire using existing profile/order data. |
+| `customer_experience` | Implement repeatable sign-in/create/recovery/profile UX, safe checkout return and shared bag/session behavior | Preserve Better Auth/guest checkout; coordinate privacy with data steward; no independent shared-data/provider/release authority | Use customer_experience to improve a customer journey and verify it with isolated fixtures. |
 | `docs_curator` | Reconcile architecture, handoff, command evidence and resumable checkpoints | No invented verification/deployment claims | Use docs_curator to update the handoff and checkpoint from the verified changes. |
 | `release_operator` | Verify source/deployment parity, existing targets, startup effects, rollback and post-release health | Managed existing-site releases; migrations/provider changes and 1.0 acceptance stay separate | Use release_operator to verify the main-triggered Railway/Vercel rollout for this ready change. |
 
@@ -27,7 +28,7 @@ The [official custom-agent guide](https://learn.chatgpt.com/docs/agent-configura
 
 The main agent coordinates these roles during an active task; saved definitions are not a bot watching GitHub when Codex is closed. Git steward owns mutations so two agents never race merges. Failed checks, dirty/divergent work, unexpected changes, unresolved review blockers or unapproved shared-data/provider effects stop the release. Capability or another agent's confidence is not approval. Do not ask repeatedly for actions already covered by the owner's bounded instruction. Follow the workflow's full gates and exceptions.
 
-Do not run all six for a typo. Start with one or two relevant roles; subagents consume extra tokens and coordination time. Save checkpoints during long work because credit/time limits cannot reliably be predicted. Agent outputs are proposals/evidence, not approval from the human. CI is deterministic verification, not an AI agent.
+Do not run all seven for a typo. Start with one or two relevant roles; subagents consume extra tokens and coordination time. The original six remain; customer_experience is a focused implementation partner, not a replacement for customer_data_steward. Save checkpoints during long work because credit/time limits cannot reliably be predicted. Agent outputs are proposals/evidence, not approval from the human. CI is deterministic verification, not an AI agent.
 
 ## Installed Supporting Pieces
 

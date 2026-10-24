@@ -1,8 +1,42 @@
 # Customer Experience Requirements
 
+## Optional Current Weight (2026-10-23)
+
+Size tiles now include approximate lb/kg guidance, not automatic classification or feeding/health advice. Add/Edit offers optional Current weight beside a labelled unit selector with a decimal keyboard, example, explanation, linked soft-red validation and first-invalid-field focus. Changing units converts the current measurement; unchanged rendered values preserve exact stored grams across repeated conversions/reopens. Size stays independently selected. A saved weight appears beneath Size on the existing card; leaving it empty saves no weight and explicitly clearing it removes the measurement/date. Weight can change as the pet grows, unlike the immutable birthday.
+
+Storage uses canonical integer grams, preferred display unit and a server-owned date for the last material measurement change. Unit-only/no-op saves do not refresh that measurement date; omitted weight in an older update preserves it. No weight value enters account activity snapshots. Existing palette, monogram, photo/birthday/archive/navigation and optional signup/checkout behavior remain. [Verification/approved migration checkpoint](work-checkpoints/2026-10-23-pet-weight.md); website deployment is separate.
+
+## Connected Photo-Led Pets (2026-10-23)
+
+Owner-approved rich Pets design is now connected application source, superseding the earlier preview-only notes below for this surface. Your pack shows real owned pet cards, private photo or clearly identified Labrador illustration, canonical breed/mix, life stage, size, favourite proteins, multiple treat purposes and the quiet cake/date row below direct Edit. No intermediate View profile. Existing account navigation, emerald/gray tokens, monogram, guest checkout and bag remain.
+
+The inline Add/Edit form uses labelled searchable breed choices (58 common named breeds plus Not sure/Not listed, not a complete registry), an independent Mixed breed checkbox, visual native radio tiles, optional multiple purposes and bounded private raster upload. Only nickname is required when saving voluntarily. Birthday is optional month/day with explicit first-save confirmation and server-enforced immutability; no correction-request UI or birth year. Existing saved purposes/omitted richer fields remain compatible with old clients.
+
+Archive/Restore sits in pet options and preserves the original profile identity/dates; archives still count toward ten. Separate Pet data & privacy offers explicit confirmed removal of profile/photo, while minimal account activity survives. No active discount, automated fraud decision or marketing consent. The future-offer notice explains one per account without implementing eligibility or redemption. New photos never enter the public image library and are fetched using owned authenticated endpoints, not external URLs. See [storage/rollout evidence](work-checkpoints/2026-10-23-connected-photo-led-pets.md); retention/rights and real-device gates remain.
+
+## Pet Activity And Account Palette (2026-10-23)
+
+The photo-led concept keeps the approved cards/direct Edit/simple birthday row and now matches account.css: emerald #17664e actions, #edf6f0 selections/notices, #f6f8f7 page background, #24332d ink, #64736c muted text and #dce5df borders. Shared brand mark/footer colors and subtle monogram remain. This is still a disconnected rich-card design, not integration of photo/breed/birthday/archive/multi-purpose fields.
+
+The connected Pet repository adds minimal transactional add/edit/remove activity using existing timestamps and CustomerAccountEvent. Customers do not see internal abuse-review labels or audit metadata. Removal still deletes active pet details; limited dated account activity survives pet removal without retaining names/preference snapshots. Draft privacy copy explains this distinction. No automatic fraud decision, reward, marketing, checkout restriction, new identity tracking or new migration. See [activity contract and limits](architecture/database.md#pet-activity-facts-2026-10-23-local-code) and [current checkpoint](work-checkpoints/2026-10-23-pet-activity-and-account-theme.md).
+
+## Centered Auth And Optional Pet Profiles (2026-10-21)
+
+Follow-up: labelled Full name/email/password inputs have examples and helper text, subtle input/card shadows, password visibility/Caps Lock guidance and two-step signup progress. Validate on blur or submit, not before interaction. Reserve helper/error space so blur feedback cannot move a button between pointer-down and click. Invalid inputs use soft red; corrected valid format/length/confirmation uses soft green with a status icon. Green never claims account existence, email verification or password strength. Sign-in passwords stay neutral until the server responds; rejected credentials mark both fields red with one account-independent message. Inline text/ARIA and linked feedback remain; submit focuses the first invalid input without hiding it under the sticky header.
+
+Keep a single inclusive Full name at signup, stored as Better Auth User.name without guessing name parts. Do not require middle names; existing personal-details first/last fields remain separate Profile edits. Better Auth is the password/security authority (explicit existing limits 8..128, default scrypt hashing/verification). Local checks and match indicators are convenience, not a replacement for server validation or breached-password/strength screening.
+
+Standalone sign-in, create, forgot and reset share one centered, bounded white card, existing yellow/brown/blue tokens, subtle Labrador monogram and the real storefront header/footer/bag. Password controls support visibility and password-manager autocomplete. Signup remains name/email/password plus confirmation, then a review step before account creation. Customer role is server-owned; no pet question, marketing requirement or OAuth button is added to signup.
+
+Safe same-origin return paths survive sign-in/create/recovery, including checkout. Confirm the actual session before redirecting; an account created without a usable session must not be created again on retry. Keep guest checkout and bag/draft storage unchanged.
+
+Recovery checks public provider readiness before requesting a link. Unconfigured/mock delivery offers honest contact guidance. Generic request acceptance is not delivery confirmation or proof an account exists. Reset consumes the email-link proof privately and removes it from the URL; refreshing afterward needs a fresh link. Successful reset clears local cached identity and revokes engine sessions. Real inbox/link acceptance still needs approved provider QA.
+
+The separate Pets account navigation destination (`/account/pets`) offers nickname, life stage, size band, favourite proteins and treat purpose, with Add/Edit/Remove and a ten-pet maximum. It reuses the existing panel rather than duplicating it inside Profile. Desktop and mobile share the same nav catalog and protected account layout; all earlier tabs remain. Only a nickname is required when voluntarily saving a pet. Ownership comes from the session; no public pet lookup. Explain purpose and future recommendations without claiming feeding/allergy safety or automated personalization. Pet changes do not alter orders, identity, profile marketing flags or notification preferences. Account deletion cascades Pet rows; account deactivation preserves them. Backup retention remains an owner decision. See [implementation evidence](work-checkpoints/2026-10-20-customer-auth-experience.md).
+
 ## 2026-10-20 Prelaunch Data And Policy Direction
 
-Keep signup short and guest checkout available. Proposed pet/preferences questions are optional/skippable/editable, not signup requirements. Orders and marketing consent remain separate. No tracker, incentive, OAuth provider or profile model was enabled here. Existing versus proposed storage is described in the [data strategy](prelaunch/customer-data-strategy.md).
+The initial planning phase kept signup short and guest checkout available, without enabling trackers, incentives or OAuth. The later pet slice above implements only optional editable/removable preferences, not signup requirements. Orders and marketing consent remain separate. Existing versus proposed storage is described in the [data strategy](prelaunch/customer-data-strategy.md).
 
 Public information pages share the storefront shell and explicit draft status until approved. Storage acknowledgment is not marketing consent and does not clear the bag or change auth. See [policy inventory](prelaunch/policy-and-storage-inventory.md) for provider/retention gaps and owner decisions.
 

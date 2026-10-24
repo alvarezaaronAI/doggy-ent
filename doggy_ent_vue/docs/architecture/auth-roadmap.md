@@ -1,6 +1,16 @@
 # Auth Architecture And Roadmap
 
-Last updated: 2026-10-18
+Last updated: 2026-10-21
+
+## Customer Entry And Recovery Refinement
+
+Standalone auth views share AccountShell's centered monogram/card variant; authenticated account navigation is unchanged. `useAccountEntry` owns short-form validation, details review, duplicate guards and session-confirmed return. `accountNavigation` constrains internal return URLs. No OAuth provider, new auth engine, admin signup or client-authorized role is added.
+
+The subsequent field-polish pass uses `useAccountFieldValidation` for blur/submitted feedback and clears it before successful password cleanup. Shared text/password controls expose hints, aria-invalid/describedby, soft red failure and soft green local-validation states. A neutral sign-in password is not marked credential-valid before engine acceptance; 401 marks both inputs without identifying the rejected credential. First-error focus is scroll-safe. Signup preserves the entered Full name rather than inventing first/middle/last parts. Customer password limits are now explicitly 8/128 in the existing engine configuration, matching previous defaults; native-engine fixtures verify rejection, private hashing and credential verification. No password algorithm, schema or provider changes. Pets is a new protected child route, not another auth boundary.
+
+`useAccountRecovery` owns readiness, private link proof and generic progress states. GET `/api/customer-auth/readiness` and a POST reset-request availability guard run under existing rate limiting before the native handler. Disabled/mock email does not pretend to send a link. The server reset callback checks actual delivery status, but Better Auth intentionally masks account-specific callback failure; generic request acceptance never confirms delivery. Native reset keeps short-lived one-use links/session revocation. After success, `useAccountAuth.clearSession` increments its generation and clears cached session/user, preventing old reads from restoring signed-in UI. Proof is scrubbed from the route on mount and never rendered/stored; a refresh after scrubbing requires a fresh link.
+
+Optional Profile pets use existing account authorization, not a new authentication relationship. Schema, ownership and backup evidence: [checkpoint](../work-checkpoints/2026-10-20-customer-auth-experience.md). No new env names are required. Better Auth Infrastructure configuration/base paths below remain; test sign-in/reset providers only with approved inboxes, and retain split-site Safari cookie acceptance as a launch gate.
 
 ## Customer Cookie And Routing Repair
 

@@ -16,3 +16,15 @@ for (const file of files) {
   }
 }
 console.log('Storefront content rules ready for this deployment root.')
+
+for (const file of ['petCatalog', 'petWeight']) {
+  const petSource = fileURLToPath(new URL(`../../shared/pets/${file}.js`, import.meta.url))
+  const petTarget = fileURLToPath(new URL(`../src/domains/pets/constants/${file}.generated.js`, import.meta.url))
+  if (fs.existsSync(petSource)) {
+    const contents = `// Generated from shared/pets/${file}.js. Do not edit directly.\n` + fs.readFileSync(petSource, 'utf8')
+    fs.mkdirSync(path.dirname(petTarget), { recursive: true })
+    if (!fs.existsSync(petTarget) || fs.readFileSync(petTarget, 'utf8') !== contents) fs.writeFileSync(petTarget, contents)
+  } else if (!fs.existsSync(petTarget)) {
+    throw new Error('Missing bundled pet rules. Build from the complete repository before isolated deployment.')
+  }
+}

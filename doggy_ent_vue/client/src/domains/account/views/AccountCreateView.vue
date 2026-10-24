@@ -1,146 +1,42 @@
+<script setup>
+import { computed, nextTick, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowLeft, ArrowRight, Check, ShieldCheck } from '@lucide/vue'
+import AccountShell from '../components/AccountShell.vue'
+import AccountPasswordField from '../components/AccountPasswordField.vue'
+import AccountTextField from '../components/AccountTextField.vue'
+import AccountFormErrors from '../components/AccountFormErrors.vue'
+import AccountPasswordGuidance from '../components/AccountPasswordGuidance.vue'
+import { useAccountEntry } from '../composables/useAccountEntry.js'
+import { accountRedirectQuery, safeAccountReturn } from '../utils/accountNavigation.js'
+const route = useRoute(), router = useRouter()
+const redirectQuery = computed(() => accountRedirectQuery(route.query.redirect))
+const checkout = computed(() => safeAccountReturn(route.query.redirect) === '/checkout')
+const { form, review, message, loading, accountCreated, errors, fieldStates, touch, submit, edit } = useAccountEntry({ creating: true, redirect: route.query.redirect, onSuccess: target => router.replace(target) })
+const summary = ref(null)
+async function submitForm() { await submit(); await nextTick(); summary.value?.focus() }
+</script>
 <template>
-  <AccountShell
-    title="Create account"
-    subtitle="Keep your treat orders together, speed up checkout, and get ready for future tracking and rewards."
-    :show-nav="false"
-  >
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.65fr)]">
-      <form class="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm" @submit.prevent="submit">
-        <label class="block text-sm font-bold text-stone-700">
-          Name
-          <input
-            v-model="form.name"
-            class="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-            type="text"
-            autocomplete="name"
-            placeholder="Your name"
-          />
-        </label>
-
-        <label class="mt-4 block text-sm font-bold text-stone-700">
-          Email
-          <input
-            v-model="form.email"
-            class="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-            type="email"
-            autocomplete="email"
-            placeholder="you@example.com"
-          />
-        </label>
-
-        <label class="mt-4 block text-sm font-bold text-stone-700">
-          Password
-          <input
-            v-model="form.password"
-            class="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-            type="password"
-            autocomplete="new-password"
-            placeholder="At least 8 characters"
-          />
-        </label>
-
-        <p v-if="message" class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-          {{ message }}
-        </p>
-
-        <div class="mt-6 flex flex-wrap items-center gap-3">
-          <button
-            class="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700 disabled:opacity-60"
-            :disabled="loading"
-            type="submit"
-          >
-            {{ loading ? 'Creating account...' : 'Create account' }}
-          </button>
-
-          <RouterLink class="text-sm font-bold text-emerald-700 hover:text-emerald-900" :to="{ path: '/account/sign-in', query: redirectQuery }">
-            Sign in instead
-          </RouterLink>
-        </div>
-
-        <p class="mt-5 text-sm text-stone-500">
-          Your account starts as a customer account. Admin access cannot be created from this form.
-        </p>
-      </form>
-
-      <div class="rounded-2xl border border-[color-mix(in_srgb,var(--brand-1)_28%,white)] bg-white p-6 shadow-sm">
-        <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-          Why create one?
-        </p>
-        <div class="mt-5 space-y-4">
-          <div class="rounded-xl bg-stone-50 p-4">
-            <h2 class="font-black text-[var(--brand-4)]">Faster checkout</h2>
-            <p class="mt-1 text-sm text-stone-600">Profile details can help prefill safe fields later.</p>
-          </div>
-          <div class="rounded-xl bg-stone-50 p-4">
-            <h2 class="font-black text-[var(--brand-4)]">Order history</h2>
-            <p class="mt-1 text-sm text-stone-600">Find references, totals, and item snapshots.</p>
-          </div>
-          <div class="rounded-xl bg-stone-50 p-4">
-            <h2 class="font-black text-[var(--brand-4)]">Future rewards</h2>
-            <p class="mt-1 text-sm text-stone-600">Loyalty, reviews, and referrals have room to grow.</p>
-          </div>
-        </div>
+  <AccountShell :title="accountCreated ? 'Your account is created' : review ? 'Check your details' : 'Make yourself at home'" :subtitle="review ? 'One last look before we create your account.' : 'A little less typing next time. Your orders and details, together.'" :show-nav="false" :back-to="checkout ? '/checkout' : '/#shop'" :back-label="checkout ? 'Back to checkout' : 'Back to the shop'">
+    <ol v-if="!accountCreated" class="auth-progress" aria-label="Create account progress"><li :aria-current="!review ? 'step' : undefined" :class="{ 'is-current': !review }"><span>1</span>Your details</li><li :aria-current="review ? 'step' : undefined" :class="{ 'is-current': review }"><span>2</span>Review &amp; create</li></ol>
+    <form v-if="!accountCreated" novalidate class="space-y-5" :aria-busy="loading" @submit.prevent="submitForm">
+      <AccountFormErrors ref="summary" :message="message" :errors="errors" :fields="{ name: 'create-name', email: 'create-email', password: 'create-password', confirmPassword: 'create-confirm-password' }" />
+      <fieldset v-if="!review" :disabled="loading" class="space-y-5">
+        <AccountTextField id="create-name" v-model="form.name" name="name" label="Full name" autocomplete="name" placeholder="Alex Morgan" hint="The name you would like us to use. One name is fine." :maxlength="100" :error="errors.name" :valid="fieldStates.name === 'valid'" @blur="touch('name')" />
+        <AccountTextField id="create-email" v-model="form.email" name="email" label="Email address" type="email" autocomplete="username" placeholder="you@example.com" hint="You will use this email to sign in and recover your account." :error="errors.email" :valid="fieldStates.email === 'valid'" @blur="touch('email')" />
+        <AccountPasswordField id="create-password" v-model="form.password" autocomplete="new-password" placeholder="Create a password" hint="Use a unique passphrase. Password managers and paste work here." :error="errors.password" :valid="fieldStates.password === 'valid'" @blur="touch('password')" />
+        <AccountPasswordField id="create-confirm-password" v-model="form.confirmPassword" label="Confirm password" autocomplete="new-password" placeholder="Repeat your password" hint="Enter it again so we can check for typing mistakes." :error="errors.confirmPassword" :valid="fieldStates.confirmPassword === 'valid'" @blur="touch('confirmPassword')" />
+        <AccountPasswordGuidance :password="form.password" :confirmation="form.confirmPassword" />
+      </fieldset>
+      <div v-else class="space-y-5">
+        <dl class="divide-y divide-stone-200 border-y border-stone-200"><div class="py-4"><dt class="auth-hint">Full name</dt><dd class="mt-1 break-words font-semibold">{{ form.name.trim() }}</dd></div><div class="py-4"><dt class="auth-hint">Sign-in email</dt><dd class="mt-1 break-words font-semibold">{{ form.email }}</dd></div></dl>
+        <p class="flex items-start gap-2 text-sm text-stone-600"><ShieldCheck :size="18" class="shrink-0" aria-hidden="true" />Your password stays private. No order is placed, and your bag is unchanged.</p>
+        <button class="auth-link" type="button" :disabled="loading" @click="edit"><ArrowLeft :size="16" aria-hidden="true" />Edit details</button>
       </div>
-    </div>
+      <button class="auth-primary" type="submit" :disabled="loading"><Check v-if="review && !loading" :size="18" aria-hidden="true" />{{ loading ? 'Creating your account...' : review ? 'Confirm & create account' : 'Review your details' }}<ArrowRight v-if="!review" :size="18" aria-hidden="true" /></button>
+    </form>
+    <p v-else class="auth-alert" role="status">{{ message }}</p>
+    <p class="auth-hint mt-5">Your account does not sign you up for marketing. Read our <RouterLink to="/privacy" class="underline underline-offset-4">privacy information</RouterLink>.</p>
+    <div class="mt-6 border-t border-stone-200 pt-4 text-center"><p v-if="!accountCreated" class="text-sm text-stone-600">Already have an account?</p><RouterLink class="auth-link" :to="{ path: '/account/sign-in', query: redirectQuery }">{{ accountCreated ? 'Sign in to continue' : 'Sign in instead' }}</RouterLink></div>
   </AccountShell>
 </template>
-
-<script setup>
-import { computed, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import AccountShell from '../components/AccountShell.vue'
-import {
-  useAccountAuth,
-} from '../composables/useAccountAuth.js'
-import {
-  normalizeAccountEmail,
-  validateCreateAccountForm,
-} from '../validators/account.validators.js'
-
-const router = useRouter()
-const route = useRoute()
-const { loading, signUp } = useAccountAuth()
-const message = ref('')
-const form = reactive({
-  name: '',
-  email: '',
-  password: '',
-})
-
-const redirectQuery = computed(() =>
-  getRedirectTarget()
-    ? { redirect: String(route.query.redirect) }
-    : {},
-)
-
-function getRedirectTarget() {
-  const redirect = String(route.query.redirect || '')
-
-  return redirect.startsWith('/') && !redirect.startsWith('//')
-    ? redirect
-    : ''
-}
-
-async function submit() {
-  message.value = validateCreateAccountForm(form)
-
-  if (message.value) {
-    return
-  }
-
-  try {
-    const createdUser = await signUp({
-      ...form,
-      email: normalizeAccountEmail(form.email),
-    })
-    if (!createdUser) {
-      message.value = 'Your account was created, but your browser session could not be confirmed. Use Sign in to continue; do not create the account again. Your bag is unchanged.'
-      return
-    }
-    router.push(getRedirectTarget() || '/account')
-  }
-  catch (error) {
-    message.value = error.message || 'Unable to create account.'
-  }
-}
-</script>

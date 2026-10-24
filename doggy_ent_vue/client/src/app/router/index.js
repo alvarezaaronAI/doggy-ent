@@ -176,6 +176,7 @@ const routes = [
     children: [
       { path: '', name: 'account-dashboard', component: () => import('../../domains/account/views/AccountDashboardView.vue') },
       { path: 'profile', name: 'account-profile', component: () => import('../../domains/account/views/AccountProfileView.vue') },
+      { path: 'pets', name: 'account-pets', component: () => import('../../domains/account/views/AccountPetsView.vue') },
       { path: 'addresses', name: 'account-addresses', component: () => import('../../domains/account/views/AccountAddressesView.vue') },
       { path: 'orders', name: 'account-orders', component: () => import('../../domains/account/views/AccountOrdersView.vue') },
       { path: 'orders/:reference', name: 'account-order-detail', component: () => import('../../domains/account/views/AccountOrderDetailView.vue') },

@@ -1,12 +1,26 @@
 # Data Flow Maps
 
+## Photo-Led Pets (2026-10-23)
+
+AccountPetsView -> photo-led cards / inline editor -> useAccountPets -> explicit payload/API -> authenticated account router -> Pet controller -> validation/service -> owned Serializable repository -> Pet + minimal CustomerAccountEvent -> safe DTO -> same cards. Server owns dates/archive status and enforces birthday immutability; native form controls are convenience only. Archive is an explicit PATCH, privacy removal an explicit confirmed DELETE. No customer profile/order/marketing changes.
+
+Photo selection -> memory-only object URL -> explicit Save profile -> bounded raw image PUT -> owned Pet check -> Sharp raster validation/metadata stripping/resize -> transactional PetPhoto replacement + minimal event. Private image GET -> credentialed fetch -> revocable blob URL; no public media endpoint/cached external URL. Cancel/unmount discards local previews; failed photo work retains the saved profile ID so retry cannot create a duplicate pet. Canonical breed choices originate in shared/pets/petCatalog.js and use build-generated identical client/server copies. See [checkpoint](../work-checkpoints/2026-10-23-connected-photo-led-pets.md).
+
+## Customer Entry And Optional Pet Data (2026-10-21)
+
+Auth view -> useAccountEntry -> validators/review -> native Better Auth API -> persisted cookie -> confirmed session -> safe internal return. Shared bag/checkout draft state is not reset. Recovery view -> public readiness -> guarded native reset request -> existing server payload/provider abstraction; generic acceptance does not prove delivery. Email link -> private proof closure -> URL cleanup -> native one-use reset -> persisted session revocation plus client cache-generation invalidation.
+
+Profile -> AccountPetsSection/editor -> useAccountPets -> explicit payload mapper/API -> protected account router -> pet controller -> validator/service -> owner-scoped repository -> Prisma Pet -> safe mapper -> UI. Owner comes only from the session. Serializable count/create limits ten; reads/updates/deletes remain owner-scoped. Pet changes do not mutate identity, order totals or marketing flags. No analytics/recommendation pipeline or automated marketing is added. See [data strategy](../prelaunch/customer-data-strategy.md) and [verification checkpoint](../work-checkpoints/2026-10-20-customer-auth-experience.md).
+
+Local 2026-10-23 extension: Pet mutation + minimal activity mapper -> the same Serializable transaction's CustomerAccountEvent write -> commit together, or fail together; P2034 conflicts retry at most three times. No-op edits/foreign rows create no event. Server-owned dates, profile tenure and changed field names survive Pet removal without copying profile values; existing account deletion cascade remains. Safe Pet DTOs and the current admin event projection do not expose metadata. No new history endpoint, automated fraud/reward action or shared DB write. See [activity architecture](database.md#pet-activity-facts-2026-10-23-local-code).
+
 ## Draft Information Pages And Storage Notice (2026-10-20)
 
 Whitelisted public route -> thin PolicyView -> plain-text policy content/PolicyContent -> existing header/footer/cart/search/auth components. No policy data API, customer submission or database write. Draft title/noindex metadata is installed on entry and restored on exit. App-level StorageNotice -> versioned acknowledgment utility -> localStorage revision only; dismissal does not change marketing consent, cart or auth. Optional analytics/advertising remains unimplemented, not enabled by acknowledging this notice. See [inventory](../prelaunch/policy-and-storage-inventory.md).
 
 Project agents/skill -> explicit scoped task -> Git preflight with optional fetch -> human-reviewed branch/PR -> non-deploying CI. Agent definitions are instructions, not access grants or scheduled workers. Future customer-data flows/models are proposals in the [strategy](../prelaunch/customer-data-strategy.md), not new production pipelines.
 
-Last updated: 2026-10-10
+Last updated: 2026-10-23
 
 ## Image Library And Seasonal Content
 

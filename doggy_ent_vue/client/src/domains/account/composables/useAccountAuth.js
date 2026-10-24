@@ -17,6 +17,14 @@ let sessionGeneration = 0
 export function useAccountAuth() {
   const authenticated = computed(() => Boolean(user.value?.id))
 
+  function clearSession() {
+    sessionGeneration++
+    session.value = null
+    user.value = null
+    loading.value = false
+    error.value = ''
+  }
+
   async function loadSession() {
     const generation = ++sessionGeneration
     loading.value = true
@@ -103,6 +111,7 @@ export function useAccountAuth() {
 
   return {
     authenticated,
+    clearSession,
     error,
     loading,
     loadSession,

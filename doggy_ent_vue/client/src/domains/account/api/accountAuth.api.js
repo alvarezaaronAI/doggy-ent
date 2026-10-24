@@ -8,6 +8,15 @@ import {
 
 const AUTH_API_URL = '/api/customer-auth'
 
+async function parseAuthResponse(response, fallback) {
+  try { return await parseJsonResponse(response, fallback) }
+  catch (error) { error.status = response.status; throw error }
+}
+
+export async function fetchCustomerAuthReadiness() {
+  return parseAuthResponse(await fetchApi(`${AUTH_API_URL}/readiness`), 'Unable to check account recovery.')
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
@@ -17,7 +26,7 @@ export function useBetterAuthSession() {
 }
 
 export async function fetchCustomerSession() {
-  return parseJsonResponse(
+  return parseAuthResponse(
     await fetchApi(`${AUTH_API_URL}/get-session`),
     'Unable to load account session.',
   )
@@ -27,7 +36,7 @@ export async function signInCustomer({
   email,
   password,
 }) {
-  return parseJsonResponse(
+  return parseAuthResponse(
     await fetchApi(`${AUTH_API_URL}/sign-in/email`, {
       method: 'POST',
       headers: {
@@ -47,7 +56,7 @@ export async function signUpCustomer({
   email,
   password,
 }) {
-  return parseJsonResponse(
+  return parseAuthResponse(
     await fetchApi(`${AUTH_API_URL}/sign-up/email`, {
       method: 'POST',
       headers: {
@@ -64,7 +73,7 @@ export async function signUpCustomer({
 }
 
 export async function signOutCustomer() {
-  return parseJsonResponse(
+  return parseAuthResponse(
     await fetchApi(`${AUTH_API_URL}/sign-out`, {
       method: 'POST',
     }),
@@ -76,7 +85,7 @@ export async function requestCustomerPasswordReset({
   email,
   redirectTo,
 }) {
-  return parseJsonResponse(
+  return parseAuthResponse(
     await fetchApi(`${AUTH_API_URL}/request-password-reset`, {
       method: 'POST',
       headers: {
@@ -95,7 +104,7 @@ export async function resetCustomerPassword({
   token,
   password,
 }) {
-  return parseJsonResponse(
+  return parseAuthResponse(
     await fetchApi(`${AUTH_API_URL}/reset-password`, {
       method: 'POST',
       headers: {
@@ -113,7 +122,7 @@ export async function resetCustomerPassword({
 export async function sendCustomerVerificationEmail({
   email,
 }) {
-  return parseJsonResponse(
+  return parseAuthResponse(
     await fetchApi(`${AUTH_API_URL}/send-verification-email`, {
       method: 'POST',
       headers: {
