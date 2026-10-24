@@ -1,5 +1,25 @@
 # Implementation Roadmap
 
+## 2026-10-23 Optional Pet Weight
+
+Connected Size guidance, optional current weight with lb/kg conversion and saved-card weight are implemented on the preserved auth/Pets task. Canonical grams/unit/server measurement date use a separately approved additive migration, applied locally/Railway after backup/preflight with old records preserved and 25 matching migrations. Both builds, 238 client/331 server tests, isolated real persistence/constraints/rollback and eighteen four-width browser scenarios pass. No real customer weight was changed or inferred. [Current checkpoint](work-checkpoints/2026-10-23-pet-weight.md). Next remains owner/device/privacy acceptance and review of the combined uncommitted release; database readiness is not source deployment.
+
+## 2026-10-23 Connected Photo-Led Pets
+
+Owner-approved photo-led cards and inline editor are integrated: canonical breed/mix, visual stage/size, optional multiple purposes, confirmed immutable month/day, private normalized photo upload/read/removal, archive/restore and separate privacy deletion. Existing pets/legacy purposes and minimal lifecycle history remain. Both builds and 225 client/314 server tests pass; isolated browser QA and real loopback persistence/ownership/rollback/concurrency/cascade evidence are in the [checkpoint](work-checkpoints/2026-10-23-connected-photo-led-pets.md).
+
+After separate explicit approval and fresh decoded full backups, additive migration is applied locally and Railway: 24 matching complete migrations, none pending and old records preserved. Actual signed-in local Railway-target page loads the existing pet and survives refresh without changing it. No reward, automatic fraud decision, provider send, commit/push/merge or website deployment. Next: owner connected-screen acceptance, retention/rights/disposal decisions, remaining real-device/accessibility and combined-source release gates, then matching managed publication. This supersedes the richer-fields-preview-only status below, not launch acceptance.
+
+## 2026-10-23 Pet History And Account Palette
+
+Implemented locally: atomic, owner-scoped Pet add/edit/remove facts in the existing CustomerAccountEvent, preserving server dates, profile tenure and changed field names without private pet snapshots. Existing Pet timestamps are reused; no new model/migration, risk score, reward or shared-data write. The disconnected photo-led card now matches actual account emerald/gray tokens; richer fields remain preview-only. Both builds, 248 server/212 client tests and four-width preview QA pass. See [checkpoint](work-checkpoints/2026-10-23-pet-activity-and-account-theme.md).
+
+Next: approve the preview's connected field/lifecycle scope, define audit retention/disposal/access and privacy handling, then verify real isolated-database atomicity/concurrency and combined-source/device acceptance before authorized publication. Do not treat audit facts as fraud proof or activate incentives from this slice.
+
+## 2026-10-21 Customer Entry And Optional Pets
+
+Implemented locally: centered brand auth shell, reviewed signup, safe checkout return, provider-aware private-link recovery, input helpers/soft red and green validation feedback, and separate protected Pets navigation with optional owned CRUD. Better Auth owns credentials and roles; no OAuth or tracking/incentive system is added. Approved additive Pet migration is already applied to local/Railway after backup/preflight (23 migrations); no further schema change in the form-polish follow-up. Source publication remains pending. [Checkpoint](work-checkpoints/2026-10-20-customer-auth-experience.md) records tests, files, backup and remaining device/provider/privacy gates. Next: visual/real-device acceptance and verified publication, then consent/retention and commerce reliability before social sign-in or automated personalization.
+
 ## 2026-10-20 Prelaunch Foundation And Next Sequence
 
 Project agents, Git preflight, PR/CI conventions and an unreleased 0.1.0 baseline are prepared. Existing `dev-main` remains integration and `main` production source. New policy/help routes are drafts pending approval. No OAuth, customer tracking/profile schema, migration or deployment is added. The [prelaunch plan](prelaunch/README.md) orders commerce reliability, privacy decisions, customer auth UX, progressive profiling, reviews and finally Google/Apple convenience. See [data strategy](prelaunch/customer-data-strategy.md), [policy/storage inventory](prelaunch/policy-and-storage-inventory.md) and [checkpoint](work-checkpoints/2026-10-20-prelaunch-foundation.md). Setup is not hosted CI or launch acceptance.

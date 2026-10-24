@@ -44,15 +44,18 @@
       </div>
       <main id="account-content" class="account-content"><slot /></main>
     </div>
-    <main v-else class="account-ui mx-auto max-w-6xl px-6 py-10 md:py-14">
-      <RouterLink class="account-link" to="/#shop"
-        ><i class="fa-solid fa-arrow-left mr-2" aria-hidden="true"></i>Back to treats</RouterLink
-      >
-      <header class="account-heading mt-6">
-        <h1>{{ title }}</h1>
-        <p v-if="subtitle">{{ subtitle }}</p>
-      </header>
-      <slot />
+    <main v-else id="account-content" class="account-ui account-auth-stage">
+      <div class="account-auth-wrap">
+        <RouterLink class="auth-link" :to="backTo"><ArrowLeft :size="17" aria-hidden="true" />{{ backLabel }}</RouterLink>
+        <section class="account-auth-card" aria-labelledby="account-auth-title">
+          <header>
+            <p class="auth-eyebrow"><span class="auth-brand-mark"><PawPrint :size="19" aria-hidden="true" /></span>YOUR CHASE &amp; EVIE ACCOUNT</p>
+            <h1 id="account-auth-title" ref="authTitle" tabindex="-1">{{ title }}</h1>
+            <p v-if="subtitle" class="mt-3 text-sm leading-relaxed text-stone-600">{{ subtitle }}</p>
+          </header>
+          <slot />
+        </section>
+      </div>
     </main>
     <SiteFooter />
     <CartDrawer
@@ -70,8 +73,9 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { ArrowLeft, PawPrint } from '@lucide/vue'
 import CartDrawer from '@cart/CartDrawer/CartDrawer.vue'
 import SiteFooter from '@app/layouts/SiteFooter.vue'
 import SiteHeader from '@app/layouts/SiteHeader.vue'
@@ -80,11 +84,16 @@ import { useStorefrontSearch } from '@storefront/composables/useStorefrontSearch
 import { useAccountAuth } from '../composables/useAccountAuth.js'
 import AccountNav from './AccountNav.vue'
 import '../styles/account.css'
-defineProps({
+import '../styles/account-auth.css'
+const props = defineProps({
   title: { type: String, default: 'Overview' },
   subtitle: { type: String, default: '' },
   showNav: { type: Boolean, default: true },
+  backTo: { type: String, default: '/#shop' },
+  backLabel: { type: String, default: 'Back to the shop' },
 })
+const authTitle = ref(null)
+watch(() => props.title, async () => { if (!props.showNav) { await nextTick(); authTitle.value?.focus() } })
 const router = useRouter()
 const { user, signOut } = useAccountAuth()
 const { searchQuery } = useStorefrontSearch()

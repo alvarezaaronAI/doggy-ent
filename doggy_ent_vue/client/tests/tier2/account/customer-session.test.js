@@ -52,4 +52,16 @@ describe('customer session confirmation', () => {
     expect(await useAccountAuth().signUp({})).toBeNull()
     expect(api.signUpCustomer).toHaveBeenCalledTimes(1)
   })
+  it('clears revoked identity after reset and prevents an older session read restoring it', async () => {
+    const auth = useAccountAuth()
+    api.fetchCustomerSession.mockResolvedValueOnce({ user: { id: 'prior-user' }, session: { id: 'prior-session' } })
+    await auth.loadSession()
+    let completeOldRead
+    api.fetchCustomerSession.mockImplementationOnce(() => new Promise(resolve => { completeOldRead = resolve }))
+    const oldRead = auth.loadSession()
+    auth.clearSession()
+    completeOldRead({ user: { id: 'prior-user' }, session: { id: 'prior-session' } })
+    await oldRead
+    expect(auth.user.value).toBeNull(); expect(auth.session.value).toBeNull(); expect(auth.authenticated.value).toBe(false)
+  })
 })

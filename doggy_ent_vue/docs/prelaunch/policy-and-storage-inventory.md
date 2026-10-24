@@ -1,6 +1,6 @@
 # Policy Pages And Storage Inventory
 
-Updated: 2026-10-20. **Drafts, not legal advice or a compliance guarantee.** Owner approved drafts and supplied Chase and Evie Co and temporary public contact info.chasenevie@gmail.com. Registered entity, operating location and markets remain unconfirmed. No mailing address, refund deadline or delivery promise was invented.
+Updated: 2026-10-23. **Drafts, not legal advice or a compliance guarantee.** Owner approved drafts and supplied Chase and Evie Co and temporary public contact info.chasenevie@gmail.com. Registered entity, operating location and markets remain unconfirmed. No mailing address, refund deadline or delivery promise was invented.
 
 ## Created Pages
 
@@ -16,6 +16,14 @@ Updated: 2026-10-20. **Drafts, not legal advice or a compliance guarantee.** Own
 PolicyView is thin; structured plain-text content and a focused renderer reuse the existing header/footer/cart/search/auth UI. No raw HTML injection, customer submission or DB write. Every page has a persistent draft banner and client-side noindex/nofollow restored on exit. Metadata is a crawler hint, not access control or a substitute for approved publication. Do not deploy these drafts as effective legal terms.
 
 Footer placeholders are now working information links. Regulatory/help copy is source-controlled for review, not arbitrary Website UI marketing text. No new admin editor/publication was added. The temporary public email is centralized in policyPages.js; replace it after a business inbox works, without requesting credentials.
+
+## Pet Activity Notice And Lifecycle
+
+Owner-approved connected follow-up adds declared breed/mix, multiple purposes, optional birthday month/day (no year, locked after first save), archive and private raster photos. Draft /privacy categories and purpose copy now describe these fields and archive-versus-removal. Photo metadata is stripped and bytes stay behind owner-authenticated private/no-store routes; no public MediaAsset or browser persistence of uploaded bytes. Pet/account removal cascades photos; archives preserve them. Retention/backup disposal and verified privacy handling still need approval before effective policy/launch. See [connected checkpoint](../work-checkpoints/2026-10-23-connected-photo-led-pets.md) for actual rollout status.
+
+The 2026-10-23 Pet repository adds minimal, account-linked lifecycle events to CustomerAccountEvent: server actor/time, pet identifier, original profile dates, age at the event and changed field names. It copies no pet names, photo, breed, birthday or preference values and adds no IP/device fingerprint, automated fraud score or discount. Existing active Pet createdAt/updatedAt are reused. The earlier history-only slice needed no migration; the later approved connected-fields/private-photo migration is tracked in the connected checkpoint above.
+
+The draft `/privacy` purpose text now distinguishes active-profile deletion from the minimal event history that remains for later account/security review. User deletion still cascades these account events. There is no automatic event expiry/disposal implementation; approve a purpose-specific retention period, access controls, backup disposal and verified privacy-request handling before rollout. Account-linked events are not anonymous or proof of fraud. Earlier deletions cannot be backfilled accurately. See [data strategy](customer-data-strategy.md#implemented-activity-facts-2026-10-23-not-deployed) and [evidence](../work-checkpoints/2026-10-23-pet-activity-and-account-theme.md).
 
 ## Source-Audited Storage
 

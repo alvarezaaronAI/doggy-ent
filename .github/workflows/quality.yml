@@ -54,3 +54,5 @@ jobs:
       - run: npm test
       - name: Git workflow helper tests
         run: node --test ../scripts/git-preflight.test.mjs
+      - name: Read-only security inventory tests
+        run: node --test ../scripts/security-preflight.test.mjs
