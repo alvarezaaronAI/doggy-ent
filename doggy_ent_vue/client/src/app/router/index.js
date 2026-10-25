@@ -182,7 +182,7 @@ const routes = [
       { path: 'orders/:reference', name: 'account-order-detail', component: () => import('../../domains/account/views/AccountOrderDetailView.vue') },
       { path: 'help', name: 'account-help', component: () => import('../../domains/account/views/AccountHelpView.vue') },
       { path: 'rewards', name: 'account-rewards', component: () => import('../../domains/account/views/AccountFutureView.vue'), props: { kind: 'Rewards' } },
-      { path: 'wishlist', name: 'account-wishlist', component: () => import('../../domains/account/views/AccountFutureView.vue'), props: { kind: 'Wishlist' } },
+      { path: 'wishlist', name: 'account-wishlist', component: () => import('../../domains/account/views/AccountWishlistView.vue') },
     ],
   },
 ]

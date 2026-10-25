@@ -5,10 +5,11 @@ import SiteFooter from '@app/layouts/SiteFooter.vue'
 import PromoStrip from '@app/layouts/PromoStrip.vue'
 import CartDrawer from '@cart/CartDrawer/CartDrawer.vue'
 import { useCart } from '@cart/composables/useCart.js'
+import { useProductVariants } from '@products/composables/useProductVariants.js'
 import { useStorefrontSearch } from '@storefront/composables/useStorefrontSearch.js'
 import '@storefront/styles/storefront.css'
 const { searchQuery } = useStorefrontSearch()
-const { cart, itemCount, subtotal, isCartOpen, loadSavedCart, increase, decrease, remove } = useCart()
+const { cart, itemCount, subtotal, isCartOpen, loadSavedCart, increase, decrease, remove } = useCart(useProductVariants())
 onMounted(loadSavedCart)
 </script>
 <template>

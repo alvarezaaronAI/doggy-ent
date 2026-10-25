@@ -1,25 +1,26 @@
 <template>
   <nav aria-label="Account navigation" class="account-nav">
-    <template v-for="(item, index) in ACCOUNT_NAV_ITEMS" :key="item.to">
-      <p v-if="item.future && !ACCOUNT_NAV_ITEMS[index - 1]?.future" class="account-future-label">
-        Coming later
-      </p>
+    <section v-for="group in ACCOUNT_NAV_GROUPS" :key="group.label" :aria-label="group.label" class="account-nav-group">
+      <h2 class="account-nav-label">{{ group.label }}</h2>
       <RouterLink
+        v-for="item in group.items"
+        :key="item.to"
         :to="item.to"
         class="account-nav-link"
         :class="{ 'is-active': isActive(item.to) }"
         :aria-current="isActive(item.to) ? 'page' : undefined"
         @click="$emit('navigate')"
       >
-        <i :class="['fa-solid', item.icon]" aria-hidden="true"></i>{{ item.label }}
+        <i :class="['fa-solid', item.icon]" aria-hidden="true"></i><span>{{ item.label }}</span>
+        <span v-if="item.future" class="ml-auto text-[10px] font-normal">Soon</span>
       </RouterLink>
-    </template>
+    </section>
   </nav>
 </template>
 
 <script setup>
 import { useRoute } from 'vue-router'
-import { ACCOUNT_NAV_ITEMS } from '../constants/account.constants.js'
+import { ACCOUNT_NAV_GROUPS } from '../constants/account.constants.js'
 defineEmits(['navigate'])
 const route = useRoute()
 function isActive(path) {

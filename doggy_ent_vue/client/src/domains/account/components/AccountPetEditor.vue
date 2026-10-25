@@ -14,6 +14,7 @@ const emit = defineEmits(['save', 'close'])
 const form = reactive(toPetProfileForm(props.pet || {}))
 const formElement = ref(null), heading = ref(null), errors = ref({}), confirmed = ref(false), photoFile = ref(null), photoPreview = ref(''), photoError = ref(''), removePhoto = ref(false)
 const id = useId()
+const photoInput = ref(null)
 const locked = computed(() => Boolean(props.pet?.birthdayMonth && props.pet?.birthdayDay))
 const days = computed(() => birthdayDays(form.birthdayMonth))
 const purposes = computed(() => PET_TREAT_PURPOSES.filter(option => option.value !== 'EVERYDAY' || form.treatPurposes.includes('EVERYDAY')))
@@ -34,6 +35,11 @@ function selectPhoto(event) {
   clearPreview(); photoFile.value = file; removePhoto.value = false; photoPreview.value = URL.createObjectURL(file)
 }
 function clearPhoto() { clearPreview(); photoFile.value = null; removePhoto.value = true; photoError.value = '' }
+async function dismissPhotoError() {
+  photoError.value = ''
+  await nextTick()
+  photoInput.value?.focus()
+}
 async function submit() {
   if (props.saving) return
   errors.value = validatePetForm(form, confirmed.value, locked.value)
@@ -56,7 +62,17 @@ defineExpose({ focus: () => heading.value?.focus() })
       <fieldset :disabled="saving" class="space-y-7">
         <div class="grid items-start gap-5 sm:grid-cols-[180px_minmax(0,1fr)]">
           <div class="overflow-hidden rounded-lg border border-[var(--account-line)]"><AccountPetPhoto :pet="pet" :preview="photoPreview" :cleared="removePhoto" /></div>
-          <div><h3 class="flex items-center gap-2"><Camera :size="18" aria-hidden="true" />Their photo <span class="account-muted text-sm font-normal">(optional)</span></h3><p class="account-muted mt-2 text-sm">A clear photo of your pet. Private to your account, never added to the public image library.</p><label class="account-button relative mt-3 overflow-hidden focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--account-green)]"><Camera :size="16" aria-hidden="true" />{{ photoFile || pet?.hasPhoto ? 'Change photo' : 'Add a photo' }}<input type="file" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 h-full w-full opacity-0" :aria-describedby="`${id}-photo-help`" :aria-invalid="Boolean(photoError)" aria-label="Choose pet photo" @change="selectPhoto" /></label><button v-if="photoFile || (pet?.hasPhoto && !removePhoto)" class="account-button ml-2 mt-3" type="button" @click="clearPhoto"><Trash2 :size="16" aria-hidden="true" />Remove photo</button><p :id="`${id}-photo-help`" class="mt-2 text-xs" :class="photoError ? 'account-error' : 'account-muted'">{{ photoError || 'JPEG, PNG or WebP · up to 5 MB. Illustration shown until you add a photo.' }}</p></div>
+          <div>
+            <h3 class="flex items-center gap-2"><Camera :size="18" aria-hidden="true" />Their photo <span class="account-muted text-sm font-normal">(optional)</span></h3>
+            <p class="account-muted mt-2 text-sm">A clear photo of your pet. Private to your account, never added to the public image library.</p>
+            <label class="account-button relative mt-3 overflow-hidden focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--account-green)]">
+              <Camera :size="16" aria-hidden="true" />{{ photoFile || (pet?.hasPhoto && !removePhoto) ? 'Change photo' : 'Add a photo' }}
+              <input ref="photoInput" type="file" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 h-full w-full opacity-0" :aria-describedby="`${id}-photo-help`" :aria-invalid="Boolean(photoError)" aria-label="Choose pet photo" @change="selectPhoto" />
+            </label>
+            <button v-if="photoFile || (pet?.hasPhoto && !removePhoto)" class="account-button ml-2 mt-3" type="button" @click="clearPhoto"><Trash2 :size="16" aria-hidden="true" />Remove photo</button>
+            <p :id="`${id}-photo-help`" class="mt-2 text-xs" :class="photoError ? 'account-error' : 'account-muted'" :role="photoError ? 'alert' : undefined">{{ photoError || 'JPEG, PNG or WebP · up to 5 MB. Illustration shown until you add a photo.' }}</p>
+            <button v-if="photoError" class="account-link mt-2 text-xs" type="button" @click="dismissPhotoError">{{ photoFile || (pet?.hasPhoto && !removePhoto) ? 'Keep the current photo' : 'Continue without a photo' }}</button>
+          </div>
         </div>
         <div><label class="account-field" :for="`${id}-nickname`">Pet nickname</label><input :id="`${id}-nickname`" v-model="form.nickname" class="account-input" :class="errors.nickname ? '!border-red-300 !bg-red-50' : ''" :aria-invalid="Boolean(errors.nickname)" :aria-describedby="`${id}-nickname-help`" autocomplete="off" maxlength="60" placeholder="For example, Luna" required @input="errors.nickname && (errors.nickname = '')" /><p :id="`${id}-nickname-help`" class="mt-2 text-xs" :class="errors.nickname ? 'account-error' : 'account-muted'">{{ errors.nickname || 'The name you use every day. Up to 60 characters.' }}</p></div>
         <div><AccountPetBreedPicker v-model="form.breedId" :error="errors.breedId" :disabled="saving" /><label class="mt-3 flex min-h-11 items-center gap-3 text-sm"><input v-model="form.isMixed" type="checkbox" class="h-4 w-4 accent-[var(--account-green)]" />Mixed breed</label><p class="account-muted text-xs">Choose a known breed and tick Mixed breed if it applies. Not sure is always an option.</p></div>

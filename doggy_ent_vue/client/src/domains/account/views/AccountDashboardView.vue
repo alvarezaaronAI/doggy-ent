@@ -49,7 +49,8 @@
           Your first order will feel right at home here.
         </p>
       </section>
-      <section class="py-7">
+      <div class="space-y-6 py-7">
+      <section>
         <div class="account-row">
           <h2>Your essentials</h2>
           <RouterLink class="account-link text-sm" to="/account/profile">Edit profile</RouterLink>
@@ -67,6 +68,8 @@
           >
         </div>
       </section>
+      <AccountPackSummary />
+      </div>
     </div>
     <section class="account-section">
       <div class="account-row">
@@ -98,10 +101,10 @@
           >Wishlist
         </h2>
         <p class="account-muted mt-2 text-sm">
-          Coming in future phase: a place for your favorites.
+          Keep your favourite treats together, ready for another look.
         </p>
         <RouterLink to="/account/wishlist" class="account-link mt-3 inline-block text-sm"
-          >Your future favorites</RouterLink
+          >Open your wishlist</RouterLink
         >
       </div>
     </section>
@@ -112,6 +115,7 @@
 import { computed, onMounted } from 'vue'
 import AccountOrderCard from '../components/AccountOrderCard.vue'
 import AccountStatusBadge from '../components/AccountStatusBadge.vue'
+import AccountPackSummary from '../components/AccountPackSummary.vue'
 import { useAccountDashboard } from '../composables/useAccountDashboard.js'
 import { addressLines, orderReference } from '../utils/accountFormatting.js'
 const { dashboard, loading, error, loadDashboard, recentOrders } = useAccountDashboard()
