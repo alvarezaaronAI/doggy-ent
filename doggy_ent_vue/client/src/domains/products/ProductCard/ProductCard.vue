@@ -70,7 +70,9 @@ const emit = defineEmits(['quick-view', 'add-to-cart', 'select-section', 'browse
     :class="{ 'store-product-giving': campaigns.length }"
     :style="campaigns.length ? undefined : { backgroundColor: PRESENTATION_COLORS[appearance.background] }"
   >
-    <WishlistButton v-if="!editable && !browseOnly" :product="props.product" class="absolute right-3 top-3 z-10" />
+    <div v-if="!editable && !browseOnly" data-wishlist-overlay class="absolute right-3 top-3 z-10">
+      <WishlistButton :product="props.product" />
+    </div>
     <button v-if="editable" type="button" class="product-edit-handle" @click="emit('select-section', 'details')"><Pencil :size="14" /> Edit image</button>
     <ProductCardImage
       :inert="browseOnly || undefined"

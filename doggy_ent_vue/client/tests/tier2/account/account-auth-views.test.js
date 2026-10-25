@@ -15,6 +15,7 @@ import AccountPetsView from '../../../src/domains/account/views/AccountPetsView.
 import { ACCOUNT_NAV_ITEMS } from '../../../src/domains/account/constants/account.constants.js'
 import { ACCOUNT_NAV_GROUPS } from '../../../src/domains/account/constants/account.constants.js'
 import AccountShell from '../../../src/domains/account/components/AccountShell.vue'
+import ProductCard from '../../../src/domains/products/ProductCard/ProductCard.vue'
 async function render(component, path, props = {}) {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }] })
   await router.push(path)
@@ -92,5 +93,19 @@ describe('shared, centered customer auth presentation', () => {
   it.each(['/account', '/account/profile', '/account/orders', '/account/addresses', '/account/pets', '/account/wishlist', '/account/help', '/account/rewards'])('shares the monogram workspace on %s', async path => {
     const html = await render(AccountShell, path)
     expect(html).toContain('account-content account-pattern')
+  })
+  it('places the card heart in a separate absolute overlay without conflicting relative positioning', async () => {
+    const props = {
+      product: { id: 'c000000000000000000000000', name: 'Fixture treat', status: 'ACTIVE' },
+      formatPrice: value => `$${value}`, getDisplayTags: () => [], getProductVariants: () => [],
+      getSelectedCardSize: () => '', selectCardSize: () => {}, getSelectedCardPrice: () => 12,
+      getSelectedCardVariant: () => null, getSelectedStockLabel: () => 'In stock', isPurchasable: () => false,
+    }
+    const html = await render(ProductCard, '/', props)
+    expect(html).toMatch(/data-wishlist-overlay class="absolute right-3 top-3 z-10"[^>]*><div class="relative"/)
+    expect(html).toContain('Sign in to save this treat')
+    for (const mode of ['editable', 'browseOnly']) {
+      expect(await render(ProductCard, '/', { ...props, [mode]: true })).not.toContain('data-wishlist-overlay')
+    }
   })
 })
