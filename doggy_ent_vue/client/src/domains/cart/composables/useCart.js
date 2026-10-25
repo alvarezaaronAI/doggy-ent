@@ -114,14 +114,17 @@ export function useCart({
 
     const currentProduct = products.value.find((product) => product.id === id)
 
-    const currentVariant = currentProduct?.variants?.find(
+    const currentVariant = (currentProduct || item)?.variants?.find(
       (variant) => variant.size === size,
-    )
+    ) || (!currentProduct ? item.variant || { quantity: item.availableQuantity } : null)
+
+    if (!isPurchasable(currentProduct || item, currentVariant)) return
 
     const availableQuantity = getAvailableQuantity(
       currentProduct || item,
       currentVariant,
     )
+    if (availableQuantity <= 0) return
 
     const nextQuantity = item.quantity + 1
 

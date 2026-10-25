@@ -73,7 +73,8 @@ model Product {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  variants ProductVariant[]
+  variants      ProductVariant[]
+  wishlistItems WishlistItem[]
 }
 
 model ProductVariant {
@@ -386,9 +387,22 @@ model User {
   loyaltyLedger          LoyaltyLedger[]
   notificationPreference CustomerNotificationPreference?
   pets                   Pet[]
+  wishlistItems          WishlistItem[]
 
   @@index([role])
   @@index([status])
+}
+
+model WishlistItem {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@index([userId, createdAt])
 }
 
 model Pet {

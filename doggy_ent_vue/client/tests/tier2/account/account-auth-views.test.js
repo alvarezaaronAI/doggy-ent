@@ -13,6 +13,8 @@ import AccountFormErrors from '../../../src/domains/account/components/AccountFo
 import AccountNav from '../../../src/domains/account/components/AccountNav.vue'
 import AccountPetsView from '../../../src/domains/account/views/AccountPetsView.vue'
 import { ACCOUNT_NAV_ITEMS } from '../../../src/domains/account/constants/account.constants.js'
+import { ACCOUNT_NAV_GROUPS } from '../../../src/domains/account/constants/account.constants.js'
+import AccountShell from '../../../src/domains/account/components/AccountShell.vue'
 async function render(component, path, props = {}) {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }] })
   await router.push(path)
@@ -77,5 +79,18 @@ describe('shared, centered customer auth presentation', () => {
     expect(html).toContain('href="/account/pets"'); expect(html).toContain('aria-current="page"')
     const pets = await render(AccountPetsView, '/account/pets')
     expect(pets).toContain('Your pack'); expect(pets).toContain('Add a pet')
+  })
+  it('groups all destinations once and labels only Rewards as coming later', async () => {
+    const items = ACCOUNT_NAV_GROUPS.flatMap(group => group.items)
+    expect(items).toHaveLength(ACCOUNT_NAV_ITEMS.length)
+    expect(new Set(items.map(item => item.to)).size).toBe(items.length)
+    expect(ACCOUNT_NAV_GROUPS.map(group => group.label)).toEqual(['Shopping', 'Your details', 'Support', 'Coming later'])
+    expect(items.filter(item => item.future).map(item => item.label)).toEqual(['Rewards'])
+    const html = await render(AccountNav, '/account/wishlist')
+    expect(html).toContain('aria-label="Shopping"'); expect(html).toContain('aria-current="page"')
+  })
+  it.each(['/account', '/account/profile', '/account/orders', '/account/addresses', '/account/pets', '/account/wishlist', '/account/help', '/account/rewards'])('shares the monogram workspace on %s', async path => {
+    const html = await render(AccountShell, path)
+    expect(html).toContain('account-content account-pattern')
   })
 })

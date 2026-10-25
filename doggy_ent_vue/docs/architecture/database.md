@@ -1,5 +1,13 @@
 # Database Architecture
 
+## Customer Wishlist (2026-10-25)
+
+WishlistItem stores only userId, productId and the original server-created date. Composite primary key prevents duplicate saves; owner/date index supports the bounded newest-first list. User and Product foreign keys cascade on actual record deletion. No copied product name/price/stock, browser fingerprint, remove-history ledger, reward or marketing-consent record is added.
+
+The existing authenticated account router exposes GET /wishlist, idempotent PUT /wishlist/:productId and owner-scoped idempotent DELETE. Responses contain productId/createdAt only; the client joins current public products and shows generic unavailable entries when absent. Public product statuses alone are eligible for new saves. Serializable count/insert with three attempts enforces 100 per owner, including concurrent saves; duplicate save preserves the original date. Payload/query ownership fields are rejected. Handler responses are private/no-store; inherited auth guards are no-store. Global parser failures occur before this router and contain no wishlist data.
+
+Owner-approved migration 20261024000000_customer_wishlist is applied locally/Railway after fresh full decoded private backups: 26 complete matching checksums, no pending, existing business/pet/account records unchanged and new table initially empty. Real loopback fixtures verified persistence/idempotence/ownership/concurrent cap/user+product cascades and were cleaned; no shared fixtures. Source rollout is separate. [Exact evidence/next steps](../work-checkpoints/2026-10-24-account-wishlist.md).
+
 Last updated: 2026-10-23
 
 ## Optional Pet Weight

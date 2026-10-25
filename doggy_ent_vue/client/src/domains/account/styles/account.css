@@ -77,6 +77,15 @@
   flex-direction: column;
   gap: 5px;
 }
+.account-nav-group + .account-nav-group { margin-top: 18px; }
+.account-ui .account-nav-label {
+  padding: 0 12px 7px;
+  color: var(--account-muted);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+.account-nav-group { display: grid; gap: 5px; }
 .account-nav-link {
   display: flex;
   align-items: center;
@@ -122,6 +131,17 @@
   min-width: 0;
   background: #f6f8f7;
   padding: 36px;
+}
+.account-pattern { position: relative; isolation: isolate; }
+.account-pattern::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('../../../assets/images/brand/labrador-monogram-v1.webp') repeat;
+  background-size: 360px;
+  opacity: 0.065;
 }
 .account-mobile-nav {
   display: none;

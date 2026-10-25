@@ -15,6 +15,7 @@ import ProductQuickViewInfoGrid from './ProductQuickViewInfoGrid.vue'
 import ProductQuickViewNotIncluded from './ProductQuickViewNotIncluded.vue'
 import ProductQuickViewAnalysis from './ProductQuickViewAnalysis.vue'
 import ProductQuickViewStorage from './ProductQuickViewStorage.vue'
+import WishlistButton from '@domains/account/components/WishlistButton.vue'
 import { pagePresentation, PRESENTATION_COLORS } from '@storefront-content/pagePresentation.js'
 import { useStorefrontContent } from '@storefront/composables/useStorefrontContent.js'
 
@@ -245,6 +246,7 @@ function addProductToCart() {
               :product="product"
               :tags="getDisplayTags(product)"
             />
+            <div v-if="!preview" class="mt-3 flex items-center gap-3"><WishlistButton :product="product" /><span class="text-sm store-muted">Save for another day</span></div>
 
             <ProductQuickViewSizeSelector
               v-if="variants.length"
