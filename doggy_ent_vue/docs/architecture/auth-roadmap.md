@@ -1,5 +1,10 @@
 # Auth Architecture And Roadmap
 
+2026-10-25: [separate Vercel admin hosting](admin-hosting.md) adds a staged server-only
+gateway ahead of existing native/compatibility admin authorization. Default off until
+protected replacement acceptance; customer auth and admin persistence are unchanged.
+See the linked checkpoint for actual deployment/cutover evidence.
+
 Last updated: 2026-10-21
 
 ## Customer Entry And Recovery Refinement

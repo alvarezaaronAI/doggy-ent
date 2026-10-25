@@ -209,6 +209,8 @@ docs/_book
 
 # Build outputs
 dist/
+client/dist-admin/
+client/dist-storefront/
 build/
 
 # Archives

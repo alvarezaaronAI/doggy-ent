@@ -1,5 +1,14 @@
 # Admin Experience Requirements
 
+## Separate Staff Hosting (2026-10-25)
+
+The owner approves a separate protected Vercel admin project, retaining the existing
+workspace, signed-in identity, data routing and business tools. Build separation and
+the server-only gateway preserve Better Auth authorization; neither a hidden URL nor
+CORS is an access gate. See [hosting design](architecture/admin-hosting.md) and its
+checkpoint for actual activation status. No second database, domain purchase or
+Cloudflare setup is part of this direction.
+
 ## Routing And Main Shop Visibility (2026-10-18)
 
 Local development has a global backend-confirmed routing panel across storefront/account/admin, independent of the authenticated admin badge. Frontend dev:railway is only a compatibility alias; server startup selects DB. Website UI main shop product choices are now labelled Featured product order: all eligible published products appear, selected ones first. Additional collections remain selected-only. This prevents newly created products silently disappearing behind the old main-shop ID selection. No product/content record is changed by these presentation rules. See [routing guide](architecture/development-data-routing.md).

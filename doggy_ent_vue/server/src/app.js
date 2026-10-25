@@ -3,6 +3,7 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { getDevelopmentContext } from './shared/services/developmentContext.service.js'
 import { boundedAuthHandler } from './app/middleware/auth/boundedAuthHandler.js'
+import { requireAdminGateway } from './app/middleware/auth/requireAdminGateway.js'
 import productsRoutes from './domains/products/routes/products.routes.js'
 import promosRoutes from './domains/promos/routes/promos.routes.js'
 import campaignsRoutes from './domains/campaigns/routes/campaigns.routes.js'
@@ -68,6 +69,7 @@ app.use(cors({
 app.use('/api/customer-auth', customerAuthRateLimiter)
 app.use('/api/customer-auth', customerRecoveryRoutes)
 app.all('/api/customer-auth/*splat', boundedAuthHandler(customerAuth))
+app.use('/api/admin-auth', requireAdminGateway)
 app.use('/api/admin-auth/sign-in/email', adminLoginRateLimiter)
 app.use('/api/admin-auth', customerAuthRateLimiter)
 app.all('/api/admin-auth/*splat', (req, res, next) => {

@@ -1,0 +1,23 @@
+import { afterEach, expect, it, vi } from 'vitest'
+afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); vi.doUnmock('../../../src/shared/config/applicationSurface.js') })
+it('standalone admin uses only same-origin API even if a public backend URL was configured', async () => {
+  vi.resetModules()
+  vi.doMock('../../../src/shared/config/applicationSurface.js', () => ({ APPLICATION_SURFACE: 'admin' }))
+  vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.test')
+  vi.stubEnv('VITE_ADMIN_DATA_TARGET', 'RAILWAY_DB')
+  const { buildApiUrl, getApiBaseUrl } = await import('../../../src/shared/api/http.js')
+  expect(getApiBaseUrl()).toBe('')
+  expect(buildApiUrl('/api/auth/me')).toBe('/api/auth/me')
+})
+it('combined compatibility retains its configured backend and startup target safeguard', async () => {
+  vi.resetModules()
+  vi.doMock('../../../src/shared/config/applicationSurface.js', () => ({ APPLICATION_SURFACE: 'combined' }))
+  vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.test')
+  expect((await import('../../../src/shared/api/http.js')).buildApiUrl('/api/auth/me')).toBe('https://api.example.test/api/auth/me')
+  vi.resetModules()
+  vi.stubEnv('VITE_API_BASE_URL', '')
+  vi.stubEnv('VITE_API_URL', '')
+  vi.stubEnv('VITE_ADMIN_DATA_TARGET', 'RAILWAY_DB')
+  const missing = await import('../../../src/shared/api/http.js')
+  expect(() => missing.buildApiUrl('/api/auth/me')).toThrow('RAILWAY DB TARGET requires')
+})
