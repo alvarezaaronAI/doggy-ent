@@ -2,6 +2,23 @@ import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
 
+export const ADMIN_GATEWAY_MAX_BYTES = 1024
+
+export function getAdminGatewayConfig(env = process.env) {
+  const flag = env.ADMIN_GATEWAY_REQUIRED
+  if (flag !== undefined && flag !== 'true' && flag !== 'false') {
+    throw new Error('ADMIN_GATEWAY_REQUIRED must be true or false.')
+  }
+  if (flag !== 'true') return { required: false }
+
+  const secret = env.ADMIN_GATEWAY_SECRET
+  if (typeof secret !== 'string' || secret.length < 32 || /\s/.test(secret)
+    || Buffer.byteLength(secret, 'utf8') > ADMIN_GATEWAY_MAX_BYTES) {
+    throw new Error('ADMIN_GATEWAY_SECRET must contain at least 32 characters, no whitespace and at most 1024 bytes when the admin gateway is required.')
+  }
+  return { required: true, secret }
+}
+
 export function getAuthSecret() {
   const secret = process.env.BETTER_AUTH_SECRET || process.env.ADMIN_SESSION_SECRET
   if (!secret && process.env.NODE_ENV === 'production') throw new Error('A dedicated Better Auth signing secret is required in production.')
@@ -99,6 +116,8 @@ export function loadServerEnv({
       quiet: true,
     })
   }
+
+  getAdminGatewayConfig()
 
   process.env.ADMIN_DATA_TARGET = process.env.NODE_ENV === 'production' ? 'DEPLOYED' : normalizeDataTarget(
     process.env.DOGGY_SERVER_ENV_TARGET || process.env.ADMIN_DATA_TARGET,

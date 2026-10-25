@@ -30,7 +30,16 @@ jobs:
           cache-dependency-path: doggy_ent_vue/client/package-lock.json
       - run: npm ci
       - run: npm run build
+      - name: Storefront artifact isolation
+        run: npm run build:storefront
+      - name: Admin artifact isolation
+        run: npm run build:admin
+        env:
+          VITE_STOREFRONT_ORIGIN: https://storefront.example.test
       - run: npm test
+      - name: Admin gateway runtime tests
+        run: npm ci && npm test
+        working-directory: doggy_ent_vue/admin
   server:
     runs-on: ubuntu-latest
     timeout-minutes: 15

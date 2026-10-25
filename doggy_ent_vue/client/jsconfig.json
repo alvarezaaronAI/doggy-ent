@@ -4,6 +4,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@application-router": ["src/app/router/index.js"],
       "@/*": ["src/*"],
       "@app/*": ["src/app/*"],
       "@shared/*": ["src/shared/*"],
@@ -21,6 +22,8 @@
   },
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "dist-admin",
+    "dist-storefront"
   ]
 }

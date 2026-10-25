@@ -1,3 +1,5 @@
+import { APPLICATION_SURFACE } from '../config/applicationSurface.js'
+
 function normalizeApiBaseUrl(value) {
   const url = String(value || '').trim()
 
@@ -12,7 +14,7 @@ function normalizeApiBaseUrl(value) {
   return `https://${url}`.replace(/\/$/, '')
 }
 
-const API_BASE_URL = normalizeApiBaseUrl(
+const API_BASE_URL = APPLICATION_SURFACE === 'admin' ? '' : normalizeApiBaseUrl(
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL,
 )
 
@@ -42,7 +44,7 @@ export function getAdminDataTarget() {
 }
 
 export function buildApiUrl(path) {
-  if (getAdminDataTarget() === 'RAILWAY_DB' && !API_BASE_URL) {
+  if (APPLICATION_SURFACE !== 'admin' && getAdminDataTarget() === 'RAILWAY_DB' && !API_BASE_URL) {
     throw new Error(
       'RAILWAY DB TARGET requires VITE_API_BASE_URL or VITE_API_URL to point to the local backend origin.',
     )
