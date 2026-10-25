@@ -1,5 +1,9 @@
 # Doggy Ent Architecture
 
+2026-10-25: [separate protected Vercel admin](admin-hosting.md) describes the approved
+two-project build/proxy/API boundary. Its checkpoint distinguishes source preparation
+from actual live cutover. Same Railway API/database; no Cloudflare or purchased domain.
+
 Prelaunch workflow/data planning (2026-10-20): [agent roles](../engineering/agents-and-workflow.md), [Git/releases](../engineering/git-workflow.md), [data strategy](../prelaunch/customer-data-strategy.md), [policy/storage inventory](../prelaunch/policy-and-storage-inventory.md). These add no database tables, OAuth providers or production deployment; proposed infrastructure is labelled.
 
 Last updated: 2026-10-11

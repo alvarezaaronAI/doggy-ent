@@ -1,5 +1,8 @@
 <script setup>
 import AdminIcon from './AdminIcon.vue'
+import { APPLICATION_SURFACE, getStorefrontHref } from '@shared/config/applicationSurface.js'
+const standalone = APPLICATION_SURFACE === 'admin'
+const storeHref = getStorefrontHref()
 defineProps({ admin: { type: Object, default: null }, signingOut: Boolean })
 defineEmits(['logout'])
 </script>
@@ -17,7 +20,9 @@ defineEmits(['logout'])
       >
     </RouterLink>
     <div class="flex items-center gap-2">
-      <RouterLink to="/" class="admin-button"
+      <a v-if="standalone && storeHref" :href="storeHref" target="_blank" rel="noopener noreferrer" class="admin-button" aria-label="View store (opens in a new tab)"><AdminIcon name="external" /><span>View store</span></a>
+      <button v-else-if="standalone" type="button" class="admin-button" disabled title="Store address not configured"><AdminIcon name="external" /><span>View store</span></button>
+      <RouterLink v-else to="/" class="admin-button"
         ><AdminIcon name="external" /><span class="hidden sm:inline"
           >View store</span
         ><span class="sr-only sm:hidden">View store</span></RouterLink

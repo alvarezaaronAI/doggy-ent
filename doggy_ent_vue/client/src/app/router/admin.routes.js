@@ -1,0 +1,25 @@
+export const adminRoutes = [
+  { path: '/admin/login', name: 'admin-login', component: () => import('../../domains/admin/views/AdminLoginView.vue') },
+  {
+    path: '/admin',
+    component: () => import('../../domains/admin/components/AdminLayout.vue'),
+    meta: { requiresAdminAuth: true },
+    children: [
+      { path: '', name: 'admin-dashboard', component: () => import('../../domains/admin/views/AdminDashboardView.vue') },
+      { path: 'products', name: 'admin-products', component: () => import('../../domains/admin/views/AdminProductsView.vue') },
+      { path: 'website', name: 'admin-website', component: () => import('../../domains/admin/views/AdminWebsiteView.vue') },
+      { path: 'orders', name: 'admin-orders', component: () => import('../../domains/admin/views/AdminOrdersView.vue') },
+      { path: 'orders/:orderId', name: 'admin-order-detail', component: () => import('../../domains/admin/views/AdminOrderDetailView.vue') },
+      { path: 'promos', name: 'admin-promos', component: () => import('../../domains/admin/views/AdminPromosView.vue') },
+      { path: 'campaigns', name: 'admin-campaigns', component: () => import('../../domains/admin/views/AdminCampaignsView.vue') },
+      { path: 'customers', name: 'admin-customers', component: () => import('../../domains/admin/views/AdminCustomersView.vue') },
+      { path: 'customers/:customerId', name: 'admin-customer-detail', component: () => import('../../domains/admin/views/AdminCustomerDetailView.vue') },
+      { path: 'notifications', name: 'admin-notifications', component: () => import('../../domains/admin/views/AdminNotificationsView.vue') },
+      { path: 'email-templates', name: 'admin-email-templates', component: () => import('../../domains/admin/views/AdminEmailTemplatesView.vue') },
+      { path: 'shipments', name: 'admin-shipments', component: () => import('../../domains/admin/views/AdminShipmentsView.vue') },
+      { path: 'order-issues', name: 'admin-order-issues', component: () => import('../../domains/admin/views/AdminOrderIssuesView.vue') },
+      { path: 'internal-issues', name: 'admin-internal-issues', component: () => import('../../domains/admin/views/AdminInternalIssuesView.vue') },
+      { path: 'reports', name: 'admin-reports', component: () => import('../../domains/admin/views/AdminReportsView.vue') },
+    ],
+  },
+]

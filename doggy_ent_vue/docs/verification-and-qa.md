@@ -1,5 +1,16 @@
 # Verification And QA
 
+## Separate Vercel Admin Gates (2026-10-25)
+
+Local routing/artifact, proxy/header/cookie, image-transport and backend-gateway tests
+are distinct from live acceptance. Require All Deployments Vercel Authentication,
+successful staff app sign-in/read/logout, direct Railway/legacy bypass denial,
+gateway-only session denial, no credential in browser artifacts/responses, retained
+public/customer behavior, exact source/deployment identity and no pending migration
+before cutover. Preview must not inherit production gateway access. See
+[hosting design](architecture/admin-hosting.md) and
+[active checkpoint](work-checkpoints/2026-10-25-vercel-admin-separation.md).
+
 ## Recovery And Footer Storage Information (2026-10-25)
 
 Production release #43 is verified on both existing providers for main4930ee4: VercelREADY/RailwaySUCCESS, startup/preflight26matching/none pending/zero error lines, public health/catalog/eight products/exact-origin CORS/anonymous wishlist guard, new image and live recovery/footer/monogram/metadata cleanup/bag focus checks pass. [Final evidence and residual risks](work-checkpoints/2026-10-25-error-pages-storage.md#final-production-verification) supersede older local-only notes below. Actual offline browser/service-worker shell and real-device/provider/legal acceptance are not claimed.
