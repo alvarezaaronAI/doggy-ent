@@ -20,7 +20,7 @@ const background = computed(() => ({
 onMounted(() => { if (!props.preview) loadContent() })
 </script>
 <template>
-  <footer v-if="footer.visible" class="site-footer" :style="background">
+  <footer v-if="footer.visible" class="site-footer mt-auto shrink-0" :style="background">
     <div class="site-footer-inner">
       <div>
         <RouterLink to="/" class="site-footer-brand"

@@ -32,14 +32,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="storefront-ui store-brand min-h-screen">
+  <div class="storefront-ui store-brand site-page flex flex-1 flex-col">
     <PromoStrip />
     <SiteHeader
       :cart-count="itemCount"
       v-model:search-query="searchQuery"
       @open-cart="isCartOpen = true"
     />
-    <main>
+    <main class="flex-1">
       <BrandPageContent />
     </main>
     <SiteFooter />

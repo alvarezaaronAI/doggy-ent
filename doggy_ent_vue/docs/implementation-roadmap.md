@@ -1,5 +1,9 @@
 # Implementation Roadmap
 
+## 2026-10-25 Recovery Pages And Storage UX (Local Preview)
+
+Branded unmatched-route recovery, distinct missing/transient campaign states, private-detail-safe copy and temporary error metadata are implemented locally. Floating storage acknowledgment is retired in favour of the footer information link; no tracker, timed acceptance or pretend consent controls. Stripe's shared pure loader defers initialization to real payment-control mounts without changing payment submission. No server/schema/DB work or publication. [Checkpoint](work-checkpoints/2026-10-25-error-pages-storage.md) tracks tests/browser review and remaining owner/provider/legal/device acceptance; this proposal does not supersede the live release until explicitly advanced.
+
 ## 2026-10-25 Account Organization And Saved Treats
 
 Connected grouped navigation/shared monogram, compact overview pack card, pet-photo rejection dismissal/privacy focus recovery and persistent owned Wishlist. Minimal additive links/date table is approved/applied locally and Railway after full private backups with26 matching completed migrations, old records preserved. No active rewards, behavioural tracker, automatic marketing, provider/payment or security-key change. [Current checkpoint](work-checkpoints/2026-10-24-account-wishlist.md) records tests/browser checks and source-publication status; do not infer deployment from migration. Next: matching reviewed release and owner/device acceptance, then existing privacy/retention/commerce/security launch work. Saved-interest analytics remains a later protected read model.

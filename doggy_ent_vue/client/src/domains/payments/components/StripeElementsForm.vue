@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 
-import { stripePromise } from '@payments/services/stripe.js'
+import { getStripe } from '@payments/services/stripe.js'
 import { createPaymentIntent } from '@payments/services/payment.service.js'
 
 const props = defineProps({
@@ -87,7 +87,7 @@ defineExpose({
 onMounted(async () => {
   if (props.preview) return
   try {
-  stripeInstance.value = await stripePromise
+  stripeInstance.value = await getStripe()
   if (!cardElementContainer.value) return
   if (!stripeInstance.value) throw new Error('Payment provider unavailable.')
 

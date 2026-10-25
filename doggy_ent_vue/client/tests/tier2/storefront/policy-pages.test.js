@@ -4,7 +4,6 @@ import { renderToString } from 'vue/server-renderer'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import PolicyContent from '../../../src/domains/policies/components/PolicyContent.vue'
 import { POLICY_BUSINESS, POLICY_PAGES } from '../../../src/domains/policies/content/policyPages.js'
-import { acknowledgeStorageNotice, hasSeenStorageNotice, STORAGE_NOTICE_KEY, STORAGE_NOTICE_REVISION } from '../../../src/domains/policies/utils/storageNotice.js'
 import { usePolicyMetadata } from '../../../src/domains/policies/composables/usePolicyMetadata.js'
 
 async function render(pageKey, page = POLICY_PAGES[pageKey]) {
@@ -40,24 +39,11 @@ describe('draft public information pages', () => {
   })
 })
 
-describe('storage acknowledgment is not consent', () => {
-  it('stores only the current notice revision and preserves the bag and customer fields', () => {
-    const data = new Map([['doggy-ent-cart', 'existing bag'], ['doggy-ent-checkout-customer', 'existing fields']])
-    const storage = { getItem: key => data.get(key), setItem: (key, value) => data.set(key, value) }
-    expect(hasSeenStorageNotice(storage)).toBe(false)
-    expect(acknowledgeStorageNotice(storage)).toBe(true)
-    expect(hasSeenStorageNotice(storage)).toBe(true)
-    expect(data.size).toBe(3)
-    expect(data.get(STORAGE_NOTICE_KEY)).toBe(STORAGE_NOTICE_REVISION)
-    expect(data.get('doggy-ent-cart')).toBe('existing bag')
-    expect(data.get('doggy-ent-checkout-customer')).toBe('existing fields')
-  })
-  it('shows revised notices and tolerates blocked browser storage', () => {
-    expect(hasSeenStorageNotice({ getItem: () => 'old' })).toBe(false)
-    const storage = { getItem() { throw Error('blocked') }, setItem() { throw Error('blocked') } }
-    expect(hasSeenStorageNotice(storage)).toBe(false)
-    expect(acknowledgeStorageNotice(storage)).toBe(false)
-  })
+it('keeps information available without treating browsing or a timer as consent', async () => {
+  const html = await render('cookies')
+  expect(html).toContain('Cookies &amp; storage in the footer')
+  expect(html).toContain('does not give marketing or optional-tracking consent')
+  expect(html).not.toContain('Acknowledging the shop storage notice')
 })
 
 afterEach(() => vi.unstubAllGlobals())

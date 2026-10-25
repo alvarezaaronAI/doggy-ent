@@ -116,7 +116,7 @@ function getDisplayTags(product) {
 </script>
 
 <template>
-  <div class="storefront-ui store-home min-h-screen">
+  <div class="storefront-ui store-home site-page flex flex-1 flex-col">
     <PromoStrip />
 
     <SiteHeader
@@ -127,6 +127,7 @@ function getDisplayTags(product) {
     />
 
     <HomePageContent
+      class="flex-1"
       :content="content" :context="pageContext"
       @quick-view="openQuickView"
       @add-to-cart="addToCart"

@@ -49,8 +49,9 @@
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   max-width: 1280px;
+  width: 100%;
   margin: auto;
-  min-height: 650px;
+  min-height: 0;
   border-bottom: 1px solid var(--account-line);
 }
 .account-sidebar {

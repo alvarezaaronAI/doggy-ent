@@ -2,6 +2,8 @@
 
 Updated: 2026-10-23. **Drafts, not legal advice or a compliance guarantee.** Owner approved drafts and supplied Chase and Evie Co and temporary public contact info.chasenevie@gmail.com. Registered entity, operating location and markets remain unconfirmed. No mailing address, refund deadline or delivery promise was invented.
 
+Local 2026-10-25 follow-up retires the floating information-only StorageNotice in favour of the existing footer link and draft page. Its revision utility/composable are removed; no new notice preference is stored and old revision values are inert. This was acknowledgment, not accept/reject consent. Stripe initialization is now deferred through its pure loader until real payment controls mount; ordinary browsing/editor imports no longer initialize it. This supersedes the eager-init and popup descriptions below, not the outstanding production/provider/jurisdiction review. [Current scope and evidence](../work-checkpoints/2026-10-25-error-pages-storage.md).
+
 ## Created Pages
 
 | Route | Content | Needs approval before effective publication |
@@ -35,17 +37,17 @@ The draft `/privacy` purpose text now distinguishes active-profile deletion from
 | `doggy-ent-checkout-customer` | useCheckoutIdentity, optional guest fields | localStorage when saveInfo chosen, no TTL. Removal currently happens after a successful checkout with saveInfo off or signed-in flow, or via browser clearing. Dedicated removal/expiry remains open. |
 | `order-receipt:<reference>` | receiptAccess guest proof | sessionStorage/in-memory; server proof validation/expiry. Never expose values. |
 | `doggy-admin-stripe-payments-url` | Admin dashboard-link preference | Admin localStorage; not a payment secret. |
-| `doggy-ent-storage-notice` | New notice utility | Revision string only until cleared/revised. Acknowledgment, not tracking/marketing consent. Blocked storage permits in-memory dismissal. |
+| `doggy-ent-storage-notice` (retired) | Former informational notice | An existing revision string may remain inert. Current source does not read/write it; no bulk browser-data clearing is performed. It was never tracking/marketing consent. |
 
 No Google Analytics, Meta pixel, session replay or advertising SDK initialization was found in searched application source. Promo/campaign 'analytics' endpoints aggregate business records, not browser tracking. This is not a certification that providers/CDNs/hosting are tracking-free.
 
 `client/index.html` loads Font Awesome CSS from cdnjs. Images may use external HTTPS sources. Stripe.js/Elements makes provider requests during payment initialization. Better Auth Infrastructure has server/client plugins. Railway/Vercel, Resend and Shippo handle operational data depending on configuration. Audit actual production requests, cookie purposes/lifetimes, logs, provider contracts and transfers. Do not label every provider request advertising or every storage use consent-exempt.
 
-Local browser verification observed the existing Stripe HTTP warning even on these information routes. The eager checkout imports reach `payments/services/stripe.js`, whose module-level stripePromise calls loadStripe. Defer/lazy-load review is recommended before final consent/provider inventory; this pass does not change payment initialization or claim it occurs only on checkout. No live payment was attempted.
+Earlier browser verification observed Stripe on information routes. The 2026-10-25 local follow-up replaces module-level initialization with a shared deferred getStripe call using the SDK's pure entry. It is invoked only by actual mounted payment controls; previews return before initialization. No trusted pricing/payment submission behavior or SDK provider configuration changes. Production/provider purpose, cookie duration and legal classification still need review; no live payment was attempted.
 
 ## Notice And Future Consent
 
-Nonblocking storefront notice links to `/cookies`, can be dismissed and is suppressed on admin routes. It stores only a revision and does not clear bags, sign out or change marketing flags. There is no 'Accept all' button because no optional shop tracker is enabled. Fake tracking toggles would misrepresent control.
+The footer Cookies & storage link keeps information available without an overlay, entry gate or timer. The former notice/revision write is retired. There is no 'Accept all' button because no optional shop tracker is enabled in application source; that finding is not a certification of every provider/deployment cookie. Fake tracking toggles would misrepresent control. The draft page states that browsing, dismissal and elapsed time do not provide marketing/optional-tracking consent. Bag/auth/optional saved-checkout behavior is unchanged; legal jurisdiction and purpose-specific exceptions require review.
 
 If analytics/advertising is approved later, add purpose/version/expiry-aware state and an actual loader gate before scripts/requests. Provide accessible refusal/reopening where required, revoke without blocking checkout, review GPC/regional requirements and verify providers. localStorage is also storage, not only cookies. Review jurisdiction-specific obligations with counsel; see [ICO guidance](https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guide-to-pecr/cookies-and-similar-technologies/) and [FTC privacy guidance](https://www.ftc.gov/business-guidance/privacy-security).
 
