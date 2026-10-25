@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
-import { stripePromise } from '../services/stripe.js'
+import { getStripe } from '../services/stripe.js'
 import { createPaymentIntent } from '../services/payment.service.js'
 const props = defineProps({ checkoutTotal: Number, cartItems: Array, customer: Object, shipping: Object, promoCode: String, applePay: Boolean, googlePay: Boolean, ready: Boolean, locked: Boolean, placeWalletOrder: { type: Function, required: true } })
 const container = ref(null), available = ref(false), message = ref('Checking wallet availability...')
@@ -8,7 +8,7 @@ let stripe, elements, wallet, disposed = false
 const methods = () => ({ applePay: props.applePay ? 'auto' : 'never', googlePay: props.googlePay ? 'auto' : 'never', link: 'never', paypal: 'never', amazonPay: 'never', klarna: 'never' })
 onMounted(async () => {
   try {
-    stripe = await stripePromise
+    stripe = await getStripe()
     if (!stripe || disposed) { message.value = 'Wallets are unavailable. You can pay by card below.'; return }
     elements = stripe.elements({ mode: 'payment', amount: Math.max(1, Math.round(props.checkoutTotal * 100)), currency: 'usd', paymentMethodTypes: ['card'], appearance: { variables: { borderRadius: '6px' } } })
     wallet = elements.create('expressCheckout', { paymentMethods: methods(), buttonHeight: 48, layout: { maxColumns: 2, maxRows: 2 } })

@@ -13,10 +13,10 @@ const { cart, itemCount, subtotal, isCartOpen, loadSavedCart, increase, decrease
 onMounted(loadSavedCart)
 </script>
 <template>
-  <div class="storefront-ui min-h-screen">
+  <div class="storefront-ui site-page flex flex-1 flex-col">
     <PromoStrip />
     <SiteHeader :cart-count="itemCount" v-model:search-query="searchQuery" @open-cart="isCartOpen = true" />
-    <main id="policy-content"><slot /></main>
+    <main id="policy-content" class="flex-1"><slot /></main>
     <SiteFooter />
     <CartDrawer :is-open="isCartOpen" :cart-items="cart" :subtotal="subtotal" :item-count="itemCount" @close="isCartOpen = false" @increase="increase" @decrease="decrease" @remove="remove" @continue-shopping="isCartOpen = false" />
   </div>

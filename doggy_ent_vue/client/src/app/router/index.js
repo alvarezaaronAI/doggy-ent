@@ -34,6 +34,11 @@ const routes = [
     component: HomeView,
   },
   {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../views/NotFoundView.vue'),
+  },
+  {
     path: BRAND_STORY_PATH,
     name: 'meet-brand',
     component: () => import('../../domains/storefront/views/BrandView.vue'),

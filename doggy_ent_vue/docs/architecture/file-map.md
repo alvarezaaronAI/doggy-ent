@@ -1,5 +1,7 @@
 # File Map
 
+Local recovery/storage follow-up (2026-10-25): `client/src/app/views/NotFoundView.vue` is the router catch-all; shared `PageRecovery.vue`, `content/pageRecovery.js` and `composables/useRecoveryMetadata.js` own safe recovery presentation/metadata. Campaign page/hook/API classify missing versus transient failures and reuse that presentation. `payments/services/stripe.js` exports lazy shared `getStripe`, used only at actual payment-control mounts. Retired StorageNotice component/composable/revision utility are removed from App; the existing footer/policy page remains the information entry point. No server/schema change. [Evidence](../work-checkpoints/2026-10-25-error-pages-storage.md).
+
 ## Account Wishlist And Shared Workspace (2026-10-25)
 
 - client account api/accountWishlist.api.js and composables/useAccountWishlist.js own private saved-list transport/state; views/AccountWishlistView.vue renders current public product details. components/WishlistButton.vue is reused on actual product cards/pop-outs, never inert editors.
