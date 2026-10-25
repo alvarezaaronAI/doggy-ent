@@ -1,0 +1,46 @@
+import { describe, expect, it, vi } from 'vitest'
+import { effectScope, nextTick, ref } from 'vue'
+const api = vi.hoisted(() => ({ fetchPublicCampaign: vi.fn() }))
+vi.mock('../../../src/domains/campaigns/api/publicCampaigns.api.js', () => api)
+import { useCampaignPage } from '../../../src/domains/campaigns/composables/useCampaignPage.js'
+
+describe('campaign failures stay distinct and safe', () => {
+  it.each([[404, 'campaign-not-found'], [503, 'unavailable'], [401, 'unavailable'], [undefined, 'unavailable']])('maps status %s without exposing provider messages', async (status, kind) => {
+    api.fetchPublicCampaign.mockRejectedValue(Object.assign(new Error('private provider stack'), { status }))
+    const scope = effectScope(), slug = ref('fixture')
+    const state = scope.run(() => useCampaignPage(slug))
+    await nextTick()
+    expect(state.loading.value).toBe(false)
+    expect(state.errorKind.value).toBe(kind)
+    expect(state.error.value).not.toContain('private')
+    expect(state.campaign.value).toBe(null)
+    scope.stop()
+  })
+  it('recovers on retry and does not let an old failure replace a new campaign', async () => {
+    let rejectOld
+    api.fetchPublicCampaign.mockImplementationOnce(() => new Promise((_, reject) => { rejectOld = reject }))
+    const scope = effectScope(), slug = ref('old')
+    const state = scope.run(() => useCampaignPage(slug))
+    api.fetchPublicCampaign.mockResolvedValue({ slug: 'new' })
+    slug.value = 'new'; await nextTick(); await nextTick()
+    rejectOld(Object.assign(new Error('private'), { status: 404 })); await nextTick()
+    expect(state.campaign.value.slug).toBe('new')
+    expect(state.error.value).toBe('')
+    api.fetchPublicCampaign.mockRejectedValueOnce(new Error('network'))
+    await state.load()
+    expect(state.errorKind.value).toBe('unavailable')
+    await state.load()
+    expect(state.campaign.value.slug).toBe('new')
+    expect(state.errorKind.value).toBe('')
+    scope.stop()
+  })
+  it('does not call the API for an empty slug or treat a malformed response as a 404', async () => {
+    api.fetchPublicCampaign.mockReset().mockResolvedValue(undefined)
+    const scope = effectScope(), slug = ref('')
+    const state = scope.run(() => useCampaignPage(slug))
+    expect(api.fetchPublicCampaign).not.toHaveBeenCalled()
+    slug.value = 'fixture'; await nextTick(); await nextTick()
+    expect(state.errorKind.value).toBe('unavailable')
+    scope.stop()
+  })
+})

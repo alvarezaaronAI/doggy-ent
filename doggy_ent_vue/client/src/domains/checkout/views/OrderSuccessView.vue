@@ -13,7 +13,7 @@ const settings = computed(() => commercePresentation(content.value).confirmation
 onMounted(loadContent)
 </script>
 <template>
-  <div class="min-h-screen bg-[#f8f5ef] text-stone-800">
+  <div class="flex-1 bg-[#f8f5ef] text-stone-800">
     <header class="border-b border-stone-200 bg-white"><nav class="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-3 px-4 py-5"><RouterLink to="/" class="inline-flex items-center gap-2 font-semibold text-[#6a3c2b]"><PawPrint :size="24" class="text-[#315bc5]" />Chase &amp; Evie Co.</RouterLink><RouterLink to="/" class="inline-flex items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-sm"><ArrowLeft :size="16" />Back to shop</RouterLink></nav></header>
     <main>
       <p v-if="loading" class="mx-auto max-w-3xl px-4 py-16" role="status">Loading your order confirmation...</p>

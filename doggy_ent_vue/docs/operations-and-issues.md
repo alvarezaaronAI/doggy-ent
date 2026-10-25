@@ -2,6 +2,8 @@
 
 Use this guide for order issue workflows, customer support cases, internal issue capture, safe error handling, audit trails, and operations tooling.
 
+Local recovery follow-up (2026-10-25): unmatched routes and missing campaigns have safe branded missing-page content; transient campaign failures have a retryable unavailable state. Customer-visible campaign errors use a fixed safe explanation, never raw public API/provider messages. No global redirect of payment/auth/form errors, automatic retry, new error telemetry, fingerprint or issue-capture endpoint is added. Existing Express/internal issue capture remains authoritative. Client noindex is a SPA mitigation, not a true hosting HTTP 404. [Scope/evidence](work-checkpoints/2026-10-25-error-pages-storage.md).
+
 Connected Pets follow-up (2026-10-23) adds generic PET_ARCHIVED/PET_RESTORED/PET_PHOTO_CHANGED/PET_PHOTO_REMOVED events to existing transactional add/edit/remove facts. Metadata retains field names, dates, profile identity/tenure only, not image or declared profile values. Archive retains details and counts toward ten; privacy removal deletes profile/photo without deleting limited account history. New pet IDs or profile churn alone are not proof of fraud. No customer block, active reward, provider send or new admin history UI. See [rollout/evidence](work-checkpoints/2026-10-23-connected-photo-led-pets.md).
 
 ## Architecture Rules

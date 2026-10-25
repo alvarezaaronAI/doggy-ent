@@ -12,10 +12,15 @@ import { useStorefrontSearch } from '@storefront/composables/useStorefrontSearch
 import { useCart } from '@cart/composables/useCart.js'
 import CartDrawer from '@cart/CartDrawer/CartDrawer.vue'
 import ProductQuickView from '@products/ProductQuickView/ProductQuickView.vue'
+import PageRecovery from '@shared/components/PageRecovery.vue'
+import { useRecoveryMetadata } from '@shared/composables/useRecoveryMetadata.js'
 const route = useRoute()
-const { campaign, loading, error, load } = useCampaignPage(
+const { campaign, loading, error, errorKind, load } = useCampaignPage(
   computed(() => route.params.slug),
 )
+useRecoveryMetadata(computed(() => !loading.value && (error.value || !campaign.value)
+  ? errorKind.value === 'campaign-not-found' ? 'Campaign not found' : 'Campaign unavailable'
+  : null))
 const { products, loadProducts, errorMessage } = useProducts()
 const variants = useProductVariants()
 const { searchQuery } = useStorefrontSearch()
@@ -37,26 +42,18 @@ onMounted(() => {
 })
 </script>
 <template>
-  <div class="storefront-ui min-h-screen">
+  <div class="storefront-ui site-page flex flex-1 flex-col">
     <PromoStrip />
     <SiteHeader
       :cart-count="itemCount"
       v-model:search-query="searchQuery"
       @open-cart="isCartOpen = true"
     />
-    <main>
+    <main class="flex-1">
       <div v-if="loading" class="store-inner" role="status">
         Loading this campaign...
       </div>
-      <div v-else-if="error || !campaign" class="store-inner">
-        <h1 class="text-3xl font-bold">This campaign isn't available.</h1>
-        <p class="store-muted mt-4" role="alert">{{ error }}</p>
-        <button type="button" class="store-button mt-5" @click="load">
-          Try again</button
-        ><RouterLink to="/" class="store-button ml-3"
-          >Back to the shop</RouterLink
-        >
-      </div>
+      <div v-else-if="error || !campaign" class="store-pattern"><PageRecovery :kind="errorKind || 'unavailable'" :retrying="loading" @retry="load" /></div>
       <template v-else>
         <div v-if="errorMessage" class="store-inner" role="alert">
           {{ errorMessage }}

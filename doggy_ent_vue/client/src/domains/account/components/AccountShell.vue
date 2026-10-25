@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-white">
+  <div class="site-page flex flex-1 flex-col bg-white">
     <SiteHeader
       :cart-count="itemCount"
       :search-query="searchQuery"
       @open-cart="isCartOpen = true"
       @update:search-query="searchQuery = $event"
     />
-    <div v-if="showNav" class="account-ui account-workspace">
+    <div v-if="showNav" class="account-ui account-workspace flex-1">
       <aside class="account-sidebar">
         <div class="account-identity">
           <strong>{{ user?.name || 'Your account' }}</strong
@@ -44,7 +44,7 @@
       </div>
       <main id="account-content" class="account-content account-pattern"><div class="relative min-w-0"><slot /></div></main>
     </div>
-    <main v-else id="account-content" class="account-ui account-auth-stage">
+    <main v-else id="account-content" class="account-ui account-auth-stage flex-1">
       <div class="account-auth-wrap">
         <RouterLink class="auth-link" :to="backTo"><ArrowLeft :size="17" aria-hidden="true" />{{ backLabel }}</RouterLink>
         <section class="account-auth-card" aria-labelledby="account-auth-title">
