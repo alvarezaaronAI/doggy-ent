@@ -17,7 +17,7 @@ const paid = computed(() => props.order.paymentStatus === 'PAID')
 const closed = computed(() => ['CANCELLED', 'REFUNDED'].includes(props.order.status))
 </script>
 <template>
-  <div class="confirmation-ui" :class="'confirmation-' + settings.background">
+  <div class="confirmation-ui store-pattern" :class="'confirmation-' + settings.background">
     <div class="mx-auto max-w-[1100px] px-4 py-10">
       <header data-commerce-section="confirmation" class="mb-8">
         <button v-if="editable" type="button" class="confirmation-edit" :aria-pressed="selected === 'confirmation'" @click="$emit('select', 'confirmation')"><Pencil :size="14" />Welcome &amp; appearance</button>

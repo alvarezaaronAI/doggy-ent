@@ -14,8 +14,10 @@ async function render(kind, extra = {}) {
 describe('branded recovery without private diagnostics', () => {
   it.each(Object.keys(PAGE_RECOVERY))('renders %s with useful recovery actions and a real image', async kind => {
     const html = await render(kind)
-    expect(html).toContain(PAGE_RECOVERY[kind].title)
-    expect(html).toContain('href="/#shop"')
+    expect(html).toContain(PAGE_RECOVERY[kind].title.replaceAll("'", '&#39;'))
+    expect(html).toContain(PAGE_RECOVERY[kind].code)
+    expect(html).toContain('text-center')
+    expect(html).toContain(kind === 'order-unavailable' ? 'href="/account/orders"' : 'href="/#shop"')
     expect(html).toContain('href="/contact"')
     expect(html).toContain('Illustrative photograph')
     expect(html).toContain('alt="Illustrative black and chocolate Labradors beside a blank trail sign"')
@@ -29,6 +31,17 @@ describe('branded recovery without private diagnostics', () => {
     expect(await render('campaign-not-found')).not.toContain('Try again')
     expect(await render('unavailable', { retrying: true })).toContain('Trying again...')
     expect(await render('unavailable', { retrying: true })).toContain('disabled')
+    expect(await render('offline')).toContain('Try again')
+    expect(await render('order-unavailable')).toContain('Try again')
+  })
+  it('makes missing pages explicit without calling service or order failures 404s', async () => {
+    for (const kind of ['not-found', 'campaign-not-found']) {
+      expect(await render(kind)).toMatch(/data-recovery-code[^>]*>404<\/p>/)
+    }
+    for (const kind of ['unavailable', 'offline', 'order-unavailable']) {
+      expect(await render(kind)).not.toContain('>404</p>')
+    }
+    expect(await render('order-unavailable')).toContain('do not pay again')
   })
   it('falls back to a safe missing-page state for an unknown kind', async () => {
     const html = await render('private-database-stack')

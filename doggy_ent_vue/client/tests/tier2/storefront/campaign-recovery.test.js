@@ -1,10 +1,27 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope, nextTick, ref } from 'vue'
 const api = vi.hoisted(() => ({ fetchPublicCampaign: vi.fn() }))
 vi.mock('../../../src/domains/campaigns/api/publicCampaigns.api.js', () => api)
 import { useCampaignPage } from '../../../src/domains/campaigns/composables/useCampaignPage.js'
+afterEach(() => vi.unstubAllGlobals())
 
 describe('campaign failures stay distinct and safe', () => {
+  it('offers connection guidance only for a network failure while the browser reports offline', async () => {
+    vi.stubGlobal('navigator', { onLine: false })
+    api.fetchPublicCampaign.mockRejectedValueOnce(new TypeError('private failed fetch'))
+    const scope = effectScope(), slug = ref('fixture')
+    const state = scope.run(() => useCampaignPage(slug))
+    await nextTick()
+    expect(state.errorKind.value).toBe('offline')
+    expect(state.error.value).toBe('Check your connection and try again.')
+    api.fetchPublicCampaign.mockRejectedValueOnce(Object.assign(new Error('private'), { status: 404 }))
+    await state.load()
+    expect(state.errorKind.value).toBe('campaign-not-found')
+    api.fetchPublicCampaign.mockResolvedValueOnce({ slug: 'fixture' })
+    await state.load()
+    expect(state.errorKind.value).toBe('')
+    scope.stop()
+  })
   it.each([[404, 'campaign-not-found'], [503, 'unavailable'], [401, 'unavailable'], [undefined, 'unavailable']])('maps status %s without exposing provider messages', async (status, kind) => {
     api.fetchPublicCampaign.mockRejectedValue(Object.assign(new Error('private provider stack'), { status }))
     const scope = effectScope(), slug = ref('fixture')

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { createSSRApp, h } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -17,9 +18,15 @@ async function render(component, props = {}, appFrame = false) {
   return renderToString(createSSRApp(appFrame ? App : { render: () => h(component, props) }).use(router))
 }
 describe('viewport-aware page and footer contracts', () => {
+  it('keeps the monogram behind open route space while public shells stay transparent', () => {
+    const css = readFileSync(new URL('../../../src/domains/storefront/styles/storefront.css', import.meta.url), 'utf8')
+    expect(css).toContain('.site-page { background: transparent; }')
+    expect(css).toContain('labrador-monogram-v1.webp')
+    expect(css).toContain('pointer-events:none')
+  })
   it('keeps the development strip and route content inside a single minimum-viewport frame', async () => {
     const html = await render(PolicyShell, {}, true)
-    expect(html).toContain('data-app-frame class="flex min-h-dvh flex-col"')
+    expect(html).toContain('data-app-frame class="store-pattern flex min-h-dvh flex-col"')
     expect(html).toContain('data-page-frame class="flex min-w-0 flex-1 flex-col"')
     expect(html.indexOf('data-development-routing')).toBeLessThan(html.indexOf('data-page-frame'))
     expect(html).toContain('Short page content')

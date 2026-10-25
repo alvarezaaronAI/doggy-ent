@@ -220,3 +220,4 @@
 .store-product .store-product-tag { font-size:11px; padding:4px 9px; }
 .store-pattern { position:relative; isolation:isolate; background:color-mix(in srgb,var(--storefront-brand-5) 55%,white); }
 .store-pattern::before { content:''; position:absolute; inset:0; z-index:-1; pointer-events:none; background:url('../../../assets/images/brand/labrador-monogram-v1.webp') repeat; background-size:360px; opacity:.045; }
+.site-page { background: transparent; }

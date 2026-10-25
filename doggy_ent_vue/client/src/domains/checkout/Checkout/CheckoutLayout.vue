@@ -3,7 +3,7 @@ import { Check, LockKeyhole, ArrowLeft, PawPrint } from '@lucide/vue'
 defineProps({ settings: Object, checklist: { type: Array, default: () => [] }, preview: Boolean })
 </script>
 <template>
-  <div class="checkout-ui flex-1">
+  <div class="checkout-ui store-pattern flex-1">
     <header class="border-b border-stone-200 bg-white">
       <nav class="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-3 px-4 py-5" aria-label="Checkout navigation">
         <RouterLink to="/" class="flex items-center gap-2 font-semibold text-[#6a3c2b]" :tabindex="preview ? -1 : 0" @click="preview && $event.preventDefault()"><PawPrint :size="24" class="text-[#315bc5]" />Chase &amp; Evie Co.</RouterLink>

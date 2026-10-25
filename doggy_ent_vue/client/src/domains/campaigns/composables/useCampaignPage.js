@@ -20,8 +20,9 @@ export function useCampaignPage(slug) {
       if (current === request) campaign.value = result
     } catch (e) {
       if (current === request) {
-        errorKind.value = e.status === 404 ? 'campaign-not-found' : 'unavailable'
-        error.value = e.status === 404 ? 'This campaign is not available at this link.' : 'We could not load this campaign. Please try again.'
+        const offline = !e.status && globalThis.navigator?.onLine === false
+        errorKind.value = e.status === 404 ? 'campaign-not-found' : offline ? 'offline' : 'unavailable'
+        error.value = e.status === 404 ? 'This campaign is not available at this link.' : offline ? 'Check your connection and try again.' : 'We could not load this campaign. Please try again.'
       }
     } finally {
       if (current === request) loading.value = false

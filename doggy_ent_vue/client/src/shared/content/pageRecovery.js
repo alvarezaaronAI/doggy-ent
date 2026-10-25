@@ -1,20 +1,41 @@
 export const PAGE_RECOVERY = Object.freeze({
   'not-found': {
-    label: '404 / Page not found',
+    code: '404',
+    label: 'Page not found',
     title: 'This page wandered off.',
     description: 'The page may have moved, or the link might be out of date. Let us lead you back to the treats.',
     aside: 'Good noses. Wrong trail.',
   },
   'campaign-not-found': {
+    code: '404',
     label: 'Campaign not found',
     title: 'A different trail awaits.',
     description: 'This campaign is not available at this link. You can still explore the shop and discover what is happening now.',
     aside: 'There is still plenty to discover.',
   },
   unavailable: {
+    code: 'Pause',
     label: 'Temporarily unavailable',
     title: 'A little pause in the adventure.',
     description: 'We could not load this page right now. Try again in a moment, or head back to the shop.',
     aside: 'We will keep your spot warm.',
+    retry: true,
+  },
+  offline: {
+    code: 'Offline',
+    label: 'Connection interrupted',
+    title: 'The trail went quiet.',
+    description: 'Your browser appears to be offline. Check your connection, then try again. Your bag is still right where you left it.',
+    aside: 'A sniff break, not goodbye.',
+    retry: true,
+  },
+  'order-unavailable': {
+    code: 'Order help',
+    label: 'Order details unavailable',
+    title: 'Let\'s pick up the trail.',
+    description: 'We cannot show this order from this link right now. If you completed payment, do not pay again. Try once more, check your own order history or contact us with your reference.',
+    aside: 'We are here to lend a paw.',
+    retry: true,
+    order: true,
   },
 })

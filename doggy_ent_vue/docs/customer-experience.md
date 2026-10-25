@@ -1,5 +1,7 @@
 # Customer Experience Requirements
 
+Recovery follow-up (2026-10-25): missing pages and campaigns show a prominent blue 404 with centered explanation/actions. Temporary campaign failures and browser-reported offline network failures have distinct safe, retryable wording. Unavailable order details use the same illustrative family but never imply payment failure, reveal diagnostics or invite another payment; read-only retry, owned history and contact remain. Shared monogram fills open public/account/checkout space; cards, forms and configured reading surfaces stay readable. Copy is stable by error type, not randomly rotated. [Current evidence](work-checkpoints/2026-10-25-error-pages-storage.md).
+
 ## Recovery And Storage Information (2026-10-25, Local Preview)
 
 Owner's next follow-up explicitly authorizes deployment after verification and replaces the recovery photo with a newly generated, labelled illustrative black/chocolate Labrador trail image. App now owns one minimum dynamic-viewport frame including the local development strip. Flexible public/account shells let short-page content grow and place the existing footer at the viewport bottom, while long pages grow naturally; footer is never fixed over content. Account width is retained without old fixed-height floors; checkout/confirmation backgrounds stretch but their intentionally condensed layouts do not gain a new shop footer. Existing footer visibility controls remain. [Release evidence](work-checkpoints/2026-10-25-error-pages-storage.md) supersedes earlier local-only notes when verified.

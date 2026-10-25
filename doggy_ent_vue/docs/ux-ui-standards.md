@@ -29,6 +29,8 @@ The existing application has both Lucide component imports and a shared Font Awe
 
 ### Viewport And Footer Foundation (2026-10-25)
 
+The shared App frame also supplies the quiet signature monogram through open route space; public/account outer shells stay transparent so wide margins and short-page space do not turn white. Keep actual cards, forms, headers, footers and configured content surfaces solid/readable. Checkout and confirmation carry the same motif without changing their condensed navigation. Recovery copy/actions are centered; only missing pages/campaigns display the prominent blue 404, while temporary/offline/order-help states use accurate labels rather than fake status codes. Wording varies by state, not randomly.
+
 App owns a single minimum dynamic-viewport frame, including the development strip when present, with a flexible route region. Public storefront, policy/recovery and account shells are flex columns; the main/workspace grows and the existing non-shrinking footer follows it with automatic top margin. Short pages fill the viewport without a white strip below the footer; long pages keep the footer after content. Do not fix the footer to the viewport, hide overflow or calculate page height from guessed header dimensions. Keep normal mobile scrolling, footer visibility controls, account width and the approved condensed checkout/confirmation shells. New generated recovery photography is illustrative, bundled/versioned and does not replace other brand/campaign assets.
 
 ### Storybook And Impact First Approval (2026-10-17)
