@@ -1,5 +1,15 @@
 # Customer Experience Requirements
 
+## Saved Treats And Account Organization (2026-10-25)
+
+Account navigation now groups Shopping (Overview, Orders, Wishlist), Your details (Profile, Pets, Addresses), Support and Coming later (Rewards only). Desktop/mobile reuse the same groups. The shell supplies the quiet account-colored monogram to every authenticated destination, rather than repeating it only on Pets. Overview includes a compact Your pack card beside essentials on desktop, up to three active pets, owned private photos or illustrative fallbacks, and separate loading/error/empty states.
+
+Wishlist is implemented, not a future placeholder. A heart on an actual product card or Quick View explicitly saves/removes the product for the signed-in customer; guests use normal sign-in and must deliberately save afterward. Editor/browse-only samples do not enable this action. Saved entries persist across devices, join the current public catalog, retain variant/price/Quick View and campaign styling, and use the account shell's real bag. Hidden/deleted catalog details are never disclosed. Saving reserves no inventory, freezes no price and is not marketing permission. Test products remain unpurchasable. Errors retain prior state; account changes clear private cached entries and stale responses cannot restore them.
+
+Rejected optional pet photos now offer Continue without a photo or Keep the current photo, without discarding draft data or deleting a valid existing photo. Focus returns to the chooser. Privacy confirmation focuses Keep details; cancelling restores its opener and successful removal selects the next removal action or privacy summary. The optional birthday/card layout is unchanged. Account bag quantity increases retain the selected variant while the catalog loads and never set quantity to zero on an unavailable variant.
+
+Storage, migration and verification: [account wishlist checkpoint](work-checkpoints/2026-10-24-account-wishlist.md). Retention/privacy decisions, real-device acceptance and commerce/security launch gates remain separate.
+
 ## Optional Current Weight (2026-10-23)
 
 Size tiles now include approximate lb/kg guidance, not automatic classification or feeding/health advice. Add/Edit offers optional Current weight beside a labelled unit selector with a decimal keyboard, example, explanation, linked soft-red validation and first-invalid-field focus. Changing units converts the current measurement; unchanged rendered values preserve exact stored grams across repeated conversions/reopens. Size stays independently selected. A saved weight appears beneath Size on the existing card; leaving it empty saves no weight and explicitly clearing it removes the measurement/date. Weight can change as the pet grows, unlike the immutable birthday.
@@ -301,7 +311,7 @@ Remaining customer work:
 Implemented on 2026-10-08 after approval of the complete seven-tab preview.
 
 - Protected account routes share one AccountLayout/AccountShell, the existing storefront header/footer, cart drawer and cart storage, search composable, and Better Auth state.
-- Keep Overview, Orders, Profile, Addresses, Order help, Rewards, Wishlist. Rewards/Wishlist remain under Coming later.
+- Keep Overview, Orders, Profile, Pets, Addresses, Order help, Rewards and Wishlist. The 2026-10-25 grouping moves working Wishlist into Shopping; only Rewards remains under Coming later.
 - Mobile/tablet uses collapsible account navigation. The storefront header switches to its existing compact layout below the desktop breakpoint to avoid tablet overflow.
 - Overview is bounded to two recent orders with order count/latest status/open case count, profile/address summaries, and useful links. No lifetime spend or invented rewards balances.
 - Orders keeps the approved month-grouped master/detail layout, search, status filter, initially eight loaded rows, Load more, selected-order accent, and mobile drill-in/back.
@@ -311,7 +321,7 @@ Implemented on 2026-10-08 after approval of the complete seven-tab preview.
 - Personal details, marketing/notification preferences, and one default address use existing APIs. Full replacement payloads preserve unedited fields. Address changes affect future checkout prefilling, not existing order snapshots.
 - Email stays read-only account identity. Preferred contact controls and email activity are not reintroduced.
 - Order help lists real cases, customer-visible messages, and resolutions through existing ownership-protected endpoints. New cases start from an eligible order; categories/deadlines remain server-owned.
-- General messaging, customer case replies, multiple addresses, billing address, reviews, reorder, rewards, referrals, and wishlist remain explicitly future-phase work. No simulated customer balances/favorites/transactions.
+- General messaging, customer case replies, multiple addresses, billing address, reviews, reorder, rewards and referrals remain explicitly future-phase work. Wishlist is connected in the 2026-10-25 follow-up; no simulated customer balances/favorites/transactions.
 - Order details display server-returned totals only; donation impact is not an extra charge. Internal status history remains hidden.
 - Header/sidebar sign-out leaves protected account content and destroys the cached order view.
 

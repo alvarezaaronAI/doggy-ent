@@ -1,5 +1,11 @@
 # Data Flow Maps
 
+## Customer Wishlist (2026-10-25)
+
+Actual product card/Quick View heart -> account identity check -> useAccountWishlist -> credentialed no-store accountWishlist API -> existing requireCustomerAuth -> wishlist route/controller -> strict empty input/product validator -> service -> owner-scoped Serializable repository -> WishlistItem -> safe productId/createdAt DTO. Owner comes only from the session. Removal is idempotent and does not change product/stock/order data.
+
+Account Wishlist view separately reads the current public catalog/campaigns, reuses ProductCard/Quick View/variant helpers, and injects the shell's validated bag action. Missing catalog entries remain generic/removable; catalog failure is not mistaken for a successful unavailable-state load. Shared account cache resets on identity change and ignores both old-owner responses and pre-acknowledgement refresh snapshots. No automatic save after login, localStorage favourites, tracking/analytics pipeline or send is added.
+
 ## Photo-Led Pets (2026-10-23)
 
 AccountPetsView -> photo-led cards / inline editor -> useAccountPets -> explicit payload/API -> authenticated account router -> Pet controller -> validation/service -> owned Serializable repository -> Pet + minimal CustomerAccountEvent -> safe DTO -> same cards. Server owns dates/archive status and enforces birthday immutability; native form controls are convenience only. Archive is an explicit PATCH, privacy removal an explicit confirmed DELETE. No customer profile/order/marketing changes.

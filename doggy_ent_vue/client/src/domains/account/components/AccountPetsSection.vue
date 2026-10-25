@@ -7,7 +7,30 @@ import { useAccountPets } from '../composables/useAccountPets.js'
 import { PET_PROFILE_LIMIT } from '../constants/petProfile.constants.js'
 const { pets, activePets, archivedPets, loading, saving, error, notice, editing, editorOpen, removing, load, edit, closeEditor, save, archive, remove } = useAccountPets()
 const editor = ref(null), pageHeading = ref(null)
+const privacy = ref(null), privacySummary = ref(null)
 let opener
+let removalOpener
+async function startRemoval(pet, event) {
+  removalOpener = event.currentTarget
+  removing.value = pet.id
+  await nextTick()
+  privacy.value?.querySelector('[data-removal-confirmation] button')?.focus()
+}
+async function cancelRemoval() {
+  if (saving.value) return
+  removing.value = ''
+  await nextTick()
+  if (removalOpener?.isConnected) removalOpener.focus()
+  else privacySummary.value?.focus()
+}
+async function removePet(pet) {
+  await remove(pet)
+  await nextTick()
+  if (error.value) return
+  const nextAction = privacy.value?.querySelector('[data-pet-remove]')
+  if (nextAction) nextAction.focus()
+  else privacySummary.value?.focus()
+}
 function startEdit(pet) { opener = document.activeElement; edit(pet); nextTick(() => editor.value?.focus()) }
 async function archivePet(pet) {
   const restoring = Boolean(pet.archivedAt)
@@ -34,7 +57,23 @@ onMounted(load)
       <p v-if="pets.length >= PET_PROFILE_LIMIT" class="account-muted mt-4 text-xs">You have reached {{ PET_PROFILE_LIMIT }} profiles, including archived pets. You can still edit, restore or remove their details.</p>
       <aside class="mt-7 flex items-start gap-3 border-l-[3px] border-[var(--account-green)] bg-[var(--account-soft)] p-5 text-sm" aria-label="Future profile offers"><Gift :size="20" class="mt-1 shrink-0 text-[var(--account-green)]" aria-hidden="true" /><div><h2 class="!text-base">One account, one future profile offer</h2><p class="account-muted mt-1 text-xs">No offer is active yet. Future profile offers will be limited to one per account, not per pet. Adding, editing, archiving or removing pets will not unlock another offer.</p></div></aside>
       <p class="account-muted mt-4 text-xs">Sharing pet details is optional. Your account and checkout work without them.</p>
-      <details class="mt-4 border-t border-[var(--account-line)] pt-4"><summary class="account-link list-none [&::-webkit-details-marker]:hidden"><ShieldCheck :size="16" aria-hidden="true" />Pet data & privacy</summary><p class="account-muted mt-3 text-sm">Archive keeps a profile for later. Removing details deletes its saved preferences and private photo. Limited dated account activity remains for account security and later review; it does not contain your pet's name, photo or preferences.</p><RouterLink class="account-link mt-3 !text-xs" to="/privacy">Read our privacy draft</RouterLink><ul class="mt-4 divide-y divide-[var(--account-line)]"><li v-for="pet in pets" :key="pet.id" class="py-3"><div class="flex flex-wrap items-center justify-between gap-3"><span class="min-w-0 text-sm [overflow-wrap:anywhere]">{{ pet.nickname }}</span><button type="button" class="account-button !text-xs" :disabled="saving" :aria-label="`Remove ${pet.nickname}'s details`" @click="removing = pet.id"><Trash2 :size="15" aria-hidden="true" />Remove details</button></div><div v-if="removing === pet.id" class="mt-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm" role="group" :aria-label="`Confirm removal of ${pet.nickname}`"><p>Remove {{ pet.nickname }}'s details and photo? This cannot be undone. Orders and limited account activity will remain.</p><div class="mt-3 flex flex-wrap gap-2"><button type="button" class="account-button" :disabled="saving" @click="removing = ''">Keep details</button><button type="button" class="account-button !border-red-300 !text-red-800" :disabled="saving" @click="remove(pet)">{{ saving ? 'Removing...' : 'Remove pet details' }}</button></div></div></li></ul></details>
+      <details ref="privacy" class="mt-4 border-t border-[var(--account-line)] pt-4">
+        <summary ref="privacySummary" class="account-link list-none [&::-webkit-details-marker]:hidden"><ShieldCheck :size="16" aria-hidden="true" />Pet data & privacy</summary>
+        <p class="account-muted mt-3 text-sm">Archive keeps a profile for later. Removing details deletes its saved preferences and private photo. Limited dated account activity remains for account security and later review; it does not contain your pet's name, photo or preferences.</p>
+        <RouterLink class="account-link mt-3 !text-xs" to="/privacy">Read our privacy draft</RouterLink>
+        <ul class="mt-4 divide-y divide-[var(--account-line)]">
+          <li v-for="pet in pets" :key="pet.id" class="py-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <span class="min-w-0 text-sm [overflow-wrap:anywhere]">{{ pet.nickname }}</span>
+              <button data-pet-remove type="button" class="account-button !text-xs" :disabled="saving" :aria-label="`Remove ${pet.nickname}'s details`" @click="startRemoval(pet, $event)"><Trash2 :size="15" aria-hidden="true" />Remove details</button>
+            </div>
+            <div v-if="removing === pet.id" data-removal-confirmation class="mt-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm" role="group" :aria-label="`Confirm removal of ${pet.nickname}`">
+              <p>Remove {{ pet.nickname }}'s details and photo? This cannot be undone. Orders and limited account activity will remain.</p>
+              <div class="mt-3 flex flex-wrap gap-2"><button type="button" class="account-button" :disabled="saving" @click="cancelRemoval">Keep details</button><button type="button" class="account-button !border-red-300 !text-red-800" :disabled="saving" @click="removePet(pet)">{{ saving ? 'Removing...' : 'Remove pet details' }}</button></div>
+            </div>
+          </li>
+        </ul>
+      </details>
     </template>
   </div>
 </template>

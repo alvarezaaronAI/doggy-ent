@@ -1,5 +1,13 @@
 # Verification And QA
 
+## Account Organization And Wishlist (2026-10-25)
+
+Both builds pass (client 2,343 modules; Prisma 6.16.2). Full suites: 264 client (11/247/6), 393 server (28/359/6), plus 21 Git/security helper fixtures. Coverage includes 62 wishlist server cases, account ownership/strict input/no-store/idempotence/cap/transaction/schema contracts; stale and cross-account client responses, concurrent refresh/mutation acknowledgement, safe errors; actual compiled-template photo rejection/dismissal/retained-photo and privacy focus handlers; grouped nav/shared monogram; selected-variant bag increments during catalog loading/fresh zero stock and test purchase rejection. Policy pages now use the established variant helpers too: made-to-order/preorder increases survive JSON's Infinity-to-null storage conversion. The component fixture renderer is not real-device browser proof.
+
+Real loopback PostgreSQL fixtures verify persistence, original date under duplicate concurrent saves, foreign-customer list/delete isolation, hidden-product rejection, concurrent 100-item cap and user/product cascades; all synthetic rows cleaned. Approved local/Railway migration follows full decoded private backups and confirms 26 matching complete migrations, none pending, validated relationships and prior records preserved. No shared fixture or real customer pet/wishlist save.
+
+Isolated actual browser/API/DB on 127.0.0.1 uses a disposable fixture customer/product/pet and blocks external backend HTTP. Checks pass: save from real catalog, persisted wishlist after refresh, remove/empty/focus, 18 oz/$39.99 Quick View and disabled test purchase, oversized photo -> dismiss -> retained draft Save, privacy Keep details focus, all eight account destinations with monogram/no page overflow at observed 834 px width, overview pack card. No captured application errors. Screenshots inspected; this is not 320/390 or actual Safari/touch/screen-reader acceptance. Private evidence/cleanup/current release state: [checkpoint](work-checkpoints/2026-10-24-account-wishlist.md).
+
 ## Optional Pet Weight (2026-10-23)
 
 Both builds/Prisma 6.16.2 generation pass; complete client suites 238 (11/221/6), server 331 (28/297/6). Canonical/generated unit rules, decimal parsing, empty/invalid input, bounds, exact-gram preservation through rounded lb/kg displays, paired input/strict DTO and server-owned measurement dates are covered. Guarded real loopback fixtures verify persistence, ownership, old-client omission, unit-only date/no-op preservation, actual update timestamp, clearing/optional values, six native DB check failures, real audit-failure rollback and User cascade. Temporary users are removed; no provider calls.

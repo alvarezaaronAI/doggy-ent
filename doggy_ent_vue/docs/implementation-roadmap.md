@@ -1,5 +1,9 @@
 # Implementation Roadmap
 
+## 2026-10-25 Account Organization And Saved Treats
+
+Connected grouped navigation/shared monogram, compact overview pack card, pet-photo rejection dismissal/privacy focus recovery and persistent owned Wishlist. Minimal additive links/date table is approved/applied locally and Railway after full private backups with26 matching completed migrations, old records preserved. No active rewards, behavioural tracker, automatic marketing, provider/payment or security-key change. [Current checkpoint](work-checkpoints/2026-10-24-account-wishlist.md) records tests/browser checks and source-publication status; do not infer deployment from migration. Next: matching reviewed release and owner/device acceptance, then existing privacy/retention/commerce/security launch work. Saved-interest analytics remains a later protected read model.
+
 ## 2026-10-23 Optional Pet Weight
 
 Connected Size guidance, optional current weight with lb/kg conversion and saved-card weight are implemented on the preserved auth/Pets task. Canonical grams/unit/server measurement date use a separately approved additive migration, applied locally/Railway after backup/preflight with old records preserved and 25 matching migrations. Both builds, 238 client/331 server tests, isolated real persistence/constraints/rollback and eighteen four-width browser scenarios pass. No real customer weight was changed or inferred. [Current checkpoint](work-checkpoints/2026-10-23-pet-weight.md). Next remains owner/device/privacy acceptance and review of the combined uncommitted release; database readiness is not source deployment.

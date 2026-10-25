@@ -1,5 +1,6 @@
 import express from 'express'
 import petsRoutes from '../../pets/routes/pets.routes.js'
+import wishlistRoutes from '../../wishlist/routes/wishlist.routes.js'
 import {
   requireCustomerAuth,
 } from '../../../app/middleware/auth/requireCustomerAuth.js'
@@ -16,6 +17,7 @@ const router = express.Router()
 
 router.use(requireCustomerAuth)
 router.use('/pets', petsRoutes)
+router.use('/wishlist', wishlistRoutes)
 
 router.get('/', getAccountDashboardController)
 router.get('/profile', getAccountProfileController)

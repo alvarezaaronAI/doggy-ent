@@ -5,6 +5,7 @@ import ProductCardVariantSelector from './ProductCardVariantSelector.vue'
 import ProductCardPriceStatus from './ProductCardPriceStatus.vue'
 import ProductCardActions from './ProductCardActions.vue'
 import ProductCampaignBadge from './ProductCampaignBadge.vue'
+import WishlistButton from '@domains/account/components/WishlistButton.vue'
 import { Pencil } from '@lucide/vue'
 import CommerceCardSurface from '@shared/components/CommerceCardSurface.vue'
 import { computed, inject } from 'vue'
@@ -65,10 +66,11 @@ const emit = defineEmits(['quick-view', 'add-to-cart', 'select-section', 'browse
 <template>
   <CommerceCardSurface
     :giving="campaigns.length > 0"
-    class="store-product store-product-card flex h-full flex-col"
+    class="store-product store-product-card relative flex h-full flex-col"
     :class="{ 'store-product-giving': campaigns.length }"
     :style="campaigns.length ? undefined : { backgroundColor: PRESENTATION_COLORS[appearance.background] }"
   >
+    <WishlistButton v-if="!editable && !browseOnly" :product="props.product" class="absolute right-3 top-3 z-10" />
     <button v-if="editable" type="button" class="product-edit-handle" @click="emit('select-section', 'details')"><Pencil :size="14" /> Edit image</button>
     <ProductCardImage
       :inert="browseOnly || undefined"

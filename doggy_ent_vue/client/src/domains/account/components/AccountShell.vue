@@ -42,7 +42,7 @@
           <p v-if="logoutError" role="alert" class="account-error">{{ logoutError }}</p>
         </div>
       </div>
-      <main id="account-content" class="account-content"><slot /></main>
+      <main id="account-content" class="account-content account-pattern"><div class="relative min-w-0"><slot /></div></main>
     </div>
     <main v-else id="account-content" class="account-ui account-auth-stage">
       <div class="account-auth-wrap">
@@ -73,13 +73,15 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { nextTick, onMounted, provide, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, PawPrint } from '@lucide/vue'
 import CartDrawer from '@cart/CartDrawer/CartDrawer.vue'
 import SiteFooter from '@app/layouts/SiteFooter.vue'
 import SiteHeader from '@app/layouts/SiteHeader.vue'
 import { useCart } from '@cart/composables/useCart'
+import { useProductVariants } from '@products/composables/useProductVariants.js'
+import { useProducts } from '@products/composables/useProducts.js'
 import { useStorefrontSearch } from '@storefront/composables/useStorefrontSearch.js'
 import { useAccountAuth } from '../composables/useAccountAuth.js'
 import AccountNav from './AccountNav.vue'
@@ -97,8 +99,11 @@ watch(() => props.title, async () => { if (!props.showNav) { await nextTick(); a
 const router = useRouter()
 const { user, signOut } = useAccountAuth()
 const { searchQuery } = useStorefrontSearch()
-const { cart, decrease, increase, isCartOpen, itemCount, loadSavedCart, remove, subtotal } =
-  useCart()
+const { getSellingMode, isPurchasable, getAvailableQuantity, limitQuantity } = useProductVariants()
+const { products, loadProducts } = useProducts()
+const { cart, decrease, increase, isCartOpen, itemCount, loadSavedCart, remove, subtotal, addToCart } =
+  useCart({ products, getSellingMode, isPurchasable, getAvailableQuantity, limitQuantity })
+provide('accountCart', { addToCart })
 const mobileNavOpen = ref(false)
 const signingOut = ref(false)
 const logoutError = ref('')
@@ -114,5 +119,5 @@ async function logout() {
     signingOut.value = false
   }
 }
-onMounted(loadSavedCart)
+onMounted(() => { loadSavedCart(); if (props.showNav) loadProducts() })
 </script>

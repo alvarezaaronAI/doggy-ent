@@ -6,8 +6,15 @@ export const ACCOUNT_NAV_ITEMS = [
   { label: 'Addresses', to: '/account/addresses', icon: 'fa-location-dot' },
   { label: 'Order help', to: '/account/help', icon: 'fa-comment' },
   { label: 'Rewards', to: '/account/rewards', icon: 'fa-gift', future: true },
-  { label: 'Wishlist', to: '/account/wishlist', icon: 'fa-heart', future: true },
+  { label: 'Wishlist', to: '/account/wishlist', icon: 'fa-heart' },
 ]
+
+export const ACCOUNT_NAV_GROUPS = [
+  { label: 'Shopping', paths: ['/account', '/account/orders', '/account/wishlist'] },
+  { label: 'Your details', paths: ['/account/profile', '/account/pets', '/account/addresses'] },
+  { label: 'Support', paths: ['/account/help'] },
+  { label: 'Coming later', paths: ['/account/rewards'] },
+].map(group => ({ ...group, items: group.paths.map(path => ACCOUNT_NAV_ITEMS.find(item => item.to === path)) }))
 
 export const ORDER_STATUS_DISPLAY = {
   PENDING: { label: 'Pending', icon: 'fa-clock', tone: 'neutral' },

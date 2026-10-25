@@ -1,5 +1,12 @@
 # File Map
 
+## Account Wishlist And Shared Workspace (2026-10-25)
+
+- client account api/accountWishlist.api.js and composables/useAccountWishlist.js own private saved-list transport/state; views/AccountWishlistView.vue renders current public product details. components/WishlistButton.vue is reused on actual product cards/pop-outs, never inert editors.
+- AccountNav/account.constants group shared destinations; AccountShell/account.css own the monogram and validated cart action; AccountPackSummary renders the overview's small active-pet list. Pet editor/section own rejection dismissal and privacy focus recovery.
+- server domains/wishlist follows route -> controller -> validator/service -> repository -> mapper with constants. Existing account router mounts it after customer auth. Prisma WishlistItem and migration20261024000000_customer_wishlist own persistent links; no duplicate customer/catalog authority.
+- Focused client account wishlist/cart/recovery/navigation tests and server wishlist repository/service/routes/schema tests accompany the slice. [Checkpoint](../work-checkpoints/2026-10-24-account-wishlist.md) records private real-DB and browser evidence, not committed credentials/fixtures/screenshots.
+
 ## Optional Weight Follow-Up (2026-10-23)
 
 `shared/pets/petWeight.js` owns canonical units, input bounds and conversion/formatting; existing client/server sync scripts produce deployment-root-safe `petWeight.generated.js` copies. AccountPetChoices/Editor/Card and account petProfile constants/mapper/validator own Size hints, optional weight/unit, no-drift payload and card display. Server Pet validator/DTO/repository/activity mapper own the strict paired input, measurement date and field-name-only atomic history. Schema plus `20261023010000_optional_pet_weight/migration.sql` add nullable grams/unit/date with a paired check. Client pet-weight and server pets-weight tests plus existing validation/service/repository tests cover this contract. [Exact files and migration/QA evidence](../work-checkpoints/2026-10-23-pet-weight.md).
