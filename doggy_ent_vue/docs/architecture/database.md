@@ -344,3 +344,34 @@ Public product reads now exclude DRAFT/ARCHIVED; protected library preserves adm
 Railway has 22 completed migrations, no pending/failed migration or checksum mismatch. No schema change was needed in the design correction. Product galleries/test protection were applied in the prior approved additive gallery migration. Final counts: Product 15, ProductVariant 30, User 3, Order 4, Promo 1, Campaign 2, MediaAsset 41.
 
 Seven legacy products were soft-archived, not deleted; seven saved order-item references remain. Eight existing test products were reused with four optional photos/two zero-stock variants each. All sixteen variants fail the real checkout resolver. The fictional test campaign uses fixed $2 per eligible order on Chicken/Salmon/Bundle, with zero attributed usage/payout; the original campaign is untouched. Presentation revision 5 has equal draft/published snapshots and hides old promise/help sections. Private full backups before both guarded publication changes decoded successfully (2,706,857 and 2,707,158 bytes); no restore drill occurred. See [archive report](../../assets/brand/test-products/design-reconciliation-report.json) and [checkpoint](../work-checkpoints/2026-10-15-approved-ui-reconciliation.md). Do not replay apply scripts or delete historical media/records merely to remove them from storefront display.
+
+## Payment Receipt Queue And Settings (2026-10-25)
+
+Owner-approved additive `20261026000000_checkout_payment_receipts` reuses
+EmailDelivery: `automatic` defaults false; private nullable `renderedEmail` holds
+the frozen `{subject, html, text}` until dispatch completes. Existing status and
+dedupe fields implement QUEUED/PENDING/SENT/MOCKED/FAILED and permanent uniqueness;
+index `(automatic, status, createdAt)` supports bounded claims. No existing order,
+item, price, stock, customer, pet, template or delivery was rewritten.
+
+`CheckoutReceiptSettings` has a single known key, mode (DISABLED/DRY_RUN/LIVE checked
+in SQL), nullable saved EmailTemplate FK with Restrict deletion, revision, actual
+admin updater and timestamps. No seeded row means disabled. Saved active
+ORDER_CONFIRMATION eligibility is checked in the settings transaction; suggestions
+cannot be assigned. Edits use optimistic compare-and-set. Archiving/changing a
+selected template prevents future preparation; frozen queued copy is unchanged.
+
+Delivery intent is nested inside the paid order/stock transaction. Worker claims
+QUEUED only, never automatically retries ambiguous PENDING/FAILED and never turns
+a test record into a live send. Processed bodies are minimized; uncertain pending
+payloads and email audit retention still need business-approved disposal policy.
+All API projections allowlist fields and omit the private body. No tracking,
+marketing consent change or live provider transaction accompanies this migration.
+
+Local/Railway both verify 27 complete matching migrations, no pending, validated
+new constraints and unchanged prior-record projections after fresh full private
+decoded backups. Automatic settings remain absent/off. Isolated disposable
+Postgres verifies guest/member persistence, concurrent claim, permanent dedupe,
+atomic receipt failure rollback, one stock decrement, dry dispatch and cleanup.
+See [checkpoint](../work-checkpoints/2026-10-25-checkout-receipt-email.md) for source/
+deployment status; database readiness is not mail delivery or payment certification.

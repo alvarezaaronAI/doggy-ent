@@ -53,6 +53,7 @@ onMounted(load)
                 'FAILED',
                 'MOCKED',
                 'PENDING',
+                'QUEUED',
                 'SKIPPED',
               ]"
               :key="status"
@@ -98,7 +99,7 @@ onMounted(load)
                   :class="{
                     'is-success': delivery.status === 'SENT',
                     'is-danger': delivery.status === 'FAILED',
-                    'is-warning': delivery.status === 'PENDING',
+                    'is-warning': ['PENDING', 'QUEUED'].includes(delivery.status),
                   }"
                   >{{ formatAdminLabel(delivery.status) }}</span
                 >

@@ -336,8 +336,20 @@ model EmailTemplate {
   revision    Int      @default(1)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  checkoutReceipts CheckoutReceiptSettings[]
 
   @@index([event, archived])
+}
+
+model CheckoutReceiptSettings {
+  id         String   @id
+  mode       String   @default("DISABLED")
+  templateId String?
+  revision   Int      @default(1)
+  updatedBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  template   EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
 }
 
 model EmailDelivery {
@@ -353,6 +365,8 @@ model EmailDelivery {
   userId       String?
   errorMessage String?
   metadata     Json?
+  automatic    Boolean   @default(false)
+  renderedEmail Json?
   sentAt       DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -364,6 +378,7 @@ model EmailDelivery {
   @@index([orderId])
   @@index([userId])
   @@index([status])
+  @@index([automatic, status, createdAt])
 }
 
 model User {

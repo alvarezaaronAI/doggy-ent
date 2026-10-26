@@ -236,7 +236,16 @@ Important constraints:
 
 ## Notification Flow
 
-Order/payment/tracking triggers do not queue email automatically. Actual order emails start with an authenticated admin template preview and explicit confirmed Send; provider rejects operational events without internal manual approval. Essential Better Auth verification/reset and intentionally enabled welcome/security messages retain their separate automatic flow. See [manual order email architecture](checkout-and-order-email.md).
+Verified checkout may now atomically queue one payment-confirmation receipt when
+the saved receipt settings allow it. A bounded database-claim worker dispatches it
+independently of the response, with test/live separation and permanent deduplication.
+Default off; live also requires the server/provider gate. Receipt preparation errors
+leave finalization retryable for the same completed payment. This is not Stripe
+webhook recovery. Shipping/status/tracking/support/marketing still require the
+authenticated admin preview and confirmed Send below; the generic provider guard
+remains manual-only. Essential Better Auth verification/reset and intentionally
+enabled welcome/security messages retain their separate flow. See
+[receipt and manual email architecture](checkout-and-order-email.md).
 
 ```mermaid
 sequenceDiagram
@@ -288,7 +297,10 @@ sequenceDiagram
   API-->>Customer: Customer-safe shipment and events
 ```
 
-Communications policy: tracking/order changes save separately without email. Received/preparing/shipped/delivered/cancelled order messages now have previewed manual sends; support/review/promo/marketing templates remain future work. No automatic operational send is added.
+Communications policy: tracking/order changes save separately without email.
+Preparing/shipped/delivered/cancelled messages retain previewed manual sends;
+support/review/promo/marketing templates remain future work. The owner-approved
+verified-checkout payment receipt above is the sole automatic order exception.
 
 ## Checkout Shipping Rate Flow
 

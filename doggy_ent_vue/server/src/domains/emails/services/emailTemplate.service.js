@@ -6,9 +6,11 @@ import { findOrderById } from '../../orders/repositories/orders.repository.js'
 import { renderOrderEmail } from '../mappers/orderEmail.mapper.js'
 import { queueEmail, getEmailProviderStatus } from './emailProvider.service.js'
 import { signCapability, readCapability } from '../../../shared/utils/signedCapability.js'
+import { getCheckoutReceiptSettings } from './checkoutReceipt.service.js'
+import { getOrderEmailPresentation } from '../utils/orderEmailPresentation.js'
 const fail = (message, statusCode = 400) => Object.assign(new Error(message), { statusCode })
 export const sampleEmailOrder = Object.freeze({ customerName: 'Alex Morgan', customerEmail: 'alex@example.com', orderNumber: 'CE-SAMPLE', status: 'SHIPPED', currency: 'USD', subtotal: 24, shippingAmount: 5.99, taxAmount: 2.25, total: 32.24, address1: '123 Example Lane', city: 'Sample City', state: 'CA', zip: '90001', items: [{ productName: 'Chicken jerky', size: '18 oz', quantity: 1, unitPrice: 24, lineTotal: 24 }], shipment: { carrier: 'Sample carrier', trackingNumber: 'SAMPLE-TRACKING' } })
-export async function getEmailTemplates() { return { templates: [...await listEmailTemplates(), ...ORDER_EMAIL_SUGGESTIONS.map(template => ({ ...template, suggested: true, revision: 0, archived: false }))], provider: getEmailProviderStatus() } }
+export async function getEmailTemplates() { return { templates: [...await listEmailTemplates(), ...ORDER_EMAIL_SUGGESTIONS.map(template => ({ ...template, suggested: true, revision: 0, archived: false }))], provider: getEmailProviderStatus(), checkoutReceipt: await getCheckoutReceiptSettings() } }
 export async function saveEmailTemplate(id, input) {
   const data = validateEmailTemplate(input)
   if (!id || id.startsWith('suggested-')) return createEmailTemplate(data)
@@ -42,7 +44,7 @@ export async function previewEmailTemplate(id, { orderId, draft } = {}, actor = 
   const order = orderId ? await findOrderById(orderId) : sampleEmailOrder
   if (!order) throw fail('Order not found.', 404)
   if (orderId) eligibility(template, order)
-  const rendered = renderOrderEmail(template, order)
+  const rendered = renderOrderEmail(template, order, getOrderEmailPresentation())
   const provider = getEmailProviderStatus()
   return {
     ...rendered, recipient: order.customerEmail, sample: !orderId, provider,
@@ -57,7 +59,7 @@ export async function sendEmailTemplate(id, input = {}, actor = '') {
   const template = await templateById(id), order = await findOrderById(proof.orderId)
   if (!order) throw fail('Order not found.', 404)
   eligibility(template, order)
-  const rendered = renderOrderEmail(template, order)
+  const rendered = renderOrderEmail(template, order, getOrderEmailPresentation())
   if (fingerprint(template, order, rendered) !== proof.fingerprint) throw fail('Order or template changed after preview. Preview again before sending.', 409)
   if (!input.dryRun && !getEmailProviderStatus().live) throw fail('The live email provider is disabled. Use a dry run or configure the provider.')
   const result = await queueEmail({

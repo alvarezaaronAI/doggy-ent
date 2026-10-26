@@ -301,6 +301,9 @@ export async function createOrder(orderInput) {
       currency: orderInput.currency || 'usd',
       stripePaymentIntentId:
         orderInput.stripePaymentIntentId || null,
+      ...(orderInput.receiptDelivery ? {
+        emailDeliveries: { create: orderInput.receiptDelivery },
+      } : {}),
       items: {
         create: orderInput.items.map((item) => ({
           productId: item.productId || null,

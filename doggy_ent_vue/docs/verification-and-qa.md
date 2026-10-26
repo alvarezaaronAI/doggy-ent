@@ -1,15 +1,53 @@
 # Verification And QA
 
+## Checkout Payment Receipt (2026-10-25)
+
+Full client357 (11/340/6) and server492 (28/458/6) pass after integration. Combined,
+storefront-only and admin builds pass; isolated admin build requires the same
+public `VITE_STOREFRONT_ORIGIN` as its hosted configuration. Server build generates
+Prisma6.16.2. Six gateway tests pass unchanged. No live provider/payment was used.
+
+Tests cover Stripe-failure-before-receipt, client price/receipt rejection, payment
+replay, preparation failure/no commit/safe retry, atomic nested receipt write,
+saved-template/mode/revision/admin validation, CAS claim, bounded/provider-filtered
+work, timer overlap/cleanup, default-off/live-lock/dry separation, provider failure
+redaction/unknown acceptance and customer payload omission. Fifty renderer cases
+cover escaping/long copy/tables/text/giving/HTTPS assets/private fields. Worker
+reported24fictional browser layouts including blocked images; main's isolated
+actual editor verifies monogram/icons/sample receipt, separate test-setting Save,
+unsaved-copy preview/Cancel, restored settings, named select labels and phone canvas.
+These do not certify Gmail/Apple Mail/Outlook inbox rendering or delivery.
+
+Actual disposable loopback Postgres27 migrations passes guest/member/replay,
+permanent receipt uniqueness, stock once, nested-failure rollback, concurrent claim
+once, dry dispatch/body cleanup and stale/constraint failures; fixture DB removed.
+Approved local/Railway migration follows fresh full private decoded backups and
+checksums:27matching/nonepending, new constraints validated, prior record projections
+unchanged, settings absent/off and zero automatic shared delivery rows. A first
+postflight probe incorrectly included Postgres18 NOT NULL constraints; restricting
+the probe to PK/FK/CHECK validates the intended constraints without reapplying SQL.
+
+Before live activation: owned verified sending domain and sender/reply config;
+explicit approved inbox and small send budget; check provider quota/suppression,
+one sandbox checkout/receipt and duplicate/replay behavior, actual clients/images
+blocked, failure reconciliation, and full guest/member checkout/device acceptance.
+Do not test with real customers or enable paid overages. Existing payment webhook
+recovery, atomic promo/campaign usage, privacy retention and launch gates remain.
+[Checkpoint](work-checkpoints/2026-10-25-checkout-receipt-email.md) records exact
+publication/deployment status; migration/dry-run success is not successful mail.
+
 ## Separate Vercel Admin Gates (2026-10-25)
 
-Staged mainaaa8923 is live: existing public Vercel/approved protected admin READY and
-Railway SUCCESS; same source SHA, startup26migrations/nonepending, public read/CORS/
-anonymous ownership controls pass. All four current admin aliases reject anonymous
-HTML/API with Vercel302. Authenticated CLI proxy returns health200, appsession401 and
-admin-only artifact identity200, without gateway/internal-header exposure. Client354,
-server413, gateway5, helper21 and hosted current-head task/release Quality pass. Actual
-owner Vercel+shop-admin browser acceptance is pending, so backend gate staysfalse and
-public app stayscombined; do not claim direct-API enforcement or completed cutover.
+Completed source main30bc5ba is live on both Vercel projects (READY) and Railway
+(SUCCESS). Public manifest has zero admin modules; admin manifest excludes customer
+routing. Vercel all-URL protection, owner MFA/app login/read/editor/logout/relogin,
+proxy session401, direct admin403, cross-origin/same-site proxy404, no credential/header
+leak, public media/read/CORS/customer controls and12anonymous alias probes pass.
+Client354/server413/gateway6/helper21 (794unique), builds, audit0 and current-head
+PR45-48 Quality pass; startup/preflight26matching/nonepending. Same DB, normal auth
+sessions only, no business-data/schema/provider transaction change. Actual Safari/
+mobile, production upload saves and unrelated launch acceptance remain manual. See
+[final checkpoint](work-checkpoints/2026-10-25-vercel-admin-separation.md).
 
 Local routing/artifact, proxy/header/cookie, image-transport and backend-gateway tests
 are distinct from live acceptance. Require All Deployments Vercel Authentication,
