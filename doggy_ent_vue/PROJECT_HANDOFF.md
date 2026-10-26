@@ -2,15 +2,17 @@
 
 ## Current Repair: Email Template Copy (2026-10-26)
 
-Owner reports repeated starter saves create extra templates. fix/email-template-duplicates
-adds idempotent starter adoption using the existing primary key, reuses older
-same-event saved templates without overwriting copy/revision/archive, groups My
-templates/Starters/Archives and applies save acknowledgement without a second list
-request. Local client364/server507 tests, builds and a real disposable-loopback
-ten-request concurrency/persistence fixture pass. Isolated browser confirms one
-copy across save/edit/reopen/reload. No schema migration or provider/settings
-change. Sending stays off. Review/publication/live verification remain; resume
-from the [repair checkpoint](docs/work-checkpoints/2026-10-26-email-template-copy.md).
+Completed and live at main2066f6b45287722bac0e40b233e38b130531643e on both
+Vercel projects READY and Railway SUCCESS. Starter adoption reuses saved copies;
+My templates/Starters/Archives and acknowledged-save state remove duplicate-create
+and refresh-lock confusion. Client364/server507, builds, ten-request real-loopback
+one-row fixture, independent review and current-head PR55/56 Quality pass.
+Live Already added/edit/Cancel checks pass with zero captured browser errors.
+Owner then explicitly requests duplicate cleanup: after a fresh decoded private
+backup, four exact active payment duplicates are archived transactionally, original
+and preparation templates preserved, two active remain. No permanent deletes,
+schema/provider/receipt-settings change or email send; sending stays off.
+See the [final checkpoint](docs/work-checkpoints/2026-10-26-email-template-copy.md).
 
 ## Latest Milestone: Payment Receipt Email (2026-10-26)
 
