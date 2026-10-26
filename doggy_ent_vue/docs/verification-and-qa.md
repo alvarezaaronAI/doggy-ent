@@ -2,7 +2,8 @@
 
 ## Checkout Payment Receipt (2026-10-25)
 
-Full client357 (11/340/6) and server492 (28/458/6) pass after integration. Combined,
+Final client357 (11/340/6) and server497 (28/463/6) pass, including the sample-state
+follow-up. Combined,
 storefront-only and admin builds pass; isolated admin build requires the same
 public `VITE_STOREFRONT_ORIGIN` as its hosted configuration. Server build generates
 Prisma6.16.2. Six gateway tests pass unchanged. No live provider/payment was used.
@@ -35,6 +36,17 @@ Do not test with real customers or enable paid overages. Existing payment webhoo
 recovery, atomic promo/campaign usage, privacy retention and launch gates remain.
 [Checkpoint](work-checkpoints/2026-10-25-checkout-receipt-email.md) records exact
 publication/deployment status; migration/dry-run success is not successful mail.
+
+Final production mainb1fc199 is verified on both Vercel hosts (READY/exact source)
+and Railway (SUCCESS/exact source). Startup27migrations/no pending/listening and
+zero receipt-worker/application-error patterns. Public PNG200/content types/source
+hashes, read APIs/exact CORS, customer401/directstaff403, public0admin manifest and
+protected anonymous302 pass. Existing real admin session reads refreshed templates,
+payment sample without tracking and shipped sample with fictional tracking, then
+returns to payment; monogram/icons render and captured browser errors0. No Save,
+provider send or shared fixture. Settings0/automatic deliveries0 and unchanged prior
+record projections reconfirmed. Source remains prelaunch, not inbox/payment/legal
+certification. Fixture5192 stopped; ordinary user servers preserved.
 
 ## Separate Vercel Admin Gates (2026-10-25)
 
