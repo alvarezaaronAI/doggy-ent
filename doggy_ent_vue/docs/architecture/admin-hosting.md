@@ -25,6 +25,10 @@ Actual activation/source/deployment evidence is in the
    configured HTTPS API origin and injects dedicated server-only gateway material.
    Incoming spoofed gateway/forwarding/authorization headers and Vercel cookies are
    not relayed. Only doggy-admin session cookies and necessary request headers pass.
+   A supplied Origin must match the admin request origin; browser cross-site/same-site
+   Fetch Metadata requests are denied before adding credentials. Public shop origins
+   trusted by the shared customer API do not grant use of the staff proxy. Origin-less
+   authorized CLI requests remain valid; this check never replaces Vercel/app auth.
    The proxy does not consume/rebuild bodies, binary images or Set-Cookie responses.
 4. With ADMIN_GATEWAY_REQUIRED enabled, Railway rejects missing/wrong material before
    session lookup on native/compatibility admin auth and every requireAdminAuth route,

@@ -2,6 +2,15 @@
 
 ## Separate Vercel Admin Gates (2026-10-25)
 
+Staged mainaaa8923 is live: existing public Vercel/approved protected admin READY and
+Railway SUCCESS; same source SHA, startup26migrations/nonepending, public read/CORS/
+anonymous ownership controls pass. All four current admin aliases reject anonymous
+HTML/API with Vercel302. Authenticated CLI proxy returns health200, appsession401 and
+admin-only artifact identity200, without gateway/internal-header exposure. Client354,
+server413, gateway5, helper21 and hosted current-head task/release Quality pass. Actual
+owner Vercel+shop-admin browser acceptance is pending, so backend gate staysfalse and
+public app stayscombined; do not claim direct-API enforcement or completed cutover.
+
 Local routing/artifact, proxy/header/cookie, image-transport and backend-gateway tests
 are distinct from live acceptance. Require All Deployments Vercel Authentication,
 successful staff app sign-in/read/logout, direct Railway/legacy bypass denial,
