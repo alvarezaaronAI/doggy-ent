@@ -1,5 +1,21 @@
 # Checkout Payment Receipt Email
 
+## Latest Continuation (2026-10-26)
+
+Implementation PR50/release51 and the sample-only correction PR52/release53 are
+merged after current-head Quality, Vercel statuses, review/head/base guards. Final
+main source is `b1fc1997c81dd4d133ae3f89133482a9f1d2b84f`, verified live on both
+Vercel sites (READY) and Railway (SUCCESS). Implementation, approved migration and
+source deployment are complete. Do not repeat them or provider setup/email sends
+on resume. Automatic settings remain absent/off and live sending is not configured.
+Detailed historical milestones below explain earlier pending items; this section
+and final verification are current.
+
+Next business step: owned verified sending domain/provider setup and explicit
+approved inbox/small email budget, then live inbox/client acceptance before enabling
+the selected saved payment template. Do not broaden automatic mail beyond payment
+confirmation. Existing payment recovery/attribution/retention/launch gates remain.
+
 ## Owner Scope And Safety
 
 2026-10-25: owner approves exactly one automatic payment-confirmation receipt after
@@ -162,3 +178,92 @@ manual-template tests pass. Five cases assert matching paid/processing/shipped/
 delivered/cancelled placeholders and tracking only for shipped/delivered samples.
 No DB/config/provider change; no client code changed. Source diff is four files
 and preserves real-order preview/proof/send behavior.
+
+## Release Records
+
+| Scope | PR | Verified Quality run |
+| --- | --- | --- |
+| Receipt implementation | 50 | 40298737774 |
+| Initial source release | 51 | 40299170209 |
+| Sample/label correction | 52 | 40300258930 |
+| Corrected source release | 53 | 40300525529 |
+
+All required local checks and both current-head hosted jobs passed for each source
+merge; all merges used expected-head guards and respected clean review/thread state.
+No branch protection/settings were modified. The repository currently reports no
+protected primary branches; deterministic CI policy is enforced by this workflow,
+not newly installed hosting/GitHub protection.
+
+Final verified artifacts: public `dpl_EELR9ryrjHD3uWnKrxjr5rQuBxnY` READY,
+admin `dpl_3M9kRmL6Y3irrWQ9LzjZUYPjj4PK` READY, Railway
+`2c2a2acd-ec90-43b0-8cee-10d3acd08d27` SUCCESS. All report exact final main SHA.
+This evidence-only branch does not change runtime/source or trigger another main
+release. Final complete evidence and manual limits follow.
+
+## Final Production Verification
+
+- Stable public/admin host lookup confirms each final READY artifact points to the
+  exact main SHA, not just a branch preview. All-URL Vercel admin protection remains.
+- Railway final runtime17entries confirms27migrations/no pending/server listening,
+  with zero receipt-worker or application-error patterns. Build error-pattern count0.
+- Public monogram/receipt/package/heart/paw PNGs return200/image/png and exact source
+  SHA-256 bytes. Public health/catalog/content/campaigns200 with exact storefront
+  CORS; anonymous account/profile401 and direct staff auth403. Public surface manifest
+  reports0admin modules. Anonymous protected admin returns302toVercel, not the app.
+- Actual existing signed-in staff session reloads the final editor: suggested
+  Payment confirmation, saved-template selection empty, Off and Live disabled. Payment
+  preview shows received payment/manual review/separate shipping, correct sample
+  items/totals/address and no tracking. Selecting Order shipped shows SAMPLE-TRACKING;
+  returning to Payment confirmation removes it. These are preview-only HTTP requests,
+  not template/settings saves, real orders or provider sends.
+- Live screenshot visually confirms the monogram and Lucide PNGs, legible email and
+  locked controls; captured browser errors0. Private fictional screenshot:
+  `/Users/nazxylix/.codex/backups/doggy-ent/2026-10-25-checkout-receipt/live-payment-receipt-editor.png`.
+  Staff editor is left open as the deliverable. Fixture5192and its tab are closed.
+- Repeated read-only Railway verify:27matching/nonepending, settings rows0, automatic
+  delivery rows0, old-record projections still match the migration postflight. Runtime
+  provider-variable inventory is names-only/redacted: no deployed Resend key/sender
+  or new live switch. No paid service/domain/key/config/activation change occurred.
+- Tests: client357, server497, gateway6, Git/security helpers21 (881unique). All
+  relevant builds, schema/syntax/docs/secret/fence/link/whitespace and hosted source
+  checks pass. No lint script exists. No dependency/version/tag change.
+
+## Changed Files And Commands
+
+- Runtime: checkout verified service context; order preparation/repository/customer
+  projection; email settings repository/service/worker/provider/controller/routes;
+  server startup; template renderer/suggestions/presentation helper; Prisma schema
+  and one additive migration. No existing security/provider credentials were copied.
+- UI: existing admin template view/composable/API, dedicated receipt settings
+  inspector, QUEUED notification state, customer receipt-state copy, static public
+  monogram/Lucide PNGs/license and reproducible asset generator.
+- Verification: new receipt preparation/dispatch/settings/payment/renderer tests,
+  order transaction tests, manual sample-state tests, customer/admin presentation
+  tests and focused policy/architecture/QA/handoff/checkpoint documentation.
+- Successful commands: server `npm test`, `npm run build`, `npx prisma validate`;
+  client `npm test`, `npm run build`, `npm run build:storefront`; admin build with
+  the existing public VITE_STOREFRONT_ORIGIN and gateway tests; root21helper fixtures,
+  read-only security preflight, configured-secret/syntax/docs scans and diff checks.
+- Private guarded fixture/backup/apply/postflight/verify helpers are not in Git.
+  Both fresh backups decoded before applying once; the fixture DB was removed.
+  Source-publication authority never authorized provider sends or paid resources.
+
+## Remaining Gates And Safe Resume
+
+No actual customer receipt was sent. An owned sending domain and Resend sender/key/
+reply setup must be verified through secure provider/dashboard flows, with open/click
+tracking decisions and quota review. Resend Free is recommended, not an account-plan
+change performed here. Request an explicit approved recipient and small send budget
+before any real test; do not infer them from old chat credentials or account emails.
+Check actual Gmail/Apple Mail/Outlook, image-blocked rendering, suppression/bounces,
+quota failures and duplicate/replay behavior. SENT is acceptance, never proof of inbox.
+
+PENDING/FAILED require provider reconciliation and deliberate manual action; no
+automatic retry/recovery UI is claimed. Claimed payload retention/disposal, real
+Safari/phone/screen-reader and existing browser-only payment/webhook/atomic promo/
+campaign/tax/shipping/legal launch gates remain. This is not1.0acceptance.
+
+Finish final evidence-only PR into dev-main and synchronize primary local branches
+to their own upstreams, leaving only these evidence docs ahead of main. Do not
+redeploy production just for final artifact IDs. The reviewed runtime is ready for
+normal commit review and already published; no required task-owned process remains.
