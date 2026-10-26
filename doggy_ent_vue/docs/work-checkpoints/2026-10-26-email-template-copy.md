@@ -71,3 +71,46 @@ Next: independent scoped review, final tests/builds/scoped secret/docs checks,
 guarded task PR/dev-main/release PR/main, exact-source hosting and live read-only
 Already added/edit/Cancel checks. Existing templates must not be deleted or
 overwritten. No real mail, provider setup, payment or receipt activation.
+
+## Final Publication And Live Evidence
+
+Earlier pending steps above are chronological. Completed source:
+
+- Task3ae81dfa9d077abb647cceeac8576c18cc9e8b5c, PR55 -> dev-main
+  d53ae719387c2e8c8e7d4ba503c7b34b8ca77c09. Quality40306544615 client/server,
+  every step and both Vercel statuses pass; exact head/base/scope/reviews guarded.
+- ReleasePR56 -> main2066f6b45287722bac0e40b233e38b130531643e.
+  Quality40306803092 client/server/every step and both Vercel statuses pass;
+  fresh clean16file scope (repair plus prior receipt evidence), no review threads.
+- Shop dpl_EvG6vEoym8t5zGJnJp6EJj6TPJ26 READY and admin
+  dpl_4h7A6qhBLGnVm35G85zgBBXJjGPn READY. Stable alias lookups confirm exact2066,
+  not merely a successful preview. Staff protection remains All Deployments.
+- Railway7dae0e36-f7c9-414e-aeb1-0b28f6cdbf9d SUCCESS/exact2066.
+  Runtime17entries:27migrations/no pending/zero error patterns.
+- Public health/products/campaigns200/exact-origin CORS, anonymous customer401,
+  direct admin403 and public manifest0admin modules pass.
+- Existing live staff session: new groups/Already added, repeated reopening same
+  saved payment copy, temporary heading edit enables Save changes, Cancel restores
+  original, no captured browser errors. No new saved template/settings/provider send.
+  Private screenshot template-copy-live-fixed.png shows final actual UI.
+
+## Owner-Requested Duplicate Cleanup
+
+During rollout the owner explicitly adds: delete duplicates. Applied only a
+recoverable archive, not hard deletes. Fresh private full backup2806546bytes,
+full pg_restore decode/checksum/0600 and read-only inventory: six active templates,
+four exact duplicates of payment confirmation. All six authorable fields must
+match; selected receipt/reserved copy protected, otherwise oldest original kept.
+
+Guarded SERIALIZABLE transaction locks/rechecks templates/settings, archives only
+those four rows with revision increments, preserves their content and verifies all
+other template rows/receipt settings/delivery count unchanged. No row deletion,
+schema/credential/provider change. Two active templates remain: original payment
+confirmation and preparation. Final UI Archived5 includes four duplicates plus
+the earlier diagnostic copy. Original/customer messages remain recoverable.
+
+Sending stays OFF, settings0/automatic deliveries0; no email/payment/shipment.
+Fixture5192/tab10 closed and process21879 completed exit143; user servers untouched.
+Final evidence is documentation-only on docs/email-template-copy-evidence for
+integration, not a redundant production rollout. No source work remains; future
+sender/domain/approved inbox and prelaunch device/payment gates remain separate.

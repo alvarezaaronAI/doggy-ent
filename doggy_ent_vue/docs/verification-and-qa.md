@@ -10,8 +10,24 @@ loopback database with27migrations verifies ten concurrent requests yield one ro
 rename/revision persistence, archive preservation, legacy reuse and unchanged
 receipt settings/zero sends; fixture removed. Memory-only actual Vue browser checks
 verify Add, edit, Save changes, Already added reopen and refresh retain one saved
-copy. No shared migration or real provider test. Review and hosted verification
-are tracked in the [repair checkpoint](work-checkpoints/2026-10-26-email-template-copy.md).
+copy. Independent review's stale legacy link finding is fixed and re-reviewed;
+canonical origin/create/update coverage also passes. PR55/56 Quality client/server
+and every step pass. Exact main2066f6b is live on both stable Vercel hosts READY
+and RailwaySUCCESS; startup27migrations/no pending/zero error patterns. Public
+health/products/campaigns200/exact CORS, customer401/directstaff403 and public
+zero-admin-module manifest pass. Live editor reuses the saved template on repeated
+Already added clicks, enables Save changes after an edit, and restores original
+copy on Cancel; zero captured browser errors. No additional template creation or
+setting Save during final live checks.
+
+Owner-requested cleanup follows fresh full private2806546byte decoded/checksummed
+backup and exact-field inventory. Serializable guarded archive of four duplicate
+active payment templates preserves the original and distinct preparation template,
+all content, other template rows, receipt settings and delivery count. Two active
+templates remain; no permanent deletion or schema migration. UI shows two My
+templates/Archived5 (four duplicates plus prior diagnostic copy). Sending is off,
+settings0/automatic deliveries0. No real provider/mail/device certification.
+See [final repair evidence](work-checkpoints/2026-10-26-email-template-copy.md).
 
 ## Checkout Payment Receipt (2026-10-25)
 
