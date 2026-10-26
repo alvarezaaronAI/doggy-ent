@@ -55,6 +55,20 @@ test('routing helper overrides upstream headers, preserves streaming body owners
   assert.equal(await response.text(), '')
 })
 
+test('the public shop or sibling host cannot use a signed-in browser as a staff proxy', () => {
+  for (const headers of [{ origin: 'https://shop.example.test' }, { origin: 'null' }, { 'sec-fetch-site': 'cross-site' }, { 'sec-fetch-site': 'same-site' }, { origin: 'https://admin.example.test', 'sec-fetch-site': 'cross-site' }]) {
+    assert.equal(createGatewayPlan(new Request('https://admin.example.test/api/products', { method: 'POST', headers }), env), null)
+  }
+  for (const headers of [{ origin: 'https://admin.example.test', 'sec-fetch-site': 'same-origin' }, { 'sec-fetch-site': 'none' }, {}]) {
+    assert.ok(createGatewayPlan(new Request('https://admin.example.test/api/auth/me', { headers }), env))
+  }
+  Object.assign(process.env, env)
+  const denied = proxy(new Request('https://admin.example.test/api/products', { method: 'POST', headers: { origin: 'https://shop.example.test', 'sec-fetch-site': 'cross-site' } }))
+  assert.equal(denied.status, 404)
+  assert.equal(denied.headers.get('x-middleware-rewrite'), null)
+  assert.equal(denied.headers.get('x-middleware-request-x-shop-admin-gateway'), null)
+})
+
 test('unknown routes and misconfigured deployments fail closed without redirect or secret', async () => {
   Object.assign(process.env, env)
   assert.equal(proxy(new Request('https://admin.example.test/api/account')).status, 404)

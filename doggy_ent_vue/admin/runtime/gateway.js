@@ -30,6 +30,10 @@ export function isAllowedApiRequest(path, method) {
 
 export function createGatewayPlan(request, env) {
   const url = new URL(request.url)
+  const origin = request.headers.get('origin')
+  const fetchSite = request.headers.get('sec-fetch-site')
+  // The public shop's trusted backend origin must not authorize use of the staff proxy.
+  if (origin && origin !== url.origin || fetchSite === 'cross-site' || fetchSite === 'same-site') return null
   if (!isAllowedApiRequest(url.pathname, request.method)) return null
   const config = getGatewayConfig(env)
   const target = new URL(config.origin)
