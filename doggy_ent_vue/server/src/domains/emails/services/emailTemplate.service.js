@@ -41,7 +41,8 @@ function fingerprint(template, order, rendered) {
 }
 export async function previewEmailTemplate(id, { orderId, draft } = {}, actor = '') {
   const template = draft ? { ...validateEmailTemplate(draft), id: 'unsaved' } : await templateById(id)
-  const order = orderId ? await findOrderById(orderId) : sampleEmailOrder
+  const sampleStatus = { ORDER_CONFIRMATION: 'PAID', ORDER_STATUS_UPDATE: 'PROCESSING', ORDER_SHIPPED: 'SHIPPED', ORDER_DELIVERED: 'DELIVERED', ORDER_CANCELLED: 'CANCELLED' }[template.event]
+  const order = orderId ? await findOrderById(orderId) : { ...sampleEmailOrder, status: sampleStatus, shipment: ['SHIPPED', 'DELIVERED'].includes(sampleStatus) ? sampleEmailOrder.shipment : null }
   if (!order) throw fail('Order not found.', 404)
   if (orderId) eligibility(template, order)
   const rendered = renderOrderEmail(template, order, getOrderEmailPresentation())

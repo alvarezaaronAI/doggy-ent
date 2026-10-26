@@ -35,6 +35,19 @@ describe('manual order templates and preview-before-send', () => {
     expect((await previewEmailTemplate(template.id, { orderId: 'order-1', draft: template })).previewProof).toBeNull()
     expect(provider.queueEmail).not.toHaveBeenCalled()
   })
+  it.each([
+    ['suggested-received', false, 'paid'], ['suggested-preparing', false, 'processing'],
+    ['suggested-shipped', true, 'shipped'], ['suggested-delivered', true, 'delivered'], ['suggested-cancelled', false, 'cancelled'],
+  ])('uses a matching fictional order state and tracking for %s', async (id, hasTracking, expectedStatus) => {
+    const preview = await previewEmailTemplate(id)
+    expect(preview.sample).toBe(true)
+    expect(preview.html.includes('Delivery tracking')).toBe(hasTracking)
+    expect(preview.html.includes('SAMPLE-TRACKING')).toBe(hasTracking)
+    expect(preview.previewProof).toBeNull()
+    const draft = { ...ORDER_EMAIL_SUGGESTIONS.find(item => item.id === id), body: 'Saved order status: {{orderStatus}}' }
+    expect((await previewEmailTemplate(id, { draft })).text).toContain('Saved order status: ' + expectedStatus)
+    expect(provider.queueEmail).not.toHaveBeenCalled()
+  })
   it('requires a matching saved order state and tracking for shipped mail', async () => {
     await expect(previewEmailTemplate('suggested-shipped', { orderId: 'order-1' })).rejects.toThrow('status')
     orders.findOrderById.mockResolvedValue({ ...sampleEmailOrder, id: 'order-1', shipment: null })
