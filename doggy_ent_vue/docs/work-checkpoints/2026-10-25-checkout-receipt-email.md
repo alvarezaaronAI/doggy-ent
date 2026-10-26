@@ -129,3 +129,36 @@ diff including three prior admin evidence docs, then gated main PR and actual
 Railway/two-Vercel source/artifact verification. No live send/domain purchase/paid
 upgrade or email activation. Final release evidence should be a docs-only dev-main
 follow-up rather than recursively redeploying merely to record artifact IDs.
+
+## Initial Production Release Verified; Sample Follow-Up
+
+PR50 and release51 passed current-head Quality40298737774/40299170209, both Vercel
+statuses, clean head/base/review checks and expected-head merge guards. Main
+492f9a84976c665de068117494a85577d6fe32c8 is deployed: public Vercel
+dpl_FqpPrcgJVGdppFg8i428N7JRWThF READY; protected admin
+dpl_9zmUx7j8Aa5FRecDb2Rzi48H2WBa READY; Railway
+bca33d48-b11e-412b-8667-d7b6093a8f6a SUCCESS. Railway startup27migrations/no pending,
+server listening, no build failure or receipt-worker error patterns. Public five
+PNG assets200/PNG/exact source hashes; health/catalog/content/campaigns200/exact
+shop CORS, direct staff API403, public manifest0admin and protected admin anonymous302.
+
+Actual signed-in admin refresh loads the new template editor, five suggestions,
+sample payment copy, Off setting and locked Live option. No settings/template save
+or live email. Read-only DBverify reconfirms settings0/automatic deliveries0 and
+old-record projections unchanged. A delayed extra postflight was refused by the
+30-minute fresh-backup gate as designed; the separate read-only verify is used,
+not another migration or a weakened apply gate.
+
+Task-owned5192fixture server and tab are closed; ordinary user servers/tabs remain.
+Before final close-out, fix the observed sample-only mismatch: the shared SHIPPED
+sample incorrectly showed fictional tracking in the payment preview. Scoped fresh
+branch fix/payment-receipt-preview changes sample status/tracking per template,
+renames the suggested label Payment confirmation (stable ID retained) and adds five
+regressions. Real orders/automatic receipt content are unchanged. Verify/publish this
+small correction before final screenshot, then record final evidence/synchronize.
+
+Follow-up verification: full server497 (28/463/6), build/Prisma6.16.2 and14 focused
+manual-template tests pass. Five cases assert matching paid/processing/shipped/
+delivered/cancelled placeholders and tracking only for shipped/delivered samples.
+No DB/config/provider change; no client code changed. Source diff is four files
+and preserves real-order preview/proof/send behavior.
