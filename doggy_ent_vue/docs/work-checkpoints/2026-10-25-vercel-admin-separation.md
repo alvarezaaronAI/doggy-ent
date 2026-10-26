@@ -2,81 +2,75 @@
 
 ## Current Live Status
 
-Public cutover verified at dpl_3utkzP53KrcUniy3ArN2KAvEMViA READY, exact mainaaa8923;
-public artifact is storefront with zero admin modules. One final bounded source repair
-is underway on fix/admin-gateway-origin (renamed only the unpublished local evidence
-branch, preserving all notes). Reproduction confirms the proxy admitted an authenticated
-cross-origin request from a shared-backend-trusted shop origin; add same-origin/Fetch
-Metadata rejection before credential injection. This does not bypass Vercel or app
-authorization, but the staff proxy should not be a cross-site deputy. No exploit or
-credential leak was observed. New regression cases cover shop/sibling/null origins,
-cross-site metadata, same-origin and existing CLI access. Review/test/publish this
-small follow-up before final close-out; both existing gates remain enabled meanwhile.
+**Completed and verified on 2026-10-25, America/Los_Angeles.** Use the stable staff
+address https://doggy-ent-admin.vercel.app/admin/login; shop remains
+https://doggy-ent.vercel.app. No Cloudflare, purchased domain, paid protection add-on
+or second database. All previous pending/staged milestones below are chronological.
 
-Gateway ENFORCEMENT VERIFIED: Railway aa2c4aaa-ef13-42ad-96b8-b8fb1bfec31c SUCCESS,
-exact reviewed mainaaa8923, ADMIN_GATEWAY_REQUIRED=true. Protected CLI proxy session
-probe401 (not403), no credential/internal-header leak; actual signed-in browser reload
-still reads9-product library with no error. Fifteen direct native/compat/legacy/admin
-API family probes with forged origin, synthetic cookie and wrong gateway return403;
-public products/campaigns/content/health retain200/exact public CORS. No DB mutation.
-Production-only VITE_APP_SURFACE=storefront is now configured on existing public Vercel;
-one exact-main public rebuild is starting. Verify its ID/status/manifest/oldadmin404
-before claiming full cutover. Earlier flagfalse/owner-pending notes below are history.
+| Target | Current source | Verified artifact |
+| --- | --- | --- |
+| Public Vercel doggy-ent | main30bc5bae4612285f2aa006e7ab28c0822ac62922 | dpl_BNVUafQpqto7aLUGMpkUM4xMqu3f READY |
+| Protected Vercel doggy-ent-admin | Same main30bc5ba | dpl_9mCS3NBLFRAEa3PbHC58X2GJZ7Wi READY |
+| Existing Railway API | Same main30bc5ba | 29dbd136-9856-4c61-9d09-cd5b6377c961 SUCCESS |
+| Existing Railway Postgres | Unchanged service | a8fb0946-43d8-4c6f-93c7-ba14f5c879ae SUCCESS |
 
-Cutover now authorized to advance: owner completed Vercel MFA; actual app sign-in,
-dashboard, protected9-product library (eight public plus existing draft), Website UI
-read, sign-out, denied guarded return and successful re-login pass through the stable
-new host. No product/content/provider mutation. Existing same admin identity/data target
-and View store link remain. Next operation enables only Railway ADMIN_GATEWAY_REQUIRED
-on the confirmed API, then verifies the resulting artifact/direct-versus-proxy boundary
-before public storefront-only redeploy. Earlier staged paragraphs below are superseded
-by this acceptance milestone; do not infer the flag deployed until verification follows.
-
-- Safe staged release is deployed, not final cutover: mainaaa8923d9876c9782c4da4a63dc3235c28e1858e,
-  public Vercel dpl_26gyF6N8Sa4MXF56dLP9LRNuQhhh READY (combined), protected admin
-  dpl_G8vzxvYFGJAXqzcAEybmnZtk3G2c READY (admin-only), Railway
-  4b08a19d-d9b1-41fa-814e-a16fc7116db3 SUCCESS. All three confirm the exact source SHA.
-  Backend startup26migrations/no pending; four severity-error stderr entries classify
-  as npm warning/Prisma notices/blank, no application failure. Public health/products8/
-  content/campaigns200, anonymous account/profile401, exact public-origin CORS pass.
-- Stable staff address: https://doggy-ent-admin.vercel.app/admin/login. All four
-  current stable/team/deployment/commit aliases reject anonymous HTML and API probes
-  with302toVercel (eight checks). Provider All Deployments protection remains enabled.
-- Authenticated CLI GET /api/health200 and /api/auth/me401 JSON authenticatedfalse;
-  actual protected /application-surface.json200 confirms admin133modules and no public
-  route catalogue. Wire responses contain neither gateway material nor internal
-  middleware override headers. No share link/protection bypass/Trusted Sources rule
-  was created; CLI uses the existing authorized account. Earlier failed curl attempts
-  forwarded the CLI's --non-interactive flag to curl; omitting that flag fixed probing,
-  not a service/proxy failure. Full URL targeting uses --deployment plus path.
-- New admin Git connection tracks main; root/build/protection verified. CLI linked
-  only ignored admin/.vercel and automatically generated admin/.env.local for its
-  short-lived OIDC token; chmod0600, ignored. Removed only CLI-generated redundant
-  admin/.gitignore; no environment values or extra ignore churn committed.
-- Owner handoff is pending: async question requests Vercel owner login then existing
-  shop admin login at the new address, and dashboard confirmation. IAB tab6 is handed
-  off on Vercel's sign-in page. Do not extract auth cookies/tokens, bypass protection,
-  reuse chat passwords in shell arguments, or claim this browser step passed.
-- IMPORTANT: ADMIN_GATEWAY_REQUIRED=false and shop stillcombined. Direct Railway
-  /api/auth/me401 is expected while staged, not evidence of an enforced gateway.
-  Existing public admin remains available intentionally until protected staff login/
-  read/logout acceptance. Gateway and matching production-only material are staged;
-  private recovery path is recorded below. Do not rotate/regenerate it on resume.
-- Next after owner acceptance: inspect actual dashboard/session through new host;
-  verify read/logout/relogin and protected media/editor navigation without mutations;
-  enable only ADMIN_GATEWAY_REQUIRED=true on confirmed API service, deploy current
-  reviewed backend artifact and verify proxy401/direct403 plus owner session access;
-  switch only public Vercel production VITE_APP_SURFACE=storefront, redeploy exact
-  reviewed main source and confirm zero admin modules/oldadmin404/publiccustomer flows.
-  Recheck all admin aliases, no internal credential leak, exact artifacts/status and
-  startup/preflight. Preserve cookies/identity/DB and existing origins. If acceptance
-  is unavailable, keep this staged state and report remaining work plainly.
-- Source PR45/release46 are merged. Current local feature branch holds only this
-  additional checkpoint evidence unstaged. Publish final docs through checked
-  integration-only evidence PR and fast-forward clean local main/dev-main against
-  their upstreams; no production deployment solely for evidence. Do not repeat source
-  PR/project creation or source release. No task-owned server/test process remains;
-  owner3000/5173servers are untouched. No DB/provider transaction or account change.
+- Initial source PR45/release46 passed current-head Quality and guarded merges.
+  Same-origin follow-up PR47/release48 passed Quality40248452936/40248638492,
+  both Vercel checks, independent review and clean head/base/review guards.
+  VERSION stays unreleased0.1.0; this is not payment/provider/legal launch acceptance.
+- Admin Vercel project prj_pTwNfe2o74fTR4YEsSAhORhBCv8W in existing team tracks
+  GitHub main, root doggy_ent_vue/admin, outside-root sources, Node22 and correct
+  install/build/output. Vercel Authentication protects All Deployments. Twelve fresh
+  anonymous probes across current stable/team/git-main/deployment and known historical
+  aliases redirect HTML/API to Vercel. Historical artifacts were not rewritten/deleted.
+- Railway ADMIN_GATEWAY_REQUIRED is enabled, dedicated material is server-only in
+  both confirmed consumers, existing origins/DB/signing/provider keys are preserved.
+  Stable admin origin was added via previously absent CLIENT_URL. Public Vercel
+  production uses storefront selection; its real manifest reports zero admin modules.
+  Admin manifest reports133admin modules and no public route catalogue.
+- Actual browser acceptance: owner completes Vercel MFA; existing shop admin signs
+  in, reads dashboard/catalog9 (eight public plus existing draft) and Website UI,
+  signs out, is denied guarded re-entry and signs back in. Final same-origin login/
+  logout/relogin after the new proxy deployment passes; identity, deployed routing,
+  View store, catalog and editors remain. No business form save/upload/publish is done.
+- Authenticated CLI confirms protected proxy health200, anonymous app session401,
+  same-origin session401, foreign-origin write404, same-site metadata404 and admin
+  manifest200. Responses contain no gateway value/internal override headers. Proxy
+  forwards public WebP bytes through protected host. No share/bypass/Trusted Sources
+  exception, account credential change or cookie extraction was used.
+- Direct native/compatibility/legacy/admin API probes return403 without valid gateway
+  material, including forged Origin, synthetic cookie and incorrect header. Fifteen
+  families passed on activation; key families retested at final source. Protected
+  gateway alone still requires an admin session; persisted ADMIN/ACTIVE rules remain.
+- Public health/catalog8/content/campaigns200 and exact shop-origin CORS remain;
+  anonymous customer profile401 and native get-session200/null are expected. Browser
+  old shop /admin/login renders public404 without an admin form; customer sign-in
+  remains Welcome back. Static SPA fallback still returns HTTP200 for client-side404,
+  an existing documented limitation, not an exposed admin route.
+- Protected canary verifies previews have no production gateway credential (503 for
+  otherwise allowed API, 404 for foreign-origin write). Backend startup and repeated
+  read-only preflight show26matching migrations, none pending. Final runtime has zero
+  application-error patterns; npm warning/Prisma stderr notices are not crashes.
+- Automated evidence: client354, server413, gateway6, helpers21 pass (794 unique tests).
+  Combined/storefront/admin builds, actual Vercel runtime build, dependency audit0,
+  scoped syntax/secret/Markdown/link/fence/whitespace checks and hosted Quality pass.
+  Secret scans are scoped checks, not a whole-history or external compromise audit.
+- No product/order/customer business-data or schema change, reseed, provider payment/
+  email/shipment, extra database or account provisioning. Ordinary Better Auth session
+  creation/revocation from the approved login tests is expected; do not claim zero DB
+  writes literally. Existing unrelated incident/launch gates remain separate.
+- Dedicated private recovery material remains at the0600path recorded below; never
+  print/regenerate it on resume. Ignored admin/.env.local holds short-lived CLI OIDC,
+  mode0600; admin/.vercel is ignored. Neither is in Git or the browser artifact.
+- Residual/manual checks: real Safari/mobile devices, production image-save/large-file
+  QA, future staff/team MFA policies and unrelated checkout/provider/legal launch
+  acceptance. MFA was observed for the owner, not configured as a new team policy.
+  Local normal3000/5173servers remain untouched; no task-owned process remains.
+- Documentation-only close-out is on docs/admin-hosting-final-evidence from integration
+  f60a147: publish these evidence documents to dev-main after checks, without another
+  main deployment just for IDs. Fast-forward clean local main/dev-main to their own
+  upstreams and retain task branches for recovery. No further implementation, migration
+  or credential operation is needed for this request.
 
 ## Current Owner Direction
 
