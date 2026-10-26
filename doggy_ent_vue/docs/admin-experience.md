@@ -1,5 +1,17 @@
 # Admin Experience Requirements
 
+## After-Checkout Payment Receipt (2026-10-25)
+
+Email templates retains its list/shared sample preview/right inspector. After
+checkout settings adds separate explicit Save/Cancel for Off, test-only and gated
+Live, selecting only saved active payment-confirmation templates. Unsaved template
+copy cannot be assigned. Mode changes explain queue behavior; live is locked until
+the server/provider readiness gate. Saving a setting sends nothing itself; only
+verified checkout queues receipts. Existing order preview/confirmed dry/live send
+and every shipping/preparation/status workflow remain manual. Delivery activity
+includes QUEUED; SENT is provider acceptance, not inbox delivery. No automatic
+failure retries. [Scope/evidence](work-checkpoints/2026-10-25-checkout-receipt-email.md).
+
 ## Separate Staff Hosting (2026-10-25)
 
 The owner approves a separate protected Vercel admin project, retaining the existing

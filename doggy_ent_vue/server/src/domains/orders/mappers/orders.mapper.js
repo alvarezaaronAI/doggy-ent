@@ -249,7 +249,7 @@ export function mapCustomerOrder(order) {
     country: mappedOrder.country,
     status: mappedOrder.status,
     paymentStatus: mappedOrder.status === 'REFUNDED' ? 'REFUNDED' : order.stripePaymentIntentId ? 'PAID' : 'PENDING',
-    receiptEmailStatus: (order.emailDeliveries || []).some(delivery => delivery.event === 'ORDER_CONFIRMATION' && delivery.status === 'SENT') ? 'SENT' : 'NOT_SENT',
+    receiptEmailStatus: getReceiptEmailStatus(order.emailDeliveries),
     total: mappedOrder.total,
     subtotal: mappedOrder.subtotal,
     shippingMethod: mappedOrder.shippingMethod,
@@ -274,4 +274,9 @@ export function mapCustomerOrder(order) {
       : [],
     campaignAttributions: mappedOrder.campaignAttributions,
   }
+}
+
+export function getReceiptEmailStatus(deliveries = []) {
+  const statuses = deliveries.filter(delivery => delivery.event === 'ORDER_CONFIRMATION').map(delivery => delivery.status)
+  return ['SENT', 'QUEUED', 'PENDING', 'FAILED', 'MOCKED'].find(status => statuses.includes(status)) || 'NOT_SENT'
 }

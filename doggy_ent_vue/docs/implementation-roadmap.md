@@ -1,5 +1,18 @@
 # Implementation Roadmap
 
+## 2026-10-25 Verified-Payment Receipt
+
+Owner approves one automatic payment confirmation only. Disabled-by-default saved
+template settings, atomic receipt intent in paid order/stock, bounded claim-once
+worker, private payload minimization, truthful customer states and monogram/Lucide
+email visuals are implemented. Manual shipping/other order sends remain separate.
+Approved additive migration follows private decoded backups and preservation checks:
+local/Railway27matching/nonepending, configuration absent/off. [Checkpoint](work-checkpoints/2026-10-25-checkout-receipt-email.md)
+tracks verification/publication. Owned sending domain, provider readiness, approved
+test inbox/budget and actual email-client acceptance precede activation. No paid
+plan or live mail is enabled. Payment webhook recovery and atomic promo/campaign
+attribution remain separate launch work, not solved by email.
+
 ## 2026-10-25 Recovery Pages And Storage UX (Local Preview)
 
 Branded unmatched-route recovery, distinct missing/transient campaign states, private-detail-safe copy and temporary error metadata are implemented locally. Floating storage acknowledgment is retired in favour of the footer information link; no tracker, timed acceptance or pretend consent controls. Stripe's shared pure loader defers initialization to real payment-control mounts without changing payment submission. No server/schema/DB work or publication. [Checkpoint](work-checkpoints/2026-10-25-error-pages-storage.md) tracks tests/browser review and remaining owner/provider/legal/device acceptance; this proposal does not supersede the live release until explicitly advanced.

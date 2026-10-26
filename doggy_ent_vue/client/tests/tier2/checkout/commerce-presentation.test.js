@@ -33,7 +33,7 @@ describe('shared receipt presentation and checkout account workflow', () => {
   })
   it('shows truthful guest receipt destination and does not claim an email was sent', async () => {
     const html = await render(OrderConfirmationContent, { order: { ...item, orderNumber: 'CE-1', createdAt: '2026-10-10T12:00:00Z', paymentStatus: 'PAID', status: 'PAID', customerEmail: 'guest@example.com', items: [item], receiptEmailStatus: 'NOT_SENT', total: 37 }, settings: commercePresentation().confirmation })
-    expect(html).toContain('guest@example.com'); expect(html).toContain('no receipt email has been sent yet'); expect(html).toContain('Guest checkout'); expect(html).toContain('6 oz')
+    expect(html).toContain('guest@example.com'); expect(html).toContain('No receipt email has been sent'); expect(html).toContain('Guest checkout'); expect(html).toContain('6 oz')
   })
   it('makes the secure order button available at mobile widths instead of XL-only', async () => {
     const html = await render(CheckoutSubmitSection, { isProcessingOrder: false, checkoutRequirementsComplete: false })

@@ -1,5 +1,73 @@
 # Checkout, Receipts And Manual Order Email
 
+## Automatic Payment Receipt (2026-10-25)
+
+Owner-approved exception to older manual-only receipt notes: exactly one payment
+confirmation may be automatic; fulfillment/shipping and all other operational email
+stay manual. The separate protected admin, Better Auth, guest checkout, trusted
+Stripe verification and current saved-order receipt privacy are preserved.
+
+After Stripe verifies amount/currency/status, checkout passes a private service
+context to `createNewOrder`. That service reads active saved receipt configuration
+and renders from the same normalized order/item snapshots that will be stored, not
+browser-supplied receipt/recipient/HTML fields. Receipt preparation failure prevents
+order commit so the existing completed-payment retry can finalize the same payment;
+it must not invite another charge or silently lose the receipt intent. Once prepared,
+the receipt's nested EmailDelivery write is atomic with Order/items/stock. Duplicate
+PaymentIntent/order or receipt-key conflicts cannot decrement stock twice. Generic
+order creation and status/tracking saves do not enable automatic receipts.
+
+The payment receipt is financial confirmation only. Campaign usage still commits
+later, so predicted giving is deliberately not frozen into this email. The on-page
+receipt and later manual emails use persisted giving attribution as before. This
+does not repair browser-only payment finalization/webhook recovery or separate
+promo/campaign commits; those launch gates remain open.
+
+`CheckoutReceiptSettings` is disabled with no row by default. It stores the selected
+saved active ORDER_CONFIRMATION template, DISABLED/DRY_RUN/LIVE mode, optimistic
+revision and admin actor. Existing templates/copy are never rewritten by startup or
+new suggestions. Template archive/event changes make it ineligible for future
+receipts; admin shows an unavailable-selection warning. Queued copy is frozen.
+
+`EmailDelivery.automatic` plus private `renderedEmail` extend the existing delivery
+store. A SHA-256 payment-derived key permanently deduplicates the one automatic
+receipt without exposing the PaymentIntent ID. Worker starts with the long-running
+Railway server, scans up to five eligible jobs every 15 seconds, avoids overlapping
+local runs and uses a database QUEUED -> PENDING compare-and-set across instances.
+It never scans old orders to backfill mail. Off pauses the queue; Live may release
+already queued live jobs. Dry jobs remain MOCKED and cannot later become live.
+
+Live requires saved LIVE mode, `CHECKOUT_RECEIPT_SEND_ENABLED=true` and existing
+non-mock Resend configuration. The flag does not verify DNS or provider eligibility.
+No keys/sender/config change or live send is part of this implementation. Missing
+configuration cannot become SENT. Each claimed row has at most one HTTP attempt;
+FAILED and uncertain PENDING are never automatically retried. Resend's own
+[idempotency retention](https://resend.com/docs/dashboard/emails/idempotency-keys)
+is only 24 hours, so database state remains the long-term guard. An ambiguous crash
+after claim/acceptance needs deliberate provider reconciliation, not a new key.
+
+SENT means provider acceptance, not delivered/read. Customer receipt state is a
+safe enum-like value, never the private rendered body/metadata/provider ID. Extra
+body JSON is discarded after SENT/MOCKED/FAILED; uncertain PENDING retains it for
+review. Audit retention/disposal still needs business decisions. The new payment
+template explicitly separates payment received from manual review and later shipping.
+All five suggestions share the monogram/PNG-Lucide/table/text rendering; arbitrary
+HTML, JavaScript, SVG/webfont dependence and private receipt URLs remain prohibited.
+
+Admin template GET includes safe receipt settings; protected
+`PUT /api/admin/email-templates/checkout-receipt` validates saved template/mode/revision
+and records the real ADMIN actor. Settings Save sends nothing itself, preserves
+unsaved-template separation and has Cancel/leave protection. Manual real-order
+preview/proof/send and other provider guards remain intact.
+
+Additive migration `20261026000000_checkout_payment_receipts` adds only the settings
+table/FK/mode check and delivery Boolean/nullable JSON/index. Local and Railway now
+have 27 matching complete migrations after owner-approved fresh decoded backups;
+old business/account/email records were preserved and settings remain absent/off.
+See [checkpoint](../work-checkpoints/2026-10-25-checkout-receipt-email.md) for exact
+checks, rollout state and live approved-inbox/domain gates. Do not infer activation
+or successful customer delivery from a migration or dry run.
+
 Implemented locally: 2026-10-10. This is source and local QA evidence, not proof of deployed payments or delivery.
 
 ## Customer Presentation

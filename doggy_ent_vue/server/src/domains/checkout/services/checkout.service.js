@@ -351,7 +351,7 @@ export async function createCheckout(
     promoCode: checkoutPreview.promo?.code || null,
     stripePaymentIntentId,
     userId: customerUser?.id || null,
-  })
+  }, { verifiedCheckout: true })
 
   let recordedPromo = checkoutPreview.promo
 
