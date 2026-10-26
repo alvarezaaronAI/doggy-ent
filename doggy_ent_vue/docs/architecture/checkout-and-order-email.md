@@ -131,7 +131,7 @@ Editable checkout: heading/introduction and wallet switches. Editable confirmati
 
 ## Manual Email Template Center
 
-`/admin/email-templates` uses the same editor convention: template list, safe sample email canvas with wide/phone controls, contextual fields and explicit Save/Cancel. Five suggestions: order received, preparing, shipped, delivered, cancelled. Saving a suggested template creates a reusable DB copy; suggestions are immutable defaults, not startup seeds. Saved templates can be archived/reactivated via their archive field. Editing has revision conflict protection; no save sends mail.
+`/admin/email-templates` uses the same editor convention: template list, safe sample email canvas with wide/phone controls, contextual fields and explicit Save/Cancel. Five starters: payment confirmation, preparing, shipped, delivered, cancelled. Adoption reuses a saved copy, with a deterministic server-owned primary key reserving one new copy across retry/concurrency. A pre-existing same-event template is reused active-first/oldest-first; a reserved copy wins even after renaming, type changes or archival. Reuse never overwrites fields or restores archives. Suggestions expose only their linked editableCopyId; copies outside the bounded ordinary list are included so selection cannot recreate them. No schema migration/startup seed/deduplication delete. Successful save response becomes the editor's saved identity/baseline immediately, without a post-save reload that could fail or lock the fields. Saved templates retain archive/revision protection; no save sends mail.
 
 `EmailTemplate` stores id, internal name, supported event, subject, heading, body, footer, archived state, revision and timestamps. This is plain-text authoring within a server-controlled rich responsive email, not arbitrary HTML/CSS/script. Only `customerName`, `orderReference` and `orderStatus` placeholders are supported now; unknown/malformed placeholders are rejected. Saved order items/totals/contact/shipping/giving/tracking are rendered server-side, HTML-escaped, with safe HTTPS tracking. No Stripe identifiers/secrets, auth/session/reset/verification data or private provider payload is placed in order emails.
 
@@ -140,7 +140,7 @@ Protected API endpoints:
 | Endpoint | Responsibility |
 | --- | --- |
 | `GET /api/admin/email-templates` | Saved templates, suggestions and non-secret provider status. |
-| `POST /api/admin/email-templates` | Create validated template. |
+| `POST /api/admin/email-templates` | Adopt a known starter idempotently; reuse an existing copy without overwrite. |
 | `PUT /api/admin/email-templates/:id` | Revision-matched update/archive. |
 | `POST /api/admin/email-templates/:id/preview` | Sample/unsaved preview, or actual saved order/recipient preview. |
 | `POST /api/admin/email-templates/:id/send` | Confirmed dry/live action; 10 requests/15 minutes and admin auth. |

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ORDER_EMAIL_SUGGESTIONS } from '../../../src/domains/emails/constants/orderEmailTemplates.constants.js'
 import { validateEmailTemplate } from '../../../src/domains/emails/validators/emailTemplate.validator.js'
 import { renderOrderEmail } from '../../../src/domains/emails/mappers/orderEmail.mapper.js'
-const repo = vi.hoisted(() => ({ listEmailTemplates: vi.fn(), findEmailTemplate: vi.fn(), createEmailTemplate: vi.fn(), updateEmailTemplate: vi.fn() }))
+const repo = vi.hoisted(() => ({ listEmailTemplates: vi.fn(), findEmailTemplate: vi.fn(), findStarterEmailTemplate: vi.fn(), useStarterEmailTemplate: vi.fn(), starterCopyId: id => `starter-copy-${id}`, updateEmailTemplate: vi.fn() }))
 const orders = vi.hoisted(() => ({ findOrderById: vi.fn() }))
 const provider = vi.hoisted(() => ({ queueEmail: vi.fn(), getEmailProviderStatus: vi.fn() }))
 vi.mock('../../../src/domains/emails/repositories/emailTemplate.repository.js', () => repo)
@@ -75,6 +75,21 @@ describe('manual order templates and preview-before-send', () => {
   it('rejects stale template revisions rather than losing editor work', async () => {
     repo.updateEmailTemplate.mockResolvedValue(null)
     await expect(saveEmailTemplate('saved-1', { ...template, revision: 1 })).rejects.toMatchObject({ statusCode: 409 })
+    expect(provider.queueEmail).not.toHaveBeenCalled()
+  })
+  it('adopts only a known starter through the idempotent repository path', async () => {
+    repo.useStarterEmailTemplate.mockResolvedValue({ id: 'saved-1', copyReused: true })
+    expect(await saveEmailTemplate(null, template)).toMatchObject({ id: 'saved-1', copyReused: true })
+    expect(repo.useStarterEmailTemplate).toHaveBeenCalledWith(template, validateEmailTemplate(template))
+    await expect(saveEmailTemplate(null, { ...template, id: 'unknown' })).rejects.toMatchObject({ statusCode: 400 })
+    expect(provider.queueEmail).not.toHaveBeenCalled()
+  })
+  it('returns server-owned starter origin on both canonical creation and later edits', async () => {
+    const saved = { ...validateEmailTemplate(template), id: `starter-copy-${template.id}`, revision: 1 }
+    repo.useStarterEmailTemplate.mockResolvedValue(saved)
+    expect(await saveEmailTemplate(null, template)).toMatchObject({ sourceSuggestionId: template.id })
+    repo.updateEmailTemplate.mockResolvedValue({ ...saved, event: 'ORDER_SHIPPED', revision: 2 })
+    expect(await saveEmailTemplate(saved.id, { ...saved, event: 'ORDER_SHIPPED' })).toMatchObject({ sourceSuggestionId: template.id, revision: 2 })
     expect(provider.queueEmail).not.toHaveBeenCalled()
   })
 })

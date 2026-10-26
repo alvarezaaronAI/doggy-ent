@@ -13,7 +13,7 @@ describe('checkout receipt controls and customer reassurance', () => {
   it('defaults to off, explains test/live and keeps other emails manual', async () => {
     const html = await render({})
     for (const text of ['After checkout', 'Test only', 'no email sent', 'other updates stay manual', 'Live sending is locked', 'Save receipt settings', 'Payment confirmation']) expect(html.toLowerCase()).toContain(text.toLowerCase())
-    expect(html).toContain('value="LIVE" disabled'); expect(html).toContain('Save an editable copy')
+    expect(html).toContain('value="LIVE" disabled'); expect(html).toContain('Add Payment confirmation to My templates')
   })
   it('only offers saved, active payment templates and keeps unsaved content separate', async () => {
     const templates = [{ id: 'payment', name: 'Approved payment copy', event: 'ORDER_CONFIRMATION' }, { id: 'shipping', name: 'Wrong event', event: 'ORDER_SHIPPED' }, { id: 'archived', name: 'Archived copy', event: 'ORDER_CONFIRMATION', archived: true }, { id: 'suggested', name: 'Unsaved suggestion', event: 'ORDER_CONFIRMATION', suggested: true }]

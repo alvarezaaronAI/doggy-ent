@@ -1,5 +1,16 @@
 # Admin Experience Requirements
 
+## Email Starter Adoption (2026-10-26)
+
+Email templates separates My templates, Starter templates and collapsed Archives.
+Add to my templates adopts a starter once; Already added opens its saved copy.
+Save changes updates that copy and clean state says All changes saved/Saved.
+Successful save acknowledgement updates the editor immediately without waiting
+for a list reload or remounting receipt settings. Repeated/concurrent adoption
+does not overwrite saved wording or reactivate archived templates. Existing
+duplicates are preserved, not silently deleted. Sending controls remain separate.
+See [repair evidence](work-checkpoints/2026-10-26-email-template-copy.md).
+
 ## After-Checkout Payment Receipt (2026-10-25)
 
 Email templates retains its list/shared sample preview/right inspector. After
