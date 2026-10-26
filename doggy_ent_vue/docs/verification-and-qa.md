@@ -1,5 +1,18 @@
 # Verification And QA
 
+## Email Template Copy Repair (2026-10-26)
+
+Client364/server507 tests and combined/admin/server builds pass. New repository,
+service and actual composable cases cover stable identity, concurrent unique-key
+collision, legacy/custom/archive preservation, list linkage, double-click guard,
+no-op save, post-save edit and failed-request draft retention. An actual disposable
+loopback database with27migrations verifies ten concurrent requests yield one row,
+rename/revision persistence, archive preservation, legacy reuse and unchanged
+receipt settings/zero sends; fixture removed. Memory-only actual Vue browser checks
+verify Add, edit, Save changes, Already added reopen and refresh retain one saved
+copy. No shared migration or real provider test. Review and hosted verification
+are tracked in the [repair checkpoint](work-checkpoints/2026-10-26-email-template-copy.md).
+
 ## Checkout Payment Receipt (2026-10-25)
 
 Final client357 (11/340/6) and server497 (28/463/6) pass, including the sample-state

@@ -68,6 +68,13 @@ The 2026-10-10 checkout/email phase removed automatic order/payment/tracking tri
 
 ## Implemented Order Email Workflow
 
+Starter adoption is idempotent (2026-10-26): Add to my templates creates at most
+one reserved copy per starter; Already added reopens a saved copy. Older same-event
+templates are reused (active before archived, oldest first), without overwriting
+custom wording/revisions or automatically restoring archives. Existing variants
+and duplicate records are retained for deliberate admin review. This changes
+template management only, never provider sending or receipt configuration.
+
 `/admin/email-templates` now provides five rich order-message suggestions, editable saved copies, archive/revision protection, a sandboxed fictional sample preview and explicit Save/Cancel. Plain-text fields use only supported customer-name/order-reference/order-status placeholders. Layout, receipt snapshots and safe tracking come from the server.
 
 Existing Orders detail -> Customer email updates provides saved-template selection, actual recipient/order preview, review confirmation and explicit dry/live action. Default is dry run; sample or unsaved templates cannot send. The server rechecks status/tracking/recipient, admin actor and a 15-minute preview fingerprint before delivery. Identical sends are protected by unique delivery reservation and provider idempotency. Customer notification preferences still apply. Old unpreviewed resend returns 410.

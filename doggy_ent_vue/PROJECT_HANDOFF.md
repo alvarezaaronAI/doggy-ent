@@ -1,5 +1,17 @@
 # Doggy Ent Project Handoff
 
+## Current Repair: Email Template Copy (2026-10-26)
+
+Owner reports repeated starter saves create extra templates. fix/email-template-duplicates
+adds idempotent starter adoption using the existing primary key, reuses older
+same-event saved templates without overwriting copy/revision/archive, groups My
+templates/Starters/Archives and applies save acknowledgement without a second list
+request. Local client364/server507 tests, builds and a real disposable-loopback
+ten-request concurrency/persistence fixture pass. Isolated browser confirms one
+copy across save/edit/reopen/reload. No schema migration or provider/settings
+change. Sending stays off. Review/publication/live verification remain; resume
+from the [repair checkpoint](docs/work-checkpoints/2026-10-26-email-template-copy.md).
+
 ## Latest Milestone: Payment Receipt Email (2026-10-26)
 
 Reviewed main `b1fc1997c81dd4d133ae3f89133482a9f1d2b84f` is verified live on both
