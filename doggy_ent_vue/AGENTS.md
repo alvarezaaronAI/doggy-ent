@@ -166,6 +166,7 @@ Follow `docs/communications.md`.
 Permanent policy:
 
 - Essential account/security emails may be automatic when intentionally enabled.
+- Owner-approved 2026-10-25 exception: one payment-confirmation receipt may be queued atomically after verified checkout, using saved receipt template/settings. Default off; live requires the server sending gate and approved provider/domain readiness. Do not broaden this to fulfillment or other automatic mail. See `docs/communications.md`.
 - Order status, processing, shipping, tracking, delivered, support, issue resolution, apology, promo, marketing, and review-request emails require explicit admin action unless the user changes this policy later.
 - Prefer in-account communication for customer issues and order updates.
 - Resend and Shippo stay server-side behind provider abstractions.

@@ -6,6 +6,7 @@ import CommerceGivingNote from '@shared/components/CommerceGivingNote.vue'
 import { itemCampaigns } from '@shared/mappers/commerceItem.mapper.js'
 import { formatCurrency } from '@shared/utils/currency.js'
 import { safeTrackingUrl } from '@domains/account/utils/accountFormatting.js'
+import { receiptEmailMessage } from '../utils/receiptEmail.js'
 const props = defineProps({ order: { type: Object, required: true }, settings: { type: Object, required: true }, signedIn: Boolean, editable: Boolean, selected: String })
 defineEmits(['select'])
 const shipment = computed(() => props.order.shipment || props.order.shipments?.[0])
@@ -46,7 +47,7 @@ const closed = computed(() => ['CANCELLED', 'REFUNDED'].includes(props.order.sta
           <section class="confirmation-panel">
             <Mail :size="22" class="text-[#315bc5]" /><h2 class="mt-3 text-lg font-semibold">Your receipt &amp; updates</h2>
             <p class="mt-3 break-words text-sm text-stone-600">Order emails go to <strong class="text-stone-800">{{ order.customerEmail }}</strong>.</p>
-            <p class="mt-2 text-sm leading-relaxed text-stone-600">{{ order.receiptEmailStatus === 'SENT' ? 'Your receipt was sent to the email provider. Check your inbox and spam folder.' : 'Your receipt is ready on this page. Our team sends order emails after reviewing your order; no receipt email has been sent yet.' }}</p>
+            <p class="mt-2 text-sm leading-relaxed text-stone-600" role="status">{{ receiptEmailMessage(order.receiptEmailStatus) }}</p>
             <p class="mt-3 text-sm text-stone-600">{{ signedIn ? 'This order is available in your account history.' : 'Keep this confirmation open or save your order reference. Guest checkout does not require an account.' }}</p>
             <RouterLink v-if="signedIn && !editable" to="/account/orders" class="mt-3 inline-flex rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-semibold">View your orders</RouterLink>
           </section>

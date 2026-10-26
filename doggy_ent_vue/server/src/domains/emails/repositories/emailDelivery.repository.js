@@ -1,4 +1,5 @@
 import { prisma } from '../../../db/prisma.js'
+import { Prisma } from '@prisma/client'
 
 export async function findEmailDeliveryByDedupeKey(dedupeKey) {
   if (!dedupeKey) {
@@ -39,7 +40,10 @@ export async function updateEmailDeliveryById(
     where: {
       id,
     },
-    data,
+    data: {
+      ...data,
+      ...(data.renderedEmail === null ? { renderedEmail: Prisma.DbNull } : {}),
+    },
   })
 }
 
@@ -82,7 +86,7 @@ export async function getEmailDeliveryStats({
       prisma.emailDelivery.count({ where: { ...where, status: 'SENT' } }),
       prisma.emailDelivery.count({ where: { ...where, status: 'FAILED' } }),
       prisma.emailDelivery.count({ where: { ...where, status: 'MOCKED' } }),
-      prisma.emailDelivery.count({ where: { ...where, status: 'PENDING' } }),
+      prisma.emailDelivery.count({ where: { ...where, status: { in: ['PENDING', 'QUEUED'] } } }),
       prisma.emailDelivery.count({ where: { ...where, status: 'SKIPPED' } }),
       findRecentEmailDeliveries({
         limit,

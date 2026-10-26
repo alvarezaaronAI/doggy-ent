@@ -1,5 +1,41 @@
 # Communications Policy
 
+## Verified-Payment Receipt Exception (2026-10-25)
+
+The owner approves exactly one automatic payment-confirmation receipt after verified
+checkout. This supersedes the older blanket receipt prohibition below, not the
+manual policy for preparation/shipping/tracking/delivery/support/marketing. Payment
+receipt wording must not imply fulfillment approval, shipment, refund or inbox delivery.
+
+The existing template center owns an explicit saved active ORDER_CONFIRMATION
+template selection and separate settings Save/Cancel with revision protection.
+Modes are DISABLED (default), DRY_RUN (no send), and LIVE. Live additionally requires
+`CHECKOUT_RECEIPT_SEND_ENABLED` to be exactly true and a configured non-mock provider.
+This Boolean is an operator gate, not automatic DNS/domain-verification proof.
+The operator must verify the sending domain and obtain approved-inbox/budget consent
+before live QA/activation. No paid plan or email send is authorized by source publication.
+
+The order/stock transaction nests a unique EmailDelivery receipt intent with frozen
+server-verified item/price/address/template copy. The 15-second bounded worker claims
+QUEUED -> PENDING atomically across instances, sends at most one provider attempt,
+and never blindly retries PENDING/FAILED. No historical-order backfill. Off pauses
+queued jobs; enabling Live may release previously queued live receipts. Dry records
+are never converted to live. SENT means provider acceptance, not inbox delivery;
+MOCKED means none sent. Inspect provider activity before any deliberate manual resend.
+Processed SENT/MOCKED/FAILED jobs discard the extra frozen body; uncertain PENDING
+retains it for review. Receipt/audit retention and disposal need business approval.
+
+Resend remains the existing provider. Its current [free transactional plan](https://resend.com/pricing)
+offers 3,000/month with a 100/day shared allowance; security and manual messages also
+consume it. Real-customer sends need an [owned verified domain](https://resend.com/docs/dashboard/domains/introduction).
+Keep provider credentials/sender/reply address server-side. Do not enable paid overages,
+purchase a domain, use a personal Gmail password as SMTP or invent delivery guarantees.
+PNG derivatives of the existing monogram/Lucide icons use public HTTPS URLs; inline
+table styles and text fallback remain readable with remote images blocked. No mail
+client depends on Tailwind, SVG, webfonts or JavaScript. Existing saved copy is not
+overwritten by changing suggestions. [Checkpoint](work-checkpoints/2026-10-25-checkout-receipt-email.md)
+records actual migration/test/deployment status and remaining activation gates.
+
 Email sending must be conservative because provider limits, deliverability, and customer trust matter.
 
 ## Manual-First Email Philosophy
@@ -13,7 +49,7 @@ Automatically allowed emails:
 
 Do not automatically send:
 
-- Order confirmations/receipts, new-order admin notices and failed-payment notices.
+- Order confirmations outside the narrowly approved verified-checkout receipt path, new-order admin notices and failed-payment notices.
 - Order status updates.
 - Processing updates.
 - Shipping updates.
@@ -28,7 +64,7 @@ Do not automatically send:
 
 These require explicit admin action unless the user later changes this policy.
 
-The 2026-10-10 checkout/email phase removed automatic order/payment/tracking triggers and adds a provider-level operational-event guard. Better Auth verification/reset and intentionally enabled welcome/security messages remain unchanged. Order creation, status Save and tracking Save do not send mail.
+The 2026-10-10 checkout/email phase removed automatic order/payment/tracking triggers and adds a provider-level operational-event guard. Better Auth verification/reset and intentionally enabled welcome/security messages remain unchanged. Status Save and tracking Save do not send mail. The later verified-checkout receipt exception above is the only new automatic order path.
 
 ## Implemented Order Email Workflow
 

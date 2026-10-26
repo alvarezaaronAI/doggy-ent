@@ -1,5 +1,13 @@
 # Doggy Ent Project Handoff
 
+## Active Work: Checkout Payment Receipt Email (2026-10-25)
+
+Owner approves automatic verified-payment receipts only, refreshed saved templates,
+and an additive Railway migration after backup/preflight. Other operational mail
+remains manual; no live send or paid provider activation is authorized. Resume from
+[the receipt checkpoint](docs/work-checkpoints/2026-10-25-checkout-receipt-email.md).
+The earlier hosting milestone below is the deployed baseline, not this task's status.
+
 Generated: 2026-06-05
 Latest milestone: 2026-10-25 protected Vercel admin separation is completed and live at main30bc5bae4612285f2aa006e7ab28c0822ac62922. Shop https://doggy-ent.vercel.app is storefront-only (zero admin UI modules; old /admin/login renders public404). Staff https://doggy-ent-admin.vercel.app/admin/login is Vercel-authenticated on all deployments, uses server-only same-origin gateway plus persisted ADMIN/ACTIVE Better Auth. Both Vercel artifacts READY and Railway SUCCESS at the exact SHA; direct admin APIs403, protected gateway-only401, cross-origin requests404, current/historical alias probes12/12protected, public read/CORS/customer controls pass. Owner MFA and real app login/read/editor/logout/relogin passed. Client354/server413/gateway6/helper21, all builds/audit0 and current-head PR45-48 Quality/reviews pass; startup/preflight26matching/nonepending. Same DB; no business-data/schema/provider transaction or account-password change (normal auth sessions only). [Hosting design](docs/architecture/admin-hosting.md) and [final checkpoint](docs/work-checkpoints/2026-10-25-vercel-admin-separation.md) record exact artifacts, scope, recovery, manual Safari/device/upload/launch gaps and documentation-only branch close-out. Earlier staged/pending paragraphs below are chronological history, not current blockers.
 Current task: 2026-10-25 owner supersedes Cloudflare preparation with Vercel-only separate admin/storefront hosting, still using RailwayAPI/DB. Explicit approval covers new protected doggy-ent-admin project, All Deployments Vercel Authentication and server-only gateway credential staged after tests. No domain purchase/Cloudflare/paid add-on/migration/business-data/provider send or account-password change. feat/separate-admin-application preserves combined/live access until new protected admin works. Local separate/combined builds and348client tests pass; optional backend gate and Vercel runtime gateway are next. [Resumable checkpoint](docs/work-checkpoints/2026-10-25-vercel-admin-separation.md) records exact scope, stages, ownership and remaining activation/verification gates. No source publication or live mutation at this milestone.

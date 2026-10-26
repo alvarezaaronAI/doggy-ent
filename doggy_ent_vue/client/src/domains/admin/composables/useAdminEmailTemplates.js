@@ -3,7 +3,7 @@ import { onBeforeRouteLeave } from 'vue-router'
 import { fetchEmailTemplates, previewEmailTemplate, saveEmailTemplate } from '../api/adminEmailTemplates.api.js'
 const clone = value => JSON.parse(JSON.stringify(value))
 export function useAdminEmailTemplates() {
-  const templates = ref([]), draft = ref(null), baseline = ref(''), preview = ref(null), provider = ref(null)
+  const templates = ref([]), draft = ref(null), baseline = ref(''), preview = ref(null), provider = ref(null), checkoutReceipt = ref(null)
   const loading = ref(true), saving = ref(false), error = ref(''), message = ref(''), previewError = ref('')
   const dirty = computed(() => draft.value && JSON.stringify(draft.value) !== baseline.value)
   let timer, generation = 0
@@ -14,7 +14,7 @@ export function useAdminEmailTemplates() {
   async function load(selectedId) {
     loading.value = true; error.value = ''
     try {
-      const data = await fetchEmailTemplates(); templates.value = data.templates; provider.value = data.provider
+      const data = await fetchEmailTemplates(); templates.value = data.templates; provider.value = data.provider; checkoutReceipt.value = data.checkoutReceipt || null
       const next = templates.value.find(item => item.id === selectedId) || templates.value.find(item => !item.archived)
       draft.value = next ? clone(next) : null; baseline.value = JSON.stringify(draft.value)
     } catch (e) { error.value = e.message } finally { loading.value = false }
@@ -38,5 +38,5 @@ export function useAdminEmailTemplates() {
   onMounted(() => { load(); window.addEventListener('beforeunload', beforeUnload) })
   onBeforeUnmount(() => { generation++; clearTimeout(timer); window.removeEventListener('beforeunload', beforeUnload) })
   onBeforeRouteLeave(() => !saving.value && (!dirty.value || window.confirm('Leave without saving email changes?')))
-  return { templates, draft, preview, provider, loading, saving, dirty, error, message, previewError, select, save, cancel, load }
+  return { templates, draft, preview, provider, checkoutReceipt, loading, saving, dirty, error, message, previewError, select, save, cancel, load }
 }

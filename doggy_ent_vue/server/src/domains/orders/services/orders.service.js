@@ -18,6 +18,7 @@ import {
   validateOrderStatus,
 } from '../validators/orders.validator.js'
 import { randomBytes } from 'node:crypto'
+import { prepareCheckoutReceipt } from '../../emails/services/checkoutReceipt.service.js'
 
 export async function fetchAdminOrders() {
   return await findAllOrders()
@@ -86,7 +87,7 @@ export async function updateAdminOrderStatus(
 }
 
 
-export async function createNewOrder(orderInput) {
+export async function createNewOrder(orderInput, { verifiedCheckout = false } = {}) {
   const orderNumber = `DGE-${Date.now()}-${randomBytes(6).toString('hex').toUpperCase()}`
   const stripePaymentIntentId =
     orderInput.stripePaymentIntentId || null
@@ -143,7 +144,7 @@ export async function createNewOrder(orderInput) {
     : []
 
   try {
-    return await createOrder({
+    const orderData = {
       orderNumber,
       userId: orderInput.userId || null,
       customerName: orderInput.customerName || 'Guest Customer',
@@ -172,7 +173,12 @@ export async function createNewOrder(orderInput) {
       taxAmount,
       stripePaymentIntentId,
       items: normalizedItems,
-    })
+    }
+    // Only the Stripe-verified checkout path may create an automatic receipt.
+    if (verifiedCheckout) {
+      orderData.receiptDelivery = await prepareCheckoutReceipt(orderData)
+    }
+    return await createOrder(orderData)
   }
   catch (error) {
     if (

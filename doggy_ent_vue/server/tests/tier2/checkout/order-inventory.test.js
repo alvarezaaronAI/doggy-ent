@@ -33,4 +33,10 @@ describe('order and inventory transaction boundary', () => {
     await expect(createOrder(input)).rejects.toMatchObject({ code: 'P2002' })
     expect(db.$transaction).toHaveBeenCalledOnce()
   })
+  it('inserts the reserved receipt in the same paid-order transaction, never in a separate write', async () => {
+    const receiptDelivery = { event: 'ORDER_CONFIRMATION', automatic: true, status: 'QUEUED', dedupeKey: 'fixture-receipt' }
+    await createOrder({ ...input, receiptDelivery })
+    expect(db.$transaction).toHaveBeenCalledOnce()
+    expect(tx.order.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ emailDeliveries: { create: receiptDelivery } }) }))
+  })
 })

@@ -1,5 +1,16 @@
 # Customer Experience Requirements
 
+## Payment Receipt Follow-Up (2026-10-25)
+
+One automatic payment confirmation is now owner-approved, narrowly superseding
+older manual-only receipt wording below. Confirmation truthfully distinguishes
+queued, pending, provider-accepted, failed, test-only and not-sent email states.
+It keeps the saved recipient/reference/on-page receipt; a failed email never asks
+the customer to pay again. Shipping and fulfillment updates remain separately
+reviewed/manual. Live sending stays disabled until verified provider/domain setup
+and an approved-inbox test. See [receipt architecture](architecture/checkout-and-order-email.md)
+and [checkpoint](work-checkpoints/2026-10-25-checkout-receipt-email.md).
+
 Recovery follow-up (2026-10-25): missing pages and campaigns show a prominent blue 404 with centered explanation/actions. Temporary campaign failures and browser-reported offline network failures have distinct safe, retryable wording. Unavailable order details use the same illustrative family but never imply payment failure, reveal diagnostics or invite another payment; read-only retry, owned history and contact remain. Shared monogram fills open public/account/checkout space; cards, forms and configured reading surfaces stay readable. Copy is stable by error type, not randomly rotated. [Current evidence](work-checkpoints/2026-10-25-error-pages-storage.md).
 
 ## Recovery And Storage Information (2026-10-25, Local Preview)

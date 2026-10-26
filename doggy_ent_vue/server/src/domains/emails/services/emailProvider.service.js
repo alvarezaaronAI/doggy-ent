@@ -163,6 +163,39 @@ export function getEmailProviderStatus() {
   return { configured: isEmailProviderConfigured(), live: !isMockEmailMode(), mode: isMockEmailMode() ? 'DRY_RUN' : 'RESEND' }
 }
 
+// Called only after the worker atomically claims a persisted verified-checkout row.
+// A claimed/uncertain send is never automatically retried, even after provider dedupe expires.
+export async function dispatchReservedCheckoutReceipt(delivery) {
+  if (!delivery?.id || delivery.automatic !== true || delivery.event !== EMAIL_EVENTS.ORDER_CONFIRMATION || delivery.metadata?.source !== 'VERIFIED_CHECKOUT') return
+  const rendered = delivery.renderedEmail
+  if (!rendered || !['subject', 'html', 'text'].every(key => typeof rendered[key] === 'string') || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(delivery.recipient || '')) {
+    await updateEmailDeliveryById(delivery.id, { status: EMAIL_STATUS.FAILED, errorMessage: 'Receipt data is unavailable. Review this order manually.' })
+    return
+  }
+  if (delivery.provider === 'MOCK') {
+    await updateEmailDeliveryById(delivery.id, { status: EMAIL_STATUS.MOCKED, renderedEmail: null })
+    return
+  }
+  if (process.env.CHECKOUT_RECEIPT_SEND_ENABLED !== 'true' || isMockEmailMode()) {
+    await updateEmailDeliveryById(delivery.id, { status: 'QUEUED' })
+    return
+  }
+  let result
+  try {
+    result = await sendWithResend({ ...rendered, to: [delivery.recipient], dedupeKey: delivery.dedupeKey })
+  } catch (error) {
+    logOperationalFailure('CHECKOUT_RECEIPT_PROVIDER_FAILED', error)
+    await updateEmailDeliveryById(delivery.id, { status: EMAIL_STATUS.FAILED, errorMessage: sanitizeEmailError(error), renderedEmail: null })
+    return
+  }
+  if (typeof result?.id !== 'string' || !result.id) {
+    await updateEmailDeliveryById(delivery.id, { errorMessage: 'Provider acceptance is uncertain. Review provider activity before sending another receipt.' })
+    return
+  }
+  // Keep an ambiguous PENDING row if recording acceptance fails; do not resend it.
+  await updateEmailDeliveryById(delivery.id, { status: EMAIL_STATUS.SENT, providerId: result.id, sentAt: new Date(), renderedEmail: null })
+}
+
 export async function queueEmail(payload = {}) {
   if (/^(ORDER_|TRACKING_|REVIEW_|ADMIN_|REFUND_|SUPPORT_)/.test(payload.event || '') && payload.manualApproved !== true) return { queued: false, status: EMAIL_STATUS.SKIPPED, reason: 'Order emails require an approved admin preview and send.' }
   const recipients = normalizeRecipients(payload.to)
