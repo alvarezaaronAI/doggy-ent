@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createRenderer, h, markRaw, nextTick, ssrContextKey } from 'vue'
+import { createRenderer, h, markRaw, nextTick, ref, ssrContextKey } from 'vue'
 import StripeElementsForm from '../../../src/domains/payments/components/StripeElementsForm.vue'
 import StripeWalletButtons from '../../../src/domains/payments/components/StripeWalletButtons.vue'
 
@@ -13,24 +13,26 @@ const props = { checkoutTotal: 14.99, cartItems: [{ id: 'offline-product', size:
 function sdk() {
   const handlers = {}
   const control = { mount: vi.fn(), on: vi.fn((event, handler) => { handlers[event] = handler }), destroy: vi.fn() }
-  const elements = { create: vi.fn(() => control), submit: vi.fn().mockResolvedValue({}) }
+  const elements = { create: vi.fn(() => control), submit: vi.fn().mockResolvedValue({}), update: vi.fn() }
   const result = () => ({ paymentIntent: { id: 'pi_offline', status: 'succeeded' } })
   const stripe = { elements: vi.fn(() => elements), confirmCardPayment: vi.fn().mockResolvedValue(result()), confirmPayment: vi.fn().mockResolvedValue(result()) }
   return { handlers, control, elements, stripe }
 }
 
 async function mount(component, key, properties = props) {
-  let state
-  const renderer = createRenderer({ createElement: () => markRaw({}), insert() {}, remove() {}, setElementText() {}, patchProp() {} })
-  const app = renderer.createApp({ ...component, render(_ctx, _cache, _props, setup) {
+  let state, exposed
+  const total = ref(properties.checkoutTotal)
+  const renderer = createRenderer({ createElement: () => markRaw({}), insert() {}, remove() {}, setElementText() {}, patchProp() {}, parentNode: () => null, nextSibling: () => null })
+  const child = { ...component, render(_ctx, _cache, _props, setup) {
     state = setup
     return h('div', { ref: value => { setup[key] = value } })
-  } }, properties)
+  } }
+  const app = renderer.createApp({ render: () => h(child, { ...properties, checkoutTotal: total.value, ref: value => { exposed = value } }) })
   app.provide(ssrContextKey, { modules: new Set() })
-  const exposed = app.mount({})
+  app.mount({})
   apps.push(app)
   await nextTick(); await nextTick()
-  return { exposed, state }
+  return { exposed, state, updateTotal: async value => { total.value = value; await nextTick() } }
 }
 
 beforeEach(() => {
@@ -44,10 +46,10 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function card() {
+async function card(properties = {}) {
   const fixture = sdk()
   provider.getStripe.mockResolvedValue(fixture.stripe)
-  const view = await mount(StripeElementsForm, 'cardElementContainer')
+  const view = await mount(StripeElementsForm, 'cardElementContainer', { ...props, ...properties })
   view.state.cardholderName = 'QA Customer'
   return { ...fixture, ...view }
 }
@@ -88,6 +90,19 @@ describe('actual card payment submission with a mocked SDK', () => {
     const view = await card()
     await expect(view.exposed.submitPayment()).rejects.toThrow('initialization unavailable')
     expect(view.stripe.confirmCardPayment).not.toHaveBeenCalled()
+  })
+
+  it('requests a preview refresh, then requires a separate explicit payment after the total updates', async () => {
+    const refresh = vi.fn()
+    const view = await card({ onPricingChanged: refresh })
+    provider.createPaymentIntent.mockResolvedValue({ clientSecret: 'offline-client-secret', pricing: { total: 15.99 } })
+    await expect(view.exposed.submitPayment()).rejects.toThrow('total changed')
+    expect(refresh).toHaveBeenCalledOnce()
+    expect(view.stripe.confirmCardPayment).not.toHaveBeenCalled()
+    await view.updateTotal(15.99)
+    expect(view.stripe.confirmCardPayment).not.toHaveBeenCalled()
+    await view.exposed.submitPayment()
+    expect(view.stripe.confirmCardPayment).toHaveBeenCalledOnce()
   })
 
   it('propagates a declined confirmation instead of returning payment success', async () => {
@@ -137,6 +152,18 @@ describe('actual wallet confirmation handler with a mocked SDK', () => {
     expect(view.stripe.confirmPayment).not.toHaveBeenCalled()
     expect(view.event.paymentFailed).toHaveBeenCalledOnce()
     expect(view.state.message).toContain('total changed')
+  })
+
+  it('refreshes a changed wallet total without confirming until the next explicit wallet attempt', async () => {
+    const refresh = vi.fn(), view = await wallet({ onPricingChanged: refresh })
+    provider.createPaymentIntent.mockResolvedValue({ clientSecret: 'offline-client-secret', pricing: { total: 15.99 } })
+    await view.handlers.confirm(view.event)
+    expect(refresh).toHaveBeenCalledOnce()
+    expect(view.stripe.confirmPayment).not.toHaveBeenCalled()
+    await view.updateTotal(15.99)
+    expect(view.stripe.confirmPayment).not.toHaveBeenCalled()
+    await view.handlers.confirm(view.event)
+    expect(view.stripe.confirmPayment).toHaveBeenCalledOnce()
   })
 
   it('reports a declined wallet without indicating a successful payment', async () => {

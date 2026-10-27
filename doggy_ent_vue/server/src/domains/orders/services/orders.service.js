@@ -19,6 +19,7 @@ import {
 } from '../validators/orders.validator.js'
 import { randomBytes } from 'node:crypto'
 import { prepareCheckoutReceipt } from '../../emails/services/checkoutReceipt.service.js'
+import { validateTaxSnapshot } from '../../../shared/utils/taxSnapshot.js'
 
 export async function fetchAdminOrders() {
   return await findAllOrders()
@@ -171,6 +172,7 @@ export async function createNewOrder(orderInput, { verifiedCheckout = false } = 
       shippingAmount,
       discountAmount,
       taxAmount,
+      taxSnapshot: verifiedCheckout && orderInput.taxSnapshot ? validateTaxSnapshot(orderInput.taxSnapshot) : undefined,
       stripePaymentIntentId,
       items: normalizedItems,
     }

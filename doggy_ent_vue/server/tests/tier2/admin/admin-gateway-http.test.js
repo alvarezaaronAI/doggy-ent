@@ -72,6 +72,7 @@ beforeEach(() => {
   vi.stubEnv('PAYMENTS_ENABLED', 'false')
   vi.stubEnv('STRIPE_SECRET_KEY', undefined)
   vi.stubEnv('STRIPE_EXPECTED_ACCOUNT_ID', undefined)
+  vi.stubEnv('TAX_PROVIDER', 'none')
   db.session.length = 0
   for (const user of db.user) { user.status = 'ACTIVE'; user.role = user.id }
   state.handler.mockImplementation(request => engine.handler(request))
@@ -113,6 +114,8 @@ describe('actual HTTP mounts with synthetic persisted Better Auth sessions', () 
     expect(JSON.stringify(body)).not.toContain('acct_')
     expect((await request('/api/admin/payments/environment')).status).toBe(403)
     expect((await request('/api/admin/payments/environment', { headers: gateway })).status).toBe(401)
+    expect((await request('/api/admin/payments/tax')).status).toBe(403)
+    expect((await request('/api/admin/payments/tax', { headers: gateway })).status).toBe(401)
   })
 
   it('exposes read-only payment blockers through an actual persisted staff session', async () => {
@@ -126,6 +129,19 @@ describe('actual HTTP mounts with synthetic persisted Better Auth sessions', () 
     expect(body.environment.blockers).toContainEqual(expect.objectContaining({ code: 'MODE_UNCONFIGURED' }))
     expect(JSON.stringify(body)).not.toContain('secretKey')
     expect((await request('/api/admin/payments/environment', { method: 'POST', headers })).status).toBe(404)
+  })
+
+  it('exposes only disabled tax readiness to persisted staff, with no storage or provider access', async () => {
+    const signedIn = await login(), headers = { ...gateway, Cookie: cookie(signedIn) }
+    const response = await request('/api/admin/payments/tax', { headers })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    const body = await response.json()
+    expect(body.success).toBe(true)
+    expect(body.readiness).toEqual({ provider: 'none', mode: 'unconfigured', status: 'disabled', headOfficeConfigured: false, productCodeConfigured: false, activeRegistrationStates: [], checkedAt: null, blockers: [] })
+    expect((await request('/api/admin/payments/tax', { method: 'POST', headers })).status).toBe(404)
+    db.user[0].role = 'CUSTOMER'
+    expect((await request('/api/admin/payments/tax', { headers })).status).toBe(401)
   })
 
   it('gates every compatibility endpoint before login, logout or session access', async () => {

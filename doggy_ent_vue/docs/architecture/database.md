@@ -1,5 +1,23 @@
 # Database Architecture
 
+## Optional Order Tax Snapshot (2026-10-27)
+
+Owner-approved 20261027000000_order_tax_snapshot adds only nullable JSONB
+Order.taxSnapshot. Local/Railway fresh full custom-format private backups decode
+successfully; 28 migration checksums match, none pending/failed. Fingerprints of
+all 34 existing business tables match before/after (Order projection excludes the
+new column); every existing order remains null, with no backfill. Local-only real
+Prisma/Postgres fixture verifies JSON round-trip, public reference stripping,
+legacy-null handling and actual rollback leaving no order behind.
+
+New verified orders persist the bounded versioned tax result alongside the order
+transaction. Public order/pricing mappings allowlist destination, amounts/rates,
+reasons and timestamp; calculation ID/mode remain internal/signed proof data.
+No raw provider responses or extra street address is duplicated in this snapshot.
+Old estimates are not retroactively declared provider-calculated. Roll back source
+without dropping the compatible column; restore is a separate operator decision.
+See the [tax checkpoint](../work-checkpoints/2026-10-27-stripe-tax-readiness.md).
+
 ## Customer Wishlist (2026-10-25)
 
 WishlistItem stores only userId, productId and the original server-created date. Composite primary key prevents duplicate saves; owner/date index supports the bounded newest-first list. User and Product foreign keys cascade on actual record deletion. No copied product name/price/stock, browser fingerprint, remove-history ledger, reward or marketing-consent record is added.

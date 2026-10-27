@@ -18,6 +18,9 @@ import { signCapability, readCapability } from '../../../shared/utils/signedCapa
 import { mapCustomerOrder } from '../../orders/mappers/orders.mapper.js'
 
 function handleCheckoutError(res, error, fallbackMessage) {
+  if (error?.code === 'TAX_UNAVAILABLE') {
+    return res.status(503).json({ success: false, message: 'Tax could not be calculated. Review your delivery address and try again. If payment already completed, do not pay again; contact support.' })
+  }
   const failure = apiError(error, fallbackMessage)
   return res.status(failure.statusCode).json({
     success: false,
@@ -76,9 +79,13 @@ export async function createCheckoutController(req, res) {
     if (!paymentProof || paymentProof.paymentIntentId !== req.body?.stripePaymentIntentId || paymentProof.email !== email) {
       return res.status(400).json({ success: false, message: 'This checkout could not be verified. If payment completed, do not pay again; contact support with your payment reference.' })
     }
+    if (paymentProof.taxVersion !== undefined && (paymentProof.taxVersion !== 1 || !paymentProof.taxSnapshot || !/^[a-f0-9]{64}$/.test(paymentProof.quoteHash || ''))) {
+      return res.status(400).json({ success: false, message: 'The checkout tax details could not be verified. If payment completed, do not pay again; contact support.' })
+    }
     const customerUser = await getCustomerUserFromRequest(req)
     const result = await createCheckout(req.body, {
       customerUser,
+      ...(paymentProof.taxVersion === 1 ? { paymentTax: paymentProof.taxSnapshot, expectedQuoteHash: paymentProof.quoteHash } : {}),
     })
     const reference = result.order?.orderNumber
     res.set('Cache-Control', 'no-store')
@@ -86,7 +93,7 @@ export async function createCheckoutController(req, res) {
 
     return res.json({
       success: true,
-      result: { ...result, order: mapCustomerOrder(result.order), receiptAccess },
+      result: { pricing: result.pricing, promo: result.promo, campaigns: result.campaigns, shipping: result.shipping, order: mapCustomerOrder(result.order), receiptAccess },
     })
   } catch (error) {
     return handleCheckoutError(

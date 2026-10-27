@@ -1,4 +1,5 @@
-import { onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { isUsableCheckoutPricing } from '../mappers/taxDetails.mapper.js'
 
 import {
   submitCheckoutPreview,
@@ -14,62 +15,64 @@ export function useCheckoutPreview({
 }) {
   const checkoutPreviewResult = ref(null)
   const isRefreshingCheckoutPreview = ref(false)
+  const checkoutPreviewError = ref('')
+  const acceptedPreviewKey = ref(null)
 
   let checkoutPreviewTimer = null
   let activePreviewRequestId = 0
 
   function normalizeCountry(country) {
     if (country === 'US') return 'United States'
-    if (country === 'CA') return 'Canada'
     return country
   }
 
+  const previewPayload = computed(() => ({
+    cartItems: cartItems.value,
+    promoCode: appliedPromoCode.value || null,
+    customer: { ...customer.value, country: normalizeCountry(customer.value.country) },
+    shipping: typeof getShippingPayload === 'function' ? getShippingPayload() : {
+      method: selectedShipping.value,
+      price: shippingPrice.value,
+    },
+  }))
+  const previewKey = computed(() => JSON.stringify(previewPayload.value))
+  const trustedPricing = computed(() => acceptedPreviewKey.value === previewKey.value
+    && !isRefreshingCheckoutPreview.value && !checkoutPreviewError.value
+    ? checkoutPreviewResult.value?.pricing || null : null)
+
   async function refreshCheckoutPreview() {
+    const requestId = ++activePreviewRequestId
+    window.clearTimeout(checkoutPreviewTimer)
+    checkoutPreviewResult.value = null
+    acceptedPreviewKey.value = null
+    checkoutPreviewError.value = ''
     if (!cartItems.value.length) {
       checkoutPreviewResult.value = null
       isRefreshingCheckoutPreview.value = false
       return
     }
 
-    const requestId = ++activePreviewRequestId
-
+    const requestKey = previewKey.value
     isRefreshingCheckoutPreview.value = true
 
     try {
       const previewResult =
-        await submitCheckoutPreview({
-          cartItems: cartItems.value,
+        await submitCheckoutPreview(previewPayload.value)
 
-          promoCode:
-            appliedPromoCode.value || null,
-
-          customer: {
-            ...customer.value,
-            country: normalizeCountry(customer.value.country),
-          },
-
-          shipping: typeof getShippingPayload === 'function'
-            ? getShippingPayload()
-            : {
-                method: selectedShipping.value,
-                price: shippingPrice.value,
-              },
-        })
-
-      if (requestId !== activePreviewRequestId) {
+      if (requestId !== activePreviewRequestId || requestKey !== previewKey.value) {
         return
       }
 
+      if (!isUsableCheckoutPricing(previewResult?.pricing)) throw new Error('Invalid pricing')
       checkoutPreviewResult.value = {
         ...previewResult,
       }
+      acceptedPreviewKey.value = requestKey
     }
-    catch (error) {
-      console.error(
-        '[checkout-preview] Failed to refresh preview.',
-      )
+    catch {
       if (requestId === activePreviewRequestId) {
         checkoutPreviewResult.value = null
+        checkoutPreviewError.value = 'Tax and order total could not be updated. Retry before paying.'
       }
     }
     finally {
@@ -81,16 +84,22 @@ export function useCheckoutPreview({
 
   function scheduleCheckoutPreview() {
     activePreviewRequestId++
+    checkoutPreviewResult.value = null
+    acceptedPreviewKey.value = null
+    checkoutPreviewError.value = ''
     isRefreshingCheckoutPreview.value = true
     window.clearTimeout(checkoutPreviewTimer)
     checkoutPreviewTimer = window.setTimeout(() => {
       void refreshCheckoutPreview()
     }, 350)
   }
+  watch(previewKey, scheduleCheckoutPreview, { flush: 'sync' })
   onBeforeUnmount(() => { activePreviewRequestId++; window.clearTimeout(checkoutPreviewTimer) })
 
   return {
     checkoutPreviewResult,
+    checkoutPreviewError,
+    trustedPricing,
     isRefreshingCheckoutPreview,
     refreshCheckoutPreview,
     scheduleCheckoutPreview,

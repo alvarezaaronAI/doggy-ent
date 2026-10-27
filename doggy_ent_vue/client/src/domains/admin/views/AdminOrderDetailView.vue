@@ -1,6 +1,8 @@
 <script setup>
 import { mediaImageSource } from '@shared/utils/mediaImage.js'
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import TaxBreakdown from '@checkout/components/TaxBreakdown.vue'
+import { mapTaxDetails } from '@checkout/mappers/taxDetails.mapper.js'
 import { useRoute } from 'vue-router'
 import AdminPageHeader from '../components/AdminPageHeader.vue'
 import AdminIcon from '../components/AdminIcon.vue'
@@ -31,6 +33,7 @@ const {
   loadOrder,
   refreshEmailActivity,
 } = useAdminOrderDetail(useRoute().params.orderId)
+const taxRate = computed(() => order.value?.taxDetails?.status === 'calculated' ? mapTaxDetails(order.value.taxDetails)?.rate : null)
 onMounted(loadOrder)
 </script>
 <template>
@@ -150,7 +153,7 @@ onMounted(loadOrder)
                   value: -Number(order.discountAmount || 0),
                 },
                 { label: 'Shipping', value: order.shippingAmount },
-                { label: 'Tax', value: order.taxAmount },
+                { label: taxRate ? 'Tax (' + taxRate + ')' : 'Tax', value: order.taxAmount },
                 { label: 'Donation generated', value: order.donationAmount },
               ]"
               :key="line.label"
@@ -166,6 +169,7 @@ onMounted(loadOrder)
               <dd class="font-semibold">{{ formatPrice(order.total) }}</dd>
             </div>
           </dl>
+          <TaxBreakdown class="mt-4" :tax-details="order.taxDetails" :tax-amount="order.taxAmount" saved :format-price="formatPrice" />
           <p v-if="order.promoUsage" class="admin-muted mt-3">
             Promo: {{ order.promoUsage.promoCode || 'Recorded promo' }}
           </p>

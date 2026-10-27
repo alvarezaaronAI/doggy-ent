@@ -5,6 +5,14 @@ payments, refunds, wallets, tax or mail are ready for real customers. See the
 [current checkpoint](../work-checkpoints/2026-10-26-stripe-checkout-readiness.md)
 for actual local results and remaining publication/device/provider evidence.
 
+2026-10-27 follow-up: hosted sandbox keys are paired and fake-card checkout is
+enabled; real charging stays locked. US-only external Tax preparation removes
+guessed rates, adds bounded quote/snapshot/hook checks and disclosures. Owner keeps
+Stripe Tax OFF; no provider address/category/registration/paid plan is configured.
+The approved optional order column is applied after backup/preservation checks.
+Actual Tax/device/payment-recovery acceptance is still open. See the
+[tax checkpoint](../work-checkpoints/2026-10-27-stripe-tax-readiness.md).
+
 Follow-up: both assistant Stripe contexts are now connected (live plus a separate
 sandbox). Local [environment safeguards](../architecture/payment-environments.md)
 add strict default-off creation, account/mode checks, public key-mode handshake,
@@ -52,7 +60,7 @@ configuration during compilation; no production credentials belong in it.
 | Wallets | Express Checkout, independent admin switches and card fallback | Correct account/domain configuration and actual supported-device sandbox payments |
 | Payment email | Saved template, atomic intent, default-off and manual fulfillment policy | Verified sender/domain, approved inbox/budget, provider acceptance/inbox QA and duplicate-receipt review |
 | Payment reporting | Stored order/intent reference and operational totals | Separate verified financial state, partial/full refund amounts, dispute/events and reconciliation |
-| Tax/shipping | Server-owned estimated tax, rate lookup/static fallback | Approved destinations, package/rate coverage and actual tax approach; Stripe Tax remains a placeholder |
+| Tax/shipping | US-only server validation, external Stripe adapter, no-collection disclosure, genuine breakdowns and frozen tax proof; explicit missing carrier rates reject | Tax intentionally off; approved government/provider setup and actual Tax/hook/device acceptance, package/rate coverage |
 
 ## Stripe Setup When Connected
 

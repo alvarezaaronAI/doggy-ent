@@ -1,5 +1,16 @@
 # Implementation Roadmap
 
+## 2026-10-27 US Tax Preparation
+
+External Stripe Tax adapter, US boundaries, clear tax disclosure, saved optional
+snapshot and protected read-only readiness are implemented. Owner keeps Tax OFF;
+no provider/business setup or real charging activation. Nullable column is applied
+locally/Railway after backup and preservation checks. Finish exact-source rollout
+and UI verification; actual Tax acceptance waits for separate setup approval.
+Durable payment attempts/events, atomic attribution and financial/device/business
+launch gates remain next, not solved by this slice. See the
+[tax checkpoint](work-checkpoints/2026-10-27-stripe-tax-readiness.md).
+
 ## 2026-10-27 Hosted Test Cards Available
 
 Owner follow-up enables sandbox-only creation on the existing testing API while

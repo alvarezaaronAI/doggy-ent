@@ -1,9 +1,12 @@
+import { mapPublicTaxDetails } from '../../../shared/utils/taxSnapshot.js'
+
 export function buildCheckoutResponse({
   subtotal,
   shippingAmount,
   discountAmount,
   donationAmount,
   tax,
+  taxSnapshot = null,
   total,
   promoResult,
   campaignPreview,
@@ -17,6 +20,7 @@ export function buildCheckoutResponse({
       donationAmount,
       tax,
       taxAmount: tax,
+      taxDetails: mapPublicTaxDetails(taxSnapshot, tax),
       total,
     },
 

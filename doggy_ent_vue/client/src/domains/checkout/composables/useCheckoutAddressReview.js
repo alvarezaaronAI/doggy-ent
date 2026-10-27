@@ -1,11 +1,12 @@
 import { computed, nextTick, ref, toValue } from 'vue'
+import { isUSShippingDestination } from '../constants/shippingDestinations.js'
 
 export function useCheckoutAddressReview(customer) {
   const reviewing = ref(false), apartmentOpen = ref(false)
   const addressReview = ref(null), streetField = ref(null)
   const value = () => toValue(customer)
   const hasApartment = computed(() => apartmentOpen.value || Boolean(value().address2))
-  const complete = computed(() => ['firstName', 'lastName', 'address1', 'city', 'state', 'zip', 'country'].every(field => String(value()[field] || '').trim()))
+  const complete = computed(() => isUSShippingDestination(value()) && ['firstName', 'lastName', 'address1', 'city', 'state', 'zip', 'country'].every(field => String(value()[field] || '').trim()))
   const recipient = computed(() => [value().firstName, value().lastName].filter(Boolean).join(' '))
   const locality = computed(() => [value().city, value().state, value().zip].filter(Boolean).join(', '))
   const countryName = computed(() => ({ US: 'United States', CA: 'Canada' })[value().country] || value().country)

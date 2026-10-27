@@ -42,6 +42,9 @@ import {
 } from '../validators/checkout.validator.js'
 import { resolveCheckoutItems } from './checkoutCatalog.service.js'
 import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
+import { assertUsDestination } from '../../../shared/utils/usAddress.js'
+import { validateTaxSnapshot } from '../../../shared/utils/taxSnapshot.js'
+import { checkoutQuoteHash, checkoutChangedAfterPayment } from '../utils/checkoutQuote.js'
 
 
 function hasRateAddress(customer = {}) {
@@ -64,6 +67,7 @@ export async function fetchCheckoutShippingRates({
   customer = {},
   cartItems = [],
 } = {}) {
+  assertUsDestination(customer)
   if (!hasRateAddress(customer)) {
     return {
       source: 'STATIC',
@@ -111,10 +115,9 @@ async function resolveCheckoutShipping({
       customer,
       cartItems,
     })
-    const selectedRate = rates.options.find((option) =>
-      option.rateId === selectedRateId
-      || option.code === shipping.method,
-    )
+    const selectedRate = rates.source === 'SHIPPO'
+      ? rates.options.find(option => option.rateId === selectedRateId)
+      : null
 
     if (selectedRate) {
       return {
@@ -126,6 +129,7 @@ async function resolveCheckoutShipping({
         provider: selectedRate.provider || rates.source || 'SHIPPO',
       }
     }
+    throw Object.assign(new Error('Your selected delivery rate is no longer available. Choose a delivery option again before paying.'), { statusCode: 409 })
   }
 
   const staticOption = buildStaticShippingOption(shipping.method)
@@ -140,7 +144,7 @@ async function resolveCheckoutShipping({
   }
 }
 
-export async function previewCheckout(checkoutInput = {}, { trustedItems = null } = {}) {
+export async function previewCheckout(checkoutInput = {}, { trustedItems = null, includeTaxSnapshot = false, paymentTax = null, expectedQuoteHash = null } = {}) {
   const {
     cartItems: inputItems = [],
     promoCode = null,
@@ -148,6 +152,7 @@ export async function previewCheckout(checkoutInput = {}, { trustedItems = null 
     customer = {},
     shipping = {},
   } = checkoutInput
+  assertUsDestination(customer)
   const cartItems = trustedItems || await resolveCheckoutItems(inputItems)
   const normalizedCustomerEmail = normalizeEmail(
     customer.email || customerEmail,
@@ -189,10 +194,11 @@ export async function previewCheckout(checkoutInput = {}, { trustedItems = null 
   )
 
   const taxableAmount = Math.max(0, subtotal - discountAmount + shippingAmount)
-
-  const taxResult = await calculateTax({
-    taxableAmount,
-    customer,
+  const quoteHash = checkoutQuoteHash({ cartItems, discountAmount, shippingAmount, shipping: resolvedShipping, customer, promoCode })
+  // A paid checkout reuses its signed tax calculation, never a new provider quote.
+  if (paymentTax && quoteHash !== expectedQuoteHash) throw checkoutChangedAfterPayment()
+  const taxResult = paymentTax ? validateTaxSnapshot(paymentTax) : await calculateTax({
+    cartItems, subtotal, discountAmount, shippingAmount, customer,
   })
 
   const tax = normalizeCurrencyAmount(
@@ -202,23 +208,27 @@ export async function previewCheckout(checkoutInput = {}, { trustedItems = null 
     taxableAmount + tax,
   )
 
-  return buildCheckoutResponse({
+  const response = buildCheckoutResponse({
     subtotal,
     shippingAmount,
     discountAmount,
     donationAmount,
     tax,
+    taxSnapshot: taxResult,
     total,
     promoResult,
     campaignPreview,
     shipping: resolvedShipping,
   })
+  return includeTaxSnapshot ? { ...response, taxSnapshot: taxResult, quoteHash } : response
 }
 
 export async function createCheckout(
   checkoutInput = {},
   {
     customerUser = null,
+    paymentTax = null,
+    expectedQuoteHash = null,
   } = {},
 ) {
   const usedPayment = await findOrderByStripePaymentIntentId(String(checkoutInput.stripePaymentIntentId || '').trim())
@@ -228,7 +238,7 @@ export async function createCheckout(
   }
   const trustedItems = await resolveCheckoutItems(checkoutInput.cartItems)
   checkoutInput = { ...checkoutInput, cartItems: trustedItems }
-  const checkoutPreview = await previewCheckout(checkoutInput, { trustedItems })
+  const checkoutPreview = await previewCheckout(checkoutInput, { trustedItems, includeTaxSnapshot: true, paymentTax, expectedQuoteHash })
 
   validateRequiredCheckoutFields({
     customer: checkoutInput.customer,
@@ -309,6 +319,7 @@ export async function createCheckout(
     expectedAmount:
       checkoutPreview.pricing.total,
     expectedCurrency: 'usd',
+    ...(paymentTax ? { expectedTaxCalculationId: paymentTax.calculationId || null } : {}),
   })
 
   if (checkoutInput.completedOrderId) {
@@ -348,6 +359,7 @@ export async function createCheckout(
     shippingAmount: checkoutPreview.pricing.shippingAmount,
     discountAmount: checkoutPreview.pricing.discountAmount,
     taxAmount: checkoutPreview.pricing.taxAmount,
+    taxSnapshot: checkoutPreview.taxSnapshot?.version === 1 ? validateTaxSnapshot(checkoutPreview.taxSnapshot) : null,
     promoCode: checkoutPreview.promo?.code || null,
     stripePaymentIntentId,
     userId: customerUser?.id || null,

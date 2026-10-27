@@ -371,7 +371,15 @@ Uploaded product/campaign/home/footer imagery now uses stable DB-backed public a
 
 ### Receipt First Cost Summary And Giving (2026-10-10)
 
-Checkout keeps bordered item cards and the existing form/payment cards. Use a conventional receipt breakdown: Items subtotal with item count, Discount/code only when applicable, Shipping, Estimated tax, then a separated prominent Order total. Amounts are right-aligned with tabular numerals; no arithmetic plus/equal symbols. Those symbols were briefly trialed at the user's request, then removed after the user preferred a standard commerce receipt layout. The server total is not recomputed in the UI.
+Checkout keeps bordered item cards and the existing form/payment cards. Use a conventional receipt breakdown: Items subtotal with item count, Discount/code only when applicable, Shipping, Tax, then a separated prominent Order total. Amounts are right-aligned with tabular numerals; no arithmetic plus/equal symbols. Those symbols were briefly trialed at the user's request, then removed after the user preferred a standard commerce receipt layout. The server total is not recomputed in the UI.
+
+2026-10-27 tax preparation removes guessed percentages/local rate tables. While
+setup is off, explicitly say tax is not collected/setup pending, not tax-exempt.
+Accessible destination/jurisdiction disclosure shows genuine provider/saved rates;
+older orders explain when a breakdown was not saved. US checkout supports 50
+states and DC. Cart/address/shipping changes invalidate accepted pricing; preview
+loading/errors block payment. Changed card/wallet totals refresh without automatic
+payment retry. Preserve entered details, bag, cards and giving separation.
 
 Giving is not a billing row. A separate soft-emerald card sits below the entire checkout summary, outside the collapsible bag; the confirmation has the same card outside its financial panel. It emphasizes the contribution amount and actual beneficiary/campaign with concise business-funded/no-extra-cost wording. Checkout contributions are estimated; confirmation/account detail use saved attribution. Only published campaign pages offer **About campaign**, opening the shared campaign renderer in a pop-out without leaving checkout. Public metadata is joined by campaign ID without replacing server amounts or saved beneficiary names. Private/disabled pages have no action. Editor sample actions are inert. Order email HTML/text keep giving after totals too. Zero giving is omitted. This reflects attributed contributions, not proof of beneficiary payout.
 

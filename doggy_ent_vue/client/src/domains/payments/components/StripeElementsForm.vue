@@ -28,7 +28,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['card-complete'])
+const emit = defineEmits(['card-complete', 'pricing-changed'])
 
 const stripeInstance = ref(null)
 const elementsInstance = ref(null)
@@ -57,7 +57,10 @@ defineExpose({
     })
 
     const { clientSecret } = paymentIntentResponse
-    if (Math.round(Number(paymentIntentResponse.pricing?.total) * 100) !== Math.round(props.checkoutTotal * 100)) throw new Error('Your total changed. Review the refreshed order before paying.')
+    if (Math.round(Number(paymentIntentResponse.pricing?.total) * 100) !== Math.round(props.checkoutTotal * 100)) {
+      emit('pricing-changed')
+      throw new Error('Your total changed. Review the refreshed order before paying.')
+    }
 
     const paymentResult = await stripeInstance.value.confirmCardPayment(clientSecret, {
       payment_method: {

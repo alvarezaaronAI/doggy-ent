@@ -44,6 +44,39 @@ their exact environment/hosting target.
 | Storefront, existing | VITE_STRIPE_PUBLISHABLE_KEY | Public key for the same account/environment; never a server credential |
 | Storefront, existing | VITE_API_BASE_URL | API for this deployment's environment; existing VITE_API_URL compatibility alias remains |
 | API, future | STRIPE_WEBHOOK_SECRET | Separate signing secret for the supported signed-event endpoint; no handler uses it yet |
+| API, tax preparation | TAX_PROVIDER | none (default) disables collection; stripe requires approved, verified setup; no local rate fallback |
+| API, tax preparation | STRIPE_TAX_PRODUCT_CODE | Owner-approved product classification; not configured by this preparation |
+| API, tax preparation | STRIPE_TAX_LIVE_ENABLED | Default false; separate explicit approval for live tax calls, not a payment unlock |
+
+## External US Tax Preparation (2026-10-27)
+
+Owner explicitly chooses preparation with Stripe Tax OFF. No address, category,
+registration or paid plan is configured in Stripe. Disabled setup returns zero
+with not-configured/not-collected disclosure, never an exemption or invented rate.
+US-only validation covers all 50 states and DC at preview/shipping/payment/order
+boundaries. No hardcoded tax-rate table or client percentage fallback remains.
+
+Future Stripe mode requires the verified intended account, active US head office,
+approved product code and active US registrations. Readiness is bounded/cached per
+account/client/mode/config. Provider failures reject checkout, never guess rates.
+Integer-cent discount allocation precedes calculation; shipping is separate and
+giving excluded. Display provider jurisdiction rates; omit a combined percentage
+when taxable bases differ. Actual provider Tax acceptance remains pending.
+
+Intent creation signs a bounded versioned snapshot and canonical quote hash over
+trusted cart/discount/shipping/address inputs, and attaches the server-selected
+calculation using PaymentIntent tax hooks. Finalization checks paid hook/amount/
+currency/mode and reuses the snapshot; changed inputs reject with do-not-pay-again
+guidance. This does not replace durable attempts/webhooks. Explicit carrier rate
+loss rejects before payment; changed totals refresh but never auto-retry payment.
+
+Order.taxSnapshot is optional JSONB, applied locally/Railway after approved backup
+and preflight. Historical orders stay null; never infer past rates. Public tax
+details exclude provider references/raw payloads/private addresses. Internal staff
+inspection retains the reference. GET /api/admin/payments/tax is no-store and
+read-only, gateway plus ACTIVE ADMIN protected, with safe setup booleans/states/
+blockers only. A Stripe registration is not a government permit; integration does
+not file/remit tax. See the [tax checkpoint](../work-checkpoints/2026-10-27-stripe-tax-readiness.md).
 
 Local commands (two terminals from the application directory):
 

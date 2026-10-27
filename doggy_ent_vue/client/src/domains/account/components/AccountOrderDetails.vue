@@ -71,9 +71,10 @@
         <dd class="tabular-nums">{{ money(order.shippingAmount) }}</dd>
       </div>
       <div class="flex justify-between gap-5">
-        <dt>Tax</dt>
+        <dt>Tax<span v-if="taxRate" class="ml-1">({{ taxRate }})</span></dt>
         <dd class="tabular-nums">{{ money(order.taxAmount) }}</dd>
       </div>
+      <div><dt class="sr-only">Saved tax details</dt><dd><TaxBreakdown :tax-details="order.taxDetails" :tax-amount="order.taxAmount" saved :format-price="money" /></dd></div>
       <div
         class="flex justify-between gap-5 border-t border-[var(--account-line)] pt-4 text-lg font-semibold"
       >
@@ -141,6 +142,8 @@
 <script setup>
 import CommerceItemCard from '@shared/components/CommerceItemCard.vue'
 import CommerceGivingNote from '@shared/components/CommerceGivingNote.vue'
+import TaxBreakdown from '@checkout/components/TaxBreakdown.vue'
+import { mapTaxDetails } from '@checkout/mappers/taxDetails.mapper.js'
 import { itemCampaigns } from '@shared/mappers/commerceItem.mapper.js'
 import { computed, onDeactivated, ref } from 'vue'
 import { formatCurrency } from '@shared/utils/currency'
@@ -162,6 +165,7 @@ onDeactivated(() => {
 const shipment = computed(() => props.order.shipment || props.order.shipments?.[0])
 const trackingUrl = computed(() => safeTrackingUrl(shipment.value?.trackingUrl))
 const shippingLines = computed(() => addressLines(props.order))
+const taxRate = computed(() => props.order.taxDetails?.status === 'calculated' ? mapTaxDetails(props.order.taxDetails)?.rate : null)
 const deliveryHeading = computed(
   () =>
     ({
