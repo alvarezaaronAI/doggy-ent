@@ -61,7 +61,7 @@ onMounted(load)
           <div
             v-for="row in [
               { label: 'Pending orders', key: 'pendingOrders' },
-              { label: 'Paid orders', key: 'paidOrders' },
+              { label: 'Marked paid', key: 'paidOrders' },
               { label: 'Delivered orders', key: 'fulfilledOrders' },
             ]"
             :key="row.key"
@@ -71,6 +71,7 @@ onMounted(load)
             <dd>{{ activity.stats?.[row.key] ?? 'Unavailable' }}</dd>
           </div>
         </dl>
+        <p class="admin-muted mt-4 text-sm">These counts follow saved order statuses, not Stripe-reconciled payment totals.</p>
         <RouterLink class="admin-link mt-6" to="/admin/orders"
           >Review orders <AdminIcon name="next"
         /></RouterLink>

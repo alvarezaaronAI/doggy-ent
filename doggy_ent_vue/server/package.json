@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "dev:local": "DOGGY_SERVER_ENV_TARGET=LOCAL node --watch src/server.js",
+    "dev:stripe-sandbox": "NODE_ENV=development PORT=3010 BETTER_AUTH_URL=http://127.0.0.1:3010 CLIENT_URL=http://127.0.0.1:5175 FRONTEND_URL=http://127.0.0.1:5175 EMAIL_MODE=mock EMAIL_PROVIDER=mock CHECKOUT_RECEIPT_SEND_ENABLED=false DOGGY_SERVER_ENV_TARGET=LOCAL DOGGY_SERVER_ENV_FILE=.env.stripe-sandbox.local node --watch src/server.js",
     "dev:railway": "DOGGY_SERVER_ENV_TARGET=RAILWAY_DB DOGGY_SERVER_ENV_FILE=.env.railway.local node --watch src/server.js",
     "build": "node scripts/sync-storefront-content.js && prisma generate",
     "start": "prisma migrate deploy && node src/server.js",

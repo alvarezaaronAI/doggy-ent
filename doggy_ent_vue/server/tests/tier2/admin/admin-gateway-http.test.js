@@ -68,6 +68,10 @@ beforeEach(() => {
   vi.stubEnv('ADMIN_GATEWAY_REQUIRED', 'true')
   vi.stubEnv('ADMIN_GATEWAY_SECRET', synthetic)
   vi.stubEnv('SHIPPO_WEBHOOK_SECRET', 'synthetic-webhook-fixture')
+  vi.stubEnv('PAYMENT_MODE', undefined)
+  vi.stubEnv('PAYMENTS_ENABLED', 'false')
+  vi.stubEnv('STRIPE_SECRET_KEY', undefined)
+  vi.stubEnv('STRIPE_EXPECTED_ACCOUNT_ID', undefined)
   db.session.length = 0
   for (const user of db.user) { user.status = 'ACTIVE'; user.role = user.id }
   state.handler.mockImplementation(request => engine.handler(request))
@@ -98,6 +102,32 @@ async function login(path = '/api/auth/login') {
 function cookie(response) { return response.headers.getSetCookie().map(value => value.split(';')[0]).join('; ') }
 
 describe('actual HTTP mounts with synthetic persisted Better Auth sessions', () => {
+  it('keeps payment configuration public and minimal, but account context staff-only', async () => {
+    const response = await request('/api/checkout/payment-configuration')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    const body = await response.json()
+    expect(body.success).toBe(true)
+    expect(body.configuration).toMatchObject({ mode: 'unconfigured', enabled: false })
+    expect(Object.keys(body.configuration).sort()).toEqual(['enabled', 'message', 'mode'])
+    expect(JSON.stringify(body)).not.toContain('acct_')
+    expect((await request('/api/admin/payments/environment')).status).toBe(403)
+    expect((await request('/api/admin/payments/environment', { headers: gateway })).status).toBe(401)
+  })
+
+  it('exposes read-only payment blockers through an actual persisted staff session', async () => {
+    const signedIn = await login()
+    const headers = { ...gateway, Cookie: cookie(signedIn) }
+    const response = await request('/api/admin/payments/environment', { headers })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    const body = await response.json()
+    expect(body.environment).toMatchObject({ mode: 'unconfigured', verification: 'unverified', canCreatePayments: false, livePaymentsSupported: false })
+    expect(body.environment.blockers).toContainEqual(expect.objectContaining({ code: 'MODE_UNCONFIGURED' }))
+    expect(JSON.stringify(body)).not.toContain('secretKey')
+    expect((await request('/api/admin/payments/environment', { method: 'POST', headers })).status).toBe(404)
+  })
+
   it('gates every compatibility endpoint before login, logout or session access', async () => {
     for (const [method, path] of [['POST', '/login'], ['POST', '/logout'], ['GET', '/me'], ['GET', '/data-target'], ['GET', '/unknown']]) {
       const response = await request('/api/auth' + path, { method, headers: { Origin: 'https://admin.example.test', 'X-User-Role': 'ADMIN' } })
@@ -120,7 +150,7 @@ describe('actual HTTP mounts with synthetic persisted Better Auth sessions', () 
   })
 
   it('blocks current protected route families and legacy aliases before session lookup', async () => {
-    for (const path of ['/api/products/admin/library', '/api/promos', '/api/admin/promos', '/api/campaigns', '/api/admin/campaigns', '/api/admin/orders', '/api/admin/customers', '/api/admin/notifications', '/api/admin/email-templates', '/api/admin/media', '/api/admin/storefront', '/api/admin/order-issues', '/api/admin/internal-issues', '/api/admin/shipments']) {
+    for (const path of ['/api/products/admin/library', '/api/promos', '/api/admin/promos', '/api/campaigns', '/api/admin/campaigns', '/api/admin/orders', '/api/admin/customers', '/api/admin/notifications', '/api/admin/email-templates', '/api/admin/media', '/api/admin/storefront', '/api/admin/order-issues', '/api/admin/internal-issues', '/api/admin/shipments', '/api/admin/payments/environment']) {
       expect((await request(path)).status).toBe(403)
     }
     expect(state.getSession).not.toHaveBeenCalled()
@@ -128,7 +158,7 @@ describe('actual HTTP mounts with synthetic persisted Better Auth sessions', () 
 
   it('requires a persisted session even with the correct gateway and forged identity headers', async () => {
     const headers = { ...gateway, 'X-User-Role': 'ADMIN', 'X-User-Status': 'ACTIVE' }
-    for (const path of ['/api/auth/me', '/api/auth/data-target', '/api/products/admin/library', '/api/admin/orders']) {
+    for (const path of ['/api/auth/me', '/api/auth/data-target', '/api/products/admin/library', '/api/admin/orders', '/api/admin/payments/environment']) {
       expect((await request(path, { headers })).status).toBe(401)
     }
     const native = await request('/api/admin-auth/get-session', { headers })

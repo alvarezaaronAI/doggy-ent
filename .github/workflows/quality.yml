@@ -65,3 +65,5 @@ jobs:
         run: node --test ../scripts/git-preflight.test.mjs
       - name: Read-only security inventory tests
         run: node --test ../scripts/security-preflight.test.mjs
+      - name: Offline payment test safety
+        run: node --test ../scripts/payment-tests.test.mjs

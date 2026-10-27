@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:local": "VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode admin-local",
+    "dev:stripe-sandbox": "VITE_APP_SURFACE=combined VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://127.0.0.1:3010 VITE_API_URL=http://127.0.0.1:3010 vite --mode stripe-sandbox --host 127.0.0.1 --port 5175 --strictPort",
     "dev:railway": "npm run dev:local",
     "dev:admin": "VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode admin",
     "dev:storefront": "VITE_ADMIN_DATA_TARGET=LOCAL VITE_API_BASE_URL=http://localhost:3000 VITE_API_URL=http://localhost:3000 vite --mode storefront",

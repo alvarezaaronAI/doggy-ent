@@ -21,6 +21,10 @@ test('gateway configuration is strict, bounded and never echoes bad values', () 
 })
 
 test('only reviewed admin API families and required read-only preview APIs are forwarded', () => {
+  assert.ok(isAllowedApiRequest('/api/admin/payments/environment', 'GET'))
+  assert.ok(isAllowedApiRequest('/api/admin/payments/environment', 'HEAD'))
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) assert.equal(isAllowedApiRequest('/api/admin/payments/environment', method), false)
+  for (const path of ['/api/admin/payments', '/api/admin/payments/charge', '/api/admin/payments/environment/extra']) assert.equal(isAllowedApiRequest(path, 'GET'), false)
   assert.ok(isAllowedApiRequest('/api/promos/validate', 'POST'))
   assert.ok(isAllowedApiRequest('/api/campaigns/preview', 'POST'))
   for (const [path, method] of [['/api/auth/login', 'POST'], ['/api/auth/me', 'GET'], ['/api/auth/logout', 'POST'], ['/api/admin-auth/get-session', 'GET'], ['/api/admin/orders/123', 'GET'], ['/api/admin/media', 'POST'], ['/api/admin/customers/123/pets/456/photo', 'GET'], ['/api/products', 'POST'], ['/api/products/123/images', 'PATCH'], ['/api/products/admin/library', 'GET'], ['/api/storefront/content', 'GET'], ['/api/campaigns/public', 'GET'], ['/api/media/123/thumbnail', 'HEAD']]) assert.ok(isAllowedApiRequest(path, method), `${method} ${path}`)
