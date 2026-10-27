@@ -1,6 +1,14 @@
 # Payment Environments And Launch Controls
 
-## Current Scope (2026-10-26, Local Source)
+## Current Scope (2026-10-27, Deployed Paused Sandbox)
+
+Reviewed main1738cc7 is verified on the existing Railway API and both Vercel
+sites. Saved server/public settings use the expected Chase and Evie Sandbox;
+actual staff verification matches that account. New payments remain disabled and
+live creation remains code-locked. Public configuration, blocked creation and
+protected staff context are verified, not an actual sandbox purchase. No new
+hosting resource, database, migration or provider transaction is introduced. See
+the [final checkpoint](../work-checkpoints/2026-10-26-payment-environment-safety.md).
 
 One checkout implementation serves separately configured environments. Assistant
 Stripe access includes a live account and a separate sandbox, but never configures
@@ -12,8 +20,9 @@ the connected sandbox: no new hosting cost and no shared test orders. Before rea
 customers, provision an explicitly approved isolated hosted test API/database and
 point preview storefront/admin deployments only at that target. Never connect a
 sandbox frontend to a live backend or assume Vercel Preview isolates Railway data.
-No separate hosted resource, credential change or database mutation is performed
-by this source implementation.
+No separate hosted resource or database mutation is performed by this source
+implementation. The later owner-authorized configuration stage updates the existing
+Railway server settings and Vercel storefront public key; it does not enable sales.
 
 ## Configuration Names
 
@@ -48,11 +57,12 @@ silently turn this command into a deployed-data target. Email is mocked and the
 automatic live-receipt gate is false in this startup mode. Do not add DB/auth values
 to these private payment overrides or start shared-data tests through this command.
 
-Owner supplied the sandbox public key; it is in the private client override only.
-The server key remains empty until privately supplied. A single read-only check of
-the older local server credential confirms it belongs to a different test account,
-so it is deliberately not copied or reused. Neither prefix matching nor this
-comparison proves the new public/server pair; that verification remains pending.
+Owner-supplied matching sandbox settings are now in both private local overrides
+and their existing hosting targets. The server key is server-only; Vercel receives
+only the public key. Own-account verification confirms the new server identity and
+public-asset inspection matches the supplied sandbox public key. The older local
+server credential is a different test account and is not reused. Actual paired
+payment acceptance is still pending: prefix/account checks alone do not prove it.
 
 Mode is deployment configuration, not a customer input that selects credentials.
 The frontend sends only its derived mode with intent creation. Server config owns

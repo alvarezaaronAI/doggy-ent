@@ -1,5 +1,27 @@
 # Doggy Ent Project Handoff
 
+## Payment Sandbox Release Verified (2026-10-27)
+
+PR58/59 release main1738cc767ea9a78f6ad13372e6a4e98a39d098f9 after exact-head
+Quality and full release review. Railway e6e49db0-9f30-49aa-b7f8-1b8b640a66fc is
+SUCCESS and both stable Vercel artifacts are READY at that source. Actual signed-in
+admin shows Configured Sandbox/Account verified/New payments paused, matching
+expected and returned Chase and Evie Sandbox IDs and the live-charge lock. Public
+configuration is sandbox/false/no-store; a valid-shaped start request gets503
+before pricing/provider work. Health/catalog/campaigns200, exact CORS, customer401,
+direct staff403 and anonymous admin protection pass. Public18-asset inspection
+finds the matching sandbox public key, no server-key pattern/live key/admin module.
+Fresh read-only preflight and startup show27matching/0pending/0failed migrations;
+old test intents last24h0. New orders/email deliveries since release0; no receipt
+settings enabled. Focused offline checks rerun289server/223client pass. No migration
+applied, business-data mutation, charge/refund/email or new resource. The
+[active checkpoint](docs/work-checkpoints/2026-10-26-payment-environment-safety.md)
+contains exact artifacts, checks, recovery limits and remaining sandbox/device/
+durable-recovery/financial launch gates. Payments stay paused, live charging is
+code-locked; credential setup is not actual purchase acceptance. Prior key-empty
+and release-hold entries below are historical, not current instructions. Final
+evidence is documentation-only integration work, not another production release.
+
 ## Local Source Complete: Payment Environment Safety (2026-10-26)
 
 Latest coordinated-release preparation: source commit fb01621 is pushed on

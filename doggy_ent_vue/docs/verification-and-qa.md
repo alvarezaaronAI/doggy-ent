@@ -1,5 +1,20 @@
 # Verification And QA
 
+## Paused Sandbox Deployment (2026-10-27)
+
+Exact main1738cc7 is RailwaySUCCESS/both stable VercelREADY after PR58/59 and
+current-head client/server Quality/all steps. Fresh read-only preflight27matching/
+0pending/0failed/checksum matches and old test last24h0; runtime startup applies
+no migration and reports no error pattern. Public sandbox/false/no-store/exactCORS,
+blocked start503, health/catalog/campaigns200, customer401, directstaff403 and
+protected admin302 pass. Actual signed-in staff Refresh/expanded detail verifies
+the intended account, paused creation and live lock; screenshot/DOM656width has no
+overflow. Public18-asset walk finds matching sandbox public key and no long server
+key/live key/admin module. Post-release new orders/email deliveries0, receipt
+settings absent/off. Focused offline runner rerun289server/223client passes. No
+charge/refund/mail, shared mutation or real-device/purchase certification. See
+[artifact/evidence checkpoint](work-checkpoints/2026-10-26-payment-environment-safety.md).
+
 ## Payment Environment Safety (2026-10-26, Local)
 
 Full server665 (60/599/6) and client551 (11/534/6) pass. Guarded payment selection
