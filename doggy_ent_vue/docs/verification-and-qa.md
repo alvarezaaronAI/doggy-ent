@@ -1,5 +1,54 @@
 # Verification And QA
 
+## US Tax Preparation (2026-10-27)
+
+Current full suites pass server795(60/729/6), client610(11/593/6), gateway6 and
+runner safety9. Coverage includes real adapter tax hooks, server-owned quote/proof,
+frozen-tax finalization, US boundaries, integer discount allocation, provider/cache
+failure, public projection, stale pricing and explicit refreshed-total card/wallet
+retry. Full server HTTP fixtures require gateway plus persisted ACTIVE ADMIN for
+tax readiness, prohibit writes and avoid provider/storage access while Tax is off.
+The network-blocked payment runner excludes listener tests; don't weaken its guard.
+
+After fresh decoded full private backups, only the approved nullable order column
+is applied locally/Railway:28matching migrations/nonepending, all34prior business
+table fingerprints preserved and old snapshots null. Local real Prisma/Postgres
+fixture verifies snapshot round-trip/customer projection/legacy/rollback with no
+persisted orders. Independent source and follow-up review close carrier-fallback
+and stale-total retry findings. Provider Tax remains intentionally OFF; genuine
+Stripe calculations/Tax transactions/device payments/receipt sends are NOT proven.
+Final source/deployment checks are tracked in the
+[tax checkpoint](work-checkpoints/2026-10-27-stripe-tax-readiness.md).
+
+## Manual Sandbox Checkout Enabled (2026-10-27)
+
+Only the existing API creation flag is enabled at the owner's request. Redeploy
+f9afcf4a-5190-4fc7-b4c8-82762c3cb2b4 SUCCESS reuses main1738cc7; no Vercel/source
+release. Fresh read-only27-migration/checksum/account/receipt-off preflight and
+clean startup pass. Public sandbox/enabled/no-store, live/missing mode409 without
+payment identity, health200/directstaff403 and actual verified staff Allowed
+(sandbox)/live-lock pass. Real customer checkout reload preserves bag/account and
+loads Stripe's secure test card input; wallets are unavailable on this device.
+Runner-safety9/9 passes. No payment is submitted and no wallet/device/successful
+purchase certification is inferred. Owner test purchases can write orders/stock
+in the testing DB; live launch and durable-recovery gates remain open. See the
+[current checkpoint](work-checkpoints/2026-10-26-payment-environment-safety.md).
+
+## Paused Sandbox Deployment (2026-10-27)
+
+Exact main1738cc7 is RailwaySUCCESS/both stable VercelREADY after PR58/59 and
+current-head client/server Quality/all steps. Fresh read-only preflight27matching/
+0pending/0failed/checksum matches and old test last24h0; runtime startup applies
+no migration and reports no error pattern. Public sandbox/false/no-store/exactCORS,
+blocked start503, health/catalog/campaigns200, customer401, directstaff403 and
+protected admin302 pass. Actual signed-in staff Refresh/expanded detail verifies
+the intended account, paused creation and live lock; screenshot/DOM656width has no
+overflow. Public18-asset walk finds matching sandbox public key and no long server
+key/live key/admin module. Post-release new orders/email deliveries0, receipt
+settings absent/off. Focused offline runner rerun289server/223client passes. No
+charge/refund/mail, shared mutation or real-device/purchase certification. See
+[artifact/evidence checkpoint](work-checkpoints/2026-10-26-payment-environment-safety.md).
+
 ## Payment Environment Safety (2026-10-26, Local)
 
 Full server665 (60/599/6) and client551 (11/534/6) pass. Guarded payment selection

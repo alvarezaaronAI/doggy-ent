@@ -1,3 +1,5 @@
+import { assertUsDestination } from '../../../shared/utils/usAddress.js'
+
 export function validateCheckoutSubmissionState({
   stripePaymentIntentId,
 }) {
@@ -83,6 +85,7 @@ export function validateRequiredCheckoutFields({
 
     throw error
   }
+  assertUsDestination(customer, { allowIncomplete: false })
 }
 
 export function validateFinalizedCheckoutPreview(

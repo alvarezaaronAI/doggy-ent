@@ -32,11 +32,13 @@ defineProps({
   },
   summaryTax: {
     type: Number,
-    required: true,
+    default: null,
   },
+  summaryTaxDetails: { type: Object, default: null },
+  checkoutPreviewError: { type: String, default: '' },
   summaryTotal: {
     type: Number,
-    required: true,
+    default: null,
   },
   appliedPromoCode: {
     type: String,
@@ -67,6 +69,7 @@ defineProps({
 const emit = defineEmits([
   'update:promo-code',
   'apply-promo-code',
+  'retry-preview',
 ])
 </script>
 
@@ -100,10 +103,13 @@ const emit = defineEmits([
       :summary-discount="summaryDiscount"
       :summary-shipping="summaryShipping"
       :summary-tax="summaryTax"
+      :summary-tax-details="summaryTaxDetails"
+      :checkout-preview-error="checkoutPreviewError"
       :summary-total="summaryTotal"
       :applied-promo-code="appliedPromoCode"
       :is-refreshing-checkout-preview="isRefreshingCheckoutPreview"
       :format-price="formatPrice"
+      @retry-preview="emit('retry-preview')"
     />
 
     <fieldset :disabled="locked"><CheckoutPromoBox

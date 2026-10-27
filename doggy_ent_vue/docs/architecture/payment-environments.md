@@ -1,6 +1,15 @@
 # Payment Environments And Launch Controls
 
-## Current Scope (2026-10-26, Local Source)
+## Current Scope (2026-10-27, Hosted Sandbox Testing Enabled)
+
+Reviewed main1738cc7 is verified on the existing Railway API and both Vercel
+sites. Saved server/public settings use the expected Chase and Evie Sandbox;
+actual staff verification matches that account. The owner's follow-up enables
+hosted sandbox creation only; local private defaults remain paused and live
+creation remains code-locked. Public configuration, mode rejection, secure card
+loading and protected staff context are verified, not an actual sandbox purchase. No new
+hosting resource, database, migration or provider transaction is introduced. See
+the [final checkpoint](../work-checkpoints/2026-10-26-payment-environment-safety.md).
 
 One checkout implementation serves separately configured environments. Assistant
 Stripe access includes a live account and a separate sandbox, but never configures
@@ -12,8 +21,12 @@ the connected sandbox: no new hosting cost and no shared test orders. Before rea
 customers, provision an explicitly approved isolated hosted test API/database and
 point preview storefront/admin deployments only at that target. Never connect a
 sandbox frontend to a live backend or assume Vercel Preview isolates Railway data.
-No separate hosted resource, credential change or database mutation is performed
-by this source implementation.
+No separate hosted resource or database mutation is performed by this source
+implementation. The later owner-authorized configuration stage updates the existing
+Railway server settings and Vercel storefront public key. The later single-flag
+enablement allows manual test-card checkout, never real-money sales. The existing
+testing database still receives any order/stock changes when a test purchase is
+completed. Receipt settings stay off and test-product purchase guards stay intact.
 
 ## Configuration Names
 
@@ -31,6 +44,39 @@ their exact environment/hosting target.
 | Storefront, existing | VITE_STRIPE_PUBLISHABLE_KEY | Public key for the same account/environment; never a server credential |
 | Storefront, existing | VITE_API_BASE_URL | API for this deployment's environment; existing VITE_API_URL compatibility alias remains |
 | API, future | STRIPE_WEBHOOK_SECRET | Separate signing secret for the supported signed-event endpoint; no handler uses it yet |
+| API, tax preparation | TAX_PROVIDER | none (default) disables collection; stripe requires approved, verified setup; no local rate fallback |
+| API, tax preparation | STRIPE_TAX_PRODUCT_CODE | Owner-approved product classification; not configured by this preparation |
+| API, tax preparation | STRIPE_TAX_LIVE_ENABLED | Default false; separate explicit approval for live tax calls, not a payment unlock |
+
+## External US Tax Preparation (2026-10-27)
+
+Owner explicitly chooses preparation with Stripe Tax OFF. No address, category,
+registration or paid plan is configured in Stripe. Disabled setup returns zero
+with not-configured/not-collected disclosure, never an exemption or invented rate.
+US-only validation covers all 50 states and DC at preview/shipping/payment/order
+boundaries. No hardcoded tax-rate table or client percentage fallback remains.
+
+Future Stripe mode requires the verified intended account, active US head office,
+approved product code and active US registrations. Readiness is bounded/cached per
+account/client/mode/config. Provider failures reject checkout, never guess rates.
+Integer-cent discount allocation precedes calculation; shipping is separate and
+giving excluded. Display provider jurisdiction rates; omit a combined percentage
+when taxable bases differ. Actual provider Tax acceptance remains pending.
+
+Intent creation signs a bounded versioned snapshot and canonical quote hash over
+trusted cart/discount/shipping/address inputs, and attaches the server-selected
+calculation using PaymentIntent tax hooks. Finalization checks paid hook/amount/
+currency/mode and reuses the snapshot; changed inputs reject with do-not-pay-again
+guidance. This does not replace durable attempts/webhooks. Explicit carrier rate
+loss rejects before payment; changed totals refresh but never auto-retry payment.
+
+Order.taxSnapshot is optional JSONB, applied locally/Railway after approved backup
+and preflight. Historical orders stay null; never infer past rates. Public tax
+details exclude provider references/raw payloads/private addresses. Internal staff
+inspection retains the reference. GET /api/admin/payments/tax is no-store and
+read-only, gateway plus ACTIVE ADMIN protected, with safe setup booleans/states/
+blockers only. A Stripe registration is not a government permit; integration does
+not file/remit tax. See the [tax checkpoint](../work-checkpoints/2026-10-27-stripe-tax-readiness.md).
 
 Local commands (two terminals from the application directory):
 
@@ -48,11 +94,12 @@ silently turn this command into a deployed-data target. Email is mocked and the
 automatic live-receipt gate is false in this startup mode. Do not add DB/auth values
 to these private payment overrides or start shared-data tests through this command.
 
-Owner supplied the sandbox public key; it is in the private client override only.
-The server key remains empty until privately supplied. A single read-only check of
-the older local server credential confirms it belongs to a different test account,
-so it is deliberately not copied or reused. Neither prefix matching nor this
-comparison proves the new public/server pair; that verification remains pending.
+Owner-supplied matching sandbox settings are now in both private local overrides
+and their existing hosting targets. The server key is server-only; Vercel receives
+only the public key. Own-account verification confirms the new server identity and
+public-asset inspection matches the supplied sandbox public key. The older local
+server credential is a different test account and is not reused. Actual paired
+payment acceptance is still pending: prefix/account checks alone do not prove it.
 
 Mode is deployment configuration, not a customer input that selects credentials.
 The frontend sends only its derived mode with intent creation. Server config owns

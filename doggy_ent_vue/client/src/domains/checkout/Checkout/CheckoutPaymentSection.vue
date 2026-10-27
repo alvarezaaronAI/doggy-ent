@@ -4,7 +4,7 @@ import { LockKeyhole } from '@lucide/vue'
 import StripeElementsForm from '@payments/components/StripeElementsForm.vue'
 import StripeWalletButtons from '@payments/components/StripeWalletButtons.vue'
 defineProps({ cartItems: Array, checkoutTotal: Number, customer: Object, promoCode: String, shipping: Object, walletSettings: Object, walletReady: Boolean, locked: Boolean, placeWalletOrder: Function, preview: Boolean })
-const emit = defineEmits(['card-complete'])
+const emit = defineEmits(['card-complete', 'pricing-changed'])
 const stripeElementsForm = ref(null)
 defineExpose({ async submitPayment() { return stripeElementsForm.value?.submitPayment() } })
 </script>
@@ -16,10 +16,11 @@ defineExpose({ async submitPayment() { return stripeElementsForm.value?.submitPa
         <h3 class="text-xl font-semibold">Payment</h3>
         <p class="mt-2 flex items-center gap-2 text-xs text-stone-600"><LockKeyhole :size="14" />Your card details are encrypted and processed by Stripe.</p>
         <div class="mt-5">
-          <StripeWalletButtons v-if="!preview && (walletSettings?.applePay || walletSettings?.googlePay)" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :apple-pay="walletSettings.applePay" :google-pay="walletSettings.googlePay" :ready="walletReady" :locked="locked" :place-wallet-order="placeWalletOrder" />
+          <StripeWalletButtons v-if="!preview && checkoutTotal != null && (walletSettings?.applePay || walletSettings?.googlePay)" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :apple-pay="walletSettings.applePay" :google-pay="walletSettings.googlePay" :ready="walletReady" :locked="locked" :place-wallet-order="placeWalletOrder" @pricing-changed="emit('pricing-changed')" />
           <div v-if="preview" class="mb-4 flex flex-wrap gap-2 text-xs text-stone-600"><span v-if="walletSettings?.applePay" class="rounded-md border border-stone-200 bg-stone-50 p-3">Apple Pay enabled</span><span v-if="walletSettings?.googlePay" class="rounded-md border border-stone-200 bg-stone-50 p-3">Google Pay enabled</span></div>
           <p class="mb-2 text-sm font-semibold">Pay by card</p>
-          <StripeElementsForm ref="stripeElementsForm" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :preview="preview" @card-complete="emit('card-complete', $event)" />
+          <p v-if="!preview && checkoutTotal == null" class="text-sm text-stone-600" role="status">Payment is unavailable until tax and the order total are confirmed. Your bag and entered details are unchanged.</p>
+          <div v-show="preview || checkoutTotal != null"><StripeElementsForm ref="stripeElementsForm" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :preview="preview" @card-complete="emit('card-complete', $event)" @pricing-changed="emit('pricing-changed')" /></div>
         </div>
       </div>
     </div>

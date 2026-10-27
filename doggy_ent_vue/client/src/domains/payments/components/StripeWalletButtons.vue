@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { getStripe } from '../services/stripe.js'
 import { createPaymentIntent } from '../services/payment.service.js'
 const props = defineProps({ checkoutTotal: Number, cartItems: Array, customer: Object, shipping: Object, promoCode: String, applePay: Boolean, googlePay: Boolean, ready: Boolean, locked: Boolean, placeWalletOrder: { type: Function, required: true } })
+const emit = defineEmits(['pricing-changed'])
 const container = ref(null), available = ref(false), message = ref('Checking wallet availability...')
 let stripe, elements, wallet, disposed = false
 const methods = () => ({ applePay: props.applePay ? 'auto' : 'never', googlePay: props.googlePay ? 'auto' : 'never', link: 'never', paypal: 'never', amazonPay: 'never', klarna: 'never' })
@@ -22,7 +23,10 @@ onMounted(async () => {
           const submission = await elements.submit()
           if (submission.error) throw new Error(submission.error.message)
           const intent = await createPaymentIntent({ cartItems: props.cartItems, customer: props.customer, shipping: props.shipping, promoCode: props.promoCode })
-          if (Math.round(Number(intent.pricing.total) * 100) !== Math.round(props.checkoutTotal * 100)) throw new Error('Your order total changed. Review the refreshed total before paying.')
+          if (Math.round(Number(intent.pricing?.total) * 100) !== Math.round(props.checkoutTotal * 100)) {
+            emit('pricing-changed')
+            throw new Error('Your order total changed. Review the refreshed total before paying.')
+          }
           const result = await stripe.confirmPayment({ elements, clientSecret: intent.clientSecret, confirmParams: { return_url: window.location.origin + '/checkout' }, redirect: 'if_required' })
           if (result.error) throw new Error(result.error.message)
           if (result.paymentIntent?.status !== 'succeeded') throw new Error('Wallet payment was not completed.')

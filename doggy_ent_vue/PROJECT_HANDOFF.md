@@ -1,5 +1,57 @@
 # Doggy Ent Project Handoff
 
+## In Progress: External US Tax And Disclosure (2026-10-27)
+
+Task feat/stripe-tax-readiness replaces hardcoded state/client guesses with an
+external Stripe Tax adapter and explicit not-configured behavior, US-only server
+validation and rate/jurisdiction UI. Owner has no real sales-tax registration;
+real charging stays locked. Owner explicitly chooses preparation only: Stripe Tax
+stays off, with no provider address/category/registration setup. Optional order
+tax snapshot migration is approved only after private backup/checks.
+Implementation is present; no DB/source release change yet. Parent owns remaining
+data/docs/verification/release; the client worker is complete. The
+[active checkpoint](docs/work-checkpoints/2026-10-27-stripe-tax-readiness.md)
+records the contract, ownership and precise next steps. Never commit the private
+business-origin address or assume sandbox registration is a government permit.
+
+## Sandbox Card Testing Enabled (2026-10-27)
+
+Owner clarifies fake-card checkout must remain usable. Only hosted API
+PAYMENTS_ENABLED changes to true; existing-build redeploy
+f9afcf4a-5190-4fc7-b4c8-82762c3cb2b4 is SUCCESS at unchanged main1738cc7. Runtime
+public configuration is sandbox/enabled; live/missing-mode requests409, health200,
+direct staff403 and no-pending-migration startup pass. Actual admin reports verified
+Sandbox/Allowed (sandbox), live still locked; reloaded customer checkout retains
+bag/account and loads the secure test card field. No purchase was submitted, no
+real funds/email, source change, migration or business-data mutation. Local private
+defaults remain paused; no Vercel rebuild. Receipt settings remain off. Owner's
+manual hosted test orders can still affect the testing DB's orders/stock. Full
+purchase/device/recovery/financial launch acceptance remains open. See the
+[current checkpoint](docs/work-checkpoints/2026-10-26-payment-environment-safety.md).
+This supersedes older paused-runtime notes, not the live-payment lock.
+
+## Payment Sandbox Release Verified (2026-10-27)
+
+PR58/59 release main1738cc767ea9a78f6ad13372e6a4e98a39d098f9 after exact-head
+Quality and full release review. Railway e6e49db0-9f30-49aa-b7f8-1b8b640a66fc is
+SUCCESS and both stable Vercel artifacts are READY at that source. Actual signed-in
+admin shows Configured Sandbox/Account verified/New payments paused, matching
+expected and returned Chase and Evie Sandbox IDs and the live-charge lock. Public
+configuration is sandbox/false/no-store; a valid-shaped start request gets503
+before pricing/provider work. Health/catalog/campaigns200, exact CORS, customer401,
+direct staff403 and anonymous admin protection pass. Public18-asset inspection
+finds the matching sandbox public key, no server-key pattern/live key/admin module.
+Fresh read-only preflight and startup show27matching/0pending/0failed migrations;
+old test intents last24h0. New orders/email deliveries since release0; no receipt
+settings enabled. Focused offline checks rerun289server/223client pass. No migration
+applied, business-data mutation, charge/refund/email or new resource. The
+[active checkpoint](docs/work-checkpoints/2026-10-26-payment-environment-safety.md)
+contains exact artifacts, checks, recovery limits and remaining sandbox/device/
+durable-recovery/financial launch gates. Payments stay paused, live charging is
+code-locked; credential setup is not actual purchase acceptance. Prior key-empty
+and release-hold entries below are historical, not current instructions. Final
+evidence is documentation-only integration work, not another production release.
+
 ## Local Source Complete: Payment Environment Safety (2026-10-26)
 
 Latest coordinated-release preparation: source commit fb01621 is pushed on

@@ -1,5 +1,35 @@
 # Implementation Roadmap
 
+## 2026-10-27 US Tax Preparation
+
+External Stripe Tax adapter, US boundaries, clear tax disclosure, saved optional
+snapshot and protected read-only readiness are implemented. Owner keeps Tax OFF;
+no provider/business setup or real charging activation. Nullable column is applied
+locally/Railway after backup and preservation checks. Finish exact-source rollout
+and UI verification; actual Tax acceptance waits for separate setup approval.
+Durable payment attempts/events, atomic attribution and financial/device/business
+launch gates remain next, not solved by this slice. See the
+[tax checkpoint](work-checkpoints/2026-10-27-stripe-tax-readiness.md).
+
+## 2026-10-27 Hosted Test Cards Available
+
+Owner follow-up enables sandbox-only creation on the existing testing API while
+live charging remains source-locked. Actual card fields and verified admin Allowed
+(sandbox) status pass; no purchase is submitted. Local defaults and email remain
+off. Test orders still affect the testing DB. This supersedes paused hosted status
+below, not purchase/device/durable-recovery/financial launch acceptance. See the
+[current checkpoint](work-checkpoints/2026-10-26-payment-environment-safety.md).
+
+## 2026-10-27 Paused Sandbox Rollout Complete
+
+Existing Railway and both Vercel sites now run the reviewed payment-environment
+guards and truthful read-only admin context. Server/public sandbox configuration
+is saved and verified; creation stays paused and live charging source-locked.
+No new resource, migration or transaction. [Final evidence](work-checkpoints/2026-10-26-payment-environment-safety.md)
+supersedes the local-only/pending-key status below. Next remains durable attempt/
+quote, signed webhook recovery/idempotency, atomic attribution and financial/status
+safety, then scoped sandbox purchase/device tests before explicit live acceptance.
+
 ## 2026-10-26 Payment Environment Safeguards
 
 Default-off new payment creation, explicit key/account/mode checks, public

@@ -21,6 +21,8 @@ export const paymentSuites = [
     'tests/tier2/admin/payment-environment-api.test.js',
     'tests/tier2/admin/payment-environment-composable.test.js',
     'tests/tier2/admin/payment-environment-ui.test.js',
+    'tests/tier2/admin/tax-readiness-api.test.js',
+    'tests/tier2/admin/order-tax-display.test.js',
   ] },
 ]
 

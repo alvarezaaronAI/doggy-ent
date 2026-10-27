@@ -1,5 +1,113 @@
 # Payment Environment Safety: 2026-10-26
 
+## 2026-10-27 Sandbox Card Testing Enabled
+
+Owner clarifies that fake-card checkout must remain usable on the hosted testing
+website. Resume only sandbox creation, not live charging. Fresh target inventory
+confirms existing API deployment e6e49db0-9f30-49aa-b7f8-1b8b640a66fc SUCCESS from
+main1738cc7, unchanged protected storefront/admin hosting and no staged Railway
+patch. Private own-account read matches Chase and Evie Sandbox with charge
+capability. Shared read-only preflight27local/27complete/0pending/0failed/checksum
+matches; receipt settings absent/off. No provider transaction or business write.
+
+Task docs/sandbox-card-testing owns this evidence only. Only PAYMENTS_ENABLED is
+changed to true on the existing API. Exact-build redeploy
+f9afcf4a-5190-4fc7-b4c8-82762c3cb2b4 is SUCCESS at main1738cc7; no source release or
+Vercel rebuild is required. PAYMENT_MODE, account/key pair, source live lock,
+receipt gates, local overrides and database remain unchanged. Startup shows no
+pending migration, server listening and zero error patterns.
+
+Runtime public configuration now returns sandbox/enabled/no-store. Complete
+fictional requests specifying live mode or omitting mode both return409 with no
+intent/client secret, before provider creation. Health200 and direct staff403
+remain. Actual protected admin Refresh shows Configured Sandbox/Account verified/
+Allowed (sandbox), matching IDs, live charging locked and no sandbox blockers.
+Reloading the existing customer checkout retains its bag and signed-in account;
+Stripe's secure card input loads in test mode instead of the old loading failure.
+Wallets truthfully report unavailable on this device; no wallet acceptance claim.
+No card entry, payment submission, provider transaction, order or stock mutation
+is performed by the agent. Native offline-runner safety checks pass9/9.
+
+Owner can now test Visa4242 with the full16-digit number, any future expiry and
+three-digit CVC, per [official Stripe testing guidance](https://docs.stripe.com/testing).
+No real money moves in the Stripe sandbox. Test products marked not for sale remain
+blocked; use an eligible product. Hosted test purchases performed by the owner
+still write orders/stock to the existing testing database; Stripe sandbox does not
+isolate the application's DB. Receipt settings remain absent/off. Actual purchase,
+failure/reload/webhook/wallet/device acceptance and all live-launch gates are still
+pending; enabling manual tests is not certification. Recovery can restore only
+PAYMENTS_ENABLED=false and redeploy this same compatible build. Never switch live
+keys, bypass product guards, send mail or migrate data as part of this change.
+
+This newer enablement supersedes the paused-sandbox runtime status below, not the
+live lock or historical release evidence. Publish these documentation-only notes
+to integration without another production source rollout; primary branches must
+remain synchronized against their own remotes.
+
+## 2026-10-27 Release Verified
+
+This is the current status; older pending-key and main-hold paragraphs below are
+historical. PR58 integrated the exact tested task735ca54 into dev-main at
+a81297422f4c886ed1bed4b814c775a52fc5b51b. PR59 released it to main at
+1738cc767ea9a78f6ad13372e6a4e98a39d098f9. Current-head Quality40463101504 and
+40555521728 pass both jobs and all steps; no blocking review/thread remains. The
+steward reviewed the complete63-file release, including its three prior evidence
+documents. No schema, migration, dependency or startup change is introduced.
+
+Fresh parent read-only preflight:27local/27complete migrations,0pending,0failed,
+0checksum mismatches. Old test account last24hours:0recent/active/succeeded/
+successful-unrecorded intents. The new private credential authenticates against
+the expected Chase and Evie Sandbox account; creation remains paused. Existing
+Railway project/API/main target, no staged changes, healthy public API/exact CORS,
+direct staff403 and all-deployments protected admin are confirmed.
+
+Both stable Vercel aliases now serve that exact main source: storefront
+dpl_5vreMzEZtefETtXmyE2ponRx4vP9 and admin dpl_GMoC2evvNUiur77edYcC9KC3b5z5
+are READY. Static public inspection traverses18referenced JavaScript assets:
+matching sandbox public key present; no long server-credential pattern, live public
+key or admin module found. Keys themselves are never recorded. Railway deployment
+e6e49db0-9f30-49aa-b7f8-1b8b640a66fc is SUCCESS at the same source. Bounded17-entry
+startup inspection confirms27migrations, no pending migration, server listening and
+0error patterns. No new migration was applied.
+
+Public configuration200returns only mode/enabled/message, sandbox/false/no-store
+and exact storefront CORS. A complete fictional customer-shaped start request
+returns503with only success/message and the generic paused explanation, before
+pricing/provider creation. No intent or checkout proof is returned. Health/catalog/
+campaigns200, anonymous customer401, direct staff environment403 and stable plus
+main-alias protected admin302 pass. The latter is expected protection, not a CORS
+failure. Existing Vercel protection was not bypassed or weakened.
+
+Actual protected staff sign-in succeeds. New shared UI deliberately reports unknown
+during the backend transition, then Refresh reports Configured Sandbox/Account
+verified/New payments paused. Expanded expected/returned account IDs match the
+connected sandbox, key mode is Sandbox, charge capability is enabled and live
+charging is explicitly locked. Inspected screenshot and DOM656/656width show no
+horizontal overflow; this is not full device/Safari certification. No business
+editor save or financial action is used. Private local overrides remain ignored,
+mode600. No new credential is put in Vercel client/server source or these notes.
+
+Post-release read-only DB check:27complete/0failed, receipt settings absent/off,
+0new orders and0new-or-sent EmailDelivery rows since18:02:42UTC. Focused offline
+npm run payments:test rerun passes289server/223client with fixture credentials and
+worker networking blocked. Earlier complete server665/client551, builds and
+independent commerce evidence remain backed by both current-head hosted Quality
+runs. No real payment/refund/email/shipment or shared business-data change.
+
+Final evidence uses docs/payment-environment-release-evidence into dev-main only;
+do not redeploy merely for artifact IDs. Git steward is closed; parent owns that
+documentation publication and final primary-branch synchronization. No task test
+server or payment process is running. Next functional work: durable owned attempt/
+quote, signed webhooks/recovery/idempotency, atomic attribution and financial/status
+safety; then explicitly scoped sandbox purchase/device acceptance. Do not unpause
+or activate live charging from this evidence. Rotate the chat-supplied server key
+privately before launch; the owner explicitly accepted its bounded test use here.
+
+Recovery caution: the pre-guard backend does not enforce PAYMENTS_ENABLED. Do not
+blindly roll back to it with the new credentials or call that a payment pause.
+Use a reviewed compatible source/config recovery, preserving existing-payment
+verification; a source revert cannot restore provider or database state.
+
 ## Coordinated Configuration Saved; Main Release Held
 
 Parent reports the following provider milestone while Git steward owns the single

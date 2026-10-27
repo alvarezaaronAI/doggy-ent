@@ -140,9 +140,10 @@ describe('shared receipt presentation and checkout account workflow', () => {
     for (const text of ['Shipping address', 'Street address', 'First name', 'ZIP code', 'shipping address-line1', 'shipping postal-code', 'Add apartment', 'Use this address']) expect(html).toContain(text)
     expect(html).toContain('disabled'); expect(html).not.toContain('Address verified')
   })
-  it('preserves prefilled apartment details and renders a province field for existing Canada support', async () => {
+  it('preserves prefilled apartment details but asks for a supported US destination', async () => {
     const html = await render(CheckoutShippingSection, { customer: { firstName: 'Alex', lastName: 'Morgan', address1: '123 Example Lane', address2: 'Unit 2', city: 'Toronto', state: 'ON', zip: 'M5V 2T6', country: 'CA' } })
-    for (const text of ['Province / territory', 'Postal code', 'Unit 2', 'shipping address-line2', 'ON']) expect(html).toContain(text)
-    expect(html).not.toContain('Select state'); expect(html).not.toContain('Add apartment')
+    for (const text of ['Choose United States', '50 US states', 'Unit 2', 'shipping address-line2', 'Select state']) expect(html).toContain(text)
+    expect(html).not.toContain('Province / territory'); expect(html).not.toContain('Add apartment')
+    expect(html).not.toContain('<option value="CA">Canada</option>')
   })
 })

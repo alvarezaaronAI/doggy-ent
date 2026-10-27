@@ -6,7 +6,7 @@ function normalizeStripeAmount(amount) {
   return Math.round(Number(amount || 0) * 100)
 }
 
-export const createStripePaymentIntent = async ({ amount, currency = 'usd', paymentMode }) => {
+export const createStripePaymentIntent = async ({ amount, currency = 'usd', paymentMode, taxCalculationId }) => {
   try {
     assertPaymentRequestMode(paymentMode)
     const { stripe, mode } = await getVerifiedStripeContext({ forCreation: true })
@@ -16,6 +16,7 @@ export const createStripePaymentIntent = async ({ amount, currency = 'usd', paym
       automatic_payment_methods: {
         enabled: true,
       },
+      ...(taxCalculationId ? { hooks: { inputs: { tax: { calculation: taxCalculationId } } } } : {}),
     })
 
     if (typeof paymentIntent?.livemode !== 'boolean' || paymentIntent.livemode !== (mode === 'live')) throw paymentUnavailable()
@@ -52,6 +53,7 @@ export async function validateStripePaymentIntent({
   stripePaymentIntentId,
   expectedAmount,
   expectedCurrency = 'usd',
+  expectedTaxCalculationId,
 }) {
   const paymentIntent =
     await retrieveStripePaymentIntent(
@@ -76,6 +78,10 @@ export async function validateStripePaymentIntent({
     error.statusCode = 400
 
     throw error
+  }
+
+  if (expectedTaxCalculationId !== undefined && (paymentIntent.hooks?.inputs?.tax?.calculation || null) !== expectedTaxCalculationId) {
+    throw Object.assign(new Error('The payment tax calculation could not be verified. Do not pay again; contact support.'), { statusCode: 409 })
   }
 
   const normalizedExpectedAmount =

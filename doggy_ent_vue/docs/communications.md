@@ -1,5 +1,14 @@
 # Communications Policy
 
+## Saved Tax Disclosure (2026-10-27)
+
+Order email totals use validated saved tax data: explicitly not-collected wording
+when setup was off, genuine saved percentage only when supplied, and no invented
+historic rate for older orders. Escape provider-derived labels. This changes only
+rendering, not email triggers, queue policy, provider readiness or send gates. No
+mail is sent by tax verification; automatic receipts remain off on the shared test
+site. Fulfillment messages remain manual.
+
 ## Local Payment Sandbox (2026-10-26)
 
 The dedicated dev:stripe-sandbox startup forces mocked email/provider and disables

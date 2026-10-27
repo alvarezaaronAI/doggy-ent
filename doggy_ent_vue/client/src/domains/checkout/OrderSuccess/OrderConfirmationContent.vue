@@ -7,6 +7,8 @@ import { itemCampaigns } from '@shared/mappers/commerceItem.mapper.js'
 import { formatCurrency } from '@shared/utils/currency.js'
 import { safeTrackingUrl } from '@domains/account/utils/accountFormatting.js'
 import { receiptEmailMessage } from '../utils/receiptEmail.js'
+import TaxBreakdown from '../components/TaxBreakdown.vue'
+import { mapTaxDetails } from '../mappers/taxDetails.mapper.js'
 const props = defineProps({ order: { type: Object, required: true }, settings: { type: Object, required: true }, signedIn: Boolean, editable: Boolean, selected: String })
 defineEmits(['select'])
 const shipment = computed(() => props.order.shipment || props.order.shipments?.[0])
@@ -16,6 +18,7 @@ const money = value => formatCurrency(value, { currency: props.order.currency ||
 const date = computed(() => new Date(props.order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }))
 const paid = computed(() => props.order.paymentStatus === 'PAID')
 const closed = computed(() => ['CANCELLED', 'REFUNDED'].includes(props.order.status))
+const taxRate = computed(() => props.order.taxDetails?.status === 'calculated' ? mapTaxDetails(props.order.taxDetails)?.rate : null)
 </script>
 <template>
   <div class="confirmation-ui store-pattern" :class="'confirmation-' + settings.background">
@@ -36,7 +39,8 @@ const closed = computed(() => ['CANCELLED', 'REFUNDED'].includes(props.order.sta
             <div class="flex justify-between gap-4"><dt>Subtotal</dt><dd>{{ money(order.subtotal) }}</dd></div>
             <div v-if="order.discountAmount > 0" class="flex justify-between gap-4"><dt>Discount<span v-if="order.promoUsage?.promoCode"> · {{ order.promoUsage.promoCode }}</span></dt><dd>-{{ money(order.discountAmount) }}</dd></div>
             <div class="flex justify-between gap-4"><dt>Shipping</dt><dd class="tabular-nums">{{ money(order.shippingAmount) }}</dd></div>
-            <div class="flex justify-between gap-4"><dt>Tax</dt><dd class="tabular-nums">{{ money(order.taxAmount) }}</dd></div>
+            <div class="flex justify-between gap-4"><dt>Tax<span v-if="taxRate" class="ml-1">({{ taxRate }})</span></dt><dd class="tabular-nums">{{ money(order.taxAmount) }}</dd></div>
+            <div><dt class="sr-only">Saved tax details</dt><dd><TaxBreakdown :tax-details="order.taxDetails" :tax-amount="order.taxAmount" saved :format-price="money" /></dd></div>
             <div class="flex justify-between gap-4 border-t border-stone-200 pt-4 text-lg font-semibold"><dt>{{ paid ? 'Total paid' : 'Total' }}</dt><dd class="tabular-nums">{{ money(order.total) }}</dd></div>
           </dl>
           <RouterLink v-if="!editable" to="/" class="mt-6 inline-flex items-center gap-2 rounded-md bg-[#f2de5c] px-4 py-3 font-semibold text-[#6a3c2b]">Continue shopping <ArrowRight :size="16" /></RouterLink>

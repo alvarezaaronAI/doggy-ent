@@ -21,6 +21,8 @@ describe('shipping address review without provider or payment work', () => {
     expect(state.complete.value).toBe(false); await state.reviewAddress(); expect(state.reviewing.value).toBe(false)
     expect(state.hasApartment.value).toBe(false); state.expandApartment(); expect(state.hasApartment.value).toBe(true)
     customer.value = { ...address(), country: 'CA', state: 'ON', city: 'Toronto', zip: 'M5V 2T6' }
-    expect(state.complete.value).toBe(true); expect(state.countryName.value).toBe('Canada'); expect(state.locality.value).toBe('Toronto, ON, M5V 2T6')
+    expect(state.complete.value).toBe(false); expect(state.countryName.value).toBe('Canada'); expect(state.locality.value).toBe('Toronto, ON, M5V 2T6')
+    await state.reviewAddress(); expect(state.reviewing.value).toBe(false)
+    expect(customer.value.country).toBe('CA'); expect(customer.value.state).toBe('ON')
   })
 })

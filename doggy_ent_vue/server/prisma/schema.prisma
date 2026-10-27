@@ -118,6 +118,7 @@ model Order {
   shippingAmount        Float       @default(0)
   discountAmount        Float       @default(0)
   taxAmount             Float       @default(0)
+  taxSnapshot           Json?
   currency              String      @default("usd")
   stripePaymentIntentId String?     @unique
   createdAt             DateTime    @default(now())

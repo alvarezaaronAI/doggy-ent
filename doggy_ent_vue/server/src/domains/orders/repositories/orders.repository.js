@@ -298,6 +298,7 @@ export async function createOrder(orderInput) {
       shippingAmount: Number(orderInput.shippingAmount || 0),
       discountAmount: Number(orderInput.discountAmount || 0),
       taxAmount: Number(orderInput.taxAmount || 0),
+      ...(orderInput.taxSnapshot ? { taxSnapshot: orderInput.taxSnapshot } : {}),
       currency: orderInput.currency || 'usd',
       stripePaymentIntentId:
         orderInput.stripePaymentIntentId || null,
