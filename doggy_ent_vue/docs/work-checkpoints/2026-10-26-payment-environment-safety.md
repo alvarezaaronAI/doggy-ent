@@ -1,5 +1,49 @@
 # Payment Environment Safety: 2026-10-26
 
+## 2026-10-27 Sandbox Card Testing Enabled
+
+Owner clarifies that fake-card checkout must remain usable on the hosted testing
+website. Resume only sandbox creation, not live charging. Fresh target inventory
+confirms existing API deployment e6e49db0-9f30-49aa-b7f8-1b8b640a66fc SUCCESS from
+main1738cc7, unchanged protected storefront/admin hosting and no staged Railway
+patch. Private own-account read matches Chase and Evie Sandbox with charge
+capability. Shared read-only preflight27local/27complete/0pending/0failed/checksum
+matches; receipt settings absent/off. No provider transaction or business write.
+
+Task docs/sandbox-card-testing owns this evidence only. Only PAYMENTS_ENABLED is
+changed to true on the existing API. Exact-build redeploy
+f9afcf4a-5190-4fc7-b4c8-82762c3cb2b4 is SUCCESS at main1738cc7; no source release or
+Vercel rebuild is required. PAYMENT_MODE, account/key pair, source live lock,
+receipt gates, local overrides and database remain unchanged. Startup shows no
+pending migration, server listening and zero error patterns.
+
+Runtime public configuration now returns sandbox/enabled/no-store. Complete
+fictional requests specifying live mode or omitting mode both return409 with no
+intent/client secret, before provider creation. Health200 and direct staff403
+remain. Actual protected admin Refresh shows Configured Sandbox/Account verified/
+Allowed (sandbox), matching IDs, live charging locked and no sandbox blockers.
+Reloading the existing customer checkout retains its bag and signed-in account;
+Stripe's secure card input loads in test mode instead of the old loading failure.
+Wallets truthfully report unavailable on this device; no wallet acceptance claim.
+No card entry, payment submission, provider transaction, order or stock mutation
+is performed by the agent. Native offline-runner safety checks pass9/9.
+
+Owner can now test Visa4242 with the full16-digit number, any future expiry and
+three-digit CVC, per [official Stripe testing guidance](https://docs.stripe.com/testing).
+No real money moves in the Stripe sandbox. Test products marked not for sale remain
+blocked; use an eligible product. Hosted test purchases performed by the owner
+still write orders/stock to the existing testing database; Stripe sandbox does not
+isolate the application's DB. Receipt settings remain absent/off. Actual purchase,
+failure/reload/webhook/wallet/device acceptance and all live-launch gates are still
+pending; enabling manual tests is not certification. Recovery can restore only
+PAYMENTS_ENABLED=false and redeploy this same compatible build. Never switch live
+keys, bypass product guards, send mail or migrate data as part of this change.
+
+This newer enablement supersedes the paused-sandbox runtime status below, not the
+live lock or historical release evidence. Publish these documentation-only notes
+to integration without another production source rollout; primary branches must
+remain synchronized against their own remotes.
+
 ## 2026-10-27 Release Verified
 
 This is the current status; older pending-key and main-hold paragraphs below are
