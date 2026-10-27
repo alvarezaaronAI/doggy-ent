@@ -20,6 +20,15 @@ Stripe calculations/Tax transactions/device payments/receipt sends are NOT prove
 Final source/deployment checks are tracked in the
 [tax checkpoint](work-checkpoints/2026-10-27-stripe-tax-readiness.md).
 
+Final hosted evidence: PR62/63 exact-head Quality pass; main8df5883 on Railway
+a51c7d27-1294-459b-83fc-afea51623243 SUCCESS and both stable Vercel aliases READY.
+Live tax-off preview/public projection/US/mode/access/no-store/CORS checks pass.
+Actual checkout/staff/legacy-order DOM verifies truthful disclosure and test-card
+availability without any payment.19public assets contain no server-key pattern,
+staff modules or development-routing component. No new orders/email;28matching
+migrations/nonepending. Real device/Tax-enabled/provider/payment-launch gates stay
+open. Final evidence is integration-only docs, not another production rollout.
+
 ## Manual Sandbox Checkout Enabled (2026-10-27)
 
 Only the existing API creation flag is enabled at the owner's request. Redeploy
