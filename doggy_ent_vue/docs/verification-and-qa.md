@@ -1,5 +1,59 @@
 # Verification And QA
 
+## Payment Environment Safety (2026-10-26, Local)
+
+Full server665 (60/599/6) and client551 (11/534/6) pass. Guarded payment selection
+passes289server/223client; native runner9 and gateway6 pass. Server build generates
+Prisma6.16.2; combined/admin/storefront builds pass (admin uses a synthetic public
+storefront origin). No schema/migration or dependency upgrade. New cases cover
+default-off/strict flags/key modes, real adapter account/livemode checks, live lock,
+paused live/sandbox retrieval, cache expiry/failure/concurrent identity changes,
+public projection, actual staff HTTP authorization/gateway restrictions, private
+override startup and client configuration/SDK gates.
+
+Isolated actual Vue admin context verifies configured/verified/paused status,
+expanded IDs/blockers, sandbox/live-lock/unset/account-mismatch/unavailable and
+stale/recheck states. Observed669px and873px layouts have no horizontal overflow;
+final captured console errors are empty and fixture write count is0. Partial
+fixture router produces expected unmatched-sidebar warnings, not app route QA.
+Screenshots are private fictional evidence; temporary5194server/tab and fixture
+file are removed. Ordinary user servers remain untouched. No narrow/Safari/wallet
+or real-admin session certification is inferred.
+
+Read-only local config inspection confirms the base DB is loopback and older
+keys are test-mode. A single Stripe own-account read confirms the old server key
+is not the newly connected sandbox; no private provider payload was printed.
+Dedicated owner-only ignored overrides keep creation paused and the old keys
+unchanged. New public key is supplied; matching private server key remains pending.
+No provider setting/key creation, actual charge/refund/email, DB write or deployment.
+See [checkpoint](work-checkpoints/2026-10-26-payment-environment-safety.md) and
+[configuration/launch contract](architecture/payment-environments.md).
+
+## Stripe Preparation And Admin Clarity (2026-10-26, Local)
+
+Final full suites:601server (56/539/6) and424client (11/407/6) pass. Combined,
+admin-only and storefront-only client builds plus server/Prisma6.16.2 generation
+pass. Guarded payments:test selection passes227server/96client, with9native safety
+tests (30combined Git/security/payment helpers). These add94server/60client/9helper
+cases to the prior baseline. No real Stripe/Resend/DB call is implied by a mocked
+provider result; no shared migration/provider configuration/send/charge occurred.
+
+Actual fictional read-only browser verifies case/space-insensitive Stripe-ID search,
+empty/matching counts, receipt queue caution and Automatic receipt marker, working
+Notifications template link and existing editor route. Observed881px page/content
+has no horizontal overflow; screenshot inspected. No captured console errors. The
+fixture rejects its editor's automatic sample-preview POST with405 (no mutation),
+so this is not a full email-editor preview/send check. Initial admin-only dev proxy
+was pointed at ordinary3000; one anonymous auth/read path was corrected to the
+memory-only fixture before acceptance. No credentials or business data changed.
+Both temporary5193/5194servers and the test tab are stopped; owner servers remain.
+
+Real narrow/iPhone/Safari/accessibility/wallet testing, provider configuration,
+webhook/reload recovery, real transaction races, financial ledger/refund truth and
+stale-browser status safety remain separate. See the [acceptance matrix](prelaunch/payment-readiness.md)
+and [checkpoint](work-checkpoints/2026-10-26-stripe-checkout-readiness.md). New CI
+safety-step configuration is local; no hosted run/publication/deployment here.
+
 ## Email Template Copy Repair (2026-10-26)
 
 Client364/server507 tests and combined/admin/server builds pass. New repository,
@@ -10,8 +64,24 @@ loopback database with27migrations verifies ten concurrent requests yield one ro
 rename/revision persistence, archive preservation, legacy reuse and unchanged
 receipt settings/zero sends; fixture removed. Memory-only actual Vue browser checks
 verify Add, edit, Save changes, Already added reopen and refresh retain one saved
-copy. No shared migration or real provider test. Review and hosted verification
-are tracked in the [repair checkpoint](work-checkpoints/2026-10-26-email-template-copy.md).
+copy. Independent review's stale legacy link finding is fixed and re-reviewed;
+canonical origin/create/update coverage also passes. PR55/56 Quality client/server
+and every step pass. Exact main2066f6b is live on both stable Vercel hosts READY
+and RailwaySUCCESS; startup27migrations/no pending/zero error patterns. Public
+health/products/campaigns200/exact CORS, customer401/directstaff403 and public
+zero-admin-module manifest pass. Live editor reuses the saved template on repeated
+Already added clicks, enables Save changes after an edit, and restores original
+copy on Cancel; zero captured browser errors. No additional template creation or
+setting Save during final live checks.
+
+Owner-requested cleanup follows fresh full private2806546byte decoded/checksummed
+backup and exact-field inventory. Serializable guarded archive of four duplicate
+active payment templates preserves the original and distinct preparation template,
+all content, other template rows, receipt settings and delivery count. Two active
+templates remain; no permanent deletion or schema migration. UI shows two My
+templates/Archived5 (four duplicates plus prior diagnostic copy). Sending is off,
+settings0/automatic deliveries0. No real provider/mail/device certification.
+See [final repair evidence](work-checkpoints/2026-10-26-email-template-copy.md).
 
 ## Checkout Payment Receipt (2026-10-25)
 

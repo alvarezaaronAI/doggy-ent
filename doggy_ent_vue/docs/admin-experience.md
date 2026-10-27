@@ -1,5 +1,34 @@
 # Admin Experience Requirements
 
+## Stripe Environment Context (2026-10-26, Local)
+
+Shared context retains signed-in identity and data routing, and adds a compact
+read-only configured Sandbox/Live indicator, account-check status and whether new
+payments are paused. Expand for expected/returned account, key mode, last check and
+blockers; Refresh uses the existing Lucide resource. Failed, unknown and stale
+checks never claim current readiness. No extra sidebar, key editor or mode toggle.
+Gateway plus persisted ADMIN/ACTIVE remains mandatory. Verification identifies an
+account, not launch/wallet/payout readiness or historical order financial state.
+Live charging is code-locked pending accepted recovery/webhooks. See
+[environment contract and configuration](architecture/payment-environments.md).
+
+## Payment Preparation (2026-10-26, Local)
+
+Orders searches actual stored PaymentIntent IDs along with existing reference and
+customer filters. Marked paid labels the saved workflow bucket, not a reconciled
+Stripe total. Reports states that limitation. Order/global email activity identifies
+known automatic payment receipts, while unknown legacy origins stay unlabelled.
+The manual composer warns about existing queued/pending/accepted/test/failed
+automatic receipts without introducing a retry or sending action. Notifications
+links directly to the working Email templates editor instead of a future placeholder.
+
+The [payment workbench/acceptance plan](prelaunch/payment-readiness.md) keeps future
+financial summaries, missing-order exceptions and reconciliation inside existing
+Orders/Operations groups, after real backend support exists. Manual PAID/REFUNDED
+mutation, stale-browser status conflicts and provider-independent refund reporting
+remain launch blockers; these local UI improvements do not repair those contracts.
+No provider/configuration/DB/financial action is enabled by this preparation.
+
 ## Email Starter Adoption (2026-10-26)
 
 Email templates separates My templates, Starter templates and collapsed Archives.

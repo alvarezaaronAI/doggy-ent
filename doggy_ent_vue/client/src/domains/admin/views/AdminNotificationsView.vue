@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import AdminPageHeader from '../components/AdminPageHeader.vue'
 import AdminMetrics from '../components/AdminMetrics.vue'
 import { useAdminActivity } from '../composables/useAdminActivity'
@@ -13,7 +13,6 @@ const { data, filters, loading, error, load } = useAdminActivity(
   { event: '', status: '' },
   75,
 )
-const tab = ref('history')
 const metrics = computed(() =>
   ['total', 'sent', 'failed', 'mocked', 'pending', 'skipped'].map((key) => ({
     label: formatAdminLabel(key),
@@ -24,19 +23,17 @@ onMounted(load)
 </script>
 <template>
   <section class="admin-page">
-    <AdminPageHeader title="Notifications" eyebrow="Communications" />
+    <AdminPageHeader title="Notifications" eyebrow="Communications">
+      <RouterLink class="admin-button" to="/admin/email-templates">
+        Email templates
+      </RouterLink>
+    </AdminPageHeader>
     <div v-if="error" class="admin-alert admin-error" role="alert">
       {{ error }}
     </div>
     <AdminMetrics :items="metrics" :loading="loading" />
-    <div class="admin-segments mb-6">
-      <button :aria-pressed="tab === 'history'" @click="tab = 'history'">
-        Delivery history</button
-      ><button :aria-pressed="tab === 'templates'" @click="tab = 'templates'">
-        Template center
-      </button>
-    </div>
-    <template v-if="tab === 'history'">
+    <section aria-labelledby="delivery-history-title">
+      <h2 id="delivery-history-title" class="mb-5">Delivery history</h2>
       <form class="admin-filters" @submit.prevent="load">
         <label class="admin-field grow"
           >Event<input v-model="filters.event" placeholder="ORDER_CONFIRMATION"
@@ -69,7 +66,7 @@ onMounted(load)
       </form>
       <p class="admin-muted my-5">
         Latest {{ data?.recent?.length || 0 }} delivery records. Mocked records
-        are not real email sends.
+        are not real email sends. Sent means accepted by the provider, not confirmed inbox delivery.
       </p>
       <p v-if="loading" class="admin-state" role="status">
         Loading delivery history...
@@ -92,6 +89,7 @@ onMounted(load)
                   {{ formatAdminLabel(delivery.event) }}
                 </p>
                 <p class="admin-muted text-xs">{{ delivery.subject }}</p>
+                <span v-if="delivery.automatic === true && delivery.event === 'ORDER_CONFIRMATION'" class="admin-badge mt-2">Automatic receipt</span>
               </td>
               <td data-label="Status">
                 <span
@@ -118,27 +116,6 @@ onMounted(load)
             : 'No deliveries match these filters.'
         }}
       </p>
-    </template>
-    <section v-else class="admin-form-section">
-      <h2>Email template center</h2>
-      <p class="admin-muted mt-3">Coming in a future phase.</p>
-      <div class="grid gap-5 sm:grid-cols-2 mt-6">
-        <div
-          v-for="group in [
-            'Account & security',
-            'Order & tracking updates',
-            'Customer support',
-            'Promos & marketing',
-          ]"
-          :key="group"
-        >
-          <h3 class="font-medium">{{ group }}</h3>
-          <p class="admin-muted mt-2">
-            Template editing, previews, and audience approval are not connected
-            yet.
-          </p>
-        </div>
-      </div>
     </section>
   </section>
 </template>

@@ -37,7 +37,7 @@ const emit = defineEmits([
         <input
           v-model="orderSearchQuery"
           class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 outline-none focus:border-emerald-400"
-          placeholder="Search order ID, customer, email, phone, city..."
+          placeholder="Reference, Stripe PaymentIntent ID, customer, email, phone or city"
         />
       </label>
 

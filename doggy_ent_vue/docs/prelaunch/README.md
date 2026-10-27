@@ -11,6 +11,10 @@ Updated: 2026-10-20. 'Halfway' is a planning description, not a measured readine
 
 ## Recommended Phases
 
+Payment implementation/admin gaps, the repeatable offline checks and the connected
+sandbox/device acceptance matrix now live in [Payment readiness](payment-readiness.md).
+Passed unit checks are not payment-launch acceptance.
+
 | Order | Phase | Acceptance before proceeding |
 | --- | --- | --- |
 | 1 | Source and release discipline | Review/publish this scoped branch when requested; verify hosted CI; protect main/dev-main; map source SHA to actual deployments. |

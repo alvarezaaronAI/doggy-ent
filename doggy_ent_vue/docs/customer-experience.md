@@ -1,5 +1,16 @@
 # Customer Experience Requirements
 
+## Payment Configuration Safety (2026-10-26, Local)
+
+Card/wallet layout, guest checkout, retained bag and presentation previews are
+unchanged. Lazy secure-field loading now requires a valid enabled public server
+configuration with matching publishable-key mode; missing/failed/mismatched setup
+fails closed with safe customer copy. Intent creation sends only its derived mode,
+never keys, and the server rechecks the current gate/account. No raw account or
+provider setup detail reaches customers. Local sandbox setup is isolated from the
+older keys; live charging stays locked. This is not payment/order recovery or
+real-device acceptance. See [environment contract](architecture/payment-environments.md).
+
 ## Payment Receipt Follow-Up (2026-10-25)
 
 One automatic payment confirmation is now owner-approved, narrowly superseding

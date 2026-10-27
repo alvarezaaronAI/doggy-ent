@@ -1,5 +1,33 @@
 # Implementation Roadmap
 
+## 2026-10-26 Payment Environment Safeguards
+
+Default-off new payment creation, explicit key/account/mode checks, public
+publishable-key handshake and protected read-only admin context are implemented
+locally. Live charging remains code-locked, not enabled by tests or env flags.
+Dedicated local API/local DB startup and ignored private overrides preserve the
+older credentials; the new public key is supplied, matching server key pending.
+No shared resource, migration, provider write, actual charge/email or deployment.
+Next: private sandbox-key verification, durable checkout/webhook/attribution and
+financial/status contracts, then approved sandbox/device and hosted acceptance.
+See [active checkpoint](work-checkpoints/2026-10-26-payment-environment-safety.md)
+and [configuration/launch contract](architecture/payment-environments.md).
+
+## 2026-10-26 Payment Readiness Preparation
+
+Local offline test harness and regressions cover actual adapter/controller,
+same-mounted coordination, card/wallet amount/decline handling and admin receipt
+privacy. Small admin improvements add payment-ID lookup, known automatic-receipt
+activity, correct template navigation and honest operational-count wording. No
+schema, provider resource/key, live payment/refund/email, rollout or launch approval.
+
+Next: durable owned checkout quote/attempt, creation idempotency, signed event
+processing/shared recovery, atomic agreed promo/giving, financial reconciliation
+and server-enforced/stale-safe admin statuses. Separate approval precedes shared
+DB migration or sandbox/provider writes. The [acceptance matrix](prelaunch/payment-readiness.md)
+and [checkpoint](work-checkpoints/2026-10-26-stripe-checkout-readiness.md) distinguish
+passed offline checks from feature-blocked and connected/device/business gates.
+
 ## 2026-10-25 Verified-Payment Receipt
 
 Owner approves one automatic payment confirmation only. Disabled-by-default saved

@@ -5,10 +5,12 @@ import {
 import { signCapability } from '../../../shared/utils/signedCapability.js'
 import { validateRequiredCheckoutFields } from '../../checkout/validators/checkout.validator.js'
 import { apiError } from '../../../shared/utils/apiError.js'
+import { assertPaymentRequestMode } from '../config/payment.config.js'
 
 export const createPaymentIntent = async (req, res) => {
   try {
     validateRequiredCheckoutFields({ customer: req.body?.customer })
+    assertPaymentRequestMode(req.body?.paymentMode)
     const checkoutPreview = await previewCheckout(req.body)
 
     if (
@@ -27,6 +29,7 @@ export const createPaymentIntent = async (req, res) => {
 
     const paymentIntent = await createStripePaymentIntent({
       amount,
+      paymentMode: req.body.paymentMode,
     })
 
     return res.status(200).json({
@@ -37,6 +40,9 @@ export const createPaymentIntent = async (req, res) => {
       pricing: checkoutPreview.pricing,
     })
   } catch (error) {
+    if (error.code === 'PAYMENT_ENVIRONMENT_UNAVAILABLE') {
+      return res.status(503).json({ success: false, message: 'Secure checkout is temporarily unavailable. Please try again later.' })
+    }
     const failure = apiError(error, 'Unable to start secure payment. Please try again.')
     return res.status(failure.statusCode).json({
       success: false,

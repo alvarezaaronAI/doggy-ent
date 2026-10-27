@@ -1,5 +1,33 @@
 # Checkout, Receipts And Manual Order Email
 
+## Payment Environment Safeguards (2026-10-26, Local)
+
+The [payment environment contract](payment-environments.md) adds default-off
+creation, explicit mode/account checks, bounded own-account verification, a minimal
+public key-mode handshake and protected admin context. Live creation is code-locked
+until durable quote/attempt, signed webhook/recovery and financial acceptance exist.
+Paused creation still permits verification of already-paid matching intents. This
+does not freeze prices, add creation idempotency, persist mode on old orders or
+implement a webhook. Receipt queue/provider/fulfillment policy is unchanged;
+dedicated local sandbox startup mocks email and keeps its live send gate off.
+
+## Payment Preparation (2026-10-26, Local)
+
+Protected admin order/global delivery projections now include only automatic===true
+as a Boolean, not the private frozen body or provider metadata. Actual order and
+notification renderers label known automatic receipts; the manual composer cautions
+about existing receipt activity and retains the existing preview/confirmed send.
+Orders can search its stored Stripe ID. Operational paid-status counts are labelled
+Marked paid rather than represented as verified financial totals. No payment state
+machine, durable attempt, webhook, ledger, refund or automatic fulfillment path is
+added. Existing financial/status/concurrency launch risks remain.
+
+The fixed offline runner uses local test binaries with fixture-only inherited
+configuration and a test-worker standard network guard. It exercises actual app
+functions/Vue components with mocked persistence/provider boundaries; passing it is
+not a Stripe/DB-race/browser certificate. See the [acceptance/admin plan](../prelaunch/payment-readiness.md)
+and [checkpoint](../work-checkpoints/2026-10-26-stripe-checkout-readiness.md).
+
 ## Automatic Payment Receipt (2026-10-25)
 
 Owner-approved exception to older manual-only receipt notes: exactly one payment
