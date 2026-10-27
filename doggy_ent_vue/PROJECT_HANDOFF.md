@@ -2,6 +2,23 @@
 
 ## Local Source Complete: Payment Environment Safety (2026-10-26)
 
+Latest coordinated-release preparation: source commit fb01621 is pushed on
+feat/payment-environment-safety; integration/release CI and full release review
+are still pending. Main merge is explicitly HELD until the parent confirms fresh
+status/preflight and releases the hold. This is not payment activation or1.0 launch.
+
+Parent-reported provider milestone: owner explicitly authorizes the supplied
+sandbox credential after the exposure warning. The private local credential is
+verified against the expected Chase and Evie Sandbox account; creation stays
+paused. Railway's four matching payment variables are saved with skipDeploys:true,
+without a runtime restart. Vercel's existing public-key variable value is updated
+for its same production/preview targets and existing type; no deployment yet.
+An attempted in-place Sensitive-type conversion returned400 without mutation;
+the successful correction changes only the value. No key values are recorded.
+No live key, DB mutation or new resource is involved. Parent retains private
+configuration/provider ownership and final deployed verification; Git steward
+owns the single publication stream. See the active checkpoint for the release hold.
+
 Hosted follow-up: owner expressly authorizes using the supplied sandbox credential
 after the exposure warning. It is saved only in ignored mode600 local backend
 settings and verified against the expected Chase and Evie Sandbox account; payments

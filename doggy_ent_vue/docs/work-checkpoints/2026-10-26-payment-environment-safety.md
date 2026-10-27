@@ -1,5 +1,35 @@
 # Payment Environment Safety: 2026-10-26
 
+## Coordinated Configuration Saved; Main Release Held
+
+Parent reports the following provider milestone while Git steward owns the single
+Git mutation stream. The owner explicitly authorizes use of the supplied sandbox
+credential after the exposure warning. Its private local own-account verification
+matches the expected Chase and Evie Sandbox account, with new creation paused.
+No credential or publishable-key value is included in source, PRs or these notes.
+
+- Railway saves STRIPE_SECRET_KEY, PAYMENT_MODE=sandbox, PAYMENTS_ENABLED=false
+  and STRIPE_EXPECTED_ACCOUNT_ID with skipDeploys:true. No runtime restart.
+- Vercel updates only the value of the existing VITE_STRIPE_PUBLISHABLE_KEY
+  variable, preserving its production/preview targets and existing type. An
+  attempted in-place conversion from legacy Sensitive returned400 and caused no
+  mutation; the corrected value-only update succeeds. No deployment yet.
+- Both existing hosting configuration stores now target the same sandbox. The
+  existing testing site/shared DB remains; no live key, DB mutation, new database
+  or other resource is introduced. No charge, refund, mail or shipment is run.
+- Parent's fresh read-only preflight reports27matching migrations,0pending,
+  0failed, and old test intents in the last60minutes:0active/0succeeded.
+
+Reviewed source commit fb01621e588d59f1156e2efaca936c532e31237f is pushed on
+feat/payment-environment-safety. This separate documentation follow-up must be
+included in the checked task/release head. Current-head hosted Quality/reviews,
+full dev-main-to-main diff inspection and parent fresh status/preflight remain.
+Main merge is explicitly HELD: no auto-merge or release until the parent confirms
+settings/preflight and expressly releases that hold. Keep the task branch stable;
+no branch cleanup. Parent performs final source/artifact/provider verification
+after any later approved release. Source publication is not activation or1.0
+acceptance; existing durable checkout/webhook/financial/device gates remain open.
+
 ## Hosted Configuration Follow-Up: Authorized Sandbox Cutover
 
 The owner explicitly instructs using the supplied sandbox server credential after
