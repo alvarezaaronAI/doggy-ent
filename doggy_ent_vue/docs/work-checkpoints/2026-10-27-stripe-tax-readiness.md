@@ -116,3 +116,92 @@ storefront2216module builds pass after edge fixes. Expanded scan64paths/39JS/10M
 finds no configured-secret/credential-pattern or local-reference/fence issues;
 git diff --check passes. No dependency upgrade. Release path is task PR to
 dev-main, checked/reviewed full release to main, then all three exact-SHA artifacts.
+
+## Publication In Progress
+
+Task a09add35aedb3e38a9e68173efa1462baaf92dac is published on
+feat/stripe-tax-readiness; PR62 integrates at
+bdbc233699bb5aba71676d4392a241da2c93ca68. Current-head Quality40600762534 and both
+client/server jobs pass; no reviews/threads block. Parent reviewed complete65-file
+release including prior sandbox-evidence-only docs. PR63 targets main1738cc7 with
+head bdbc233; require its own successful current-head Quality before guarded merge.
+Existing hosting targets/protections/source branches confirmed. No Tax/provider/
+payment flag changed. All implementation agents closed; parent is sole Git stream.
+
+Docs-only final evidence branch docs/tax-release-evidence starts at bdbc233 while
+PR63 runs; do not merge it into dev-main until the release head is settled. Record
+exact Railway/storefront/admin artifact IDs and live tax/UI/privacy checks, then
+integrate evidence without another production rollout. Main/dev-main locals need
+fast-forward against their own remotes after final merges. No task server remains.
+
+Release PR63 passed exact-head Quality40600984794 both jobs/all steps and no
+blocking reviews/threads; guarded merge main is
+8df5883153d8f8a89d64efbb0d04fd8043eba8ff. Automatic existing-target rollouts:
+Railway a51c7d27-1294-459b-83fc-afea51623243 BUILDING; storefront
+dpl_9DiJJmtB8JdLAttnG4XLgLVrGCLE READY; staff
+dpl_GAVrMmHgyxoC19ygT6yKK4Hmaktu BUILDING. All identify the exact main SHA.
+Do not call rollout complete yet: verify final API/staff states, stable aliases,
+tax-off preview/access boundaries and actual UI before final evidence publication.
+
+Both stable Vercel aliases now READY at8df5883: storefront dpl_9DiJJmtB8JdLAttnG4XLgLVrGCLE,
+staff dpl_GAVrMmHgyxoC19ygT6yKK4Hmaktu. Public19referenced JS assets respond200;
+no long server-key pattern, staff module or development-routing code, sandbox
+public key present. Actual published shop DOM has no Front End / Back End text or
+development-routing element and no horizontal overflow at2560px. Screenshot pill
+is therefore not shop UI (appears to be Safari native tab-group/topic label).
+Railway still BUILDING at last check; no premature API/checkout success claim.
+
+## Final Hosted Verification
+
+Railway a51c7d27-1294-459b-83fc-afea51623243 is SUCCESS at main8df5883. All three
+artifacts now match that exact source. Startup17entries confirms28migrations/no
+pending/listening; four severity-error entries are npm/Prisma stderr notices,
+not runtime exceptions. No actual exception/crash/error pattern found. Health
+probe initially used wrong /health(404), corrected to actual /api/health(200).
+
+Live API checks23:20:22UTC: health200, sandbox/enabled/no-store with exact storefront
+CORS; preview tax0/provider none/status not_configured/rate null/breakdown empty,
+total16.98 for10.99subtotal plus5.99shipping. No internal snapshot/hash/calculation
+or street address in public preview. Non-US400, missing/live-mode payment starts
+409 with no intent/proof, direct staff tax403, anonymous customer401, protected
+admin302. No valid-mode payment start or payment submission performed.
+
+Actual live checkout DOM: original bag/account retained; secure card iframe loaded,
+one countryUS,52state options(placeholder plus50states/DC), total16.98 and explicit
+not-collected/setup-pending wording. Tax disclosure opens in place and shows only
+destination city/state, no invented rate. DOM1310px has no horizontal overflow.
+Actual staff panel reports Configured Sandbox/Account verified/Allowed(sandbox),
+Tax Not collecting; expand shows US-only/no-local-rates, setup pending and no
+confirmed registrations, live charging locked. Existing order detail says no rate/
+jurisdiction breakdown saved. No editor save, refund, email or order action used.
+
+Public19asset scan and shop DOM prove no development-routing component or
+Front End / Back End label; this appears to be Safari native tab-group/topic UI,
+not a site/backend switch. No source change is needed for that native label.
+Actual browser screenshot cropping did not frame the intended summary reliably;
+the temporary capture was removed, not published as evidence. DOM/earlier isolated
+1440/390/320client fixture checks support this UI pass; real iPhone/Safari/wallet/
+Tax-enabled acceptance is still manual, not claimed from a screenshot.
+
+Fresh shared post-release preflight28matching/no pending; new orders0 and new-or-
+sent email deliveries0 since23:14:35UTC, receipt settings absent/off. No provider
+settings/keys/address/category/registration/paid plan/payment flags changed. Sandbox
+fake-card testing remains enabled; Tax stays OFF and live charging code-locked.
+Docs-only final evidence is next into dev-main, then FF local main/dev-main against
+their own remotes; don't redeploy production solely for these final artifact IDs.
+
+## Remaining Before Tax Or Real-Payment Launch
+
+- Confirm business tax registrations/obligations with a qualified adviser. Setting
+  aside money is not a substitute for required registration/collection/remittance.
+- Separately approve provider business origin/product classification/registration,
+  fee/readiness review and actual isolated sandbox Tax/hook/refund acceptance before
+  enabling TAX_PROVIDER=stripe. No automatic toggle/permit/filing is supplied here.
+- Durable attempts, signed webhook/replay recovery, atomic promo/campaign attribution,
+  paid-unfulfillable handling and truthful financial/refund reconciliation remain.
+- Actual supported-device card/wallet/3DS/failure/reload acceptance, approved receipt
+  sender/inbox/budget, operational monitoring/restore and launch approval remain.
+- Existing carrier integration needs independently accepted quote lifecycle/package
+  coverage before live use; exact stale-rate rejection is not shipping certification.
+- Task agents/processes closed. Preserve ignored private backups/env files; source
+  rollback leaves the compatible column in place. No destructive down migration.
