@@ -1,5 +1,15 @@
 # Implementation Roadmap
 
+## 2026-10-27 Paused Sandbox Rollout Complete
+
+Existing Railway and both Vercel sites now run the reviewed payment-environment
+guards and truthful read-only admin context. Server/public sandbox configuration
+is saved and verified; creation stays paused and live charging source-locked.
+No new resource, migration or transaction. [Final evidence](work-checkpoints/2026-10-26-payment-environment-safety.md)
+supersedes the local-only/pending-key status below. Next remains durable attempt/
+quote, signed webhook recovery/idempotency, atomic attribution and financial/status
+safety, then scoped sandbox purchase/device tests before explicit live acceptance.
+
 ## 2026-10-26 Payment Environment Safeguards
 
 Default-off new payment creation, explicit key/account/mode checks, public
