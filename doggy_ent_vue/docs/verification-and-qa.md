@@ -1,5 +1,19 @@
 # Verification And QA
 
+## Manual Sandbox Checkout Enabled (2026-10-27)
+
+Only the existing API creation flag is enabled at the owner's request. Redeploy
+f9afcf4a-5190-4fc7-b4c8-82762c3cb2b4 SUCCESS reuses main1738cc7; no Vercel/source
+release. Fresh read-only27-migration/checksum/account/receipt-off preflight and
+clean startup pass. Public sandbox/enabled/no-store, live/missing mode409 without
+payment identity, health200/directstaff403 and actual verified staff Allowed
+(sandbox)/live-lock pass. Real customer checkout reload preserves bag/account and
+loads Stripe's secure test card input; wallets are unavailable on this device.
+Runner-safety9/9 passes. No payment is submitted and no wallet/device/successful
+purchase certification is inferred. Owner test purchases can write orders/stock
+in the testing DB; live launch and durable-recovery gates remain open. See the
+[current checkpoint](work-checkpoints/2026-10-26-payment-environment-safety.md).
+
 ## Paused Sandbox Deployment (2026-10-27)
 
 Exact main1738cc7 is RailwaySUCCESS/both stable VercelREADY after PR58/59 and

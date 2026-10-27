@@ -1,12 +1,13 @@
 # Payment Environments And Launch Controls
 
-## Current Scope (2026-10-27, Deployed Paused Sandbox)
+## Current Scope (2026-10-27, Hosted Sandbox Testing Enabled)
 
 Reviewed main1738cc7 is verified on the existing Railway API and both Vercel
 sites. Saved server/public settings use the expected Chase and Evie Sandbox;
-actual staff verification matches that account. New payments remain disabled and
-live creation remains code-locked. Public configuration, blocked creation and
-protected staff context are verified, not an actual sandbox purchase. No new
+actual staff verification matches that account. The owner's follow-up enables
+hosted sandbox creation only; local private defaults remain paused and live
+creation remains code-locked. Public configuration, mode rejection, secure card
+loading and protected staff context are verified, not an actual sandbox purchase. No new
 hosting resource, database, migration or provider transaction is introduced. See
 the [final checkpoint](../work-checkpoints/2026-10-26-payment-environment-safety.md).
 
@@ -22,7 +23,10 @@ point preview storefront/admin deployments only at that target. Never connect a
 sandbox frontend to a live backend or assume Vercel Preview isolates Railway data.
 No separate hosted resource or database mutation is performed by this source
 implementation. The later owner-authorized configuration stage updates the existing
-Railway server settings and Vercel storefront public key; it does not enable sales.
+Railway server settings and Vercel storefront public key. The later single-flag
+enablement allows manual test-card checkout, never real-money sales. The existing
+testing database still receives any order/stock changes when a test purchase is
+completed. Receipt settings stay off and test-product purchase guards stay intact.
 
 ## Configuration Names
 

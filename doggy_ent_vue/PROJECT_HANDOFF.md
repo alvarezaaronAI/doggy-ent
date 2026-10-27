@@ -1,5 +1,21 @@
 # Doggy Ent Project Handoff
 
+## Sandbox Card Testing Enabled (2026-10-27)
+
+Owner clarifies fake-card checkout must remain usable. Only hosted API
+PAYMENTS_ENABLED changes to true; existing-build redeploy
+f9afcf4a-5190-4fc7-b4c8-82762c3cb2b4 is SUCCESS at unchanged main1738cc7. Runtime
+public configuration is sandbox/enabled; live/missing-mode requests409, health200,
+direct staff403 and no-pending-migration startup pass. Actual admin reports verified
+Sandbox/Allowed (sandbox), live still locked; reloaded customer checkout retains
+bag/account and loads the secure test card field. No purchase was submitted, no
+real funds/email, source change, migration or business-data mutation. Local private
+defaults remain paused; no Vercel rebuild. Receipt settings remain off. Owner's
+manual hosted test orders can still affect the testing DB's orders/stock. Full
+purchase/device/recovery/financial launch acceptance remains open. See the
+[current checkpoint](docs/work-checkpoints/2026-10-26-payment-environment-safety.md).
+This supersedes older paused-runtime notes, not the live-payment lock.
+
 ## Payment Sandbox Release Verified (2026-10-27)
 
 PR58/59 release main1738cc767ea9a78f6ad13372e6a4e98a39d098f9 after exact-head

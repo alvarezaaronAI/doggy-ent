@@ -1,5 +1,14 @@
 # Implementation Roadmap
 
+## 2026-10-27 Hosted Test Cards Available
+
+Owner follow-up enables sandbox-only creation on the existing testing API while
+live charging remains source-locked. Actual card fields and verified admin Allowed
+(sandbox) status pass; no purchase is submitted. Local defaults and email remain
+off. Test orders still affect the testing DB. This supersedes paused hosted status
+below, not purchase/device/durable-recovery/financial launch acceptance. See the
+[current checkpoint](work-checkpoints/2026-10-26-payment-environment-safety.md).
+
 ## 2026-10-27 Paused Sandbox Rollout Complete
 
 Existing Railway and both Vercel sites now run the reviewed payment-environment
