@@ -18,7 +18,7 @@ export function isAllowedApiRequest(path, method) {
   const parts = path.split('/').slice(1)
   if (parts[0] !== 'api' || parts.some(part => part === '.' || part === '..')) return false
   const read = method === 'GET' || method === 'HEAD'
-  if (parts[1] === 'admin' && parts[2] === 'payments') return read && path === '/api/admin/payments/environment'
+  if (parts[1] === 'admin' && parts[2] === 'payments') return read && ['/api/admin/payments/environment', '/api/admin/payments/tax'].includes(path)
   if (parts[1] === 'admin') return ADMIN_AREAS.has(parts[2]) && parts.slice(3).every(part => /^[a-zA-Z0-9_-]+$/.test(part))
   if (parts[1] === 'auth' && parts.length === 3) return read ? ['me', 'data-target'].includes(parts[2]) : method === 'POST' && ['login', 'logout'].includes(parts[2])
   if (parts[1] === 'admin-auth') return read ? path === '/api/admin-auth/get-session' : method === 'POST' && ['/api/admin-auth/sign-in/email', '/api/admin-auth/sign-out'].includes(path)

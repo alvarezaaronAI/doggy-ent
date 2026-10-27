@@ -1,5 +1,19 @@
 # Doggy Ent Project Handoff
 
+## In Progress: External US Tax And Disclosure (2026-10-27)
+
+Task feat/stripe-tax-readiness replaces hardcoded state/client guesses with an
+external Stripe Tax adapter and explicit not-configured behavior, US-only server
+validation and rate/jurisdiction UI. Owner has no real sales-tax registration;
+real charging stays locked. Owner explicitly chooses preparation only: Stripe Tax
+stays off, with no provider address/category/registration setup. Optional order
+tax snapshot migration is approved only after private backup/checks.
+Implementation is present; no DB/source release change yet. Parent owns remaining
+data/docs/verification/release; the client worker is complete. The
+[active checkpoint](docs/work-checkpoints/2026-10-27-stripe-tax-readiness.md)
+records the contract, ownership and precise next steps. Never commit the private
+business-origin address or assume sandbox registration is a government permit.
+
 ## Sandbox Card Testing Enabled (2026-10-27)
 
 Owner clarifies fake-card checkout must remain usable. Only hosted API

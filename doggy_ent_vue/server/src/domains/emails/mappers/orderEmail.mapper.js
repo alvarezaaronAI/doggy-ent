@@ -1,4 +1,5 @@
 import { givingBeneficiaries } from '../../storefront/content/commercePresentation.js'
+import { mapPublicTaxDetails } from '../../../shared/utils/taxSnapshot.js'
 
 const escape = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;')
 const labelStyle = 'margin:0 0 16px;font-size:18px;line-height:26px;font-weight:700;color:#6A3C2B;'
@@ -59,13 +60,15 @@ export function renderOrderEmail(template, order, options = {}) {
       <td style="padding:16px 0;border-bottom:1px solid #e2e5e9;vertical-align:top;font-size:16px;line-height:24px;${amountStyle}">${escape(money(item.lineTotal))}</td>
     </tr>`
   }).join('')
+  const taxDetails = mapPublicTaxDetails(order.taxSnapshot || order.taxDetails, Number(order.taxAmount || 0))
+  const taxLabel = taxDetails?.status === 'not_configured' ? 'Tax not collected' : taxDetails?.ratePercent != null ? `Sales tax (${taxDetails.ratePercent}%)` : 'Tax'
   const totalRows = [
     ['Subtotal', order.subtotal],
     ...(order.discountAmount > 0 ? [['Discount', -order.discountAmount]] : []),
     ['Shipping', order.shippingAmount],
-    ['Tax', order.taxAmount],
+    [taxLabel, order.taxAmount],
   ]
-  const totals = totalRows.map(([label, value]) => `<tr><th scope="row" style="padding:6px 12px 6px 0;text-align:left;font-weight:400;">${label}</th><td style="padding:6px 0;${amountStyle}">${escape(money(value))}</td></tr>`).join('')
+  const totals = totalRows.map(([label, value]) => `<tr><th scope="row" style="padding:6px 12px 6px 0;text-align:left;font-weight:400;">${escape(label)}</th><td style="padding:6px 0;${amountStyle}">${escape(money(value))}</td></tr>`).join('')
   const addressLines = [order.customerName, order.address1, order.address2, [order.city, order.state, order.zip].filter(Boolean).join(', '), order.country].filter(Boolean)
   const address = addressLines.map(escape).join('<br>')
   const shippingMethod = [order.shippingCarrier, order.shippingService || order.shippingMethod].filter(Boolean).join(' - ')

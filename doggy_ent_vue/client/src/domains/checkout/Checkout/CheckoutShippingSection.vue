@@ -1,7 +1,8 @@
 <script setup>
-import { useId } from 'vue'
+import { computed, useId } from 'vue'
 import { Mail, Pencil, Plus, ArrowRight } from '@lucide/vue'
 import { useCheckoutAddressReview } from '../composables/useCheckoutAddressReview.js'
+import { US_SHIPPING_STATES, isUSShippingDestination } from '../constants/shippingDestinations.js'
 
 const props = defineProps({
   customer: {
@@ -11,6 +12,12 @@ const props = defineProps({
 })
 const id = useId()
 const { reviewing, addressReview, streetField, hasApartment, complete, recipient, locality, countryName, reviewAddress, editAddress, expandApartment } = useCheckoutAddressReview(() => props.customer)
+const country = computed({
+  get: () => props.customer.country === 'United States' ? 'US' : props.customer.country,
+  set: value => { props.customer.country = value },
+})
+const unsupportedDestination = computed(() => country.value !== 'US'
+  || Boolean(props.customer.state && !isUSShippingDestination(props.customer)))
 </script>
 
 <template>
@@ -30,15 +37,16 @@ const { reviewing, addressReview, streetField, hasApartment, complete, recipient
     </div>
 
     <div v-else class="shipping-fields mt-5 grid grid-cols-2 gap-x-4 gap-y-4">
-      <label class="shipping-field col-span-2" :for="id + '-country'">Country / region<select :id="id + '-country'" v-model="customer.country" autocomplete="shipping country"><option value="US">United States</option><option value="CA">Canada</option></select></label>
+      <label class="shipping-field col-span-2" :for="id + '-country'">Country / region<select :id="id + '-country'" v-model="country" autocomplete="shipping country" :aria-describedby="id + '-destinations'" required><option value="US">United States</option></select></label>
+      <p :id="id + '-destinations'" class="col-span-2 text-xs text-stone-600">Shipping is available to the 50 US states and District of Columbia only.<span v-if="unsupportedDestination" class="block font-medium text-red-700" role="status">Choose United States and a supported state for this checkout. Your saved address is unchanged.</span></p>
       <label class="shipping-field" :for="id + '-first'">First name<input :id="id + '-first'" v-model="customer.firstName" autocomplete="shipping given-name" required></label>
       <label class="shipping-field" :for="id + '-last'">Last name<input :id="id + '-last'" v-model="customer.lastName" autocomplete="shipping family-name" required></label>
       <label class="shipping-field col-span-2" :for="id + '-street'">Street address<input :id="id + '-street'" ref="streetField" v-model="customer.address1" autocomplete="shipping address-line1" placeholder="Street and house number" required></label>
       <label v-if="hasApartment" class="shipping-field col-span-2" :for="id + '-apartment'">Apartment, suite or unit <span class="text-xs text-stone-500">Optional</span><input :id="id + '-apartment'" v-model="customer.address2" autocomplete="shipping address-line2"></label>
       <button v-else type="button" class="col-span-2 inline-flex min-h-11 items-center gap-2 justify-self-start rounded-md border border-stone-200 bg-stone-50 px-3 text-sm text-stone-700" :aria-expanded="hasApartment" @click="expandApartment"><Plus :size="15" />Add apartment, suite or unit</button>
       <label class="shipping-field col-span-2" :for="id + '-city'">City<input :id="id + '-city'" v-model="customer.city" autocomplete="shipping address-level2" required></label>
-      <label class="shipping-field" :for="id + '-state'">{{ customer.country === 'CA' ? 'Province / territory' : 'State' }}<input v-if="customer.country === 'CA'" :id="id + '-state'" v-model="customer.state" autocomplete="shipping address-level1" placeholder="e.g. ON" required><select v-else :id="id + '-state'" v-model="customer.state" autocomplete="shipping address-level1" required><option value="">Select state</option><option value="CA">California</option><option value="NV">Nevada</option><option value="AZ">Arizona</option><option value="OR">Oregon</option></select></label>
-      <label class="shipping-field" :for="id + '-postal'">{{ customer.country === 'CA' ? 'Postal code' : 'ZIP code' }}<input :id="id + '-postal'" v-model="customer.zip" autocomplete="shipping postal-code" required></label>
+      <label class="shipping-field" :for="id + '-state'">State<select :id="id + '-state'" v-model="customer.state" autocomplete="shipping address-level1" required><option value="">Select state</option><option v-for="state in US_SHIPPING_STATES" :key="state.code" :value="state.code">{{ state.name }}</option></select></label>
+      <label class="shipping-field" :for="id + '-postal'">ZIP code<input :id="id + '-postal'" v-model="customer.zip" autocomplete="shipping postal-code" required></label>
       <div class="col-span-2 border-t border-stone-200 pt-4"><button type="button" class="inline-flex min-h-11 items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-4 text-sm font-semibold text-stone-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!complete" @click="reviewAddress">Use this address <ArrowRight :size="16" /></button><p class="mt-2 text-xs text-stone-500">{{ complete ? 'Review your delivery address before paying.' : 'Complete the fields above to review your address.' }}</p></div>
     </div>
   </div>

@@ -1,5 +1,25 @@
 # Verification And QA
 
+## US Tax Preparation (2026-10-27)
+
+Current full suites pass server795(60/729/6), client610(11/593/6), gateway6 and
+runner safety9. Coverage includes real adapter tax hooks, server-owned quote/proof,
+frozen-tax finalization, US boundaries, integer discount allocation, provider/cache
+failure, public projection, stale pricing and explicit refreshed-total card/wallet
+retry. Full server HTTP fixtures require gateway plus persisted ACTIVE ADMIN for
+tax readiness, prohibit writes and avoid provider/storage access while Tax is off.
+The network-blocked payment runner excludes listener tests; don't weaken its guard.
+
+After fresh decoded full private backups, only the approved nullable order column
+is applied locally/Railway:28matching migrations/nonepending, all34prior business
+table fingerprints preserved and old snapshots null. Local real Prisma/Postgres
+fixture verifies snapshot round-trip/customer projection/legacy/rollback with no
+persisted orders. Independent source and follow-up review close carrier-fallback
+and stale-total retry findings. Provider Tax remains intentionally OFF; genuine
+Stripe calculations/Tax transactions/device payments/receipt sends are NOT proven.
+Final source/deployment checks are tracked in the
+[tax checkpoint](work-checkpoints/2026-10-27-stripe-tax-readiness.md).
+
 ## Manual Sandbox Checkout Enabled (2026-10-27)
 
 Only the existing API creation flag is enabled at the owner's request. Redeploy

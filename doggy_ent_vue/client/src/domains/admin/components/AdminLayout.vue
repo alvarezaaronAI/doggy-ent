@@ -5,6 +5,7 @@ import AdminHeader from './AdminHeader.vue'
 import AdminSidebar from './AdminSidebar.vue'
 import AdminDataTargetBadge from './AdminDataTargetBadge.vue'
 import AdminPaymentEnvironment from './AdminPaymentEnvironment.vue'
+import AdminTaxReadiness from './AdminTaxReadiness.vue'
 import { fetchAdminSession, logoutAdmin } from '../api/adminSession.api.js'
 import '../../../assets/styles/admin.css'
 const router = useRouter()
@@ -51,6 +52,7 @@ async function logout() {
           </p>
         </details>
         <AdminPaymentEnvironment />
+        <AdminTaxReadiness />
       </div>
       <p class="admin-muted break-all">
         Signed in as

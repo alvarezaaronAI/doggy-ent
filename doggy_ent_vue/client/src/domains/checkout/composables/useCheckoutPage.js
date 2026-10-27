@@ -22,18 +22,15 @@ import {
 import {
   calculateDiscount,
   calculateItemCount,
-  calculateOrderTotal,
   calculateSubtotal,
-  calculateTax,
-  calculateTaxableTotal,
 } from '../utils/checkout.utils'
 
 import { useCheckoutIdentity } from './useCheckoutIdentity.js'
 import { useCheckoutShipping } from './useCheckoutShipping.js'
+import { isUSShippingDestination } from '../constants/shippingDestinations.js'
 import { useStorefrontCampaigns } from '@campaigns/composables/useStorefrontCampaigns.js'
 export function useCheckoutPage() {
 const CART_STORAGE_KEY = 'doggy-ent-cart'
-const TAX_RATE = 0.075
 
 const router = useRouter()
 
@@ -76,9 +73,7 @@ const {
         country:
           customer.value.country === 'US'
             ? 'United States'
-            : customer.value.country === 'CA'
-              ? 'Canada'
-              : customer.value.country,
+            : customer.value.country,
       },
       shipping: {
         ...buildSelectedShippingPayload(),
@@ -130,9 +125,10 @@ const checkoutRequirementsComplete = computed(() => {
     && customer.value.city.trim()
     && customer.value.state.trim()
     && customer.value.zip.trim()
+    && isUSShippingDestination(customer.value)
     && !!selectedShippingOption.value
     && paymentRequirementsComplete.value
-    && (paymentCompleted.value || (!!trustedPricing.value && !isRefreshingCheckoutPreview.value))
+    && (paymentCompleted.value || pricingReady.value)
     && cartItems.value.length
   )
 })
@@ -156,7 +152,8 @@ const checkoutChecklist = computed(() => [
       && customer.value.address1.trim()
       && customer.value.city.trim()
       && customer.value.state.trim()
-      && customer.value.zip.trim(),
+      && customer.value.zip.trim()
+      && isUSShippingDestination(customer.value),
   },
   {
     id: 'delivery',
@@ -210,33 +207,11 @@ const discount = computed(() =>
   })
 )
 
-const taxableTotal = computed(() =>
-  calculateTaxableTotal({
-    subtotal: subtotal.value,
-    discount: discount.value,
-    shipping: shippingPrice.value,
-  })
-)
-
-const tax = computed(() =>
-  calculateTax({
-    taxableTotal: taxableTotal.value,
-    taxRate: TAX_RATE,
-  })
-)
-
-const total = computed(() =>
-  calculateOrderTotal({
-    taxableTotal: taxableTotal.value,
-    tax: tax.value,
-  })
-)
-
 const {
-  checkoutPreviewResult,
+  trustedPricing,
+  checkoutPreviewError,
   isRefreshingCheckoutPreview,
   refreshCheckoutPreview,
-  scheduleCheckoutPreview,
 } = useCheckoutPreview({
   cartItems,
   appliedPromoCode,
@@ -259,6 +234,7 @@ function loadSavedCart() {
 }
 
 function formatPrice(value) {
+  if (value == null) return 'Pending'
   return `$${Number(value || 0).toFixed(2)}`
 }
 
@@ -298,24 +274,22 @@ const totalCampaignDonation = computed(() =>
   campaignPreview.value.reduce((total, campaign) => total + Number(campaign.donationAmount || 0), 0)
 )
 
-const trustedPricing = computed(() =>
-  checkoutPreviewResult.value?.pricing || null,
-)
+const pricingReady = computed(() => Boolean(trustedPricing.value)
+  && trustedPricing.value.taxDetails?.status !== 'pending_address')
+const summaryTaxDetails = computed(() => trustedPricing.value?.taxDetails || null)
 
 const summarySubtotal = computed(() => trustedPricing.value?.subtotal ?? subtotal.value)
 const summaryDiscount = computed(() => trustedPricing.value?.discountAmount ?? discount.value)
 const summaryShipping = computed(() => trustedPricing.value?.shippingAmount ?? shippingPrice.value)
 const summaryTax = computed(() => (
-  trustedPricing.value?.taxAmount
-  ?? trustedPricing.value?.tax
-  ?? tax.value
+  pricingReady.value ? trustedPricing.value.taxAmount ?? trustedPricing.value.tax : null
 ))
 const summaryDonation = computed(() => trustedPricing.value?.donationAmount ?? totalCampaignDonation.value)
-const summaryTotal = computed(() => trustedPricing.value?.total ?? total.value)
+const summaryTotal = computed(() => pricingReady.value ? trustedPricing.value.total : null)
 
 
 function validateCheckout({ wallet = false } = {}) {
-  if (!paymentCompleted.value && (!trustedPricing.value || isRefreshingCheckoutPreview.value)) {
+  if (!paymentCompleted.value && !pricingReady.value) {
     checkoutStatusType.value = 'error'
     checkoutStatus.value = 'Wait for the current order total to be verified before paying.'
     return false
@@ -348,6 +322,12 @@ function validateCheckout({ wallet = false } = {}) {
     return false
   }
 
+  if (!isUSShippingDestination(customer.value)) {
+    checkoutStatusType.value = 'error'
+    checkoutStatus.value = 'Shipping is available only to the 50 US states and District of Columbia. Choose a US shipping address.'
+    return false
+  }
+
   if (!selectedShippingOption.value) {
     checkoutStatusType.value = 'error'
     checkoutStatus.value = 'Please choose a valid delivery method.'
@@ -376,7 +356,6 @@ watch(
   customer,
   () => {
     scheduleShippingRates()
-    scheduleCheckoutPreview()
   },
   {
     deep: true,
@@ -387,31 +366,9 @@ watch(
   cartItems,
   () => {
     scheduleShippingRates()
-    scheduleCheckoutPreview()
   },
   {
     deep: true,
-  },
-)
-
-watch(
-  selectedShipping,
-  () => {
-    scheduleCheckoutPreview()
-  },
-)
-
-watch(
-  appliedPromoCode,
-  () => {
-    scheduleCheckoutPreview()
-  },
-)
-
-watch(
-  shippingPrice,
-  () => {
-    scheduleCheckoutPreview()
   },
 )
 
@@ -423,9 +380,9 @@ onMounted(async () => {
 })
 const placeOrder = () => submitCurrentOrder()
 const placeWalletOrder = paymentExecutor => submitCurrentOrder({ paymentExecutor })
-const walletReady = computed(() => checkoutChecklist.value.slice(0, 3).every(step => step.complete) && !!trustedPricing.value && !isRefreshingCheckoutPreview.value)
+const walletReady = computed(() => checkoutChecklist.value.slice(0, 3).every(step => step.complete) && isUSShippingDestination(customer.value) && pricingReady.value)
 const { campaigns, loadCampaigns } = useStorefrontCampaigns()
 onMounted(loadCampaigns)
-return { cartItems, customer, selectedShipping, shippingOptions, isLoadingShippingRates, shippingRateMessage, campaignPreview, isLoadingCampaignPreview, paymentFormComplete, accountProfile, isSignedInCheckout, profilePrefilled, checkoutAuthMode, stripePaymentForm, checkoutChecklist, isProcessingOrder, paymentCompleted, checkoutRequirementsComplete, checkoutStatus, checkoutStatusType, summarySubtotal, summaryDiscount, summaryShipping, summaryTax, summaryDonation, summaryTotal, totalCampaignDonation, itemCount, appliedPromoCode, isRefreshingCheckoutPreview, promoCode, promoStatus, promoMessage, formatPrice, buildSelectedShippingPayload, placeOrder, placeWalletOrder, walletReady, openCheckoutAuth, handleCheckoutAuthenticated, applyPromoCode, campaigns }
+return { cartItems, customer, selectedShipping, shippingOptions, isLoadingShippingRates, shippingRateMessage, campaignPreview, isLoadingCampaignPreview, paymentFormComplete, accountProfile, isSignedInCheckout, profilePrefilled, checkoutAuthMode, stripePaymentForm, checkoutChecklist, isProcessingOrder, paymentCompleted, checkoutRequirementsComplete, checkoutStatus, checkoutStatusType, summarySubtotal, summaryDiscount, summaryShipping, summaryTax, summaryTaxDetails, summaryDonation, summaryTotal, totalCampaignDonation, itemCount, appliedPromoCode, isRefreshingCheckoutPreview, checkoutPreviewError, refreshCheckoutPreview, promoCode, promoStatus, promoMessage, formatPrice, buildSelectedShippingPayload, placeOrder, placeWalletOrder, walletReady, openCheckoutAuth, handleCheckoutAuthenticated, applyPromoCode, campaigns }
 
 }

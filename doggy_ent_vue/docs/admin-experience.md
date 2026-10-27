@@ -1,5 +1,17 @@
 # Admin Experience Requirements
 
+## Tax Readiness And Saved Details (2026-10-27)
+
+The shared context adds compact read-only tax collection status with expandable
+setup booleans, recorded states, blockers and explicit refresh. No tax activation,
+secret/address/permit editor or new sidebar item. Failed/stale checks do not claim
+readiness; sandbox registration is not a government permit. Owner keeps Tax OFF.
+Saved order tax details show only genuine rate/jurisdiction evidence; old orders
+show unavailable breakdown, never an inferred percentage. Internal inspection may
+include the saved provider reference; customer views cannot. Existing gateway and
+persisted ACTIVE ADMIN checks remain required. See the
+[tax checkpoint](work-checkpoints/2026-10-27-stripe-tax-readiness.md).
+
 ## Stripe Environment Context (2026-10-26, Local)
 
 Shared context retains signed-in identity and data routing, and adds a compact

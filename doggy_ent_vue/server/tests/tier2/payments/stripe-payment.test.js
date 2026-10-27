@@ -65,6 +65,24 @@ afterEach(() => vi.restoreAllMocks())
 afterAll(() => vi.unstubAllEnvs())
 
 describe('offline Stripe payment adapter', () => {
+  it('attaches only the server-selected tax calculation when creating an intent', async () => {
+    mocks.create.mockResolvedValue({ id: paymentIntentId, livemode: false })
+    await createStripePaymentIntent({ amount: 42.37, paymentMode: 'sandbox', taxCalculationId: 'taxcalc_fixture' })
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ hooks: { inputs: { tax: { calculation: 'taxcalc_fixture' } } } }))
+  })
+
+  it.each([undefined, 'taxcalc_other'])('rejects a missing or mismatched paid tax hook (%s)', async calculation => {
+    mocks.retrieve.mockResolvedValue(succeededIntent({ hooks: calculation ? { inputs: { tax: { calculation } } } : undefined }))
+    await expect(validateStripePaymentIntent({ ...validationInput, expectedTaxCalculationId: 'taxcalc_fixture' })).rejects.toMatchObject({ statusCode: 409 })
+  })
+
+  it('accepts the matching paid tax hook and requires no hook for disabled tax', async () => {
+    mocks.retrieve.mockResolvedValue(succeededIntent({ hooks: { inputs: { tax: { calculation: 'taxcalc_fixture' } } } }))
+    await expect(validateStripePaymentIntent({ ...validationInput, expectedTaxCalculationId: 'taxcalc_fixture' })).resolves.toMatchObject({ id: paymentIntentId })
+    await expect(validateStripePaymentIntent({ ...validationInput, expectedTaxCalculationId: null })).rejects.toMatchObject({ statusCode: 409 })
+    mocks.retrieve.mockResolvedValue(succeededIntent())
+    await expect(validateStripePaymentIntent({ ...validationInput, expectedTaxCalculationId: null })).resolves.toMatchObject({ id: paymentIntentId })
+  })
   it('does not construct a Stripe client at module import', () => {
     expect(mocks.Stripe).not.toHaveBeenCalled()
   })

@@ -1,3 +1,5 @@
+import { mapPublicTaxDetails } from '../../../shared/utils/taxSnapshot.js'
+
 export function mapOrderItem(orderItem) {
   return {
     id: orderItem.id,
@@ -193,6 +195,7 @@ export function mapOrder(order) {
     shippingRateProvider: order.shippingRateProvider || null,
     discountAmount: Number(order.discountAmount || 0),
     taxAmount: Number(order.taxAmount || 0),
+    taxDetails: mapPublicTaxDetails(order.taxSnapshot || order.taxDetails, Number(order.taxAmount || 0)),
     donationAmount: getOrderDonationAmount(order),
     customerReference: getCustomerOrderReference(order),
     promoUsage: mapOrderPromoUsage(order.promoUsage),
@@ -261,6 +264,7 @@ export function mapCustomerOrder(order) {
     shippingAmount: mappedOrder.shippingAmount,
     discountAmount: mappedOrder.discountAmount,
     taxAmount: mappedOrder.taxAmount,
+    taxDetails: mappedOrder.taxDetails,
     donationAmount: mappedOrder.donationAmount,
     currency: mappedOrder.currency,
     createdAt: mappedOrder.createdAt,

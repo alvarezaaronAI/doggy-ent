@@ -81,7 +81,7 @@ describe('payment intent trusted amount', () => {
       customer,
       cartItems: [],
       promoCode: 'CHASE20',
-    })
+    }, { includeTaxSnapshot: true })
     expect(mocks.createStripePaymentIntent).toHaveBeenCalledWith({
       amount: 42.37,
       paymentMode: 'sandbox',
