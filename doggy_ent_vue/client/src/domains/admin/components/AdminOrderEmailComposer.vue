@@ -8,6 +8,17 @@ const emit = defineEmits(['sent'])
 const templates = ref([]), selected = ref(''), preview = ref(null), error = ref(''), message = ref(''), busy = ref(false), live = ref(false), confirmed = ref(false)
 let generation = 0
 const choices = computed(() => templates.value.filter(item => !item.archived))
+const automaticReceiptNote = computed(() => {
+  const receipt = props.order.emailDeliveries?.find(item => item.event === 'ORDER_CONFIRMATION' && item.automatic === true)
+  if (!receipt) return ''
+  return ({
+    QUEUED: 'An automatic payment confirmation is queued. Review email activity before sending another payment confirmation.',
+    PENDING: 'An automatic payment confirmation is being handled. Check provider activity before sending another payment confirmation.',
+    SENT: 'The provider accepted an automatic payment confirmation. This is not proof of inbox delivery.',
+    FAILED: 'An automatic payment confirmation needs review. Check provider activity before retrying or sending another confirmation.',
+    MOCKED: 'An automatic payment confirmation was recorded as a test. No email was sent.',
+  })[receipt.status] || 'Automatic payment confirmation activity is recorded. Review email activity before sending another confirmation.'
+})
 function invalidate() { generation++; preview.value = null; confirmed.value = false; live.value = false }
 watch(selected, invalidate)
 watch(() => props.order.updatedAt, invalidate)
@@ -35,7 +46,8 @@ async function send() {
 <template>
   <section class="admin-form-section">
     <div class="admin-row"><h2>Customer email</h2><RouterLink class="admin-link" to="/admin/email-templates">Edit templates</RouterLink></div>
-    <p class="admin-muted mt-2 text-sm">No order emails send automatically. Preview the saved order and recipient first.</p>
+    <p class="admin-muted mt-2 text-sm">Payment confirmations can send automatically when enabled. Preparation, shipping and other order updates require your preview and send.</p>
+    <p v-if="automaticReceiptNote" class="admin-alert mt-4 text-sm" role="status">{{ automaticReceiptNote }}</p>
     <p v-if="error" role="alert" class="admin-alert admin-alert-error mt-4">{{ error }}</p><p v-if="message" role="status" class="admin-alert mt-4">{{ message }}</p>
     <fieldset :disabled="busy" class="mt-4 space-y-4">
       <label class="admin-field">Customer email template<select v-model="selected"><option value="" disabled>Choose template</option><option v-for="template in choices" :key="template.id" :value="template.id">{{ template.name }}{{ template.suggested ? ' · Suggested' : '' }}</option></select></label>

@@ -126,4 +126,46 @@ describe('promo validation rules', () => {
     expect(result.valid).toBe(true)
     expect(result.discountAmount).toBe(20)
   })
+
+  it('rejects unknown codes without recording a redemption', async () => {
+    repository.getActivePromoByCode.mockResolvedValue(null)
+    repository.getPromoByCode.mockResolvedValue(null)
+    const result = await validatePromoCode({ code: 'UNKNOWN', customerEmail: 'qa@example.test', cart: { subtotal: 100 } })
+    expect(result).toMatchObject({ valid: false, discountAmount: 0, message: 'Invalid code' })
+    expect(repository.createPromoUsageTx).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { status: 'DRAFT' }, { status: 'PAUSED' }, { status: 'ARCHIVED' }, { status: 'EXPIRED' },
+    { startsAt: new Date(Date.now() + 86400000).toISOString() },
+    { endsAt: new Date(Date.now() - 86400000).toISOString() },
+  ])('rejects inactive or out-of-schedule promotion %j', async change => {
+    repository.getActivePromoByCode.mockResolvedValue({ ...activePromo, ...change })
+    expect(await validatePromoCode({ code: activePromo.code, customerEmail: 'qa@example.test', cart: { subtotal: 100 } })).toMatchObject({ valid: false, discountAmount: 0, message: 'Promo not active.' })
+    expect(repository.createPromoUsageTx).not.toHaveBeenCalled()
+  })
+
+  it('rejects a fully used global allowance', async () => {
+    repository.getActivePromoByCode.mockResolvedValue({ ...activePromo, usageLimitTotal: 1 })
+    repository.getPromoUsageCount.mockResolvedValue(1)
+    expect(await validatePromoCode({ code: activePromo.code, customerEmail: 'qa@example.test', cart: { subtotal: 100 } })).toMatchObject({ valid: false, discountAmount: 0, message: 'Promo usage limit reached.' })
+  })
+
+  it('rejects a promotion assigned to another email', async () => {
+    repository.getActivePromoByCode.mockResolvedValue({ ...activePromo, assignedCustomerEmail: 'owner@example.test' })
+    expect(await validatePromoCode({ code: activePromo.code, customerEmail: 'other@example.test', cart: { subtotal: 100 } })).toMatchObject({ valid: false, discountAmount: 0, message: 'Promo assigned to another customer.' })
+  })
+
+  it('matches an assigned email after normalization without consuming the code', async () => {
+    repository.getActivePromoByCode.mockResolvedValue({ ...activePromo, assignedCustomerEmail: 'Owner@Example.test' })
+    expect(await validatePromoCode({ code: ' chase20 ', customerEmail: ' OWNER@example.test ', cart: { subtotal: 100 } })).toMatchObject({ valid: true, code: 'CHASE20', discountAmount: 20 })
+    expect(repository.getActivePromoByCode).toHaveBeenCalledWith('CHASE20')
+    expect(repository.createPromoUsageTx).not.toHaveBeenCalled()
+    expect(repository.incrementPromoUsageStatsTx).not.toHaveBeenCalled()
+  })
+
+  it('caps a fixed discount at the trusted subtotal instead of creating negative merchandise totals', async () => {
+    repository.getActivePromoByCode.mockResolvedValue({ ...activePromo, discountType: 'FIXED', discountValue: 999 })
+    expect(await validatePromoCode({ code: activePromo.code, customerEmail: 'qa@example.test', cart: { subtotal: 100 } })).toMatchObject({ valid: true, discountAmount: 100 })
+  })
 })

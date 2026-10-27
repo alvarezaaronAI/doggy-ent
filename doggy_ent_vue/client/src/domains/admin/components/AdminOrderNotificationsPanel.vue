@@ -54,6 +54,7 @@ function formatDateTime(value) {
               {{ formatEvent(delivery.event) }}
             </p>
             <p class="mt-1 text-stone-500">{{ delivery.subject }}</p>
+            <span v-if="delivery.automatic === true && delivery.event === 'ORDER_CONFIRMATION'" class="admin-badge mt-2">Automatic receipt</span>
           </div>
           <span
             class="rounded-full bg-white px-2 py-1 text-xs font-black uppercase text-stone-500"
@@ -63,6 +64,9 @@ function formatDateTime(value) {
         </div>
         <p class="mt-2 text-xs text-stone-400">
           {{ formatDateTime(delivery.sentAt || delivery.createdAt) }}
+        </p>
+        <p v-if="['QUEUED', 'PENDING'].includes(delivery.status)" class="mt-2 text-xs text-stone-500">
+          {{ delivery.status === 'QUEUED' ? 'Waiting for the receipt worker. Not sent yet.' : 'Provider acceptance is not confirmed. Review activity before retrying.' }}
         </p>
         <p
           v-if="delivery.errorMessage"

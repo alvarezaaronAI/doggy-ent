@@ -1,5 +1,25 @@
 # Communications Policy
 
+## Local Payment Sandbox (2026-10-26)
+
+The dedicated dev:stripe-sandbox startup forces mocked email/provider and disables
+the automatic live-receipt gate. New payment-mode controls do not authorize any
+email or make Stripe sandbox data safe for real inboxes. Existing manual-send and
+approved-inbox/budget requirements remain. [Environment setup](architecture/payment-environments.md)
+keeps local testing separate; no live receipt/provider setting is changed.
+
+## Receipt Activity Clarity (2026-10-26, Local)
+
+Protected admin order/global delivery projections expose only the strict automatic
+Boolean alongside existing safe fields, never frozen renderedEmail, dedupe keys or
+private metadata. A known automatic ORDER_CONFIRMATION receives an Automatic
+receipt label; unspecified older origins are not invented as Manual. The manual
+composer explains prior receipt queue/provider/test/failure activity before another
+confirmation. Notifications links to the actual template editor. Existing preview,
+review, actor, duplicate-send and default-off/live gates are unchanged; no new send,
+retry, provider setting or automatic fulfillment behavior. See the
+[preparation evidence](work-checkpoints/2026-10-26-stripe-checkout-readiness.md).
+
 ## Verified-Payment Receipt Exception (2026-10-25)
 
 The owner approves exactly one automatic payment-confirmation receipt after verified

@@ -124,6 +124,7 @@ export function mapOrderEmailDelivery(delivery) {
     subject: delivery.subject,
     provider: delivery.provider,
     status: delivery.status,
+    automatic: delivery.automatic === true,
     errorMessage: delivery.errorMessage,
     sentAt: delivery.sentAt,
     createdAt: delivery.createdAt,

@@ -56,7 +56,7 @@ onMounted(loadPageData)
           label: 'Pending',
           value: statsError ? 'Unavailable' : stats.pendingOrders,
         },
-        { label: 'Paid', value: statsError ? 'Unavailable' : stats.paidOrders },
+        { label: 'Marked paid', value: statsError ? 'Unavailable' : stats.paidOrders },
         {
           label: 'Delivered',
           value: statsError ? 'Unavailable' : stats.fulfilledOrders,
@@ -68,7 +68,7 @@ onMounted(loadPageData)
         >Search orders<input
           v-model="orderSearchQuery"
           type="search"
-          placeholder="Reference, customer, email, phone or city"
+          placeholder="Reference, Stripe PaymentIntent ID, customer, email, phone or city"
       /></label>
       <label class="admin-field"
         >Status<select aria-label="Status" v-model="orderStatusFilter">

@@ -1,5 +1,74 @@
 # Doggy Ent Project Handoff
 
+## Local Source Complete: Payment Environment Safety (2026-10-26)
+
+Hosted follow-up: owner expressly authorizes using the supplied sandbox credential
+after the exposure warning. It is saved only in ignored mode600 local backend
+settings and verified against the expected Chase and Evie Sandbox account; payments
+remain paused. Shared read-only migration preflight27matches/nonepending/nonefailed.
+Coordinated hosted source/config preparation follows; no live key is activated.
+The earlier wait-for-private-replacement step below is superseded, not secret
+handling rules. See the checkpoint's latest evidence before acting.
+
+Earlier hosted follow-up: owner requests existing Railway/Vercel use Chase and Evie Sandbox;
+renamed context and current hosting targets are verified read-only. Server key was
+missing, then supplied in chat. That copy is not saved/deployed; request a privately
+entered replacement after Stripe key rotation. No cloud variables, staged patch or
+deployment changed. Current main does not enforce local new payment gates; next
+requires coordinated source/config/preflight, not a frontend-only key switch. See
+the checkpoint's latest follow-up before acting. Never copy credentials into notes.
+
+Owner approves source preparation for sandbox/live isolation and a server-backed
+admin Stripe indicator. Both assistant Stripe contexts are connected; website keys
+are not yet verified. Task feat/payment-environment-safety preserves the prior
+uncommitted payment test/admin preparation. Default-off creation, strict mode/account
+checks, protected read-only context and public key-mode handshake are implemented.
+Live creation stays code-locked pending durable attempt/webhook/recovery acceptance.
+Server665/client551 tests, payment selection289/223, safety9/gateway6 and all builds
+pass. Isolated actual admin UI checks pass; independent commerce review finds no
+scoped blocker, and its extra cache/paused-live/timeout tests are added. Dedicated
+local commands use3010/5175, loopback DB validation and mocked email. Ignored private
+overrides are owner-only: supplied sandbox public key saved, server key still empty,
+creation false. One read-only account check proves the older local key belongs to
+a different test environment; it is not reused. No existing credential changed.
+No shared data/schema/provider configuration, real payment/email, publication or
+deployment. Hosted isolation/durable recovery/financial/device acceptance remains.
+See the [active checkpoint](docs/work-checkpoints/2026-10-26-payment-environment-safety.md)
+for implementation ownership, verification and remaining target/configuration gates.
+The [customer worker checkpoint](docs/work-checkpoints/2026-10-26-customer-payment-configuration.md)
+records the bounded handshake's additional isolated evidence.
+
+## Current Preparation: Stripe And Admin Checks (2026-10-26)
+
+Local preparation on test/stripe-checkout-readiness preserves the initial audit.
+Adds an offline fixed-suite runner with inherited-credential isolation and worker
+network guard, expanded adapter/controller/promo/card/wallet/coordinator tests and
+safe admin receipt projections. Orders now searches Stripe IDs; actual Orders and
+Reports say Marked paid, not reconciled transactions; automatic receipt activity
+and pre-manual-send cautions are visible; Notifications links to the real editor.
+No payment creation/recovery/refund/financial-status/fulfillment policy is changed.
+The [acceptance matrix and admin backlog](docs/prelaunch/payment-readiness.md)
+separate working source from durable-recovery/atomic-attribution/financial-ledger/
+stale-status launch blockers and provider/device/business decisions. No DB/schema,
+credential/provider setting, payment/email, publication or deployment. See the
+[current checkpoint](docs/work-checkpoints/2026-10-26-stripe-checkout-readiness.md)
+for exact final test/build/browser/review results and resume instructions.
+
+## Initial Audit: Stripe Checkout Readiness (2026-10-26)
+
+Read-only payment-flow review is complete; no runtime or provider change. Stripe
+plugin discovery reports not installed, so account mode, webhook destinations,
+wallet domains and provider activity are unverified. Existing trusted pricing,
+payment verification, unique-payment order/atomic inventory and receipt privacy
+are present. Main launch blockers remain browser-dependent finalization, no durable
+checkout/payment-attempt snapshot or Stripe creation idempotency, separate
+promo/campaign commits, and order-status-derived refund reporting. Tax is still an
+estimate with a placeholder Stripe Tax path. Focused provider-mocked checks pass:
+50 server/36 client. No charge, email, DB write/migration, configuration change,
+source publication or deployment. Docs-only task is docs/stripe-checkout-readiness
+from synchronized dev-main517e5ed. [Audit/checklist and exact next steps](docs/work-checkpoints/2026-10-26-stripe-checkout-readiness.md)
+separate confirmed source findings from pending Stripe/dashboard/device acceptance.
+
 ## Current Repair: Email Template Copy (2026-10-26)
 
 Completed and live at main2066f6b45287722bac0e40b233e38b130531643e on both

@@ -1,5 +1,7 @@
 {
   "scripts": {
+    "payments:test": "node scripts/payment-tests.mjs",
+    "test:payment-safety": "node --test scripts/payment-tests.test.mjs",
     "security:preflight": "node scripts/security-preflight.mjs",
     "test:security-preflight": "node --test scripts/security-preflight.test.mjs",
     "test": "npm run tiertest1 && npm run tiertest2 && npm run tiertest3",

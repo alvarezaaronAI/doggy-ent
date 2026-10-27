@@ -9,6 +9,7 @@ import promosRoutes from './domains/promos/routes/promos.routes.js'
 import campaignsRoutes from './domains/campaigns/routes/campaigns.routes.js'
 import checkoutRoutes from './domains/checkout/routes/checkout.routes.js'
 import paymentRoutes from './domains/payments/routes/payment.routes.js'
+import adminPaymentsRoutes from './domains/payments/routes/adminPayments.routes.js'
 import ordersRoutes from './domains/orders/routes/orders.routes.js'
 import authRoutes from './domains/auth/routes/auth.routes.js'
 import customerRecoveryRoutes from './domains/auth/routes/customerRecovery.routes.js'
@@ -98,6 +99,7 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/products', productsRoutes)
 app.use('/api/checkout', checkoutRoutes)
 app.use('/api/checkout', paymentRoutes)
+app.use('/api/admin/payments', adminPaymentsRoutes)
 app.use('/api/promos', promosRoutes)
 app.use('/api/admin/promos', promosRoutes)
 app.use('/api/admin/campaigns', campaignsRoutes)

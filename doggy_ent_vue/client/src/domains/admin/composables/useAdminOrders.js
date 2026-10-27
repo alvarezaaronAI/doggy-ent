@@ -26,6 +26,7 @@ export function useAdminOrders() {
           order.id,
           order.orderNumber,
           order.customerReference,
+          order.stripePaymentIntentId,
           order.customerName,
           order.customerEmail,
           order.customerPhone,

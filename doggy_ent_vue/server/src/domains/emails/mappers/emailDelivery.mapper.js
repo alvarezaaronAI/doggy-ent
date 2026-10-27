@@ -10,6 +10,7 @@ export function mapEmailDelivery(delivery) {
     subject: delivery.subject,
     provider: delivery.provider,
     status: delivery.status,
+    automatic: delivery.automatic === true,
     orderId: delivery.orderId,
     userId: delivery.userId,
     errorMessage: delivery.errorMessage,

@@ -1,14 +1,15 @@
-import Stripe from 'stripe'
 import { logOperationalFailure } from '../../../shared/utils/operationalLog.js'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+import { assertPaymentRequestMode, paymentUnavailable } from '../config/payment.config.js'
+import { getVerifiedStripeContext } from './paymentEnvironment.service.js'
 
 function normalizeStripeAmount(amount) {
   return Math.round(Number(amount || 0) * 100)
 }
 
-export const createStripePaymentIntent = async ({ amount, currency = 'usd' }) => {
+export const createStripePaymentIntent = async ({ amount, currency = 'usd', paymentMode }) => {
   try {
+    assertPaymentRequestMode(paymentMode)
+    const { stripe, mode } = await getVerifiedStripeContext({ forCreation: true })
     const paymentIntent = await stripe.paymentIntents.create({
       amount: normalizeStripeAmount(amount),
       currency,
@@ -17,6 +18,7 @@ export const createStripePaymentIntent = async ({ amount, currency = 'usd' }) =>
       },
     })
 
+    if (typeof paymentIntent?.livemode !== 'boolean' || paymentIntent.livemode !== (mode === 'live')) throw paymentUnavailable()
     return paymentIntent
   } catch (error) {
     logOperationalFailure('PAYMENT_INTENT_CREATE_FAILED', error)
@@ -34,9 +36,12 @@ export async function retrieveStripePaymentIntent(
   }
 
   try {
-    return await stripe.paymentIntents.retrieve(
+    const { stripe, mode } = await getVerifiedStripeContext()
+    const paymentIntent = await stripe.paymentIntents.retrieve(
       stripePaymentIntentId,
     )
+    if (paymentIntent && (typeof paymentIntent.livemode !== 'boolean' || paymentIntent.livemode !== (mode === 'live'))) throw paymentUnavailable()
+    return paymentIntent
   } catch (error) {
     logOperationalFailure('PAYMENT_INTENT_RETRIEVE_FAILED', error)
     throw error
