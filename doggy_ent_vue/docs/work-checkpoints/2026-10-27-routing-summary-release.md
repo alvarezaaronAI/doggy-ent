@@ -67,7 +67,12 @@ localhost tab11 works; old127tab10 reached connection-refused after fixture rest
 although shellhealth200. Use localhost preview, not the broken old tab. Captured
 checkout-summary-release-detail.png is the actual fictional summary, cropped from
 the saved full screenshot. It is not real Tax/provider/payment certification.
-Independent source review and exact-head hosted CI/release are still pending.
+Independent source review at4907659 found one freshness edge case after sleep:
+timer-throttled tabs could briefly retain old Connected evidence on return. Parent
+now recalculates age synchronously on visibility return before any label remains
+current. A no-timer five-minute clock-jump regression and focused26client cases
+pass; admin build passes. No other concrete review findings. Follow-up review and
+exact-head hosted CI/release remain pending; do not merge the superseded head.
 
 Private memory-only fixture now runs in exec session10460 at5197; tab11 is owner
 preview. Its API/SDK block all real payments and writes; sample8.25% tax is not a

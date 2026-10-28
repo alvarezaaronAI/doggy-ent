@@ -39,7 +39,12 @@ export function useAdminRouting() {
     return inFlight
   }
   function recheckVisibleTab() {
-    if (!document.hidden && (!routing.value || stale.value)) void refresh()
+    if (document.hidden) return
+    if (routing.value) {
+      const age = Date.now() - Date.parse(routing.value.checkedAt)
+      stale.value = !Number.isFinite(age) || age < 0 || age >= FRESHNESS_MS
+    }
+    if (!routing.value || stale.value) void refresh()
   }
   onMounted(() => {
     document.addEventListener('visibilitychange', recheckVisibleTab)

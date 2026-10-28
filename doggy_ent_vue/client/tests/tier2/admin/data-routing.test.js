@@ -90,4 +90,17 @@ describe('protected staff routing display', () => {
     expect(http.fetchApi).toHaveBeenCalledTimes(2)
     expect(state.connected.value).toBe(true)
   })
+  it('invalidates expired connection evidence after sleep even when the expiry timer has not run', async () => {
+    const { state } = mount(); await flush()
+    expect(state.connected.value).toBe(true)
+    vi.setSystemTime(new Date('2026-10-27T18:05:00Z'))
+    let resolve
+    http.fetchApi.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    documentState.addEventListener.mock.calls[0][1]()
+    expect(http.fetchApi).toHaveBeenCalledTimes(2)
+    expect(state.connected.value).toBe(false)
+    expect(state.label.value).toBe('Checking routing')
+    resolve(response(fixture())); await flush()
+    expect(state.connected.value).toBe(true)
+  })
 })
