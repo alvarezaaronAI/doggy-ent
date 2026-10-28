@@ -11,6 +11,13 @@ gets authenticated connection/route evidence without exposing private DB details
 Implementation, operations and remaining verification/publication are tracked in
 the [active checkpoint](docs/work-checkpoints/2026-10-27-routing-summary-release.md).
 
+PR65 is integrated at0dee993 after exact-head client/server Quality and independent
+review; the sleep-return stale-connection finding is fixed and re-reviewed. PR66
+is the reviewed36-file release to main8df5883, awaiting its own CI before merge.
+Do not confuse preview artifacts with production deployment. Evidence branch
+docs/checkout-routing-release-evidence must not move dev-main until PR66's head is
+settled. Parent owns remaining publication and exact-source post-release checks.
+
 ## Current: Checkout Summary Labels Only (2026-10-27)
 
 Owner rejects the broader checkout/payment redesign and supplies the original

@@ -89,3 +89,25 @@ creating orders. Sync clean primary branches and record results/rollback.
 Source rollback is the prior reviewed main8df5883 artifact; no DB down migration
 or gate weakening is part of recovery. This remains a testing-site release, not
 real-payment launch certification or Tax collection activation.
+
+## Publication Milestone
+
+Implementation1f37209534652a57de096057fa5209711cd2d9c3 is pushed/synced. Independent
+review closes the sleep-freshness finding with15/15routing checks and no further
+findings. PR65 exact-head Quality40646543697 passes both client/server jobs; no
+blocking reviews/threads. Annotations are existing action-runtime/Ubuntu notices,
+not code/test failures. Guarded merge integrates at
+0dee99398d15ec1faf874f8ffef109d3104246ef.
+
+Full reviewed release has36files, with runtime tree identical to the accepted task
+head and only prior tax-evidence docs additionally included. PR66 is open from
+dev-main0dee993 to main8df5883; its own current-head Quality must pass before main
+merge. Parent remains the single Git mutation stream; all review/preflight agents
+are closed. Doc evidence is prepared on docs/checkout-routing-release-evidence,
+not merged into dev-main while PR66's release head is pending. Next: verify PR66,
+guarded merge, exact-source API/shop/admin rollout and live UI/boundaries, then
+publish this final evidence into integration without another production rollout.
+
+Local server3000 read-only health also confirms RAILWAY_DB/databaseConnected true.
+This is distinct from the labelled DB-free5197fixture; no local data target was
+silently changed. Keep previewtab11 until replacement live result is verified.
