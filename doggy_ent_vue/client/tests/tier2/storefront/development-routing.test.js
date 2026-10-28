@@ -40,4 +40,17 @@ describe('backend-owned development routing indicator', () => {
       expect(routing.verified.value).toBe(false)
     }
   })
+  it('distinguishes an explicitly isolated preview from a verified database connection', async () => {
+    api.fetchDevelopmentContext.mockResolvedValue({ development: { target: { code: 'PREVIEW' }, databaseConnected: false } })
+    const routing = useDevelopmentRouting()
+    await routing.refresh()
+    expect(routing.preview.value).toBe(true)
+    expect(routing.verified.value).toBe(false)
+    expect(routing.label.value).toBe('PREVIEW · NO DATABASE')
+    expect(routing.error.value).toBe('')
+    api.fetchDevelopmentContext.mockRejectedValueOnce(new Error('failed'))
+    await routing.refresh()
+    expect(routing.preview.value).toBe(false)
+    expect(routing.label.value).toBe('DATA TARGET UNVERIFIED')
+  })
 })

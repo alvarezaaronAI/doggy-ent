@@ -95,7 +95,8 @@ describe('safe server tax presentation', () => {
 
   it('shows server tax amount/rate and total without recomputing them', async () => {
     const html = await render(CheckoutTotals, { summarySubtotal: 30, summaryDiscount: 0, summaryShipping: 5, summaryTax: 2.25, summaryTaxDetails: details(), summaryTotal: 37.25, isRefreshingCheckoutPreview: false, formatPrice: money })
-    expect(html).toContain('(7.5%)'); expect(html).toContain('$2.25'); expect(html).toContain('$37.25')
+    expect(html).toContain('7.5%'); expect(html).toContain('bg-stone-100'); expect(html).toContain('$2.25'); expect(html).toContain('$37.25')
+    expect(html).not.toContain('Tax destination'); expect(html).not.toContain('Example City')
   })
 
   it.each([OrderConfirmationContent, AccountOrderDetails])('uses saved order details and leaves legacy amounts without historical rate inference', async component => {

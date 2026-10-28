@@ -1,5 +1,17 @@
 # Checkout, Receipts And Manual Order Email
 
+## Summary Labels Only (2026-10-27)
+
+The superseded broad payment UI revision is reversed. CheckoutTotals alone owns
+new summary presentation: server tax rate in gray (actual zero:0% applied), no
+destination/setup disclosure, and explicitly effective ratio if no single rate was
+supplied. This display ratio never calculates tax or enters a payment request.
+Promo validation adds public discountType/discountValue; current accepted preview
+passes that metadata through summaryPromo. Percent labels require a matching valid
+rule/rounded amount; other discounts show effective percent saved. Before/after
+figures are item subtotals, not fabricated alternative tax-inclusive order totals.
+No schema, price, tax configuration, payment control or provider behavior changes.
+
 ## Payment Environment Safeguards (2026-10-26, Local)
 
 The [payment environment contract](payment-environments.md) adds default-off

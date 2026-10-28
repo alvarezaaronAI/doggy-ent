@@ -1,6 +1,42 @@
 # Doggy Ent Project Handoff
 
-## In Progress: External US Tax And Disclosure (2026-10-27)
+## Current: Routing And Summary Release (2026-10-27)
+
+Owner accepts the corrected checkout preview and requests deployment after routing,
+thumbnail, gold shipping accent and per-item subtle monogram checks. PR65 preview
+hold is superseded by this bounded follow-up. Original checkout/payment layout
+stays; no provider activation, secret/configuration change or migration. Local
+fixture is intentionally DB-free, now explicitly labelled; hosted staff routing
+gets authenticated connection/route evidence without exposing private DB details.
+Implementation, operations and remaining verification/publication are tracked in
+the [active checkpoint](docs/work-checkpoints/2026-10-27-routing-summary-release.md).
+
+## Current: Checkout Summary Labels Only (2026-10-27)
+
+Owner rejects the broader checkout/payment redesign and supplies the original
+layout as authority. PR65 is draft/unmerged; no production deployment occurred.
+Correction f3661c2 is pushed and synced; it reverses superseded749f435 without
+rewriting history. Payment,
+contact/shipping/delivery cards, controls and unrelated behavior match f1bf1ba.
+Only summary presentation plus two public promo metadata fields are replaced.
+
+Tax/promo percentages use gray labels; tax text/amount is blue, promo/code/savings
+emerald and total brand brown. No checkout destination disclosure or setup prose.
+Discount shows actual item subtotal before/after. Rate comes from server detail;
+mixed/legacy ratio is explicitly effective and real zero is0% applied, never a
+fabricated state rate. Configured percent promo survives cent rounding; fixed
+discount shows actual percent saved. Tax amounts/payment totals remain unchanged.
+
+Full client624/server797 and guarded420/296 pass; final color-only client607 tier2
+and combined build also pass. Actual fictional preview verifies gray pills,
+blue tax/emerald savings/brown total, SAVE10 before14.99/after13.49, no destination
+and320px no-overflow. Fixture has0attempts/0writes and remains a labelled local
+preview at http://127.0.0.1:5197/checkout for owner review; not a live tax calculation. No DB/
+provider/flag/registration/payment activation, real charge or email. Draft preview
+uses fictional8.25%tax/SAVE10/SAVE5, not configured production collection. See the
+[active checkpoint](docs/work-checkpoints/2026-10-27-checkout-summary-labels.md).
+
+## Deployed: US Tax Preparation, Collection Off (2026-10-27)
 
 Task feat/stripe-tax-readiness replaces hardcoded state/client guesses with an
 external Stripe Tax adapter and explicit not-configured behavior, US-only server
@@ -8,8 +44,19 @@ validation and rate/jurisdiction UI. Owner has no real sales-tax registration;
 real charging stays locked. Owner explicitly chooses preparation only: Stripe Tax
 stays off, with no provider address/category/registration setup. Optional order
 tax snapshot migration is approved only after private backup/checks.
-Implementation is present; no DB/source release change yet. Parent owns remaining
-data/docs/verification/release; the client worker is complete. The
+Implementation and approved backup/migration are complete:28matching migrations,
+no pending; all34prior business-table fingerprints preserved. PR62/63 pass separate
+exact-head Quality and release main8df5883153d8f8a89d64efbb0d04fd8043eba8ff.
+Railway a51c7d27-1294-459b-83fc-afea51623243 SUCCESS; both stable Vercel aliases
+READY at that exact source. Live preview reports none/not_configured/zero/null
+percentage, correct16.98total for the existing10.99plus5.99 example, no raw refs;
+non-US/wrong-mode/access boundaries pass. Actual checkout preserves bag/account,
+loads secure card fields, shows US-only selection/51states+placeholder and opens
+tax disclosure; staff reports Sandbox/Allowed and Tax/Not collecting. Older staff
+order explains no saved breakdown rather than inventing a historic rate. No new
+orders/email since release, receipts off. Screenshot browser label is absent from
+published DOM and production routing code; appears to be Safari tab-group UI.
+Parent owns docs-only final evidence/sync; implementation/review agents closed. The
 [active checkpoint](docs/work-checkpoints/2026-10-27-stripe-tax-readiness.md)
 records the contract, ownership and precise next steps. Never commit the private
 business-origin address or assume sandbox registration is a government permit.

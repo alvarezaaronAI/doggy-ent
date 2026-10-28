@@ -35,6 +35,7 @@ defineProps({
     default: null,
   },
   summaryTaxDetails: { type: Object, default: null },
+  summaryPromo: { type: Object, default: null },
   checkoutPreviewError: { type: String, default: '' },
   summaryTotal: {
     type: Number,
@@ -107,6 +108,7 @@ const emit = defineEmits([
       :checkout-preview-error="checkoutPreviewError"
       :summary-total="summaryTotal"
       :applied-promo-code="appliedPromoCode"
+      :summary-promo="summaryPromo"
       :is-refreshing-checkout-preview="isRefreshingCheckoutPreview"
       :format-price="formatPrice"
       @retry-preview="emit('retry-preview')"

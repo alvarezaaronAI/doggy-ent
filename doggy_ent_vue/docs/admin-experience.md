@@ -1,5 +1,15 @@
 # Admin Experience Requirements
 
+## Two-Site Routing Context (2026-10-27)
+
+Data routing now expands in the shared context to show staff site, protected
+gateway, public backend origin, coarse database type, environment and last
+read-only connection check. No new navigation or database-switch button. Only
+gateway-admitted persisted ACTIVE ADMIN sessions may read it; private DB
+addresses/credentials remain server-only. Expired/failed checks say unverified,
+not Connected. Known Railway DB hosts identify Railway database; an unknown host
+remains Deployed database. See [routing contract](architecture/development-data-routing.md).
+
 ## Tax Readiness And Saved Details (2026-10-27)
 
 The shared context adds compact read-only tax collection status with expandable
