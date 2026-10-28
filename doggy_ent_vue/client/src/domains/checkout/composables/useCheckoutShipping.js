@@ -1,5 +1,6 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { fetchCheckoutShippingRates, fetchCheckoutShippingOptions } from '../api/checkout.api.js'
+import { isUSShippingDestination } from '../constants/shippingDestinations.js'
 export function useCheckoutShipping(customer, cartItems) {
 const selectedShipping = ref('standard')
 const shippingOptions = ref([
@@ -19,6 +20,16 @@ const shippingOptions = ref([
 const isLoadingShippingRates = ref(false)
 const shippingRateMessage = ref('')
 let shippingRateTimer = null
+let activeShippingRequestId = 0
+let disposed = false
+const shippingPayload = computed(() => ({
+  cartItems: cartItems.value,
+  customer: {
+    ...customer.value,
+    country: customer.value.country === 'US' ? 'United States' : customer.value.country,
+  },
+}))
+const shippingKey = computed(() => JSON.stringify(shippingPayload.value))
 const selectedShippingOption = computed(() =>
   shippingOptions.value.find((option) => option.code === selectedShipping.value) || null,
 )
@@ -58,10 +69,27 @@ function normalizeShippingOption(option = {}) {
   }
 }
 
+function invalidateShippingWork() {
+  window.clearTimeout(shippingRateTimer)
+  shippingRateTimer = null
+  return ++activeShippingRequestId
+}
+
+function isCurrentShippingWork(requestId, requestKey) {
+  return !disposed
+    && requestId === activeShippingRequestId
+    && requestKey === shippingKey.value
+}
 
 async function loadShippingOptions() {
+  if (disposed) return
+  const requestId = invalidateShippingWork()
+  const requestKey = shippingKey.value
+  isLoadingShippingRates.value = true
+
   try {
     const result = await fetchCheckoutShippingOptions()
+    if (!isCurrentShippingWork(requestId, requestKey)) return
     const options = Array.isArray(result?.options)
       ? result.options
       : []
@@ -75,10 +103,16 @@ async function loadShippingOptions() {
       shippingRateMessage.value = result.message || ''
     }
   }
-  catch (error) {
+  catch {
+    if (!isCurrentShippingWork(requestId, requestKey)) return
     console.warn(
       '[checkout] Using local fallback shipping options.',
     )
+  }
+  finally {
+    if (isCurrentShippingWork(requestId, requestKey)) {
+      isLoadingShippingRates.value = false
+    }
   }
 }
 
@@ -91,26 +125,13 @@ function hasShippingAddress() {
   ].every((value) => String(value || '').trim())
 }
 
-async function loadShippingRates() {
-  if (!cartItems.value.length || !hasShippingAddress()) {
-    return
-  }
-
-  isLoadingShippingRates.value = true
+async function loadShippingRates(requestId, requestKey) {
+  if (!isCurrentShippingWork(requestId, requestKey)) return
 
   try {
-    const result = await fetchCheckoutShippingRates({
-      cartItems: cartItems.value,
-      customer: {
-        ...customer.value,
-        country:
-          customer.value.country === 'US'
-            ? 'United States'
-            : customer.value.country === 'CA'
-              ? 'Canada'
-              : customer.value.country,
-      },
-    })
+    // Freeze the same input snapshot used to reject stale responses.
+    const result = await fetchCheckoutShippingRates(JSON.parse(requestKey))
+    if (!isCurrentShippingWork(requestId, requestKey)) return
     const options = Array.isArray(result?.options)
       ? result.options.map(normalizeShippingOption)
       : []
@@ -126,24 +147,40 @@ async function loadShippingRates() {
       shippingRateMessage.value = result.message || ''
     }
   }
-  catch (error) {
+  catch {
+    if (!isCurrentShippingWork(requestId, requestKey)) return
     shippingRateMessage.value = 'Carrier rates are unavailable. Store shipping rates are shown.'
     console.warn('[checkout] Shipping rate refresh failed.')
   }
   finally {
-    isLoadingShippingRates.value = false
+    if (isCurrentShippingWork(requestId, requestKey)) {
+      isLoadingShippingRates.value = false
+    }
   }
 }
 
 function scheduleShippingRates() {
-  window.clearTimeout(shippingRateTimer)
+  if (disposed) return
+  const requestId = invalidateShippingWork()
+  if (!cartItems.value.length || !hasShippingAddress() || !isUSShippingDestination(customer.value)) {
+    isLoadingShippingRates.value = false
+    return
+  }
+
+  const requestKey = shippingKey.value
+  isLoadingShippingRates.value = true
   shippingRateTimer = window.setTimeout(() => {
-    loadShippingRates()
+    shippingRateTimer = null
+    void loadShippingRates(requestId, requestKey)
   }, 700)
 }
 
 
 
-onBeforeUnmount(() => window.clearTimeout(shippingRateTimer))
+onBeforeUnmount(() => {
+  disposed = true
+  invalidateShippingWork()
+  isLoadingShippingRates.value = false
+})
 return { selectedShipping, selectedShippingOption, shippingPrice, shippingOptions, isLoadingShippingRates, shippingRateMessage, buildSelectedShippingPayload, loadShippingOptions, scheduleShippingRates }
 }

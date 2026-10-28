@@ -1,5 +1,54 @@
 # Doggy Ent Project Handoff
 
+## Latest: Simplified Checkout, No Live Activation (2026-10-27)
+
+Owner accepts standard visible card fields, rejects the extra readiness panel and
+requests removing the redundant not-collected sentence. Revised source retains
+numeric server tax, verified-total Pay, paid retry Finish your order and shipping/
+pricing guards. No fabricated tax or client total override. Full client665 and
+combined/admin/storefront builds pass; final isolated browser and guarded payment
+runner418server/337client pass. New form has no extra readiness band;20.98standard
+and26.98priority match Pay, pending/error block payment with entry retained and
+fixture counters0attempts/0writes. Owner accepts simpler direction and reiterates
+full-total payment. Source-only UI publication is proceeding under the original
+deploy request; provider/live/tax configuration is unchanged. Final review/CI and
+exact-source hosted verification remain before completion.
+
+Owner has no LLC/registration and manufacturing/storage is home/undecided; they
+will handle business/tax matters separately and want full-total payment. Do not
+submit registration forms, configure a false registration, invent tax, remove live
+payment launch locks or confuse amount-correct sandbox checkout with launch
+acceptance. Current server Tax is off/zero; there is no configured extra tax amount.
+The [active checkpoint](docs/work-checkpoints/2026-10-27-visual-checkout-readiness.md)
+records current scope, incomplete checks and exact next steps.
+
+## In Progress: Visual Checkout Readiness (2026-10-27)
+
+Latest owner follow-up: accepts the simpler checkout direction, wants the extra
+not-collected sentence removed, then confirms no sales-tax registration yet and
+prioritizes assisted registration. UI implementation/release remains on hold while
+business structure and manufacturing/storage arrangements are clarified. Official
+CDTFA registration entry is opened; no application/account was submitted, no Tax
+provider setting changed. Identity/bank/tax-ID inputs stay only in official forms.
+See the active checkpoint for the registration handoff and pet-food facility gate.
+
+RELEASE HOLD: owner rejects the new "A few details, then payment" readiness panel
+and asks for a more familiar payment portal and clarified tax-estimate behavior.
+Nothing on this task is committed, pushed, merged or deployed. Preserve the dirty
+task and useful pricing/shipping safeguards; do not publish the rejected panel.
+Discuss/preview the simpler checkout before resuming implementation/publication.
+Tax stays OFF; no invented state rate or provider activation is authorized.
+
+Owner requests visual prerequisite progress/actionable next-step controls, clear
+early estimates updated with delivery details, then deployment. Task
+feat/visual-checkout-readiness preserves Tax OFF/sandbox enabled/live lock and
+adds no DB/provider change. Implementation and isolated verification are complete;
+managed publication is now held by the newer request. Client663/server795,
+all builds/gateway/safety pass; independent commerce review finds no blockers.
+Parent owns final publication; shipping worker/reviewer completed their scopes.
+See the [checkpoint](docs/work-checkpoints/2026-10-27-visual-checkout-readiness.md)
+for next steps and screenshot/browser-label findings. Never charge an estimate.
+
 ## Deployed: US Tax Preparation, Collection Off (2026-10-27)
 
 Task feat/stripe-tax-readiness replaces hardcoded state/client guesses with an

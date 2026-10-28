@@ -75,12 +75,12 @@ const emit = defineEmits(['open-auth'])
         <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
           <label class="md:col-span-2">
             <span class="mb-2 block text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--brand-4)]">Email address</span>
-            <input v-model="props.customer.email" type="email" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="you@example.com" />
+            <input v-model="props.customer.email" name="email" type="email" autocomplete="email" required class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="you@example.com" />
           </label>
 
           <label>
             <span class="mb-2 block text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--brand-4)]">Phone number</span>
-            <input v-model="props.customer.phone" type="tel" class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="(555) 555-5555" />
+            <input v-model="props.customer.phone" name="phone" type="tel" autocomplete="tel" required class="w-full rounded-2xl border border-stone-700 bg-white px-4 py-3 outline-none focus:border-emerald-400" placeholder="(555) 555-5555" />
           </label>
 
           <label>

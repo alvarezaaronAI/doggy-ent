@@ -1,5 +1,26 @@
 # Customer Experience Requirements
 
+## Visual Checkout Readiness (2026-10-27)
+
+The owner rejected the additional readiness panel. Standard card fields stay
+visible inside the Payment card, with one security line, accepted-card icons and
+inline card feedback. A missing prerequisite offers a working next-step action
+that focuses the relevant field; a real refresh shows a spinner rather than a dead
+payment button. Complete US address fields trigger recalculation automatically;
+reviewing the address can refresh without a mandatory extra apply step.
+
+Known costs remain visible as an estimate while details change. Unknown tax is
+labelled before tax, never guessed. Payment receives only current server pricing,
+not the display estimate. Delivery refresh invalidates readiness immediately and
+older responses cannot restore stale rates. Card fields remain mounted and visible
+during refresh, preserving entry. Card completeness includes the cardholder name.
+Pay shows the verified total; an already-paid retry says Finish your order, never
+asks for payment again. The redundant not-collected setup sentence is removed;
+the genuine numeric tax row remains. Tax remains off, no tax amount is invented,
+and sandbox availability/live lock are unchanged. The inert admin checkout canvas
+uses these same components with sample data. Revised preview is not deployed.
+See the [verification checkpoint](work-checkpoints/2026-10-27-visual-checkout-readiness.md).
+
 ## Payment Configuration Safety (2026-10-26, Local)
 
 Card/wallet layout, guest checkout, retained bag and presentation previews are

@@ -5,6 +5,8 @@ import CheckoutPromoBox from './CheckoutPromoBox.vue'
 
 defineProps({
   locked: Boolean,
+  estimatedTotal: { type: Number, default: null },
+  totalIsEstimate: Boolean,
   campaigns: { type: Array, default: () => [] },
   mobileSummaryOpen: {
     type: Boolean,
@@ -106,6 +108,8 @@ const emit = defineEmits([
       :summary-tax-details="summaryTaxDetails"
       :checkout-preview-error="checkoutPreviewError"
       :summary-total="summaryTotal"
+      :estimated-total="estimatedTotal"
+      :total-is-estimate="totalIsEstimate"
       :applied-promo-code="appliedPromoCode"
       :is-refreshing-checkout-preview="isRefreshingCheckoutPreview"
       :format-price="formatPrice"

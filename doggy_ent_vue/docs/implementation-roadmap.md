@@ -1,5 +1,16 @@
 # Implementation Roadmap
 
+## 2026-10-27 Visual Checkout Readiness
+
+Owner replaces the extra visual readiness panel with standard visible card fields,
+verified-amount Pay, retained entry, contextual continuation, visible estimates,
+delivery refresh safety and matching inert admin preview. Extra no-tax setup
+sentence is removed, numeric tax remains server-owned. Local implementation and
+preview are not a deployment or tax-collection activation. Evidence lives in the
+[checkpoint](work-checkpoints/2026-10-27-visual-checkout-readiness.md).
+This does not activate Tax/live payments or close durable attempts, signed event
+recovery, atomic attribution, financial reconciliation or real-device launch gates.
+
 ## 2026-10-27 US Tax Preparation
 
 External Stripe Tax adapter, US boundaries, clear tax disclosure, saved optional

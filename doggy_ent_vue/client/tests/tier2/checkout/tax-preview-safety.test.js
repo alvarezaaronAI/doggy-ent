@@ -124,6 +124,7 @@ describe('actual checkout card and wallet tax readiness', () => {
     Object.assign(state.customer.value, customer())
     state.paymentFormComplete.value = true
     state.stripePaymentForm.value = { submitPayment: vi.fn() }
+    await nextTick(); await vi.advanceTimersByTimeAsync(700)
     await state.refreshCheckoutPreview(); await nextTick()
     return state
   }

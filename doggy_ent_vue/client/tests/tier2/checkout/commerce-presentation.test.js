@@ -44,7 +44,7 @@ describe('shared receipt presentation and checkout account workflow', () => {
     expect(html).toContain('bg-[var(--storefront-brand-2)]'); expect(html).toContain('text-[var(--storefront-brand-4)]')
     expect(html).not.toContain('disabled=""'); expect(html).not.toContain('bg-[var(--brand-1)]')
     const pending = await render(CheckoutSubmitSection, { isProcessingOrder: true, checkoutRequirementsComplete: true })
-    expect(pending).toContain('disabled'); expect(pending).toContain('Processing Secure Payment'); expect(pending).toContain('motion-reduce:animate-none')
+    expect(pending).toContain('disabled'); expect(pending).toContain('Processing payment'); expect(pending).toContain('motion-reduce:animate-none')
   })
   it('keeps incomplete checkout readiness Boolean so Vue cannot treat an empty field as ready', async () => {
     let state
@@ -85,7 +85,7 @@ describe('shared receipt presentation and checkout account workflow', () => {
   })
   it('renders actual checkout sections in the editor without initializing payments', async () => {
     const html = await render(AdminCommerceCanvas, { draft: commercePresentation(), page: 'checkout', selected: 'checkout' })
-    for (const text of ['Contact', 'Shipping', 'Delivery', 'Payment', 'Apple Pay enabled', 'Google Pay enabled', 'Card number', 'Your bag', '$32.24', 'Complete Secure Order', 'bg-[var(--storefront-brand-2)]']) expect(html).toContain(text)
+    for (const text of ['Contact', 'Shipping', 'Delivery', 'Payment', 'Apple Pay enabled', 'Google Pay enabled', 'Card number', 'Your bag', '$32.24', 'Pay $32.24', 'bg-[var(--storefront-brand-2)]']) expect(html).toContain(text)
     expect(html).not.toContain('Initializing secure payment')
   })
   it('does not claim a cancelled order is being prepared', async () => {
@@ -110,7 +110,7 @@ describe('shared receipt presentation and checkout account workflow', () => {
     expect(html).not.toContain('Your order makes a difference'); expect(html).not.toContain('$5.40')
     const view = readFileSync(new URL('../../../src/domains/checkout/views/CheckoutView.vue', import.meta.url), 'utf8')
     expect(view.indexOf('<CheckoutCampaignPreview')).toBeGreaterThan(view.indexOf('</CheckoutBagDisclosure>'))
-    expect(html).toContain('Items subtotal'); expect(html).toContain('(2 items)'); expect(html).toContain('Estimated tax'); expect(html).toContain('Order total')
+    expect(html).toContain('Items subtotal'); expect(html).toContain('(2 items)'); expect(html).toContain('>Tax'); expect(html).toContain('Order total')
     expect(html).not.toContain('>+</span>'); expect(html).not.toContain('>=</span>')
     expect(html).not.toContain('Donation generated'); expect(html).not.toContain('Estimated donation from')
   })

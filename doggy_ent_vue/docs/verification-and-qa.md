@@ -1,5 +1,32 @@
 # Verification And QA
 
+## Visual Checkout Readiness (2026-10-27)
+
+The earlier proposal passed client663/server795/gateway6/runner-safety9 and an
+independent107-test review, but was rejected before publication. The revised form
+removes the extra panel, retains visible fields and numeric tax, omits setup copy,
+shows verified-amount Pay and paid-order Finish your order. Full client665
+(11/648/6), combined/admin/storefront builds and guarded418server/337client pass.
+Actual revised fixture verifies visible card entry before address, standard20.98
+then priority26.98 Pay, slow/error/retry blocking with card entry retained,
+no rejected copy, and0payment attempts/0writes. Measured320/324/384/467/874/1600
+CSS widths have no horizontal overflow; screenshot is fictional/private. Temporary
+fixture/tab are stopped/closed and viewport reset. Real device/provider purchase
+remains untested. Prior server/gateway checks remain recorded below.
+Readiness, estimates, cardholder completeness and shipping races add regression
+coverage; independent commerce review passes107 focused tests with no blockers.
+Combined/admin/storefront and server builds pass. Admin sample remains inert.
+
+Actual isolated Vue checkout uses fictional contact/address/cart and a fake SDK;
+all writes and payment creation are denied. Next actions focus email/address/name,
+complete details unlock payment, refresh blocks payment and retains entry,
+failure offers retry and successful retry restores payment without auto-submitting.
+Observed320/389/874/1333 CSS widths have no horizontal overflow. Fixture counters
+remain0 payment attempts/0 writes. This is not an actual Stripe or wallet/device
+purchase. Those recorded layout measurements describe the earlier proposal, not
+automatic acceptance of the revised UI. Source/deployment IDs and remaining acceptance live in the
+[checkpoint](work-checkpoints/2026-10-27-visual-checkout-readiness.md).
+
 ## US Tax Preparation (2026-10-27)
 
 Current full suites pass server795(60/729/6), client610(11/593/6), gateway6 and

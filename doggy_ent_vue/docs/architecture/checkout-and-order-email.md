@@ -1,5 +1,26 @@
 # Checkout, Receipts And Manual Order Email
 
+## Checkout Prerequisite Presentation (2026-10-27)
+
+`checkoutReadiness.js` maps existing checklist/current-quote state into the next
+action; it owns no price or payment authority. The rejected extra visual checklist
+is removed. `summaryEstimate`
+is display-only. `summaryTotal` stays null without a usable current server quote
+and remains the only total passed to Stripe. Address review requests a preview;
+normal field edits still debounce. Shipping scheduling marks loading synchronously,
+freezes its input snapshot and rejects superseded/unmounted result/error/finalizer
+work. Both customer/cart watchers invalidate it synchronously.
+
+`CheckoutPaymentSection` and `StripeElementsForm` are shared with the inert admin
+sample canvas. Card entry initializes independently of address completion through
+the existing configuration/SDK gate, remains mounted and visible while pricing is
+stale, and cannot charge until checkout prerequisites/current pricing pass. No
+continuation action submits payment. Pay uses current server total; an already-paid
+retry says Finish your order instead. Extra no-tax setup copy is omitted, numeric
+tax still comes from the server. No hardcoded rate or client tax override is added.
+The existing paid-order retry bypasses fresh-payment requirements as before.
+No API, schema, provider setting, Tax activation or receipt policy changes.
+
 ## Payment Environment Safeguards (2026-10-26, Local)
 
 The [payment environment contract](payment-environments.md) adds default-off
