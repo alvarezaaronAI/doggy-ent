@@ -4,7 +4,8 @@
 
 Owner rejects the broader checkout/payment redesign and supplies the original
 layout as authority. PR65 is draft/unmerged; no production deployment occurred.
-The superseded749f435 is reversed locally without rewriting history. Payment,
+Correction f3661c2 is pushed and synced; it reverses superseded749f435 without
+rewriting history. Payment,
 contact/shipping/delivery cards, controls and unrelated behavior match f1bf1ba.
 Only summary presentation plus two public promo metadata fields are replaced.
 
@@ -19,7 +20,7 @@ Full client624/server797 and guarded420/296 pass; final color-only client607 tie
 and combined build also pass. Actual fictional preview verifies gray pills,
 blue tax/emerald savings/brown total, SAVE10 before14.99/after13.49, no destination
 and320px no-overflow. Fixture has0attempts/0writes and remains a labelled local
-preview for owner review; not a live tax calculation. No DB/
+preview at http://127.0.0.1:5197/checkout for owner review; not a live tax calculation. No DB/
 provider/flag/registration/payment activation, real charge or email. Draft preview
 uses fictional8.25%tax/SAVE10/SAVE5, not configured production collection. See the
 [active checkpoint](docs/work-checkpoints/2026-10-27-checkout-summary-labels.md).

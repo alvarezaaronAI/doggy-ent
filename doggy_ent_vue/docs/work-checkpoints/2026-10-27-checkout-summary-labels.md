@@ -59,8 +59,14 @@ remain0attempts/0writes. Reset viewport before final handoff.
 Keep owner tabs3/4/8 untouched. If leaving preview running, explicitly give its URL
 and mark tab as deliverable; record the active process for the next turn.
 
-Finish final docs/secret checks, commit/push corrected scope to PR65 without merge/deploy until preview
-accepted. Update PR body with new head/net scope/tests, not old redesign evidence.
+Final docs/secret checks passed. Correction f3661c2 is committed, pushed and
+synced with its upstream; PR65 metadata reflects the narrowed scope and tests.
+PR65 remains DRAFT and unmerged. Viewport is reset and preview tab10 is marked
+deliverable at http://127.0.0.1:5197/checkout. Fixture process56574 remains running
+for owner review, with payment/write guards intact. Screenshot detail is saved
+outside Git as summary-labels-color-detail.png. Next: obtain owner visual review;
+do not merge/deploy before acceptance. This docs-only follow-up records the
+publication/preview milestone without changing runtime behavior.
 The original deployment request does not override this latest screenshot correction.
 Provider Tax remains none/zero and live payments source-locked. User handles
 business matters; no government form or registration was submitted. Do not invent
