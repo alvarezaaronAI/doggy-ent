@@ -5,7 +5,7 @@ defineProps({ cartItems: { type: Array, required: true }, campaigns: { type: Arr
 </script>
 <template>
   <div v-if="cartItems.length" class="mt-5 space-y-3">
-    <CommerceItemCard v-for="item in cartItems" :key="`${item.id}-${item.size}`" :item="item" :campaigns="itemCampaigns(item, campaigns)" :promo-code="promoCode" :format-price="formatPrice" />
+    <CommerceItemCard v-for="item in cartItems" :key="`${item.id}-${item.size}`" :item="item" :campaigns="itemCampaigns(item, campaigns)" :promo-code="promoCode" :format-price="formatPrice" monogram />
   </div>
   <p v-else class="mt-5 text-sm text-stone-600">Your bag is empty. Return to the shop to add treats.</p>
 </template>

@@ -84,6 +84,12 @@ describe('promo validation rules', () => {
     )
   })
 
+  it.each([['PERCENT', 20], ['FIXED', 5]])('returns validated %s display metadata without changing the calculated discount', async (discountType, discountValue) => {
+    repository.getActivePromoByCode.mockResolvedValue({ ...activePromo, discountType, discountValue })
+    const result = await validatePromoCode({ code: 'CHASE20', customerEmail: 'fixture@example.test', cart: { subtotal: 100 } })
+    expect(result).toMatchObject({ valid: true, code: 'CHASE20', discountType, discountValue, discountAmount: discountValue })
+  })
+
   it('enforces per-customer usage limits', async () => {
     repository.getPromoUsageCountByCustomer.mockResolvedValue(1)
 

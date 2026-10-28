@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminHeader from './AdminHeader.vue'
 import AdminSidebar from './AdminSidebar.vue'
-import AdminDataTargetBadge from './AdminDataTargetBadge.vue'
+import AdminDataRouting from './AdminDataRouting.vue'
 import AdminPaymentEnvironment from './AdminPaymentEnvironment.vue'
 import AdminTaxReadiness from './AdminTaxReadiness.vue'
 import { fetchAdminSession, logoutAdmin } from '../api/adminSession.api.js'
@@ -40,17 +40,7 @@ async function logout() {
     <AdminHeader :admin="admin" :signing-out="signingOut" @logout="logout" />
     <div class="admin-context">
       <div class="flex min-w-0 flex-1 flex-col items-start gap-3 sm:flex-row sm:flex-wrap">
-        <details>
-          <summary
-            class="flex cursor-pointer flex-wrap items-center gap-3 text-xs"
-          >
-            <span>Data routing</span><AdminDataTargetBadge />
-          </summary>
-          <p class="admin-muted mt-3">
-            Data target is set when the server starts. Temporary admin modes use
-            local admin &rarr; local server &rarr; selected database.
-          </p>
-        </details>
+        <AdminDataRouting />
         <AdminPaymentEnvironment />
         <AdminTaxReadiness />
       </div>

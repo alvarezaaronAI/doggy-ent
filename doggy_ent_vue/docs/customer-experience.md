@@ -1,5 +1,17 @@
 # Customer Experience Requirements
 
+## Compact Checkout Summary Labels (2026-10-27)
+
+Preserve the original checkout layout, payment form and actions. Only the summary
+gets gray tax/promo percentage labels, blue tax text, emerald promo/savings and
+brand-brown total. Shipping uses a legible gold/brown label/amount and delivery
+icon. Summary product items retain real64px thumbnails and opt into a faint
+signature monogram without losing campaign/promo colors. Other shared card
+instances keep their existing backgrounds. Omit the checkout destination disclosure and setup paragraph;
+saved order/admin tax details remain intact. Show item subtotal before and after
+discount, not an invented pre-discount order total with guessed tax. Server amounts
+remain authoritative. See the [checkpoint](work-checkpoints/2026-10-27-checkout-summary-labels.md).
+
 ## Payment Configuration Safety (2026-10-26, Local)
 
 Card/wallet layout, guest checkout, retained bag and presentation previews are

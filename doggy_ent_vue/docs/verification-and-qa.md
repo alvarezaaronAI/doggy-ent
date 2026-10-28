@@ -1,5 +1,36 @@
 # Verification And QA
 
+## Routing And Summary Follow-Up (2026-10-27)
+
+Full client655/server802, gateway6, guarded420server/311client and all four builds
+pass. New thumbnail regressions preserve actual image sources through cart reload,
+checkout, confirmation/account snapshots and unavailable-price states. Monogram
+is opt-in for checkout items, preserving campaign/promo colors and other cards.
+Staff context tests cover private projection, host recognition/no guessing,
+read-only probe only after gateway+fresh ACTIVE ADMIN, stale/failure/cancellation
+and same-origin transport. Production public health remains diagnostic-free.
+Actual fictional Vue preview confirms image decode, pattern and shipping accent
+at wide and400px/480px narrow widths with no overflow. Fresh shared read-only
+preflight confirms28matching/0pending/0failed migrations. Independent review,
+exact-head hosted CI and deployment evidence are tracked in the
+[current checkpoint](work-checkpoints/2026-10-27-routing-summary-release.md).
+
+## Checkout Summary Correction (2026-10-27)
+
+Broad unmerged749f435 checkout redesign is reversed to f1bf1ba; critical payment/
+contact/shipping/delivery/admin-canvas files have no net difference. Only five
+runtime files add summary metadata/presentation. Full client624(11/607/6), server
+797(62/729/6), guarded420server/296client and admin/storefront/server builds pass.
+Fourteen new summary cases and two promo metadata cases cover real gray rates,
+zero/pending/mixed, percentage/cent rounding/fixed savings, before/after amounts,
+escaping and unchanged server total. Final color-only client607 tier2 and combined
+build pass; actual sample preview verifies blue tax/emerald savings/brown total,
+gray pills,14.99 ->13.49/10% off, no breakdown and320px no-overflow. Fixture has
+0payment attempts/0writes. This is not production Tax configuration. Final
+new evidence and remaining preview/release steps are in the
+[checkpoint](work-checkpoints/2026-10-27-checkout-summary-labels.md). No actual
+Stripe/Tax calculation, charge/email or shared DB operation is implied by fixtures.
+
 ## US Tax Preparation (2026-10-27)
 
 Current full suites pass server795(60/729/6), client610(11/593/6), gateway6 and

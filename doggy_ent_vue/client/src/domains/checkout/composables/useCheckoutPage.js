@@ -208,6 +208,7 @@ const discount = computed(() =>
 )
 
 const {
+  checkoutPreviewResult,
   trustedPricing,
   checkoutPreviewError,
   isRefreshingCheckoutPreview,
@@ -277,6 +278,7 @@ const totalCampaignDonation = computed(() =>
 const pricingReady = computed(() => Boolean(trustedPricing.value)
   && trustedPricing.value.taxDetails?.status !== 'pending_address')
 const summaryTaxDetails = computed(() => trustedPricing.value?.taxDetails || null)
+const summaryPromo = computed(() => trustedPricing.value ? checkoutPreviewResult.value?.promo || null : null)
 
 const summarySubtotal = computed(() => trustedPricing.value?.subtotal ?? subtotal.value)
 const summaryDiscount = computed(() => trustedPricing.value?.discountAmount ?? discount.value)
@@ -383,6 +385,6 @@ const placeWalletOrder = paymentExecutor => submitCurrentOrder({ paymentExecutor
 const walletReady = computed(() => checkoutChecklist.value.slice(0, 3).every(step => step.complete) && isUSShippingDestination(customer.value) && pricingReady.value)
 const { campaigns, loadCampaigns } = useStorefrontCampaigns()
 onMounted(loadCampaigns)
-return { cartItems, customer, selectedShipping, shippingOptions, isLoadingShippingRates, shippingRateMessage, campaignPreview, isLoadingCampaignPreview, paymentFormComplete, accountProfile, isSignedInCheckout, profilePrefilled, checkoutAuthMode, stripePaymentForm, checkoutChecklist, isProcessingOrder, paymentCompleted, checkoutRequirementsComplete, checkoutStatus, checkoutStatusType, summarySubtotal, summaryDiscount, summaryShipping, summaryTax, summaryTaxDetails, summaryDonation, summaryTotal, totalCampaignDonation, itemCount, appliedPromoCode, isRefreshingCheckoutPreview, checkoutPreviewError, refreshCheckoutPreview, promoCode, promoStatus, promoMessage, formatPrice, buildSelectedShippingPayload, placeOrder, placeWalletOrder, walletReady, openCheckoutAuth, handleCheckoutAuthenticated, applyPromoCode, campaigns }
+return { cartItems, customer, selectedShipping, shippingOptions, isLoadingShippingRates, shippingRateMessage, campaignPreview, isLoadingCampaignPreview, paymentFormComplete, accountProfile, isSignedInCheckout, profilePrefilled, checkoutAuthMode, stripePaymentForm, checkoutChecklist, isProcessingOrder, paymentCompleted, checkoutRequirementsComplete, checkoutStatus, checkoutStatusType, summarySubtotal, summaryDiscount, summaryShipping, summaryTax, summaryTaxDetails, summaryPromo, summaryDonation, summaryTotal, totalCampaignDonation, itemCount, appliedPromoCode, isRefreshingCheckoutPreview, checkoutPreviewError, refreshCheckoutPreview, promoCode, promoStatus, promoMessage, formatPrice, buildSelectedShippingPayload, placeOrder, placeWalletOrder, walletReady, openCheckoutAuth, handleCheckoutAuthenticated, applyPromoCode, campaigns }
 
 }

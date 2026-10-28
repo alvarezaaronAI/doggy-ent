@@ -1,5 +1,41 @@
 # Doggy Ent Project Handoff
 
+## Current: Routing And Summary Release (2026-10-27)
+
+Owner accepts the corrected checkout preview and requests deployment after routing,
+thumbnail, gold shipping accent and per-item subtle monogram checks. PR65 preview
+hold is superseded by this bounded follow-up. Original checkout/payment layout
+stays; no provider activation, secret/configuration change or migration. Local
+fixture is intentionally DB-free, now explicitly labelled; hosted staff routing
+gets authenticated connection/route evidence without exposing private DB details.
+Implementation, operations and remaining verification/publication are tracked in
+the [active checkpoint](docs/work-checkpoints/2026-10-27-routing-summary-release.md).
+
+## Current: Checkout Summary Labels Only (2026-10-27)
+
+Owner rejects the broader checkout/payment redesign and supplies the original
+layout as authority. PR65 is draft/unmerged; no production deployment occurred.
+Correction f3661c2 is pushed and synced; it reverses superseded749f435 without
+rewriting history. Payment,
+contact/shipping/delivery cards, controls and unrelated behavior match f1bf1ba.
+Only summary presentation plus two public promo metadata fields are replaced.
+
+Tax/promo percentages use gray labels; tax text/amount is blue, promo/code/savings
+emerald and total brand brown. No checkout destination disclosure or setup prose.
+Discount shows actual item subtotal before/after. Rate comes from server detail;
+mixed/legacy ratio is explicitly effective and real zero is0% applied, never a
+fabricated state rate. Configured percent promo survives cent rounding; fixed
+discount shows actual percent saved. Tax amounts/payment totals remain unchanged.
+
+Full client624/server797 and guarded420/296 pass; final color-only client607 tier2
+and combined build also pass. Actual fictional preview verifies gray pills,
+blue tax/emerald savings/brown total, SAVE10 before14.99/after13.49, no destination
+and320px no-overflow. Fixture has0attempts/0writes and remains a labelled local
+preview at http://127.0.0.1:5197/checkout for owner review; not a live tax calculation. No DB/
+provider/flag/registration/payment activation, real charge or email. Draft preview
+uses fictional8.25%tax/SAVE10/SAVE5, not configured production collection. See the
+[active checkpoint](docs/work-checkpoints/2026-10-27-checkout-summary-labels.md).
+
 ## Deployed: US Tax Preparation, Collection Off (2026-10-27)
 
 Task feat/stripe-tax-readiness replaces hardcoded state/client guesses with an

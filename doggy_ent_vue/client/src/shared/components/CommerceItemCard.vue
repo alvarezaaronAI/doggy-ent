@@ -6,12 +6,12 @@ import ProductCampaignBadge from '@products/ProductCard/ProductCampaignBadge.vue
 import { mapCommerceItem } from '../mappers/commerceItem.mapper.js'
 import { mediaImageSource } from '../utils/mediaImage.js'
 import { formatCurrency } from '../utils/currency.js'
-const props = defineProps({ item: { type: Object, required: true }, campaigns: { type: Array, default: () => [] }, promoCode: { type: String, default: '' }, formatPrice: { type: Function, default: formatCurrency } })
+const props = defineProps({ item: { type: Object, required: true }, campaigns: { type: Array, default: () => [] }, promoCode: { type: String, default: '' }, monogram: { type: Boolean, default: false }, formatPrice: { type: Function, default: formatCurrency } })
 const row = computed(() => mapCommerceItem(props.item)), failed = ref(false)
 watch(() => row.value.image, () => { failed.value = false })
 </script>
 <template>
-  <CommerceCardSurface :giving="campaigns.length > 0" :promotion="Boolean(promoCode)" class="p-4">
+  <CommerceCardSurface :giving="campaigns.length > 0" :promotion="Boolean(promoCode)" :monogram="monogram" class="p-4">
     <div class="flex min-w-0 gap-3">
       <div class="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-md border border-stone-200 bg-white">
         <img v-if="row.image && !failed" :src="mediaImageSource(row.image)" :alt="row.name" class="h-full w-full object-cover" loading="lazy" @error="failed = true" />

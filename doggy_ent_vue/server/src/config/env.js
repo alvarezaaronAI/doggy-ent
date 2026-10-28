@@ -144,7 +144,16 @@ export function getAdminDataTarget() {
   const dataTarget = process.env.NODE_ENV === 'production' ? 'DEPLOYED' : normalizeDataTarget(
     process.env.ADMIN_DATA_TARGET,
   )
-  if (dataTarget === 'DEPLOYED') return { code: 'DEPLOYED', label: 'DEPLOYED DATA TARGET', description: 'Deployed server uses its configured database.' }
+  if (dataTarget === 'DEPLOYED') {
+    let railwayDatabase = false
+    try {
+      const host = new URL(process.env.DATABASE_URL).hostname
+      railwayDatabase = host.endsWith('.railway.internal') || host.endsWith('.proxy.rlwy.net')
+    } catch { /* Missing or unknown configuration must not be labelled Railway. */ }
+    return railwayDatabase
+      ? { code: 'RAILWAY_DB', label: 'RAILWAY DB TARGET', description: 'Deployed server uses Railway PostgreSQL.' }
+      : { code: 'DEPLOYED', label: 'DEPLOYED DATA TARGET', description: 'Deployed server uses its configured database.' }
+  }
 
   if (dataTarget === 'RAILWAY_DB') {
     return {
