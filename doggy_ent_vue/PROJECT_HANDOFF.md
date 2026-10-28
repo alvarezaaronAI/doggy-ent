@@ -1,53 +1,28 @@
 # Doggy Ent Project Handoff
 
-## Latest: Simplified Checkout, No Live Activation (2026-10-27)
+## Current: Checkout Summary Labels Only (2026-10-27)
 
-Owner accepts standard visible card fields, rejects the extra readiness panel and
-requests removing the redundant not-collected sentence. Revised source retains
-numeric server tax, verified-total Pay, paid retry Finish your order and shipping/
-pricing guards. No fabricated tax or client total override. Full client665 and
-combined/admin/storefront builds pass; final isolated browser and guarded payment
-runner418server/337client pass. New form has no extra readiness band;20.98standard
-and26.98priority match Pay, pending/error block payment with entry retained and
-fixture counters0attempts/0writes. Owner accepts simpler direction and reiterates
-full-total payment. Source-only UI publication is proceeding under the original
-deploy request; provider/live/tax configuration is unchanged. Final review/CI and
-exact-source hosted verification remain before completion.
+Owner rejects the broader checkout/payment redesign and supplies the original
+layout as authority. PR65 is draft/unmerged; no production deployment occurred.
+The superseded749f435 is reversed locally without rewriting history. Payment,
+contact/shipping/delivery cards, controls and unrelated behavior match f1bf1ba.
+Only summary presentation plus two public promo metadata fields are replaced.
 
-Owner has no LLC/registration and manufacturing/storage is home/undecided; they
-will handle business/tax matters separately and want full-total payment. Do not
-submit registration forms, configure a false registration, invent tax, remove live
-payment launch locks or confuse amount-correct sandbox checkout with launch
-acceptance. Current server Tax is off/zero; there is no configured extra tax amount.
-The [active checkpoint](docs/work-checkpoints/2026-10-27-visual-checkout-readiness.md)
-records current scope, incomplete checks and exact next steps.
+Tax/promo percentages use gray labels; tax text/amount is blue, promo/code/savings
+emerald and total brand brown. No checkout destination disclosure or setup prose.
+Discount shows actual item subtotal before/after. Rate comes from server detail;
+mixed/legacy ratio is explicitly effective and real zero is0% applied, never a
+fabricated state rate. Configured percent promo survives cent rounding; fixed
+discount shows actual percent saved. Tax amounts/payment totals remain unchanged.
 
-## In Progress: Visual Checkout Readiness (2026-10-27)
-
-Latest owner follow-up: accepts the simpler checkout direction, wants the extra
-not-collected sentence removed, then confirms no sales-tax registration yet and
-prioritizes assisted registration. UI implementation/release remains on hold while
-business structure and manufacturing/storage arrangements are clarified. Official
-CDTFA registration entry is opened; no application/account was submitted, no Tax
-provider setting changed. Identity/bank/tax-ID inputs stay only in official forms.
-See the active checkpoint for the registration handoff and pet-food facility gate.
-
-RELEASE HOLD: owner rejects the new "A few details, then payment" readiness panel
-and asks for a more familiar payment portal and clarified tax-estimate behavior.
-Nothing on this task is committed, pushed, merged or deployed. Preserve the dirty
-task and useful pricing/shipping safeguards; do not publish the rejected panel.
-Discuss/preview the simpler checkout before resuming implementation/publication.
-Tax stays OFF; no invented state rate or provider activation is authorized.
-
-Owner requests visual prerequisite progress/actionable next-step controls, clear
-early estimates updated with delivery details, then deployment. Task
-feat/visual-checkout-readiness preserves Tax OFF/sandbox enabled/live lock and
-adds no DB/provider change. Implementation and isolated verification are complete;
-managed publication is now held by the newer request. Client663/server795,
-all builds/gateway/safety pass; independent commerce review finds no blockers.
-Parent owns final publication; shipping worker/reviewer completed their scopes.
-See the [checkpoint](docs/work-checkpoints/2026-10-27-visual-checkout-readiness.md)
-for next steps and screenshot/browser-label findings. Never charge an estimate.
+Full client624/server797 and guarded420/296 pass; final color-only client607 tier2
+and combined build also pass. Actual fictional preview verifies gray pills,
+blue tax/emerald savings/brown total, SAVE10 before14.99/after13.49, no destination
+and320px no-overflow. Fixture has0attempts/0writes and remains a labelled local
+preview for owner review; not a live tax calculation. No DB/
+provider/flag/registration/payment activation, real charge or email. Draft preview
+uses fictional8.25%tax/SAVE10/SAVE5, not configured production collection. See the
+[active checkpoint](docs/work-checkpoints/2026-10-27-checkout-summary-labels.md).
 
 ## Deployed: US Tax Preparation, Collection Off (2026-10-27)
 

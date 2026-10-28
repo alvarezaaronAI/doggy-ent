@@ -1,15 +1,12 @@
 # Implementation Roadmap
 
-## 2026-10-27 Visual Checkout Readiness
+## 2026-10-27 Checkout Summary Correction
 
-Owner replaces the extra visual readiness panel with standard visible card fields,
-verified-amount Pay, retained entry, contextual continuation, visible estimates,
-delivery refresh safety and matching inert admin preview. Extra no-tax setup
-sentence is removed, numeric tax remains server-owned. Local implementation and
-preview are not a deployment or tax-collection activation. Evidence lives in the
-[checkpoint](work-checkpoints/2026-10-27-visual-checkout-readiness.md).
-This does not activate Tax/live payments or close durable attempts, signed event
-recovery, atomic attribution, financial reconciliation or real-device launch gates.
+Restore original checkout/payment layout; limit follow-up to color-coded tax/promo
+summary labels, actual before/after item subtotals and public promo display
+metadata. PR65 stays draft during review; no website release or tax activation.
+The [checkpoint](work-checkpoints/2026-10-27-checkout-summary-labels.md) supersedes
+the rejected visual readiness/payment-form work saved in commit749f435.
 
 ## 2026-10-27 US Tax Preparation
 

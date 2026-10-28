@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import { ChevronDown } from '@lucide/vue'
-defineProps({ total: String, itemCount: Number, estimated: Boolean })
+defineProps({ total: String, itemCount: Number })
 const details = ref(null)
 let observer, desktop
 onMounted(() => {
@@ -16,7 +16,7 @@ onBeforeUnmount(() => observer?.disconnect())
 </script>
 <template>
   <details ref="details" open class="checkout-disclosure">
-    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md border border-stone-200 bg-white p-4 text-sm font-semibold"><span>Your bag · {{ itemCount }} {{ itemCount === 1 ? 'item' : 'items' }}</span><span class="flex items-center gap-2"><span v-if="estimated" class="text-xs font-normal text-stone-500">Est.</span>{{ total }}<ChevronDown :size="16" /></span></summary>
+    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md border border-stone-200 bg-white p-4 text-sm font-semibold"><span>Your bag · {{ itemCount }} {{ itemCount === 1 ? 'item' : 'items' }}</span><span class="flex items-center gap-3">{{ total }}<ChevronDown :size="16" /></span></summary>
     <div class="mt-4"><slot /></div>
   </details>
 </template>

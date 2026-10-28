@@ -14,13 +14,13 @@ defineExpose({ async submitPayment() { return stripeElementsForm.value?.submitPa
       <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f2de5c] font-semibold text-[#6a3c2b]">4</span>
       <div class="min-w-0 flex-1">
         <h3 class="text-xl font-semibold">Payment</h3>
-        <p class="mt-2 flex items-center gap-2 text-xs text-stone-600"><LockKeyhole :size="14" aria-hidden="true" />Secure payment by Stripe</p>
+        <p class="mt-2 flex items-center gap-2 text-xs text-stone-600"><LockKeyhole :size="14" />Your card details are encrypted and processed by Stripe.</p>
         <div class="mt-5">
-          <StripeWalletButtons v-if="!preview && walletReady && checkoutTotal != null && (walletSettings?.applePay || walletSettings?.googlePay)" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :apple-pay="walletSettings.applePay" :google-pay="walletSettings.googlePay" :ready="walletReady" :locked="locked" :place-wallet-order="placeWalletOrder" @pricing-changed="emit('pricing-changed')" />
+          <StripeWalletButtons v-if="!preview && checkoutTotal != null && (walletSettings?.applePay || walletSettings?.googlePay)" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :apple-pay="walletSettings.applePay" :google-pay="walletSettings.googlePay" :ready="walletReady" :locked="locked" :place-wallet-order="placeWalletOrder" @pricing-changed="emit('pricing-changed')" />
           <div v-if="preview" class="mb-4 flex flex-wrap gap-2 text-xs text-stone-600"><span v-if="walletSettings?.applePay" class="rounded-md border border-stone-200 bg-stone-50 p-3">Apple Pay enabled</span><span v-if="walletSettings?.googlePay" class="rounded-md border border-stone-200 bg-stone-50 p-3">Google Pay enabled</span></div>
-          <div>
-            <StripeElementsForm ref="stripeElementsForm" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :preview="preview" @card-complete="emit('card-complete', $event)" @pricing-changed="emit('pricing-changed')" />
-          </div>
+          <p class="mb-2 text-sm font-semibold">Pay by card</p>
+          <p v-if="!preview && checkoutTotal == null" class="text-sm text-stone-600" role="status">Payment is unavailable until tax and the order total are confirmed. Your bag and entered details are unchanged.</p>
+          <div v-show="preview || checkoutTotal != null"><StripeElementsForm ref="stripeElementsForm" :cart-items="cartItems" :checkout-total="checkoutTotal" :customer="customer" :promo-code="promoCode" :shipping="shipping" :preview="preview" @card-complete="emit('card-complete', $event)" @pricing-changed="emit('pricing-changed')" /></div>
         </div>
       </div>
     </div>

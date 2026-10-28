@@ -63,36 +63,12 @@ async function wallet(properties = {}) {
 }
 
 describe('actual card payment submission with a mocked SDK', () => {
-  it('reports completeness only when both the SDK card and cardholder name are complete', async () => {
-    const complete = vi.fn(), view = await card({ onCardComplete: complete })
-    view.handlers.change({ complete: false }); await nextTick()
-    expect(complete).toHaveBeenLastCalledWith(false)
-    view.handlers.change({ complete: true }); await nextTick()
-    expect(complete).toHaveBeenLastCalledWith(true)
-    view.state.cardholderName = ' '; await nextTick()
-    expect(complete).toHaveBeenLastCalledWith(false)
-    view.state.cardholderName = 'QA Customer'; await nextTick()
-    expect(complete).toHaveBeenLastCalledWith(true)
-    expect(provider.createPaymentIntent).not.toHaveBeenCalled()
-  })
-
   it('requires a cardholder before creating any intent', async () => {
     const view = await card()
     view.state.cardholderName = ' '
     await expect(view.exposed.submitPayment()).rejects.toThrow('cardholder name')
     expect(provider.createPaymentIntent).not.toHaveBeenCalled()
     expect(view.stripe.confirmCardPayment).not.toHaveBeenCalled()
-  })
-
-  it('shows card-field feedback and clears it after correction without starting a payment', async () => {
-    const complete = vi.fn(), view = await card({ onCardComplete: complete })
-    view.handlers.change({ complete: false, error: { message: 'Your card number is incomplete.' } })
-    await nextTick()
-    expect(view.state.cardError).toBe('Your card number is incomplete.')
-    expect(complete).toHaveBeenLastCalledWith(false)
-    view.handlers.change({ complete: true }); await nextTick()
-    expect(view.state.cardError).toBe(''); expect(complete).toHaveBeenLastCalledWith(true)
-    expect(provider.createPaymentIntent).not.toHaveBeenCalled()
   })
 
   it('returns only the completed payment identity and scoped proof after confirmation', async () => {

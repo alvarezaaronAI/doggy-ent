@@ -10,7 +10,6 @@ const props = defineProps({
     required: true,
   },
 })
-const emit = defineEmits(['address-reviewed'])
 const id = useId()
 const { reviewing, addressReview, streetField, hasApartment, complete, recipient, locality, countryName, reviewAddress, editAddress, expandApartment } = useCheckoutAddressReview(() => props.customer)
 const country = computed({
@@ -19,11 +18,6 @@ const country = computed({
 })
 const unsupportedDestination = computed(() => country.value !== 'US'
   || Boolean(props.customer.state && !isUSShippingDestination(props.customer)))
-async function confirmAddress() {
-  if (!complete.value) return
-  await reviewAddress()
-  emit('address-reviewed')
-}
 </script>
 
 <template>
@@ -53,7 +47,7 @@ async function confirmAddress() {
       <label class="shipping-field col-span-2" :for="id + '-city'">City<input :id="id + '-city'" v-model="customer.city" autocomplete="shipping address-level2" required></label>
       <label class="shipping-field" :for="id + '-state'">State<select :id="id + '-state'" v-model="customer.state" autocomplete="shipping address-level1" required><option value="">Select state</option><option v-for="state in US_SHIPPING_STATES" :key="state.code" :value="state.code">{{ state.name }}</option></select></label>
       <label class="shipping-field" :for="id + '-postal'">ZIP code<input :id="id + '-postal'" v-model="customer.zip" autocomplete="shipping postal-code" required></label>
-      <div class="col-span-2 border-t border-stone-200 pt-4"><button type="button" class="inline-flex min-h-11 items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-4 text-sm font-semibold text-stone-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!complete" @click="confirmAddress">Use this address <ArrowRight :size="16" /></button><p class="mt-2 text-xs text-stone-500">{{ complete ? 'Review your delivery address before paying.' : 'Complete the fields above to review your address.' }}</p></div>
+      <div class="col-span-2 border-t border-stone-200 pt-4"><button type="button" class="inline-flex min-h-11 items-center gap-2 rounded-md border border-stone-200 bg-stone-50 px-4 text-sm font-semibold text-stone-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!complete" @click="reviewAddress">Use this address <ArrowRight :size="16" /></button><p class="mt-2 text-xs text-stone-500">{{ complete ? 'Review your delivery address before paying.' : 'Complete the fields above to review your address.' }}</p></div>
     </div>
   </div>
 </template>

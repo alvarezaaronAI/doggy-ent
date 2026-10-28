@@ -1,6 +1,5 @@
 <script setup>
-import { onMounted, onBeforeUnmount, ref, useId, watch } from 'vue'
-import { CreditCard, LoaderCircle } from '@lucide/vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 
 import { getStripe } from '@payments/services/stripe.js'
 import { createPaymentIntent } from '@payments/services/payment.service.js'
@@ -37,10 +36,6 @@ const cardElement = ref(null)
 const cardElementContainer = ref(null)
 
 const cardholderName = ref('')
-const cardFieldComplete = ref(false)
-const cardError = ref('')
-const nameId = useId()
-watch(cardholderName, name => emit('card-complete', cardFieldComplete.value && Boolean(name.trim())))
 const stripeReady = ref(false)
 const initializationError = ref('')
 
@@ -122,9 +117,7 @@ onMounted(async () => {
   cardElement.value.mount(cardElementContainer.value)
 
   cardElement.value.on('change', (event) => {
-    cardError.value = event.error?.message || ''
-    cardFieldComplete.value = Boolean(event.complete) && !event.error
-    emit('card-complete', cardFieldComplete.value && Boolean(cardholderName.value.trim()))
+    emit('card-complete', !!event.complete)
   })
 
   stripeReady.value = true
@@ -137,48 +130,86 @@ onBeforeUnmount(() => cardElement.value?.destroy())
 </script>
 
 <template>
-  <div>
-    <div class="grid gap-4">
+  <div class="bg-white p-5 md:p-6">
+    <div class="flex items-start justify-between gap-4">
       <div>
-        <label :for="nameId" class="mb-2 block text-sm font-medium text-stone-700">
+        <p class="text-sm text-stone-500">
+          Your payment information is securely encrypted and processed through Stripe.
+        </p>
+      </div>
+
+      <div class="hidden items-center gap-2 text-xs font-semibold text-stone-400 sm:inline-flex">
+        <i class="fa-solid fa-lock text-emerald-500"></i>
+        Secure Checkout
+      </div>
+    </div>
+
+    <div class="mt-6 grid gap-4">
+      <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 text-sm">
+          <span class="font-semibold text-stone-700">
+            {{ props.cartItems.length }} items
+          </span>
+
+          <span class="text-lg font-extrabold text-stone-900">
+            ${{ Number(props.checkoutTotal || 0).toFixed(2) }}
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.08em] text-stone-700">
           Name on card
         </label>
 
         <input
           v-model="cardholderName"
-          :id="nameId"
-          name="cardholderName"
-          autocomplete="cc-name"
-          required
           type="text"
-          placeholder="Full name as shown on card"
-          class="min-h-12 w-full rounded-md border border-stone-300 bg-white px-4 py-3 text-base text-stone-900 shadow-sm outline-none transition focus:border-[#315bc5] focus:ring-2 focus:ring-[#315bc5]/15"
+          placeholder="John Doe"
+          class="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-900 outline-none transition focus:border-emerald-400 focus:bg-white"
         />
       </div>
 
       <div>
-        <p :id="nameId + '-card-label'" class="mb-2 flex items-center gap-2 text-sm font-medium text-stone-700"><CreditCard :size="16" aria-hidden="true" />Card details</p>
-        <div role="group" :aria-labelledby="nameId + '-card-label'" :aria-describedby="cardError ? nameId + '-card-error' : undefined" :aria-invalid="Boolean(cardError)" class="min-h-14 rounded-md border px-4 py-4 shadow-sm transition focus-within:border-[#315bc5] focus-within:ring-2 focus-within:ring-[#315bc5]/15" :class="cardError ? 'border-red-300 bg-red-50' : 'border-stone-300 bg-white'">
-          <div ref="cardElementContainer" class="min-h-6"></div>
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.08em] text-stone-700">
+          Card information
+        </label>
+
+        <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 transition focus-within:border-emerald-400 focus-within:bg-white">
+          <div ref="cardElementContainer"></div>
           <p v-if="preview" class="text-sm text-stone-500">Card number · Expiry · CVC</p>
         </div>
-        <p v-if="cardError" :id="nameId + '-card-error'" role="alert" class="mt-2 text-sm text-red-700">{{ cardError }}</p>
       </div>
     </div>
 
-    <div class="mt-4 flex items-center gap-3 text-2xl text-stone-500" role="group" aria-label="Accepted cards">
-      <i class="fa-brands fa-cc-visa" role="img" aria-label="Visa"></i>
-      <i class="fa-brands fa-cc-mastercard" role="img" aria-label="Mastercard"></i>
-      <i class="fa-brands fa-cc-amex" role="img" aria-label="American Express"></i>
+    <div class="mt-5 flex flex-wrap items-center gap-2 text-xs font-medium text-stone-500">
+      <span class="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-2">
+        <i class="fa-brands fa-cc-visa"></i>
+        Visa
+      </span>
+
+      <span class="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-2">
+        <i class="fa-brands fa-cc-mastercard"></i>
+        Mastercard
+      </span>
+
+      <span class="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-2">
+        <i class="fa-brands fa-cc-amex"></i>
+        Amex
+      </span>
+
+      <span class="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-2">
+        <i class="fa-solid fa-shield-check text-emerald-500"></i>
+        Stripe Secured
+      </span>
     </div>
 
     <div
       v-if="!stripeReady && !preview"
       role="status"
-      class="mt-4 flex items-center gap-2 text-sm"
-      :class="initializationError ? 'text-red-700' : 'text-stone-500'"
+      class="mt-4 text-sm font-semibold text-stone-500"
     >
-      <LoaderCircle v-if="!initializationError" :size="16" class="shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />{{ initializationError || 'Loading secure card fields...' }}
+      {{ initializationError || 'Initializing secure payment fields...' }}
     </div>
   </div>
 </template>

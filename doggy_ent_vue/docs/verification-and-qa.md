@@ -1,31 +1,20 @@
 # Verification And QA
 
-## Visual Checkout Readiness (2026-10-27)
+## Checkout Summary Correction (2026-10-27)
 
-The earlier proposal passed client663/server795/gateway6/runner-safety9 and an
-independent107-test review, but was rejected before publication. The revised form
-removes the extra panel, retains visible fields and numeric tax, omits setup copy,
-shows verified-amount Pay and paid-order Finish your order. Full client665
-(11/648/6), combined/admin/storefront builds and guarded418server/337client pass.
-Actual revised fixture verifies visible card entry before address, standard20.98
-then priority26.98 Pay, slow/error/retry blocking with card entry retained,
-no rejected copy, and0payment attempts/0writes. Measured320/324/384/467/874/1600
-CSS widths have no horizontal overflow; screenshot is fictional/private. Temporary
-fixture/tab are stopped/closed and viewport reset. Real device/provider purchase
-remains untested. Prior server/gateway checks remain recorded below.
-Readiness, estimates, cardholder completeness and shipping races add regression
-coverage; independent commerce review passes107 focused tests with no blockers.
-Combined/admin/storefront and server builds pass. Admin sample remains inert.
-
-Actual isolated Vue checkout uses fictional contact/address/cart and a fake SDK;
-all writes and payment creation are denied. Next actions focus email/address/name,
-complete details unlock payment, refresh blocks payment and retains entry,
-failure offers retry and successful retry restores payment without auto-submitting.
-Observed320/389/874/1333 CSS widths have no horizontal overflow. Fixture counters
-remain0 payment attempts/0 writes. This is not an actual Stripe or wallet/device
-purchase. Those recorded layout measurements describe the earlier proposal, not
-automatic acceptance of the revised UI. Source/deployment IDs and remaining acceptance live in the
-[checkpoint](work-checkpoints/2026-10-27-visual-checkout-readiness.md).
+Broad unmerged749f435 checkout redesign is reversed to f1bf1ba; critical payment/
+contact/shipping/delivery/admin-canvas files have no net difference. Only five
+runtime files add summary metadata/presentation. Full client624(11/607/6), server
+797(62/729/6), guarded420server/296client and admin/storefront/server builds pass.
+Fourteen new summary cases and two promo metadata cases cover real gray rates,
+zero/pending/mixed, percentage/cent rounding/fixed savings, before/after amounts,
+escaping and unchanged server total. Final color-only client607 tier2 and combined
+build pass; actual sample preview verifies blue tax/emerald savings/brown total,
+gray pills,14.99 ->13.49/10% off, no breakdown and320px no-overflow. Fixture has
+0payment attempts/0writes. This is not production Tax configuration. Final
+new evidence and remaining preview/release steps are in the
+[checkpoint](work-checkpoints/2026-10-27-checkout-summary-labels.md). No actual
+Stripe/Tax calculation, charge/email or shared DB operation is implied by fixtures.
 
 ## US Tax Preparation (2026-10-27)
 

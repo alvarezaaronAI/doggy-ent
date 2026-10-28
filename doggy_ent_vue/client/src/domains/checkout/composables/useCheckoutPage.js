@@ -1,4 +1,4 @@
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
@@ -28,7 +28,6 @@ import {
 import { useCheckoutIdentity } from './useCheckoutIdentity.js'
 import { useCheckoutShipping } from './useCheckoutShipping.js'
 import { isUSShippingDestination } from '../constants/shippingDestinations.js'
-import { buildPaymentReadiness, hasCompleteDeliveryAddress } from '../utils/checkoutReadiness.js'
 import { useStorefrontCampaigns } from '@campaigns/composables/useStorefrontCampaigns.js'
 export function useCheckoutPage() {
 const CART_STORAGE_KEY = 'doggy-ent-cart'
@@ -129,7 +128,7 @@ const checkoutRequirementsComplete = computed(() => {
     && isUSShippingDestination(customer.value)
     && !!selectedShippingOption.value
     && paymentRequirementsComplete.value
-    && (paymentCompleted.value || (pricingReady.value && !isLoadingShippingRates.value))
+    && (paymentCompleted.value || pricingReady.value)
     && cartItems.value.length
   )
 })
@@ -147,12 +146,19 @@ const checkoutChecklist = computed(() => [
   {
     id: 'shipping',
     label: 'Shipping details',
-    complete: hasCompleteDeliveryAddress(customer.value),
+    complete:
+      customer.value.firstName.trim()
+      && customer.value.lastName.trim()
+      && customer.value.address1.trim()
+      && customer.value.city.trim()
+      && customer.value.state.trim()
+      && customer.value.zip.trim()
+      && isUSShippingDestination(customer.value),
   },
   {
     id: 'delivery',
     label: 'Delivery method',
-    complete: !!selectedShippingOption.value && !isLoadingShippingRates.value,
+    complete: !!selectedShippingOption.value,
   },
   {
     id: 'payment',
@@ -202,6 +208,7 @@ const discount = computed(() =>
 )
 
 const {
+  checkoutPreviewResult,
   trustedPricing,
   checkoutPreviewError,
   isRefreshingCheckoutPreview,
@@ -271,44 +278,20 @@ const totalCampaignDonation = computed(() =>
 const pricingReady = computed(() => Boolean(trustedPricing.value)
   && trustedPricing.value.taxDetails?.status !== 'pending_address')
 const summaryTaxDetails = computed(() => trustedPricing.value?.taxDetails || null)
+const summaryPromo = computed(() => trustedPricing.value ? checkoutPreviewResult.value?.promo || null : null)
 
 const summarySubtotal = computed(() => trustedPricing.value?.subtotal ?? subtotal.value)
 const summaryDiscount = computed(() => trustedPricing.value?.discountAmount ?? discount.value)
-const summaryShipping = computed(() => cartItems.value.length ? trustedPricing.value?.shippingAmount ?? shippingPrice.value : 0)
+const summaryShipping = computed(() => trustedPricing.value?.shippingAmount ?? shippingPrice.value)
 const summaryTax = computed(() => (
   pricingReady.value ? trustedPricing.value.taxAmount ?? trustedPricing.value.tax : null
 ))
 const summaryDonation = computed(() => trustedPricing.value?.donationAmount ?? totalCampaignDonation.value)
 const summaryTotal = computed(() => pricingReady.value ? trustedPricing.value.total : null)
-// Display-only estimate. Payment always receives summaryTotal from current server pricing.
-const summaryEstimate = computed(() => Math.round(Math.max(0, summarySubtotal.value - summaryDiscount.value + summaryShipping.value + (summaryTax.value ?? 0)) * 100) / 100)
-const totalIsEstimate = computed(() => !hasCompleteDeliveryAddress(customer.value) || !pricingReady.value || isLoadingShippingRates.value)
-const paymentReadiness = computed(() => buildPaymentReadiness({
-  steps: checkoutChecklist.value.slice(0, 3), quoteReady: pricingReady.value,
-  loading: isRefreshingCheckoutPreview.value || isLoadingShippingRates.value,
-  deliveryLoading: isLoadingShippingRates.value,
-  error: checkoutPreviewError.value, cardComplete: paymentRequirementsComplete.value,
-  empty: !cartItems.value.length, paid: paymentCompleted.value,
-}))
-
-async function continueCheckout(step) {
-  if (isProcessingOrder.value || paymentCompleted.value) return
-  if (step === 'total') return refreshCheckoutPreview()
-  if (step === 'bag') return router.push('/#shop')
-  await nextTick()
-  const section = document.getElementById(`checkout-${step}`)
-  if (!section) return
-  const field = section.querySelector('input[required]:invalid, select[required]:invalid')
-    || section.querySelector('iframe[title="Secure card payment input frame"]')
-    || section.querySelector('input:not([disabled]):not([type="hidden"]), select:not([disabled]), button:not([disabled])')
-  section.scrollIntoView({ block: 'start', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
-  const target = field || section
-  target.focus({ preventScroll: true })
-}
 
 
 function validateCheckout({ wallet = false } = {}) {
-  if (!paymentCompleted.value && (!pricingReady.value || isLoadingShippingRates.value)) {
+  if (!paymentCompleted.value && !pricingReady.value) {
     checkoutStatusType.value = 'error'
     checkoutStatus.value = 'Wait for the current order total to be verified before paying.'
     return false
@@ -378,7 +361,6 @@ watch(
   },
   {
     deep: true,
-    flush: 'sync',
   },
 )
 
@@ -389,22 +371,20 @@ watch(
   },
   {
     deep: true,
-    flush: 'sync',
   },
 )
 
 onMounted(async () => {
   await loadShippingOptions()
-  scheduleShippingRates()
   loadCheckoutAccountProfile()
   loadCampaignPreview()
   refreshCheckoutPreview()
 })
 const placeOrder = () => submitCurrentOrder()
 const placeWalletOrder = paymentExecutor => submitCurrentOrder({ paymentExecutor })
-const walletReady = computed(() => paymentReadiness.value.canEnterPayment)
+const walletReady = computed(() => checkoutChecklist.value.slice(0, 3).every(step => step.complete) && isUSShippingDestination(customer.value) && pricingReady.value)
 const { campaigns, loadCampaigns } = useStorefrontCampaigns()
 onMounted(loadCampaigns)
-return { cartItems, customer, selectedShipping, shippingOptions, isLoadingShippingRates, shippingRateMessage, campaignPreview, isLoadingCampaignPreview, paymentFormComplete, accountProfile, isSignedInCheckout, profilePrefilled, checkoutAuthMode, stripePaymentForm, checkoutChecklist, isProcessingOrder, paymentCompleted, checkoutRequirementsComplete, checkoutStatus, checkoutStatusType, summarySubtotal, summaryDiscount, summaryShipping, summaryTax, summaryTaxDetails, summaryDonation, summaryTotal, summaryEstimate, totalIsEstimate, paymentReadiness, continueCheckout, totalCampaignDonation, itemCount, appliedPromoCode, isRefreshingCheckoutPreview, checkoutPreviewError, refreshCheckoutPreview, promoCode, promoStatus, promoMessage, formatPrice, buildSelectedShippingPayload, placeOrder, placeWalletOrder, walletReady, openCheckoutAuth, handleCheckoutAuthenticated, applyPromoCode, campaigns }
+return { cartItems, customer, selectedShipping, shippingOptions, isLoadingShippingRates, shippingRateMessage, campaignPreview, isLoadingCampaignPreview, paymentFormComplete, accountProfile, isSignedInCheckout, profilePrefilled, checkoutAuthMode, stripePaymentForm, checkoutChecklist, isProcessingOrder, paymentCompleted, checkoutRequirementsComplete, checkoutStatus, checkoutStatusType, summarySubtotal, summaryDiscount, summaryShipping, summaryTax, summaryTaxDetails, summaryPromo, summaryDonation, summaryTotal, totalCampaignDonation, itemCount, appliedPromoCode, isRefreshingCheckoutPreview, checkoutPreviewError, refreshCheckoutPreview, promoCode, promoStatus, promoMessage, formatPrice, buildSelectedShippingPayload, placeOrder, placeWalletOrder, walletReady, openCheckoutAuth, handleCheckoutAuthenticated, applyPromoCode, campaigns }
 
 }

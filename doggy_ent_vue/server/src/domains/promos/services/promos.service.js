@@ -407,6 +407,8 @@ export async function validatePromoCode({ code, cart, customerEmail }) {
   return {
     valid: true,
     code: promo.code,
+    discountType: promo.discountType,
+    discountValue: normalizePromoDiscountValue(promo),
     discountAmount,
     referralOwnerName: promo.referralOwnerName,
     assignedCustomerEmail: promo.assignedCustomerEmail,

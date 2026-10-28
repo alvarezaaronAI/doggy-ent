@@ -1,25 +1,16 @@
 # Checkout, Receipts And Manual Order Email
 
-## Checkout Prerequisite Presentation (2026-10-27)
+## Summary Labels Only (2026-10-27)
 
-`checkoutReadiness.js` maps existing checklist/current-quote state into the next
-action; it owns no price or payment authority. The rejected extra visual checklist
-is removed. `summaryEstimate`
-is display-only. `summaryTotal` stays null without a usable current server quote
-and remains the only total passed to Stripe. Address review requests a preview;
-normal field edits still debounce. Shipping scheduling marks loading synchronously,
-freezes its input snapshot and rejects superseded/unmounted result/error/finalizer
-work. Both customer/cart watchers invalidate it synchronously.
-
-`CheckoutPaymentSection` and `StripeElementsForm` are shared with the inert admin
-sample canvas. Card entry initializes independently of address completion through
-the existing configuration/SDK gate, remains mounted and visible while pricing is
-stale, and cannot charge until checkout prerequisites/current pricing pass. No
-continuation action submits payment. Pay uses current server total; an already-paid
-retry says Finish your order instead. Extra no-tax setup copy is omitted, numeric
-tax still comes from the server. No hardcoded rate or client tax override is added.
-The existing paid-order retry bypasses fresh-payment requirements as before.
-No API, schema, provider setting, Tax activation or receipt policy changes.
+The superseded broad payment UI revision is reversed. CheckoutTotals alone owns
+new summary presentation: server tax rate in gray (actual zero:0% applied), no
+destination/setup disclosure, and explicitly effective ratio if no single rate was
+supplied. This display ratio never calculates tax or enters a payment request.
+Promo validation adds public discountType/discountValue; current accepted preview
+passes that metadata through summaryPromo. Percent labels require a matching valid
+rule/rounded amount; other discounts show effective percent saved. Before/after
+figures are item subtotals, not fabricated alternative tax-inclusive order totals.
+No schema, price, tax configuration, payment control or provider behavior changes.
 
 ## Payment Environment Safeguards (2026-10-26, Local)
 
