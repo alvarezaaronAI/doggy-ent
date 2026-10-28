@@ -151,7 +151,9 @@ plus action-runtime/Ubuntu notices. No dependency was added/upgraded here and no
 blanket security/launch certificate is claimed. Triage separately before launch;
 do not apply an unreviewed major Prisma/dependency upgrade during this UI release.
 
-Next close-out: stop task fixture10460/close task previewtab11; owner live tabs3/4
-stay open. Final docs-only evidence is published to dev-main after its own checked
-PR; main remains1199d5f with no evidence-only redeploy. Fast-forward local primary
-branches against their own upstreams, verify task/doc branch sync and clean tree.
+Cleanup complete: task fixture10460 stopped/exit0, task previewtab11 closed;
+owner live tabs3/4 stay open and temporary viewport is reset. PR67 publishes only
+these3evidence docs to dev-main after its own checked PR; main remains1199d5f
+with no evidence-only redeploy. Local main is already fast-forwarded to its
+upstream. Next: finish PR67, fast-forward local dev-main against its upstream,
+verify task/doc branch sync and clean tree. No task-owned server or agent remains.
