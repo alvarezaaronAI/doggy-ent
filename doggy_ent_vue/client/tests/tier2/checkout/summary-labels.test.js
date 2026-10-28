@@ -9,6 +9,13 @@ const tax = overrides => ({ provider: 'stripe', status: 'calculated', taxAmount:
 const render = props => renderToString(createSSRApp(CheckoutTotals, { ...base, ...props }))
 
 describe('compact checkout tax and promo labels', () => {
+  it('identifies shipping with an accessible label, delivery icon and legible gold accent', async () => {
+    const html = await render({})
+    expect(html).toContain('Shipping')
+    expect(html).toContain('lucide-truck')
+    expect(html).toContain('text-[#775a1c]')
+    expect(html).toContain('$5.00')
+  })
   it('shows the actual tax rate in a gray label without rendering destination or breakdown', async () => {
     const html = await render({ summaryTax: 2.89, summaryTotal: 37.89, summaryTaxDetails: tax() })
     expect(html).toContain('bg-stone-100'); expect(html).toContain('text-stone-600')

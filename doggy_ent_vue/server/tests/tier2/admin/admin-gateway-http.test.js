@@ -6,10 +6,10 @@ import { hashPassword } from 'better-auth/crypto'
 
 const state = vi.hoisted(() => ({
   handler: vi.fn(), getSession: vi.fn(), signInEmail: vi.fn(), signOut: vi.fn(),
-  customerHandler: vi.fn(), customerSession: vi.fn(), dbAccess: vi.fn(), providerAccess: vi.fn(),
+  customerHandler: vi.fn(), customerSession: vi.fn(), dbAccess: vi.fn(), routingProbe: vi.fn(), providerAccess: vi.fn(),
 }))
 vi.mock('../../../src/db/prisma.js', () => ({ prisma: new Proxy({}, {
-  get: () => new Proxy(state.dbAccess, { get: () => state.dbAccess }),
+  get: (_target, key) => key === '$queryRaw' ? state.routingProbe : new Proxy(state.dbAccess, { get: () => state.dbAccess }),
 }) }))
 vi.mock('../../../src/domains/auth/services/adminAuth.service.js', async importOriginal => ({
   ...await importOriginal(),
@@ -82,6 +82,7 @@ beforeEach(() => {
   state.customerHandler.mockImplementation(() => Response.json({ fixture: 'customer-auth' }))
   state.customerSession.mockResolvedValue(null)
   state.dbAccess.mockImplementation(() => { throw new Error('Unexpected fixture storage access.') })
+  state.routingProbe.mockResolvedValue([{ '?column?': 1 }])
   state.providerAccess.mockImplementation(() => { throw new Error('Unexpected fixture provider access.') })
 })
 
@@ -197,6 +198,21 @@ describe('actual HTTP mounts with synthetic persisted Better Auth sessions', () 
     expect((await request('/api/auth/logout', { method: 'POST', headers })).status).toBe(200)
     expect(db.session).toHaveLength(0)
     expect((await request('/api/auth/me', { headers })).status).toBe(401)
+  })
+
+  it('checks database routing only after gateway and fresh persisted admin authorization', async () => {
+    const signedIn = await login(), headers = { ...gateway, Cookie: cookie(signedIn) }
+    expect((await request('/api/auth/data-target')).status).toBe(403)
+    expect((await request('/api/auth/data-target', { headers: gateway })).status).toBe(401)
+    expect(state.routingProbe).not.toHaveBeenCalled()
+    const response = await request('/api/auth/data-target', { headers })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    expect(await response.json()).toMatchObject({ success: true, routing: { apiOrigin: 'https://api.example.test', databaseConnected: true, transport: 'protected-gateway', environment: 'production' } })
+    expect(state.routingProbe).toHaveBeenCalledOnce()
+    db.user[0].role = 'CUSTOMER'
+    expect((await request('/api/auth/data-target', { headers })).status).toBe(401)
+    expect(state.routingProbe).toHaveBeenCalledOnce()
   })
 
   it('keeps fresh ADMIN and ACTIVE checks after gateway admission', async () => {

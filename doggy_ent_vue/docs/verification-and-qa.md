@@ -1,5 +1,20 @@
 # Verification And QA
 
+## Routing And Summary Follow-Up (2026-10-27)
+
+Full client655/server802, gateway6, guarded420server/311client and all four builds
+pass. New thumbnail regressions preserve actual image sources through cart reload,
+checkout, confirmation/account snapshots and unavailable-price states. Monogram
+is opt-in for checkout items, preserving campaign/promo colors and other cards.
+Staff context tests cover private projection, host recognition/no guessing,
+read-only probe only after gateway+fresh ACTIVE ADMIN, stale/failure/cancellation
+and same-origin transport. Production public health remains diagnostic-free.
+Actual fictional Vue preview confirms image decode, pattern and shipping accent
+at wide and400px/480px narrow widths with no overflow. Fresh shared read-only
+preflight confirms28matching/0pending/0failed migrations. Independent review,
+exact-head hosted CI and deployment evidence are tracked in the
+[current checkpoint](work-checkpoints/2026-10-27-routing-summary-release.md).
+
 ## Checkout Summary Correction (2026-10-27)
 
 Broad unmerged749f435 checkout redesign is reversed to f1bf1ba; critical payment/

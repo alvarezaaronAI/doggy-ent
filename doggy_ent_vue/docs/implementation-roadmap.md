@@ -1,5 +1,14 @@
 # Implementation Roadmap
 
+## 2026-10-27 Approved Summary And Routing Release
+
+Owner accepts the narrow checkout summary and authorizes release after staff
+routing, thumbnails, shipping accent and subtle per-item monogram checks. Keep
+original payment/form controls. Staff routing clarifies the protected two-site
+path; preview truthfully reports no DB. No Tax activation or schema/provider
+changes. [Current checkpoint](work-checkpoints/2026-10-27-routing-summary-release.md)
+tracks acceptance/CI/preflight/deploy evidence and supersedes the prior PR65 hold.
+
 ## 2026-10-27 Checkout Summary Correction
 
 Restore original checkout/payment layout; limit follow-up to color-coded tax/promo

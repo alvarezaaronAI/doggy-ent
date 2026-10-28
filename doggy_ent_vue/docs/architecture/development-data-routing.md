@@ -1,5 +1,28 @@
 # Development Data Routing
 
+## Two-Site Staff Context And Isolated Previews (2026-10-27)
+
+The protected staff site uses same-origin `/api/auth/data-target` through its
+existing Vercel gateway. After gateway and persisted ACTIVE ADMIN checks, the
+backend returns a read-only routing projection: configured public API origin,
+direct/protected transport, development/production environment, coarse database
+provider, connection probe and check time. Known Railway private/proxy host
+suffixes identify Railway PostgreSQL without returning the database host, name,
+username or connection URL. Unknown hosted providers remain Deployed database.
+The legacy top-level target field is retained. Public production health remains
+generic and does not probe the DB or expose these staff details.
+
+Admin displays Staff website -> protected gateway -> backend -> database in its
+existing shared context. Checks use no-store, expire after60seconds and can be
+refreshed; returning to a visible stale tab rechecks. Errors, old target-only
+responses and expired checks never claim Connected. This is connection/route
+evidence, not schema parity or a runtime database-switch control.
+
+A deliberately isolated local design fixture may report `PREVIEW` with
+`databaseConnected:false`. The development strip then says Preview / No database,
+not Railway and not a connection failure. Ordinary APIs cannot become verified
+from a frontend mode hint. The private fixture is not shipped in production.
+
 ## Source Of Truth
 
 The running backend chooses the database at startup. A Vite mode, browser URL, logged-in state, frontend label or choice of Chrome versus Safari does not select a database. Local and Railway customer/catalog/content records are independent; an account in one is not automatically copied to the other.

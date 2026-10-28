@@ -1,4 +1,5 @@
-import { loginAdmin, logoutAdmin, getAdminFromRequest, getAdminDataTarget, forwardAuthCookies } from '../services/auth.service.js'
+import { loginAdmin, logoutAdmin, getAdminFromRequest, forwardAuthCookies } from '../services/auth.service.js'
+import { getAdminRoutingContext } from '../services/adminRouting.service.js'
 
 export async function loginAdminController(req, res) {
   try {
@@ -27,9 +28,11 @@ async function adminContext(req, res, dataTarget) {
   try {
     const admin = await getAdminFromRequest(req)
     if (!admin) return res.status(401).json({ success: false, authenticated: false })
-    return res.json(dataTarget
-      ? { success: true, target: getAdminDataTarget() }
-      : { success: true, authenticated: true, admin })
+    if (dataTarget) {
+      const routing = await getAdminRoutingContext()
+      return res.json({ success: true, target: routing.target, routing })
+    }
+    return res.json({ success: true, authenticated: true, admin })
   } catch {
     return res.status(500).json({ success: false, message: 'Unable to validate admin session.' })
   }

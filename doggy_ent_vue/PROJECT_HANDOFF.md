@@ -1,5 +1,16 @@
 # Doggy Ent Project Handoff
 
+## Current: Routing And Summary Release (2026-10-27)
+
+Owner accepts the corrected checkout preview and requests deployment after routing,
+thumbnail, gold shipping accent and per-item subtle monogram checks. PR65 preview
+hold is superseded by this bounded follow-up. Original checkout/payment layout
+stays; no provider activation, secret/configuration change or migration. Local
+fixture is intentionally DB-free, now explicitly labelled; hosted staff routing
+gets authenticated connection/route evidence without exposing private DB details.
+Implementation, operations and remaining verification/publication are tracked in
+the [active checkpoint](docs/work-checkpoints/2026-10-27-routing-summary-release.md).
+
 ## Current: Checkout Summary Labels Only (2026-10-27)
 
 Owner rejects the broader checkout/payment redesign and supplies the original

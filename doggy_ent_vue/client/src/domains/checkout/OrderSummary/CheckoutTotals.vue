@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { ReceiptText, RefreshCw, Tag } from '@lucide/vue'
+import { ReceiptText, RefreshCw, Tag, Truck } from '@lucide/vue'
 import { mapTaxDetails } from '../mappers/taxDetails.mapper.js'
 const props = defineProps({
   summarySubtotal: { type: Number, required: true },
@@ -54,8 +54,8 @@ const rate = computed(() => {
         <dd class="flex min-w-0 flex-wrap justify-end gap-x-2 gap-y-1 tabular-nums"><span class="text-stone-500"><span class="sr-only">Before discount </span><s>{{ formatPrice(summarySubtotal) }}</s></span><span class="font-medium text-[#17634c]"><span class="sr-only">After discount </span>{{ formatPrice(afterDiscount) }}</span></dd>
       </div>
       <div class="flex items-baseline justify-between gap-5">
-        <dt class="text-stone-600">Shipping</dt>
-        <dd class="shrink-0 font-medium tabular-nums text-stone-800">{{ formatPrice(summaryShipping) }}</dd>
+        <dt class="text-[#775a1c]"><Truck :size="14" class="mr-1 inline-block align-middle" aria-hidden="true" />Shipping</dt>
+        <dd class="shrink-0 font-medium tabular-nums text-[#775a1c]">{{ formatPrice(summaryShipping) }}</dd>
       </div>
       <div class="flex items-baseline justify-between gap-5">
         <dt class="min-w-0 text-[#315bc5]"><ReceiptText :size="14" class="mr-1 inline-block align-middle" aria-hidden="true" />Estimated tax<span v-if="rate" class="ml-2 inline-block rounded bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">{{ rate }}</span></dt>
