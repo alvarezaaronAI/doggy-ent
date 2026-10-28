@@ -1,6 +1,6 @@
 # Doggy Ent Project Handoff
 
-## Current: Routing And Summary Release (2026-10-27)
+## Deployed: Routing And Summary Release (2026-10-27)
 
 Owner accepts the corrected checkout preview and requests deployment after routing,
 thumbnail, gold shipping accent and per-item subtle monogram checks. PR65 preview
@@ -11,12 +11,19 @@ gets authenticated connection/route evidence without exposing private DB details
 Implementation, operations and remaining verification/publication are tracked in
 the [active checkpoint](docs/work-checkpoints/2026-10-27-routing-summary-release.md).
 
-PR65 is integrated at0dee993 after exact-head client/server Quality and independent
-review; the sleep-return stale-connection finding is fixed and re-reviewed. PR66
-is the reviewed36-file release to main8df5883, awaiting its own CI before merge.
-Do not confuse preview artifacts with production deployment. Evidence branch
-docs/checkout-routing-release-evidence must not move dev-main until PR66's head is
-settled. Parent owns remaining publication and exact-source post-release checks.
+PR65 integrates at0dee993 after exact-head client/server Quality and independent
+review; sleep-return freshness is fixed/re-reviewed. PR66 passes separate Quality
+and releases main1199d5f48b7d09edc36966516c71878570bade23. Railway80d2fece is
+SUCCESS and stable shopdpl_JBFSQ61wf2JZxqVqtdc8tyLK6p87/staff
+dpl_3Jdo3LxQ4LJdcKSyDzXKR2krrxzT are READY at that exact source. Startup28migrations/
+nonepending/0exception patterns. Live staff sign-in/routing confirms protected
+gateway/RailwayAPI/PostgreSQL/Connected; checkout retains bag/account and shows
+small image/monogram/gold shipping/blue tax/gray rate/brown total without destination
+breakdown or public dev strip. Nineteen public assets have0private-key patterns/
+staff modules/dev panels; public/auth/CORS/media checks pass. No order/payment/email
+was submitted and no provider setting changed. Final docs-only evidence stays on
+integration, not another production rollout. Existing8server dependency advisories
+and real-device/payment/Tax/receipt launch acceptance remain separate.
 
 ## Current: Checkout Summary Labels Only (2026-10-27)
 

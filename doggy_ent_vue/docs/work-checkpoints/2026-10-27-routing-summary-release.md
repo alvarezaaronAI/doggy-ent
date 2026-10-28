@@ -111,3 +111,47 @@ publish this final evidence into integration without another production rollout.
 Local server3000 read-only health also confirms RAILWAY_DB/databaseConnected true.
 This is distinct from the labelled DB-free5197fixture; no local data target was
 silently changed. Keep previewtab11 until replacement live result is verified.
+
+PR66 exact-head Quality40646728542 client/server passes; no blocking reviews or
+threads. Expected-head guarded merge releases main
+1199d5f48b7d09edc36966516c71878570bade23. Automatic artifacts identify that SHA:
+Railway80d2fece-c4e3-4456-be4d-a41c75886418 BUILDING; storefront
+dpl_JBFSQ61wf2JZxqVqtdc8tyLK6p87 READY; staffdpl_3Jdo3LxQ4LJdcKSyDzXKR2krrxzT
+BUILDING. Not yet final acceptance: verify backend/staff success and stable
+aliases, actual staff routing/last-check/no-secret boundaries and live checkout
+image/monogram/gold shipping/gray percent/no destination. No payment submission.
+Doc branch remains parent-owned and must be integrated after final evidence only;
+do not redeploy main for evidence-only files. Primary local main still needs FF.
+
+Both stable Vercel aliases now READY at1199d5f: shopdpl_JBFSQ61wf2JZxqVqtdc8tyLK6p87,
+staffdpl_3Jdo3LxQ4LJdcKSyDzXKR2krrxzT. Railway80d2fece is SUCCESS at the same SHA;
+17startup entries show28migrations/no pending/listening8080 and0exception/crash
+patterns. Actual hosted checkout retains bag/account and decodes its product image
+inside the64px frame, displays the monogram asset at.065opacity, gold shipping,
+blue tax with gray0%applied and brown16.98total (10.99+5.99). No destination/setup
+disclosure or public dev panel;2620px document has no overflow. No payment entered
+or submitted. Staff session had expired; normal existing-credential sign-in
+succeeds after Vercel protection, with no credential changes. Actual expanded
+routing reports stafforigin/protectedgateway/RailwayAPI/RailwayPostgreSQL/
+production/Connected(read-only check)/local check time. Payments remains verified
+Sandbox/Allowed; Tax intentionally unchanged. No business editor or provider send.
+
+Final public checks pass health/catalog/content/campaigns200, anonymous customer
+401, direct staff403, protected staff302, exact shop/staff credentialed CORS and
+untrusted403. Product media returns200WebP and decodes768x1024. Nineteen public JS
+assets contain0server-key patterns,0staff modules and0development panels. Saved
+actual-live summary screenshot deployed-summary.png shows small product image,
+monogram, gold5.99shipping, blue0.00tax/gray0%applied and brown16.98total, with no
+customer address or email. Preview8.25% remains fictional, not deployed tax setup.
+All three exact-source artifacts are accepted for this scoped UI release. Actual
+card/wallet/payment/Tax-enabled/receipt acceptance remains outside this pass.
+
+CI dependency installation reported existing8server advisories(3moderate/5high),
+plus action-runtime/Ubuntu notices. No dependency was added/upgraded here and no
+blanket security/launch certificate is claimed. Triage separately before launch;
+do not apply an unreviewed major Prisma/dependency upgrade during this UI release.
+
+Next close-out: stop task fixture10460/close task previewtab11; owner live tabs3/4
+stay open. Final docs-only evidence is published to dev-main after its own checked
+PR; main remains1199d5f with no evidence-only redeploy. Fast-forward local primary
+branches against their own upstreams, verify task/doc branch sync and clean tree.

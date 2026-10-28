@@ -15,6 +15,15 @@ preflight confirms28matching/0pending/0failed migrations. Independent review,
 exact-head hosted CI and deployment evidence are tracked in the
 [current checkpoint](work-checkpoints/2026-10-27-routing-summary-release.md).
 
+Release follow-up: independent review's sleep-throttled freshness finding is fixed
+and re-reviewed(15routing tests), then PR65/66 exact-head Quality pass. Main1199d5f
+is RailwaySUCCESS/both stable VercelREADY. Actual signed-in staff confirms route,
+DB and read-only connection; live summary verifies decoded thumbnail/monogram/
+shipping/tax/rate/total, no destination and no public diagnostics. Health/media/
+catalog/CORS/access guards and19asset privacy scan pass. No payment, real email or
+Tax activation. Existing dependency advisories and actual device/commerce launch
+gates are not certified by this scoped rollout.
+
 ## Checkout Summary Correction (2026-10-27)
 
 Broad unmerged749f435 checkout redesign is reversed to f1bf1ba; critical payment/
