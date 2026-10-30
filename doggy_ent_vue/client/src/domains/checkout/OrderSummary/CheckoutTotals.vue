@@ -40,19 +40,31 @@ const rate = computed(() => {
 
 <template>
   <section aria-label="Cost summary" class="mt-6 border-t border-stone-200 pt-5" :aria-busy="isRefreshingCheckoutPreview">
-    <dl class="space-y-3 text-sm">
-      <div class="flex items-baseline justify-between gap-5">
-        <dt class="text-stone-600">Items subtotal<span v-if="itemCount" class="ml-1 text-stone-500">({{ itemCount }} {{ itemCount === 1 ? 'item' : 'items' }})</span></dt>
-        <dd class="shrink-0 font-medium tabular-nums text-stone-800">{{ formatPrice(summarySubtotal) }}</dd>
-      </div>
-      <div v-if="summaryDiscount > 0" class="flex items-baseline justify-between gap-5">
-        <dt class="min-w-0 text-[#17634c]"><Tag :size="14" class="mr-1 inline-block align-middle" aria-hidden="true" />Discount<span v-if="appliedPromoCode" class="ml-2 inline-block break-words rounded bg-[#e8f3ec] px-2 py-1 text-xs font-medium text-[#17634c]">{{ appliedPromoCode }}</span><span v-if="promoLabel" class="ml-2 inline-block rounded bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">{{ promoLabel }}</span></dt>
-        <dd class="shrink-0 font-medium tabular-nums text-[#17634c]">-{{ formatPrice(summaryDiscount) }}</dd>
-      </div>
-      <div v-if="summaryDiscount > 0" class="flex items-baseline justify-between gap-3 text-xs">
-        <dt class="text-stone-600">Items after discount</dt>
-        <dd class="flex min-w-0 flex-wrap justify-end gap-x-2 gap-y-1 tabular-nums"><span class="text-stone-500"><span class="sr-only">Before discount </span><s>{{ formatPrice(summarySubtotal) }}</s></span><span class="font-medium text-[#17634c]"><span class="sr-only">After discount </span>{{ formatPrice(afterDiscount) }}</span></dd>
-      </div>
+    <div role="group" :aria-label="summaryDiscount > 0 ? 'Items and discounts' : 'Items subtotal'" class="text-sm" :class="summaryDiscount > 0 ? 'rounded-lg border border-stone-200 bg-stone-50/80 p-3 sm:p-4' : ''">
+      <dl>
+        <div class="flex items-baseline justify-between gap-3">
+          <dt class="text-stone-600">Items subtotal<span v-if="itemCount" class="ml-1 text-stone-500">({{ itemCount }} {{ itemCount === 1 ? 'item' : 'items' }})</span></dt>
+          <dd class="shrink-0 font-medium tabular-nums text-stone-800">{{ formatPrice(summarySubtotal) }}</dd>
+        </div>
+      </dl>
+      <dl v-if="summaryDiscount > 0" class="ml-3 mt-3 space-y-3 border-l border-stone-300 pl-3">
+        <div class="flex items-baseline justify-between gap-3">
+          <dt class="min-w-0 text-[#17634c]">
+            <Tag :size="14" class="mr-1 inline-block align-middle" aria-hidden="true" />Discount on items
+            <span class="mt-2 flex flex-wrap gap-2">
+              <span v-if="appliedPromoCode" class="min-w-0 max-w-full break-words rounded bg-[#e8f3ec] px-2 py-1 text-xs font-medium text-[#17634c] [overflow-wrap:anywhere]">{{ appliedPromoCode }}</span>
+              <span v-if="promoLabel" class="rounded bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600">{{ promoLabel }}</span>
+            </span>
+          </dt>
+          <dd class="shrink-0 font-medium tabular-nums text-[#17634c]">-{{ formatPrice(summaryDiscount) }}</dd>
+        </div>
+        <div class="flex items-baseline justify-between gap-3 border-t border-stone-200 pt-3 text-xs">
+          <dt class="text-stone-600">Items after discount</dt>
+          <dd class="flex min-w-0 flex-wrap justify-end gap-x-2 gap-y-1 tabular-nums"><span class="text-stone-500"><span class="sr-only">Before discount </span><s>{{ formatPrice(summarySubtotal) }}</s></span><span class="font-medium text-[#17634c]"><span class="sr-only">After discount </span>{{ formatPrice(afterDiscount) }}</span></dd>
+        </div>
+      </dl>
+    </div>
+    <dl class="mt-3 space-y-3 text-sm">
       <div class="flex items-baseline justify-between gap-5">
         <dt class="text-[#775a1c]"><Truck :size="14" class="mr-1 inline-block align-middle" aria-hidden="true" />Shipping</dt>
         <dd class="shrink-0 font-medium tabular-nums text-[#775a1c]">{{ formatPrice(summaryShipping) }}</dd>
