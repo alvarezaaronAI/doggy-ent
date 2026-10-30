@@ -1,5 +1,21 @@
 # Doggy Ent Project Handoff
 
+## Current: Item Discount Group (Resumed 2026-10-30)
+
+Owner requests indented promos grouped with their item subtotal, plus an accurate
+explanation of tax/campaign handling. Focused presentation change only: light
+item-pricing box when discounted, indented Discount on items and before/after
+amounts, shipping/tax/total outside. Approved cards, colors, thumbnail/monogram and
+server amounts remain unchanged. Tax activation and campaign calculation changes
+are not part of this request. Focused61/full client659 checks and storefront/admin
+builds pass, with independent review finding no issues. Actual preview confirms
+percent/fixed savings in the group. Fresh hosted quote confirms tax provider none,
+not_configured/zero; no payment submitted. Migration preflight28matching/nonepending
+passes. Managed publication and exact-source deployment verification remain pending.
+Follow the
+[active checkpoint](docs/work-checkpoints/2026-10-28-checkout-discount-group.md)
+for exact state and next steps before claiming deployment.
+
 ## Deployed: Routing And Summary Release (2026-10-27)
 
 Owner accepts the corrected checkout preview and requests deployment after routing,

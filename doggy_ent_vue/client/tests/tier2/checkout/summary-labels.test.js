@@ -47,6 +47,23 @@ describe('compact checkout tax and promo labels', () => {
     expect(html).toContain('bg-[#e8f3ec]'); expect(html).toContain('text-[#17634c]')
   })
 
+  it('boxes item pricing and indents its discount while keeping shipping, tax and total outside', async () => {
+    const html = await render({ summaryDiscount: 3, summaryTotal: 32, appliedPromoCode: 'SAVE10' })
+    const items = html.match(/<div role="group"[\s\S]*?<\/dl><\/div>/)?.[0]
+    expect(items).toBeTruthy()
+    for (const value of ['Items and discounts', 'border-stone-200', 'bg-stone-50/80', 'Items subtotal', 'Discount on items', 'Items after discount', '$27.00']) expect(items).toContain(value)
+    expect(items).toMatch(/<dl class="ml-3 mt-3 space-y-3 border-l border-stone-300 pl-3">/)
+    for (const value of ['Shipping', 'Estimated tax', 'Order total', '$32.00']) expect(items).not.toContain(value)
+    expect(html.indexOf('Shipping')).toBeGreaterThan(html.indexOf(items) + items.length)
+    expect(html).toContain('$32.00')
+  })
+
+  it('keeps the ordinary subtotal unboxed when no promo applies', async () => {
+    const html = await render({})
+    expect(html).toContain('aria-label="Items subtotal"')
+    for (const value of ['Items and discounts', 'bg-stone-50/80', 'Discount on items', 'border-l border-stone-300']) expect(html).not.toContain(value)
+  })
+
   it('uses the configured promo percent despite ordinary cent rounding', async () => {
     const html = await render({ summarySubtotal: 10.99, summaryDiscount: 1.1, summaryPromo: { valid: true, discountType: 'PERCENT', discountValue: 10 } })
     expect(html).toContain('10% off'); expect(html).not.toContain('10.01%')
@@ -74,5 +91,13 @@ describe('compact checkout tax and promo labels', () => {
     const html = await render({ summaryDiscount: 3, appliedPromoCode: '<script>example</script>' })
     expect(html).toContain('break-words'); expect(html).toContain('&lt;script&gt;')
     expect(html).not.toContain('<script>example')
+  })
+
+  it('lets long promo codes wrap inside the indented item group', async () => {
+    const code = 'HOLIDAY'.repeat(12)
+    const html = await render({ summaryDiscount: 3, appliedPromoCode: code })
+    expect(html).toContain(code)
+    expect(html).toContain('max-w-full break-words')
+    expect(html).toContain('[overflow-wrap:anywhere]')
   })
 })
