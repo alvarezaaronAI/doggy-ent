@@ -1,5 +1,12 @@
 # Checkout Discount Group: 2026-10-28
 
+## Latest Status (2026-10-30)
+
+The scoped UI release is deployed and verified at main7f7a2a0. This evidence is
+integration-only documentation, not another main rollout. Historical queue and
+pre-release notes below are superseded by the Final Deployment Evidence section.
+The final documentation PR records its own merge and branch-sync close-out.
+
 ## Scope And Baseline
 
 Owner requests a final focused checkout UI adjustment: visually associate promos
@@ -70,3 +77,99 @@ Record final evidence on integration without a second docs-only main rollout.
 Rollback is the prior reviewed main1199d5f source; no data/config rollback is needed.
 Existing payment/device/Tax-enabled/receipt launch gates and dependency advisories
 remain separate. This is not a real-payment launch acceptance.
+
+## Publication Milestone (2026-10-30)
+
+Implementation74cfc559f4af5f1268ba92751e31518211e39796 is pushed/synchronized on
+fix/checkout-discount-group. PR68 targets unchanged dev-main1bfe301, with5files/
+146additions/13deletions; no reviews or unresolved threads. Both Vercel previews
+are successful, but Quality41100478631 client/server remain QUEUED at that exact
+head as of17:42UTC. Do not merge/bypass queued checks. The Actions job browser page
+also returned a GitHub load error; no repository cause is confirmed. Provider status
+reports operational, so do not attribute the queue to an active outage without
+evidence. Local full client659/server802/gateway6 and all combined/storefront/admin/
+server builds pass. No workflow/configuration/dependency changes were made.
+
+Release target preflight confirms existing Railway production API service and
+main/rootserver/startnpm; staged changes null. Staff Vercel SSO remains enabled
+for all deployments. Complete production-to-task diff has only the2presentation/
+test files plus5current/prior evidence docs. No server/schema/startup change.
+
+Parent is now on docs/checkout-discount-release-evidence with this task-owned
+evidence only. Keep it OUT of dev-main until the checked implementation/release
+head is merged. Next: verify PR68 current-head Quality success and unchanged base,
+guarded merge, then release PR dev-main -> main with its own exact-head Quality.
+Repeat DB preflight if stale. Verify exact-source production deployments and live
+summary; finish final evidence, docs-only PR, sync clean main/dev-main/task refs.
+Fixture22215 and previewtab12 are still task-owned; close/stop during final cleanup.
+GitHub diagnostic tab14 is temporary; owner live tabs3/4 must remain.
+
+Owner resumes after interruption: fresh fetch still matches both primary upstreams,
+PR68 head74cfc55/base1bfe301 unchanged and mergeable. By17:48UTC both Quality jobs
+are IN_PROGRESS (no failure/annotations; step summaries still empty), not passed.
+Do not mistake started/preview success for merge acceptance. Fresh read-only
+28migration/checksum/no-pending preflight passes again. No merge or production
+deployment has been attempted while these required checks are incomplete.
+
+At17:53UTC PR68's exact-head client/server Quality succeeds. Its only annotations
+are existing action Node-runtime deprecation/Ubuntu runner notices. Fresh PR
+head/base/mergeability and empty reviews/threads are checked; guarded merge
+integrates d2beb1f43d343e40c069bdb81c91443f4fc3a72e. Runtime/file tree matches reviewed
+74cfc55 exactly. Full7file production release diff is reviewed; PR69 dev-main ->
+main1199d5f is open and attached. Its own exact-head Quality must pass before main
+merge. Keep evidence branch unmerged while that release head is checked. No new
+source/provider/DB operation was added to work around GitHub's queue.
+
+PR69 Quality41102258257 checks server124221340086/client124221339836 are still
+queued at17:59UTC; both Vercel statuses succeed. Production remains main1199d5f.
+Publish this checkpoint branch as a source-only recovery point, not a release or
+permission to bypass CI. Its final evidence PR must remain separate from PR69's
+unchanged dev-main head until production verification finishes.
+
+At18:02UTC PR69 exact-head Quality41102258257 client/server succeeds. Fresh
+read-only28migration/no-pending preflight, unchanged head/base/mergeability and
+empty reviews/threads pass. Guarded merge releases main
+7f7a2a0217b5ef86a999d635180f974d9b4d8451. Next is exact-source Railway and both
+stable Vercel rollout verification, not a claim that a merge alone is deployment.
+
+## Final Deployment Evidence (2026-10-30)
+
+- Main source:7f7a2a0217b5ef86a999d635180f974d9b4d8451 after PR68/69, each with its
+  own exact-head client/server Quality success and guarded merge. No blocking
+  review/thread or conflict. Slow GitHub runner allocation was waited out, not
+  bypassed; existing action-runtime/Ubuntu annotations are not test failures.
+- Railway:c1ac53b7-291c-4bef-b81f-4e798ba9e128 SUCCESS at that source. Its17startup
+  entries show28migrations/none pending/listening8080 and0exception/crash patterns.
+- Shop stable alias:doggy-ent.vercel.app resolves to
+  dpl_3zBJ2EQX3BHk78wNWRR99WBXZTKh READY at that source.
+- Staff stable alias:doggy-ent-admin.vercel.app resolves to
+  dpl_51kpPzxhzZwugCmjueYGDGLWqmms READY at that source. All-deployment Vercel SSO
+  stays enabled; anonymous staff entry302 and direct staff API403 remain.
+- Actual live checkout retains the existing customer/bag, original Contact,
+  Shipping address, Delivery, Payment and promo controls. Non-discounted subtotal
+  is not boxed. Verified10.99items +5.99shipping +0tax =16.98total, gray0%applied,
+  real loaded64px image frame and monogram asset at.065opacity, with no horizontal
+  overflow or public development strip. No payment entered/submitted. Discounted
+  percent/fixed state was verified in the actual isolated Vue preview, not by
+  creating a production coupon or claiming a live purchase.
+- Public health/products/campaigns/payment-configuration200; configuration remains
+  sandbox/enabled. Exact shop credentialed CORS, anonymous customer401, direct
+  staff403 and protected staff302 pass. A52same-origin-JS-asset walk confirms the
+  new group/label markup and0server-key patterns/staff modules/development panels.
+- Current browser screenshot API cannot capture the live tab. DOM/layout and
+  deployment evidence above are verified; don't claim a new live screenshot.
+  The prior PII-free checkout-discount-group.png shows the real isolated UI with
+  fictional8.25%tax. Full mobile/zoom/screen-reader, real Stripe Tax/payment/receipt
+  and existing dependency-advisory triage remain separate launch gates.
+
+No migration, business-data change, credential/provider/Tax setting, new resource,
+real email, intent or order was created by this task. Runtime main/dev-main trees
+match; final evidence will intentionally be dev-main-only documentation.
+Task fixture5197 is no longer listening after interruption (curl/lsof confirm),
+not restarted. Prior local preview/diagnostic tabs are gone; the new temporary
+live-checkout tab is closed and the owner's staff tab remains. No active review
+agent remains. Final docs/link/fence/diff checks pass. Evidence close-out follows
+the normal checked docs-only PR into dev-main, then clean local main/dev-main
+fast-forwards and task/doc upstream synchronization; record those exact results
+on that PR without a recursive evidence-only production rollout. Source rollback
+candidate remains1199d5f; no DB rollback or weakened protection is part of recovery.
