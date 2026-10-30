@@ -1,5 +1,18 @@
 # Verification And QA
 
+## Checkout Discount Group (2026-10-30)
+
+Full client659/server802/gateway6 and combined/storefront/admin/server builds pass.
+Three focused regressions cover item-pricing scope/indent, no-discount layout and
+long-code wrapping; independent review finds no issues. PR68/69 pass separate
+exact-head Quality. Main7f7a2a0 is RailwaySUCCESS and both stable VercelREADY.
+Live checkout verifies original cards, retained bag/account, correct total,
+thumbnail/monogram/colors/no public dev panel. Public access and52asset privacy/
+new-markup checks pass. Percent/fixed promo states are actual isolated UI checks,
+not a real order. Tax stays off. Full mobile/screen-reader/payment/Tax/receipt
+acceptance and a new live screenshot are not claimed. See the
+[checkpoint](work-checkpoints/2026-10-28-checkout-discount-group.md).
+
 ## Routing And Summary Follow-Up (2026-10-27)
 
 Full client655/server802, gateway6, guarded420server/311client and all four builds

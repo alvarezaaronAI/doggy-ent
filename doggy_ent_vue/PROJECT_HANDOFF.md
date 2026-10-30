@@ -1,27 +1,26 @@
 # Doggy Ent Project Handoff
 
-## Current: Item Discount Group (Resumed 2026-10-30)
+## Deployed: Item Discount Group (2026-10-30)
 
-Owner requests indented promos grouped with their item subtotal, plus an accurate
-explanation of tax/campaign handling. Focused presentation change only: light
-item-pricing box when discounted, indented Discount on items and before/after
-amounts, shipping/tax/total outside. Approved cards, colors, thumbnail/monogram and
-server amounts remain unchanged. Tax activation and campaign calculation changes
-are not part of this request. Focused61/full client659 checks and storefront/admin
-builds pass, with independent review finding no issues. Actual preview confirms
-percent/fixed savings in the group. Fresh hosted quote confirms tax provider none,
-not_configured/zero; no payment submitted. Migration preflight28matching/nonepending
-passes. Full server802/gateway6 and combined/server builds also pass. Source74cfc55
-is pushed as PR68; both Vercel previews succeed but hosted Quality41100478631 is
-now passes after a slow queue. PR68 integrates d2beb1f; release PR69 targets main
-with the same reviewed tree and requires its own Quality. No production deployment
-yet; do not bypass pending checks. Parent's task-owned
-docs/checkout-discount-release-evidence branch records release milestones without
-changing PR68's checked head. Managed publication and exact-source deployment
-verification remain pending.
-Follow the
-[active checkpoint](docs/work-checkpoints/2026-10-28-checkout-discount-group.md)
-for exact state and next steps before claiming deployment.
+Discounted item pricing now has a light neutral box with indented Discount on items
+and before/after amounts. Shipping, tax and total remain outside. Approved checkout
+cards, colors, thumbnail/monogram and all server financial rules are unchanged.
+Tax remains off (none/not_configured/zero); percentage campaign giving still uses
+eligible item subtotal before promos, with no extra customer charge.
+
+PR68/69 pass separate exact-head Quality and guarded merges. Main
+7f7a2a0217b5ef86a999d635180f974d9b4d8451 is Railway c1ac53b7 SUCCESS and stable Vercel
+shop dpl_3zBJ2EQX3BHk78wNWRR99WBXZTKh / staff dpl_51kpPzxhzZwugCmjueYGDGLWqmms
+READY at that exact source. Startup reports 28 migrations, none pending, no error
+patterns. Full client659/server802/gateway6, all four builds and independent review
+pass. Actual live checkout retains bag/account, correct16.98 total, decoded64px
+thumbnail/monogram and colors, no public dev strip or overflow. Public/API/access
+checks and52asset privacy/new-markup scan pass. No payment/order/email or provider/
+DB/config change. Full mobile/screen-reader and real payment/Tax/receipt acceptance
+remain manual; current screenshot capture is unavailable, prior safe promo-preview
+image remains valid. Final evidence is integration-only docs, not another rollout.
+See the [checkpoint](docs/work-checkpoints/2026-10-28-checkout-discount-group.md)
+for exact artifacts, cleanup and branch-sync status.
 
 ## Deployed: Routing And Summary Release (2026-10-27)
 
