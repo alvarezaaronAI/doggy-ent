@@ -12,6 +12,14 @@ saved order/admin tax details remain intact. Show item subtotal before and after
 discount, not an invented pre-discount order total with guessed tax. Server amounts
 remain authoritative. See the [checkpoint](work-checkpoints/2026-10-27-checkout-summary-labels.md).
 
+2026-10-28 refinement: when a promo applies, group the item subtotal and its
+adjustments on a light neutral surface. Indent Discount on items and the before/
+after item amounts under a left rule. Shipping, tax and final total stay outside
+the group; no-discount summaries keep their ordinary compact subtotal. Preserve
+gray percentage labels and wrap long codes. This changes presentation only, not
+promo scope, tax configuration or company-funded campaign giving. See the
+[discount-group checkpoint](work-checkpoints/2026-10-28-checkout-discount-group.md).
+
 ## Payment Configuration Safety (2026-10-26, Local)
 
 Card/wallet layout, guest checkout, retained bag and presentation previews are

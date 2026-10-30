@@ -1,6 +1,22 @@
 # Doggy Ent Project Handoff
 
-## Current: Routing And Summary Release (2026-10-27)
+## Current: Item Discount Group (Resumed 2026-10-30)
+
+Owner requests indented promos grouped with their item subtotal, plus an accurate
+explanation of tax/campaign handling. Focused presentation change only: light
+item-pricing box when discounted, indented Discount on items and before/after
+amounts, shipping/tax/total outside. Approved cards, colors, thumbnail/monogram and
+server amounts remain unchanged. Tax activation and campaign calculation changes
+are not part of this request. Focused61/full client659 checks and storefront/admin
+builds pass, with independent review finding no issues. Actual preview confirms
+percent/fixed savings in the group. Fresh hosted quote confirms tax provider none,
+not_configured/zero; no payment submitted. Migration preflight28matching/nonepending
+passes. Managed publication and exact-source deployment verification remain pending.
+Follow the
+[active checkpoint](docs/work-checkpoints/2026-10-28-checkout-discount-group.md)
+for exact state and next steps before claiming deployment.
+
+## Deployed: Routing And Summary Release (2026-10-27)
 
 Owner accepts the corrected checkout preview and requests deployment after routing,
 thumbnail, gold shipping accent and per-item subtle monogram checks. PR65 preview
@@ -10,6 +26,20 @@ fixture is intentionally DB-free, now explicitly labelled; hosted staff routing
 gets authenticated connection/route evidence without exposing private DB details.
 Implementation, operations and remaining verification/publication are tracked in
 the [active checkpoint](docs/work-checkpoints/2026-10-27-routing-summary-release.md).
+
+PR65 integrates at0dee993 after exact-head client/server Quality and independent
+review; sleep-return freshness is fixed/re-reviewed. PR66 passes separate Quality
+and releases main1199d5f48b7d09edc36966516c71878570bade23. Railway80d2fece is
+SUCCESS and stable shopdpl_JBFSQ61wf2JZxqVqtdc8tyLK6p87/staff
+dpl_3Jdo3LxQ4LJdcKSyDzXKR2krrxzT are READY at that exact source. Startup28migrations/
+nonepending/0exception patterns. Live staff sign-in/routing confirms protected
+gateway/RailwayAPI/PostgreSQL/Connected; checkout retains bag/account and shows
+small image/monogram/gold shipping/blue tax/gray rate/brown total without destination
+breakdown or public dev strip. Nineteen public assets have0private-key patterns/
+staff modules/dev panels; public/auth/CORS/media checks pass. No order/payment/email
+was submitted and no provider setting changed. Final docs-only evidence stays on
+integration, not another production rollout. Existing8server dependency advisories
+and real-device/payment/Tax/receipt launch acceptance remain separate.
 
 ## Current: Checkout Summary Labels Only (2026-10-27)
 
