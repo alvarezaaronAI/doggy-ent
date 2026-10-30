@@ -11,7 +11,14 @@ are not part of this request. Focused61/full client659 checks and storefront/adm
 builds pass, with independent review finding no issues. Actual preview confirms
 percent/fixed savings in the group. Fresh hosted quote confirms tax provider none,
 not_configured/zero; no payment submitted. Migration preflight28matching/nonepending
-passes. Managed publication and exact-source deployment verification remain pending.
+passes. Full server802/gateway6 and combined/server builds also pass. Source74cfc55
+is pushed as PR68; both Vercel previews succeed but hosted Quality41100478631 is
+now passes after a slow queue. PR68 integrates d2beb1f; release PR69 targets main
+with the same reviewed tree and requires its own Quality. No production deployment
+yet; do not bypass pending checks. Parent's task-owned
+docs/checkout-discount-release-evidence branch records release milestones without
+changing PR68's checked head. Managed publication and exact-source deployment
+verification remain pending.
 Follow the
 [active checkpoint](docs/work-checkpoints/2026-10-28-checkout-discount-group.md)
 for exact state and next steps before claiming deployment.

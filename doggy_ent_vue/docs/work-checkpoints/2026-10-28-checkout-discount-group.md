@@ -70,3 +70,51 @@ Record final evidence on integration without a second docs-only main rollout.
 Rollback is the prior reviewed main1199d5f source; no data/config rollback is needed.
 Existing payment/device/Tax-enabled/receipt launch gates and dependency advisories
 remain separate. This is not a real-payment launch acceptance.
+
+## Publication Milestone (2026-10-30)
+
+Implementation74cfc559f4af5f1268ba92751e31518211e39796 is pushed/synchronized on
+fix/checkout-discount-group. PR68 targets unchanged dev-main1bfe301, with5files/
+146additions/13deletions; no reviews or unresolved threads. Both Vercel previews
+are successful, but Quality41100478631 client/server remain QUEUED at that exact
+head as of17:42UTC. Do not merge/bypass queued checks. The Actions job browser page
+also returned a GitHub load error; no repository cause is confirmed. Provider status
+reports operational, so do not attribute the queue to an active outage without
+evidence. Local full client659/server802/gateway6 and all combined/storefront/admin/
+server builds pass. No workflow/configuration/dependency changes were made.
+
+Release target preflight confirms existing Railway production API service and
+main/rootserver/startnpm; staged changes null. Staff Vercel SSO remains enabled
+for all deployments. Complete production-to-task diff has only the2presentation/
+test files plus5current/prior evidence docs. No server/schema/startup change.
+
+Parent is now on docs/checkout-discount-release-evidence with this task-owned
+evidence only. Keep it OUT of dev-main until the checked implementation/release
+head is merged. Next: verify PR68 current-head Quality success and unchanged base,
+guarded merge, then release PR dev-main -> main with its own exact-head Quality.
+Repeat DB preflight if stale. Verify exact-source production deployments and live
+summary; finish final evidence, docs-only PR, sync clean main/dev-main/task refs.
+Fixture22215 and previewtab12 are still task-owned; close/stop during final cleanup.
+GitHub diagnostic tab14 is temporary; owner live tabs3/4 must remain.
+
+Owner resumes after interruption: fresh fetch still matches both primary upstreams,
+PR68 head74cfc55/base1bfe301 unchanged and mergeable. By17:48UTC both Quality jobs
+are IN_PROGRESS (no failure/annotations; step summaries still empty), not passed.
+Do not mistake started/preview success for merge acceptance. Fresh read-only
+28migration/checksum/no-pending preflight passes again. No merge or production
+deployment has been attempted while these required checks are incomplete.
+
+At17:53UTC PR68's exact-head client/server Quality succeeds. Its only annotations
+are existing action Node-runtime deprecation/Ubuntu runner notices. Fresh PR
+head/base/mergeability and empty reviews/threads are checked; guarded merge
+integrates d2beb1f43d343e40c069bdb81c91443f4fc3a72e. Runtime/file tree matches reviewed
+74cfc55 exactly. Full7file production release diff is reviewed; PR69 dev-main ->
+main1199d5f is open and attached. Its own exact-head Quality must pass before main
+merge. Keep evidence branch unmerged while that release head is checked. No new
+source/provider/DB operation was added to work around GitHub's queue.
+
+PR69 Quality41102258257 checks server124221340086/client124221339836 are still
+queued at17:59UTC; both Vercel statuses succeed. Production remains main1199d5f.
+Publish this checkpoint branch as a source-only recovery point, not a release or
+permission to bypass CI. Its final evidence PR must remain separate from PR69's
+unchanged dev-main head until production verification finishes.
