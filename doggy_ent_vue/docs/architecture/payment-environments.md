@@ -1,5 +1,15 @@
 # Payment Environments And Launch Controls
 
+## Recovery Follow-Up (2026-10-31, In Verification)
+
+[Saved checkout recovery](checkout-recovery.md) adds a default-off server feature
+gate and signed-event handler without removing the live-creation lock. Earlier
+notes below describing no handler refer to the prior deployed baseline, not this
+unreleased source. Only `CHECKOUT_RECOVERY_ENABLED` and server-only
+`STRIPE_WEBHOOK_SECRET` are new configuration names. Migration/provider enablement
+remain separately approved; current evidence is in the
+[checkpoint](../work-checkpoints/2026-10-31-payment-recovery.md).
+
 ## Current Scope (2026-10-27, Hosted Sandbox Testing Enabled)
 
 Reviewed main1738cc7 is verified on the existing Railway API and both Vercel

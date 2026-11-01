@@ -33,6 +33,7 @@ export const ORDER_RECORD_FIELDS = [
   'discountAmount',
   'taxAmount',
   'taxSnapshot',
+  'attributionSnapshot',
   'currency',
   'stripePaymentIntentId',
   'createdAt',

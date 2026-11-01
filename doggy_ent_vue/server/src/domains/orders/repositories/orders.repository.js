@@ -262,16 +262,31 @@ export async function findOrderStats() {
   }
 }
 
-export async function createOrder(orderInput) {
-  const createdOrder = await prisma.$transaction(async tx => {
-    for (const item of orderInput.items) {
-      const variant = await tx.productVariant.findUnique({ where: { sku: item.sku }, include: { product: true } })
-      if (!variant || !variant.isActive || variant.product.status !== 'ACTIVE') throw Object.assign(new Error('An ordered variant is no longer available.'), { statusCode: 409 })
-      if (variant.product.sellingMode && variant.product.sellingMode !== 'INVENTORY_LIMITED') continue
-      const reserved = await tx.productVariant.updateMany({ where: { sku: item.sku, inventory: { gte: item.quantity } }, data: { inventory: { decrement: item.quantity } } })
-      if (!reserved.count) throw Object.assign(new Error('An ordered variant no longer has enough stock. Payment may be complete; contact support rather than paying again.'), { statusCode: 409 })
-    }
-    return tx.order.create({
+export async function createOrderTx(tx, orderInput) {
+  const unavailable = () => Object.assign(new Error('An ordered variant is no longer available.'), { statusCode: 409, code: 'CHECKOUT_VARIANT_UNAVAILABLE' })
+  const quantities = new Map()
+  for (const item of orderInput.items) {
+    if (!item.sku || !Number.isSafeInteger(item.quantity) || item.quantity < 1) throw unavailable()
+    const existing = quantities.get(item.sku)
+    if (existing && ['productId', 'variantId', 'size'].some(key => existing[key] && item[key] && existing[key] !== item[key])) throw unavailable()
+    const quantity = (existing?.quantity || 0) + item.quantity
+    if (!Number.isSafeInteger(quantity) || quantity > 2147483647) throw unavailable()
+    quantities.set(item.sku, { ...existing, ...item, productId: item.productId || existing?.productId, size: item.size || existing?.size, variantId: item.variantId || existing?.variantId, quantity })
+  }
+  // Stable ordering avoids opposite stock-lock order for overlapping bags.
+  for (const item of [...quantities.values()].sort((a, b) => a.sku.localeCompare(b.sku))) {
+    const variant = await tx.productVariant.findUnique({ where: item.variantId ? { id: item.variantId } : { sku: item.sku }, include: { product: true } })
+    if (!variant || !variant.isActive || variant.product.status !== 'ACTIVE' || variant.product.isTestProduct
+      || variant.sku !== item.sku || (item.productId && variant.productId !== item.productId)
+      || (item.size && variant.size !== item.size)) throw unavailable()
+    if (variant.product.sellingMode && variant.product.sellingMode !== 'INVENTORY_LIMITED') continue
+    const reserved = await tx.productVariant.updateMany({
+      where: { id: variant.id, productId: variant.productId, sku: item.sku, isActive: true, inventory: { gte: item.quantity } },
+      data: { inventory: { decrement: item.quantity } },
+    })
+    if (reserved.count !== 1) throw Object.assign(new Error('An ordered variant no longer has enough stock. Payment may be complete; contact support rather than paying again.'), { statusCode: 409, code: 'CHECKOUT_STOCK_UNAVAILABLE' })
+  }
+  return tx.order.create({
     data: {
       orderNumber: orderInput.orderNumber,
       userId: orderInput.userId || null,
@@ -299,6 +314,7 @@ export async function createOrder(orderInput) {
       discountAmount: Number(orderInput.discountAmount || 0),
       taxAmount: Number(orderInput.taxAmount || 0),
       ...(orderInput.taxSnapshot ? { taxSnapshot: orderInput.taxSnapshot } : {}),
+      ...(orderInput.attributionSnapshot ? { attributionSnapshot: orderInput.attributionSnapshot } : {}),
       currency: orderInput.currency || 'usd',
       stripePaymentIntentId:
         orderInput.stripePaymentIntentId || null,
@@ -328,9 +344,11 @@ export async function createOrder(orderInput) {
       shipments: orderShipmentsInclude,
       emailDeliveries: orderEmailDeliveriesInclude,
     },
-    })
   })
+}
 
+export async function createOrder(orderInput) {
+  const createdOrder = await prisma.$transaction(tx => createOrderTx(tx, orderInput))
   return mapOrder(createdOrder)
 }
 

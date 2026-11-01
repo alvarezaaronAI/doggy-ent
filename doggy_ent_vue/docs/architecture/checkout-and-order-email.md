@@ -1,5 +1,16 @@
 # Checkout, Receipts And Manual Order Email
 
+## Durable Attempt Follow-Up (2026-10-31, In Verification)
+
+The new default-off [recovery path](checkout-recovery.md) freezes the agreement
+before payment, provides leased canonical signed-event/browser recovery and
+completes order/stock/promo/campaign/optional receipt atomically. Historical
+browser-driven notes below remain relevant only to legacy paid-proof compatibility.
+This source is not deployed or activated; shared migration/provider approvals and
+isolated acceptance are tracked in the
+[checkpoint](../work-checkpoints/2026-10-31-payment-recovery.md). Manual fulfillment,
+live email/Tax gates and source-locked live charging remain unchanged.
+
 ## Summary Labels Only (2026-10-27)
 
 The superseded broad payment UI revision is reversed. CheckoutTotals alone owns

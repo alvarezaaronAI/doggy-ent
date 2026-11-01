@@ -2,7 +2,7 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { getStripe } from '../services/stripe.js'
 import { createPaymentIntent } from '../services/payment.service.js'
-const props = defineProps({ checkoutTotal: Number, cartItems: Array, customer: Object, shipping: Object, promoCode: String, applePay: Boolean, googlePay: Boolean, ready: Boolean, locked: Boolean, placeWalletOrder: { type: Function, required: true } })
+const props = defineProps({ checkoutTotal: Number, cartItems: Array, customer: Object, shipping: Object, promoCode: String, applePay: Boolean, googlePay: Boolean, ready: Boolean, locked: Boolean, preparePayment: Function, placeWalletOrder: { type: Function, required: true } })
 const emit = defineEmits(['pricing-changed'])
 const container = ref(null), available = ref(false), message = ref('Checking wallet availability...')
 let stripe, elements, wallet, disposed = false
@@ -20,10 +20,13 @@ onMounted(async () => {
       let paid = false
       try {
         const success = await props.placeWalletOrder(async () => {
+          const reviewedTotal = props.checkoutTotal
           const submission = await elements.submit()
           if (submission.error) throw new Error(submission.error.message)
-          const intent = await createPaymentIntent({ cartItems: props.cartItems, customer: props.customer, shipping: props.shipping, promoCode: props.promoCode })
-          if (Math.round(Number(intent.pricing?.total) * 100) !== Math.round(props.checkoutTotal * 100)) {
+          const payload = { cartItems: props.cartItems, customer: props.customer, shipping: props.shipping, promoCode: props.promoCode }
+          const intent = await (props.preparePayment ? props.preparePayment(payload, reviewedTotal) : createPaymentIntent(payload))
+          if (intent.recovered) { paid = true; return { status: 'recovered' } }
+          if (Math.round(Number(intent.pricing?.total) * 100) !== Math.round(reviewedTotal * 100)) {
             emit('pricing-changed')
             throw new Error('Your order total changed. Review the refreshed total before paying.')
           }

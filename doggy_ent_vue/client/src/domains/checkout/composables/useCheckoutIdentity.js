@@ -33,30 +33,30 @@ function loadSavedCustomer() {
   }
 }
 
-function saveCustomerForNextCheckout() {
+function saveCustomerForNextCheckout(checkoutCustomer = customer.value) {
   if (isSignedInCheckout.value) {
     localStorage.removeItem(CUSTOMER_STORAGE_KEY)
     return
   }
 
-  if (!customer.value.saveInfo) {
+  if (!checkoutCustomer.saveInfo) {
     localStorage.removeItem(CUSTOMER_STORAGE_KEY)
     return
   }
 
   localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify({
-    email: customer.value.email,
-    phone: customer.value.phone,
-    firstName: customer.value.firstName,
-    lastName: customer.value.lastName,
-    address1: customer.value.address1,
-    address2: customer.value.address2,
-    city: customer.value.city,
-    state: customer.value.state,
-    zip: customer.value.zip,
-    country: customer.value.country,
+    email: checkoutCustomer.email,
+    phone: checkoutCustomer.phone,
+    firstName: checkoutCustomer.firstName,
+    lastName: checkoutCustomer.lastName,
+    address1: checkoutCustomer.address1,
+    address2: checkoutCustomer.address2,
+    city: checkoutCustomer.city,
+    state: checkoutCustomer.state,
+    zip: checkoutCustomer.zip,
+    country: checkoutCustomer.country,
     saveInfo: true,
-    marketingOptIn: customer.value.marketingOptIn,
+    marketingOptIn: checkoutCustomer.marketingOptIn,
   }))
 }
 

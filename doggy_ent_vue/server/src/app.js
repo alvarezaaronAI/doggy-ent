@@ -10,6 +10,7 @@ import campaignsRoutes from './domains/campaigns/routes/campaigns.routes.js'
 import checkoutRoutes from './domains/checkout/routes/checkout.routes.js'
 import paymentRoutes from './domains/payments/routes/payment.routes.js'
 import adminPaymentsRoutes from './domains/payments/routes/adminPayments.routes.js'
+import { stripeWebhook } from './domains/payments/controllers/stripeWebhook.controller.js'
 import ordersRoutes from './domains/orders/routes/orders.routes.js'
 import authRoutes from './domains/auth/routes/auth.routes.js'
 import customerRecoveryRoutes from './domains/auth/routes/customerRecovery.routes.js'
@@ -79,6 +80,9 @@ app.all('/api/admin-auth/*splat', (req, res, next) => {
   res.set('Cache-Control', 'no-store')
   return boundedAuthHandler(adminAuth)(req, res, next)
 })
+
+// Signature verification must receive the exact bytes, before any JSON parser.
+app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json', limit: '100kb' }), stripeWebhook)
 
 app.use(express.json({
   limit: '100kb',

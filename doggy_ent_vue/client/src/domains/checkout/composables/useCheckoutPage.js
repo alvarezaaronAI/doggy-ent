@@ -27,6 +27,9 @@ import {
 
 import { useCheckoutIdentity } from './useCheckoutIdentity.js'
 import { useCheckoutShipping } from './useCheckoutShipping.js'
+import { useCheckoutRecovery } from './useCheckoutRecovery.js'
+import { cartFingerprint, clearRecoveredCart } from '../utils/checkoutRecovery.js'
+import { rememberReceiptAccess } from '../utils/receiptAccess.js'
 import { isUSShippingDestination } from '../constants/shippingDestinations.js'
 import { useStorefrontCampaigns } from '@campaigns/composables/useStorefrontCampaigns.js'
 export function useCheckoutPage() {
@@ -49,9 +52,9 @@ const stripePaymentForm = ref(null)
 const {
   checkoutStatus,
   checkoutStatusType,
-  isProcessingOrder,
+  isProcessingOrder: legacyProcessing,
   hasSubmittedOrder,
-  paymentCompleted,
+  paymentCompleted: legacyPaymentCompleted,
   completedPaymentIntent,
   checkoutResult,
   placeOrder: submitCurrentOrder,
@@ -109,6 +112,55 @@ const {
   },
 })
 
+function buildCheckoutPayload() {
+  return {
+    cartItems: cartItems.value,
+    promoCode: appliedPromoCode.value || null,
+    customer: { ...customer.value, country: customer.value.country === 'US' ? 'United States' : customer.value.country },
+    shipping: buildSelectedShippingPayload(),
+  }
+}
+let recoveredShipping = null
+const recovery = useCheckoutRecovery({
+  getPayload: buildCheckoutPayload,
+  getTotal: () => summaryTotal.value,
+  async onRestore(saved, fingerprint) {
+    if (!['PREPARED', 'OPEN'].includes(saved.status) || await cartFingerprint(cartItems.value) !== fingerprint) return
+    for (const key of ['email', 'phone', 'deliveryNotes', 'firstName', 'lastName', 'address1', 'address2', 'city', 'state', 'zip']) {
+      if (!String(customer.value[key] || '').trim() && typeof saved.customer?.[key] === 'string') customer.value[key] = saved.customer[key]
+    }
+    if (saved.customer?.country && (!customer.value.country || customer.value.country === 'US')) customer.value.country = saved.customer.country === 'United States' ? 'US' : saved.customer.country
+    recoveredShipping = saved.shipping
+    if (saved.promo?.valid && typeof saved.promo.code === 'string') {
+      promoCode.value = saved.promo.code; appliedPromoCode.value = saved.promo.code
+    }
+  },
+  async onComplete(result, fingerprint) {
+    rememberReceiptAccess(result.orderReference, result.receiptAccess)
+    try {
+      if (await clearRecoveredCart(CART_STORAGE_KEY, fingerprint)) {
+        cartItems.value = []; campaignPreview.value = []; clearPromo()
+        saveCustomerForNextCheckout(result.attempt.customer)
+      }
+    } catch { /* Receipt navigation must not depend on optional bag cleanup. */ }
+    const failure = await router.push(`/order-success/${encodeURIComponent(result.orderReference)}`)
+    if (failure) throw new Error('Confirmation navigation is not available.')
+  },
+})
+const isProcessingOrder = computed(() => legacyProcessing.value || recovery.busy.value)
+const paymentCompleted = computed(() => legacyPaymentCompleted.value || recovery.paid.value)
+const paymentLocked = computed(() => isProcessingOrder.value || paymentCompleted.value || recovery.locked.value)
+const recoveryUi = computed(() => ({
+  visible: recovery.hasRecovery.value || recovery.blocked.value || (recovery.active.value && recovery.message.value),
+  status: recovery.attempt.value?.status || '', message: recovery.message.value,
+  busy: recovery.busy.value || recovery.initializing.value,
+  canCheck: recovery.hasRecovery.value && !recovery.blocked.value,
+  canCancel: recovery.canCancel.value, canFinalize: recovery.canFinalize.value, canPrepare: recovery.canPrepare.value, canStartNew: recovery.canStartNew.value,
+  hideControls: recovery.initializing.value || recovery.blocked.value || (recovery.hasRecovery.value && !recovery.busy.value && recovery.locked.value),
+  check: recovery.check, cancel: recovery.cancel, finalize: recovery.finalize, prepare: recovery.retryPreparation, startNew: recovery.startNew,
+}))
+const preparePayment = (payload, total) => recovery.preparePayment(payload, total)
+
 const paymentRequirementsComplete = computed(() =>
   paymentFormComplete.value
   || paymentCompleted.value
@@ -130,6 +182,7 @@ const checkoutRequirementsComplete = computed(() => {
     && paymentRequirementsComplete.value
     && (paymentCompleted.value || pricingReady.value)
     && cartItems.value.length
+    && !recovery.locked.value
   )
 })
 
@@ -196,9 +249,8 @@ const {
   subtotal,
 })
 
-const itemCount = computed(() =>
-  calculateItemCount(cartItems.value)
-)
+const summaryCartItems = computed(() => recovery.attempt.value?.items || cartItems.value)
+const itemCount = computed(() => calculateItemCount(summaryCartItems.value))
 
 const discount = computed(() =>
   calculateDiscount({
@@ -277,17 +329,23 @@ const totalCampaignDonation = computed(() =>
 
 const pricingReady = computed(() => Boolean(trustedPricing.value)
   && trustedPricing.value.taxDetails?.status !== 'pending_address')
-const summaryTaxDetails = computed(() => trustedPricing.value?.taxDetails || null)
-const summaryPromo = computed(() => trustedPricing.value ? checkoutPreviewResult.value?.promo || null : null)
+const frozenPricing = computed(() => recovery.attempt.value?.pricing || null)
+const summaryTaxDetails = computed(() => recovery.attempt.value ? frozenPricing.value?.taxDetails || null : trustedPricing.value?.taxDetails || null)
+const summaryPromo = computed(() => recovery.attempt.value ? recovery.attempt.value.promo : trustedPricing.value ? checkoutPreviewResult.value?.promo || null : null)
+const summaryAppliedPromoCode = computed(() => recovery.attempt.value ? recovery.attempt.value.promo?.code || '' : appliedPromoCode.value)
+const summaryCampaigns = computed(() => recovery.attempt.value ? recovery.attempt.value.campaigns : campaignPreview.value)
+const campaignPreviewLoading = computed(() => !recovery.attempt.value && (isLoadingCampaignPreview.value || isRefreshingCheckoutPreview.value))
 
-const summarySubtotal = computed(() => trustedPricing.value?.subtotal ?? subtotal.value)
-const summaryDiscount = computed(() => trustedPricing.value?.discountAmount ?? discount.value)
-const summaryShipping = computed(() => trustedPricing.value?.shippingAmount ?? shippingPrice.value)
+const summarySubtotal = computed(() => recovery.attempt.value ? frozenPricing.value?.subtotal ?? null : trustedPricing.value?.subtotal ?? subtotal.value)
+const summaryDiscount = computed(() => recovery.attempt.value ? frozenPricing.value?.discountAmount ?? null : trustedPricing.value?.discountAmount ?? discount.value)
+const summaryShipping = computed(() => recovery.attempt.value ? frozenPricing.value?.shippingAmount ?? null : trustedPricing.value?.shippingAmount ?? shippingPrice.value)
 const summaryTax = computed(() => (
-  pricingReady.value ? trustedPricing.value.taxAmount ?? trustedPricing.value.tax : null
+  recovery.attempt.value ? frozenPricing.value?.taxAmount ?? frozenPricing.value?.tax ?? null : pricingReady.value ? trustedPricing.value.taxAmount ?? trustedPricing.value.tax : null
 ))
-const summaryDonation = computed(() => trustedPricing.value?.donationAmount ?? totalCampaignDonation.value)
-const summaryTotal = computed(() => pricingReady.value ? trustedPricing.value.total : null)
+const summaryDonation = computed(() => recovery.attempt.value ? frozenPricing.value?.donationAmount ?? summaryCampaigns.value.reduce((sum, campaign) => sum + Number(campaign.donationAmount || 0), 0) : trustedPricing.value?.donationAmount ?? totalCampaignDonation.value)
+const summaryTotal = computed(() => recovery.attempt.value ? recovery.attempt.value.amountCents / 100 : pricingReady.value ? trustedPricing.value.total : null)
+const summaryRefreshing = computed(() => !recovery.attempt.value && isRefreshingCheckoutPreview.value)
+const summaryPreviewError = computed(() => recovery.attempt.value ? '' : checkoutPreviewError.value)
 
 
 function validateCheckout({ wallet = false } = {}) {
@@ -375,16 +433,28 @@ watch(
 )
 
 onMounted(async () => {
+  await recovery.initialize()
   await loadShippingOptions()
+  if (recoveredShipping?.method) {
+    const saved = recoveredShipping
+    shippingOptions.value = [{ ...saved, code: saved.method, label: saved.service || 'Saved delivery method' }, ...shippingOptions.value.filter(option => option.code !== saved.method)]
+    selectedShipping.value = saved.method
+  }
   loadCheckoutAccountProfile()
   loadCampaignPreview()
   refreshCheckoutPreview()
 })
-const placeOrder = () => submitCurrentOrder()
-const placeWalletOrder = paymentExecutor => submitCurrentOrder({ paymentExecutor })
-const walletReady = computed(() => checkoutChecklist.value.slice(0, 3).every(step => step.complete) && isUSShippingDestination(customer.value) && pricingReady.value)
+async function placeOrder() {
+  if (recovery.initializing.value || !validateCheckout()) return false
+  return recovery.active.value ? recovery.pay(() => stripePaymentForm.value.submitPayment(), () => validateCheckout()) : submitCurrentOrder()
+}
+async function placeWalletOrder(paymentExecutor) {
+  if (recovery.initializing.value || !validateCheckout({ wallet: true })) return false
+  return recovery.active.value ? recovery.pay(paymentExecutor, () => validateCheckout({ wallet: true })) : submitCurrentOrder({ paymentExecutor })
+}
+const walletReady = computed(() => !recovery.locked.value && checkoutChecklist.value.slice(0, 3).every(step => step.complete) && isUSShippingDestination(customer.value) && pricingReady.value)
 const { campaigns, loadCampaigns } = useStorefrontCampaigns()
 onMounted(loadCampaigns)
-return { cartItems, customer, selectedShipping, shippingOptions, isLoadingShippingRates, shippingRateMessage, campaignPreview, isLoadingCampaignPreview, paymentFormComplete, accountProfile, isSignedInCheckout, profilePrefilled, checkoutAuthMode, stripePaymentForm, checkoutChecklist, isProcessingOrder, paymentCompleted, checkoutRequirementsComplete, checkoutStatus, checkoutStatusType, summarySubtotal, summaryDiscount, summaryShipping, summaryTax, summaryTaxDetails, summaryPromo, summaryDonation, summaryTotal, totalCampaignDonation, itemCount, appliedPromoCode, isRefreshingCheckoutPreview, checkoutPreviewError, refreshCheckoutPreview, promoCode, promoStatus, promoMessage, formatPrice, buildSelectedShippingPayload, placeOrder, placeWalletOrder, walletReady, openCheckoutAuth, handleCheckoutAuthenticated, applyPromoCode, campaigns }
+return { cartItems, customer, selectedShipping, shippingOptions, isLoadingShippingRates, shippingRateMessage, campaignPreview: summaryCampaigns, isLoadingCampaignPreview, paymentFormComplete, accountProfile, isSignedInCheckout, profilePrefilled, checkoutAuthMode, stripePaymentForm, checkoutChecklist, isProcessingOrder, paymentCompleted, checkoutRequirementsComplete, checkoutStatus, checkoutStatusType, summarySubtotal, summaryDiscount, summaryShipping, summaryTax, summaryTaxDetails, summaryPromo, summaryDonation, summaryTotal, totalCampaignDonation, itemCount, appliedPromoCode, isRefreshingCheckoutPreview, checkoutPreviewError, refreshCheckoutPreview, promoCode, promoStatus, promoMessage, formatPrice, buildSelectedShippingPayload, placeOrder, placeWalletOrder, walletReady, openCheckoutAuth, handleCheckoutAuthenticated, applyPromoCode, campaigns, paymentLocked, recoveryUi, preparePayment: computed(() => recovery.active.value ? preparePayment : undefined), summaryCartItems, summaryRefreshing, summaryPreviewError, summaryAppliedPromoCode, campaignPreviewLoading }
 
 }
