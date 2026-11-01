@@ -1,4 +1,5 @@
 import { fetchApi, parseJsonResponse } from '@shared/api/http.js'
+import { preparePetPhotoUpload } from '../utils/petPhotoTransport.js'
 const base = '/api/account/pets'
 async function request(path = '', options) {
   const response = await fetchApi(base + path, options)
@@ -12,7 +13,10 @@ export function saveAccountPet(id, values) {
 }
 export const deleteAccountPet = id => request(`/${encodeURIComponent(id)}`, { method: 'DELETE' })
 export const archiveAccountPet = (id, archived) => request(`/${encodeURIComponent(id)}/archive`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archived }) })
-export const uploadAccountPetPhoto = (id, file) => request(`/${encodeURIComponent(id)}/photo`, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+export async function uploadAccountPetPhoto(id, file) {
+  const body = await preparePetPhotoUpload(file)
+  return request(`/${encodeURIComponent(id)}/photo`, { method: 'PUT', headers: { 'Content-Type': body.type }, body })
+}
 export const deleteAccountPetPhoto = id => request(`/${encodeURIComponent(id)}/photo`, { method: 'DELETE' })
 export async function fetchAccountPetPhoto(id, signal) {
   const response = await fetchApi(`${base}/${encodeURIComponent(id)}/photo`, { signal, cache: 'no-store' })

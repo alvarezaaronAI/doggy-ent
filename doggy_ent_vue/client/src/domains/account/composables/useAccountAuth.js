@@ -91,12 +91,18 @@ export function useAccountAuth() {
 
   async function signOut() {
     sessionGeneration++
+    loading.value = true
+    error.value = ''
     try {
       await signOutCustomer()
-    }
-    finally {
       session.value = null
       user.value = null
+    }
+    catch (signOutError) {
+      error.value = 'Unable to sign out. Please try again.'
+      throw signOutError
+    }
+    finally {
       loading.value = false
     }
   }

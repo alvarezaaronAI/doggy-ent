@@ -117,15 +117,7 @@ export const customerAuth = betterAuth({
       },
     },
   },
-  session: {
-    additionalFields: {
-      token: {
-        type: 'string',
-        required: false,
-        returned: false,
-      },
-    },
-  },
+  // Redact tokens in the response hook, not the engine's internal renewal fields.
   databaseHooks: {
     session: { create: { before: async session => {
       const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { status: true } })
