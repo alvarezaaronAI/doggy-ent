@@ -182,3 +182,74 @@ anonymous/private/deny-default transport first, then stable-domain native sessio
 cookie acceptance after guarded rollout. Actual owner iPhone Safari and real
 recovery-email delivery remain separate device/provider acceptance. Existing
 recovery/payments/email controls remain unchanged. No release has occurred yet.
+
+## Checked Publication Milestone
+
+Task source67ce5792429550a23c18b1f6e23624235e77a147 is pushed. PR77 exact-head
+Quality41336497696 passes client/server and all steps; no reviews/conflicts and
+expected-head guarded merge integrates atdf7631c088831e1165ec78f8b26a7b4fabf6747e.
+PR78 releases that integration head to maince6370c; its independent exact-head
+Quality41336695930 is running. Do not merge before both jobs pass. Full release
+diff24paths is task source plus known prior admin-routing evidence docs only.
+
+Vercel task previewdpl_9wrmvDAAq6ZWg2z1PRi7m4hAj4Po is READY at67ce579. Existing
+CLI identity accesses it without disabling protection: isolated storefront/0admin
+manifest, first-party get-session200null/private-no-store, ownedprofile401,
+staffpath404 and hostile-origin sign-out404. Invalid fixture cookie is ignored
+with no new cookie; this does not prove successful session-cookie acceptance.
+No real preview signup/login or new trusted origin was added.
+
+Read-only target recheck confirms both existing Vercel roots/main repo branch,
+public all_except_custom_domains and staff all-URL authentication; Railway
+artistic-gentleness/API main/server root/start command, no staged config, prior
+deployment30aeede4SUCCESS. Fresh shared migration preflight29matching/nonepending.
+No shared/env/provider mutation. CLI project inspection uses explicit existing
+project/team; no new linking, token or share-link generation.
+
+Parent now uses docs/customer-session-release based ondf7631c for post-release
+evidence only. Do not merge that documentation branch before PR78 finishes;
+do not repeatedly deploy merely to record final artifacts. Exact remaining work:
+finish PR78 checks/guarded merge, verify all three stable artifacts/source and
+runtime startup/access controls, then existing-owner stable-domain UI sign-in/
+reload/logout (no real signup/mail/payment), document device/provider limitations,
+integrate evidence docs and synchronize clean primary/task branches.
+
+## Verified Stable Deployment / Final Acceptance
+
+PR78 Quality41336695930 passes both jobs/all steps at exactdf7631c, with no reviews
+or conflicts. Guarded merge releases main23a3ed1b84cce62009f55a954595ce1ed73abdd3.
+All three main-triggered existing artifacts match that exact source:
+
+- Railway8c865954-1527-4c4a-a64d-148d74618f58 SUCCESS; startup29migrations,
+  nonepending/listening and0captured Error/uncaught/Unhandled/FATAL patterns.
+- Stable shopdpl_GQhzNWeAEHd7k8aVDYsBE7qzSXfG and protected
+  staffdpl_BXFnxrsgZYcQp77hqcc8dYX1FMxt READY, stable aliases verified by hostname.
+- Public isolated manifest0admin, SPA/signup200, same-origin native session200,
+  anonymous ownedprofile401, public staffpath404 and private-no-store. Public API
+  health/products/campaigns200; protected staff unauthenticated302. Initial smoke
+  used a nonexistent /api/admin/data-routing and got404; the documented direct
+  /api/auth/data-target is checked separately, not treated as a routing regression.
+- Same-origin payment configuration retains Sandboxenabled/recoveryoff. Native
+  reset readiness is false; the existing unavailable state is honest. No provider
+  activation, secret/env change, payment attempt/order/email/refund or shipment.
+- Fresh read-only postflight29matching/nonepending, preserving34prior projections.
+
+Actual live customer browser acceptance uses the owner's existing authorized
+account only, no shared fixture signup. New storefront cookie initially requires
+a normal sign-in (old unrelated-domain session is not copied). Login reaches owned
+account, reload confirms persisted identity and the existing bag, logout succeeds,
+then opening /account redirects to sign-in. Re-login restores owned access; pets
+loads with2/2private images decoded, wishlist loads, checkout retains signed-in
+contact and the original bag item with1/1summary image decoded, no horizontal
+overflow and0captured console warnings/errors. No profile/pet/wishlist/product or
+order write was made. Routine sign-in/revocation creates/removes ordinary session
+rows only. User-owned original tab/storage is not cleared. Agent tab is temporary.
+
+The bounded source repair and deep isolated/live-existing-account checks are
+complete. Remaining acceptance: owner refresh/sign-in on actual iPhone Safari;
+real reset-email delivery needs separate approved provider/domain/inbox work.
+Native expiry/renewal/reset/copy-cookie/privacy are fixture-proven, not a claim of
+waiting days on production or delivering real mail. No browser security setting
+was weakened. Existing broader prelaunch/payment/recovery gates remain unchanged.
+Finish docs-only evidence checks/PR into integration and synchronize clean primary
+branches against their own upstreams; do not redeploy just for final evidence.
