@@ -156,6 +156,37 @@ release checked dev-main PR to main, verify all3exact-source deployments and
 public/staff/access/off-mode endpoints, then clean/sync main/dev-main. Record PR/
 artifact/check evidence here; do not mistake provider-ready source for activation.
 
+## Publication Checkpoint
+
+Implementation committed/pushed as8a857f5d483d77badeb82676b7c45dedb0497418 on
+feat/payment-recovery, synchronized with its remote. PR71 targets dev-main
+ab23e13; Quality run41255851640 is in progress at this checkpoint. No merge or
+production source deployment yet. Final scanned68paths have no configured-secret/
+long credential-pattern findings;10Markdown documents/283local links/fences and
+staged diff checks pass. All task agents are closed. No task CLI/server remains.
+This post-commit evidence is intentionally left as an owned documentation delta
+for the final post-release evidence PR, not an untested runtime change.
+
+PR71 now passed both exact-head Quality jobs/all steps (run41255851640), no reviews/
+blocking conflict, and merged guarded to dev-main14754ee315a59bb6a0fb7644b4c13395b4b5a9e0.
+The entire69-file main release is reviewed: implementation plus the known prior
+three evidence-document differences, no unrelated runtime scope. PR72 targets
+main7f7a2a0 from exact dev-main14754ee; await its own current-head Quality before
+guarded merge. No production release yet at this update.
+
+PR72 now passes its own client/server Quality/all steps (run41255953844), no
+reviews/conflicts, and merges guarded to main2d395d5d76d8e76f01d8346dcc70c826993e85ff.
+Git-triggered hosting rollout is started; exact artifact readiness is NOT yet
+verified at this checkpoint. Source merge alone is not successful deployment.
+
+Resume: inspect PR71 exact head/base/checks/reviews; wait for Quality client/server
+success, merge with expected8a857f5head. Open reviewed dev-main->main release PR,
+wait its own current-head Quality, merge guarded and verify Railway + both stable
+Vercel deployments at the resulting mainSHA. Shared schema already29matching,
+featureflag/secret absent; do NOT configure Stripe. Finish smoke/privacy/access
+checks, append artifacts, commit this evidence on a docs branch into integration,
+and synchronize local main/dev-main. Do not rerun migration or enable recovery.
+
 ## Owner's Later Sandbox Setup
 
 Do not execute this configuration in this release. In Chase and Evie Sandbox,
@@ -174,3 +205,47 @@ Stock/promo reservations, complete financial ledger/status/refund safety,
 retention/disposal/support identity decisions, actual devices/providers and1.0
 launch approval remain open. Seven-day access expiry does not purge stored PII.
 No raw event/card/clientSecret/private customer export belongs in notes or Git.
+
+## Final Production Verification
+
+Exact released main2d395d5d76d8e76f01d8346dcc70c826993e85ff is verified:
+
+- Railway7d81f053-3aec-474a-95b1-32187ce224e1 SUCCESS with matching main commit;
+  runtime29migrations, nonepending, listening8080 and zero captured exception/
+  worker-failure patterns. Both stable Vercel aliases resolve to READY artifacts
+  at the same source:shopdpl_CgpdaUixZQf4mC5UiUotVRUk9Kky and
+  staffdpl_84Dfjga9fKdReHq4fJ5yTx8kVQfY.
+- Public home/checkout/manifest/APIhealth/products/campaigns/config200, exact shop
+  CORS, public diagnostics absent; anonymous account401/direct staff recovery403,
+  protected admin anonymous302. Unsigned off-mode webhook503 without storage.
+  Existing public Sandbox creation remains enabled; recovery field absent/off.
+- Public artifact scan79JS/CSS assets finds zero long private credential patterns,
+  admin module or development-panel marker; storefront manifest has0admin modules.
+- Actual live checkout retains existing signed-in account/bag/product thumbnail,
+  sizes/prices/16.98total, gray0%tax label, shipping colors, monogram and original
+  cards. Image decoded, zero captured errors/overflow, no public diagnostics or
+  new recovery UI while off. Observed desktop viewport is3878px, not mobile proof.
+- Existing protected staff reload/Orders loads, payment account verified/Sandbox
+  allowed, no new review UI or captured errors. No order/status/email edit. Routing
+  panel read returns route/DB facts but immediately labels check expired, even after
+  Refresh. Record as an existing conservative freshness/clock-skew investigation;
+  cause not verified. It is not evidence of an API/database outage and no fix is
+  smuggled into this payment release. Prior source of routing freshness is unchanged.
+- Fresh history/checksum postflight remains29matching/nonepending. Read-only counts
+  show both new recovery tables empty and orders/email deliveries unchanged from
+  backup. No actual charge, customer email, webhook resource, credential/flag,
+  tax/provider/fulfillment setting or local-primary migration occurred.
+
+All source test/build evidence above remains valid for this deployed source.
+Remaining enabled recovery/mobile/keyboard/3DS/wallet/event/receipt, reservation,
+financial status/refund, retention and business launch gates are explicit, not
+passed by deployment. Owner intentionally configures Stripe later. Do not activate
+from this checkpoint alone.
+
+Cleanup: task agents closed and no task server/PTY session remains. User's ordinary
+development servers remain. Agent-created browser tabs3(local) and4(live checkout)
+are temporary; explicit close returned browser.user unavailable, so rely on host
+temporary-tab cleanup or owner close. User-owned staff/home tabs are preserved.
+Post-release documentation-only evidence is being published to integration, not
+another main rollout. Finish that PR/checks and fast-forward local main/dev-main;
+retain task branches. Runtime source must still match deployed main2d395d5.

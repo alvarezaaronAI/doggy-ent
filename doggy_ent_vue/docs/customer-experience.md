@@ -1,6 +1,6 @@
 # Customer Experience Requirements
 
-## Durable Payment Recovery (2026-10-31, In Verification)
+## Durable Payment Recovery (2026-10-31, Deployed Inactive)
 
 Keep the approved checkout cards, summary, guest/member paths and payment controls.
 The default-off recovery contract saves a minimal seven-day browser handle before

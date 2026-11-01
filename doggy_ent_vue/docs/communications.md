@@ -1,6 +1,6 @@
 # Communications Policy
 
-## Recoverable Receipt Intent (2026-10-31, In Verification)
+## Recoverable Receipt Intent (2026-10-31, Deployed Inactive)
 
 New saved-attempt completion inserts its one optional payment receipt in the same
 transaction as order/items/stock and frozen promo/giving accounting. Signed payment

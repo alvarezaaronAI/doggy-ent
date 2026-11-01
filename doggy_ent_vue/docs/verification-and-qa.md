@@ -2,6 +2,16 @@
 
 ## Checkout Recovery Preparation (2026-10-31)
 
+Main2d395d5 is Railway7d81f053SUCCESS and both stable Vercel aliases READY at that
+exact source; PR71/72 separate current-head Quality/all steps pass. Runtime startup
+29migrations/nonepending/listening/no error patterns. Off-mode webhook503, public
+health/catalog/campaign/config200/exactCORS, anonymousaccount401/directstaff403,
+SSO302 and79asset privacy/zero-admin manifest checks pass. Actual checkout/staff
+Orders retain approved UI and no captured errors/overflow; new recovery controls
+are correctly absent. Tables empty/order-email counts unchanged. Staff routing
+badge's immediate-expiry observation is recorded separately as a follow-up; no
+DB outage or new active recovery/payment/Tax/receipt acceptance is inferred.
+
 Full client734/server880/gateway6 pass; guarded payment492server/382client,
 runner-safety9/security-helper10 and combined/storefront/admin/server builds pass.
 Real disposable PostgreSQL12-stage verification covers concurrent finalization,
