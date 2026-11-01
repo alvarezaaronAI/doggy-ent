@@ -57,6 +57,62 @@ describe('protected staff routing display', () => {
     expect(state.connected.value).toBe(false)
     expect(state.label.value).toBe('Routing unverified')
   })
+  it.each([-86_400_000, 86_400_000])('keeps a fresh no-store check current despite a server clock offset of %i ms', async offset => {
+    http.fetchApi.mockResolvedValue(response(fixture({ checkedAt: new Date(Date.now() + offset).toISOString() })))
+    const { state } = mount(); await flush()
+    expect(state.connected.value).toBe(true)
+    vi.advanceTimersByTime(59_999)
+    expect(state.connected.value).toBe(true)
+    vi.advanceTimersByTime(1)
+    expect(state.connected.value).toBe(false)
+  })
+  it('includes request latency rather than granting a new minute when the response arrives', async () => {
+    let resolve
+    http.fetchApi.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const { state } = mount()
+    vi.advanceTimersByTime(45_000)
+    resolve(response(fixture({ checkedAt: '2036-10-27T18:00:00Z' }))); await flush()
+    expect(state.connected.value).toBe(true)
+    vi.advanceTimersByTime(14_999)
+    expect(state.connected.value).toBe(true)
+    vi.advanceTimersByTime(1)
+    expect(state.connected.value).toBe(false)
+  })
+  it('does not certify a response whose request exceeded the freshness limit', async () => {
+    let resolve
+    http.fetchApi.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const { state } = mount()
+    vi.advanceTimersByTime(60_000)
+    resolve(response(fixture())); await flush()
+    expect(state.connected.value).toBe(false)
+    expect(state.stale.value).toBe(true)
+    await state.refresh()
+    expect(state.connected.value).toBe(true)
+  })
+  it('does not extend a slow request when the wall clock partially rolls back in flight', async () => {
+    let tick = 0, resolve
+    vi.stubGlobal('performance', { now: () => tick })
+    http.fetchApi.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const { state } = mount()
+    tick = 70_000
+    vi.setSystemTime(new Date('2026-10-27T18:00:50Z'))
+    resolve(response(fixture())); await flush()
+    expect(state.connected.value).toBe(false)
+    expect(state.stale.value).toBe(true)
+  })
+  it('rechecks an expired monotonic age on tab return even after a partial wall clock rollback', async () => {
+    let tick = 0, resolve
+    vi.stubGlobal('performance', { now: () => tick })
+    const { state } = mount(); await flush()
+    tick = 70_000
+    vi.setSystemTime(new Date('2026-10-27T18:00:50Z'))
+    http.fetchApi.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    documentState.addEventListener.mock.calls[0][1]()
+    expect(state.connected.value).toBe(false)
+    expect(state.label.value).toBe('Checking routing')
+    resolve(response(fixture())); await flush()
+    expect(state.connected.value).toBe(true)
+  })
   it('shows connection failure distinctly and removes prior confirmation on a failed recheck', async () => {
     http.fetchApi.mockResolvedValue(response(fixture({ databaseConnected: false })))
     const { state } = mount(); await flush()
@@ -101,6 +157,17 @@ describe('protected staff routing display', () => {
     expect(state.connected.value).toBe(false)
     expect(state.label.value).toBe('Checking routing')
     resolve(response(fixture())); await flush()
+    expect(state.connected.value).toBe(true)
+  })
+  it('rechecks after the local clock moves backwards instead of retaining old evidence', async () => {
+    const { state } = mount(); await flush()
+    vi.setSystemTime(new Date('2026-10-27T17:55:00Z'))
+    let resolve
+    http.fetchApi.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    documentState.addEventListener.mock.calls[0][1]()
+    expect(state.connected.value).toBe(false)
+    expect(state.label.value).toBe('Checking routing')
+    resolve(response(fixture({ checkedAt: '2026-10-27T18:00:00Z' }))); await flush()
     expect(state.connected.value).toBe(true)
   })
 })

@@ -22,6 +22,11 @@ addresses/credentials remain server-only. Expired/failed checks say unverified,
 not Connected. Known Railway DB hosts identify Railway database; an unknown host
 remains Deployed database. See [routing contract](architecture/development-data-routing.md).
 
+The freshness repair measures the 60-second bound from the browser's request start
+instead of comparing server/browser clocks. Server check time is retained for
+display; slow, expired, invalid or failed evidence still cannot claim Connected.
+No layout, database target, authorization or provider setting changes.
+
 ## Tax Readiness And Saved Details (2026-10-27)
 
 The shared context adds compact read-only tax collection status with expandable
