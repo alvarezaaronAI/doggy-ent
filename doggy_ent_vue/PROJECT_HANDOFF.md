@@ -1,13 +1,23 @@
 # Doggy Ent Project Handoff
 
-## In Progress: Customer Session Repair And Deep QA (2026-11-01)
+## Deployed: Customer Session Repair And Deep QA (2026-11-01)
 
-Owner reports mobile sign-in accepted but session not retained and requests deep
-signup/login/recovery testing. Investigate the known direct Railway cross-site
-cookie limitation and a narrowly allowed first-party storefront gateway, keeping
-existing Better Auth/ownership/origin safeguards, UI, bag and guest checkout. No
-shared migration, password reset, live email/payment or provider change. Current
-branch, evidence and exact next steps are in the
+Hosted customer auth/account/private-photo/checkout now use a restricted first-party
+gateway, removing the unrelated-domain cookie dependency without weakening privacy
+or backend authorization. Native aged-session renewal and failed-logout identity
+handling are corrected; approved UI, accounts/passwords and bag remain unchanged.
+Client821/server902/gateway6, offline492/382, all builds, real-engine fixtures and
+actual disposable signup/review/duplicate/login/reload/logout/checkout-return pass.
+PR77/78 each pass current-head Quality; main23a3ed1 is Railway8c865954SUCCESS and
+stable shopdpl_GQhzNWeAEHd7k8aVDYsBE7qzSXfG/staffdpl_BXFnxrsgZYcQp77hqcc8dYX1FMxt
+READY at that exact source. Live existing-customer login/reload/logout/private
+redirect/re-login, decoded private pet photos, wishlist and signed-in checkout/
+retained bag pass, with no captured warnings/errors or overflow. Shared history
+29matching/nonepending; no migration, password/provider/config change, signup row,
+email or payment. Existing Sandbox controls and inactive recovery remain unchanged.
+Owner iPhone/Safari retest remains; reset-email readiness is currently false, so
+real delivery needs separate provider/inbox approval. Final evidence and next
+steps are in the
 [session repair checkpoint](docs/work-checkpoints/2026-11-01-customer-first-party-sessions.md).
 
 ## Deployed: Admin Routing Freshness (2026-10-31)

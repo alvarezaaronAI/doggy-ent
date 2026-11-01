@@ -1,6 +1,6 @@
 # Auth Architecture And Roadmap
 
-## First-Party Customer Sessions (2026-11-01, In Verification)
+## First-Party Customer Sessions (2026-11-01, Deployed)
 
 Hosted storefront customer-auth, owned account/private photo and session-aware
 checkout calls now have a narrowly allowed same-origin Vercel gateway. Public
@@ -16,7 +16,9 @@ Safari may block the earlier direct Railway third-party cookies even with
 SameSite=None/Secure. Same-origin transport addresses that deployment shape
 without disabling privacy protections or sharing cookie domains. Existing users
 may need to sign in again to establish the storefront host-only cookie; passwords,
-accounts and bag data are not reset. Deployment/browser proof remains in the
+accounts and bag data are not reset. Stable-domain existing-customer sign-in,
+reload, logout/re-login and private-photo/checkout reads pass after deployment;
+actual owner iPhone Safari acceptance is still a manual device check. Proof is in the
 [checkpoint](../work-checkpoints/2026-11-01-customer-first-party-sessions.md).
 
 Deep real-engine QA also finds a native renewal defect: redeclaring Session.token

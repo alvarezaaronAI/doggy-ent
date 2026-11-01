@@ -1,6 +1,6 @@
 # Customer Experience Requirements
 
-## Customer Session Reliability (2026-11-01, In Verification)
+## Customer Session Reliability (2026-11-01, Deployed)
 
 Keep the approved centered sign-in/signup/recovery cards and monogram unchanged.
 Hosted customer session/account/checkout requests use a restricted first-party

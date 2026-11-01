@@ -1,6 +1,6 @@
 # Development Data Routing
 
-## Customer Session Transport (2026-11-01, In Verification)
+## Customer Session Transport (2026-11-01, Deployed)
 
 The hosted storefront's customer-auth/account/checkout paths use its own origin
 and a restricted Vercel gateway to the existing Railway API/DB. Public product,

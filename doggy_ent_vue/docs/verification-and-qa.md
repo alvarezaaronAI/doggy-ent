@@ -1,6 +1,6 @@
 # Verification And QA
 
-## Customer Session Repair (2026-11-01, In Verification)
+## Customer Session Repair (2026-11-01, Deployed)
 
 Current source adds first-party customer transport, fixes native aged-session
 renewal and failed-logout UI state, and preserves large private photo input via a
@@ -19,9 +19,17 @@ and all builds. Actual isolated browser signup/review/duplicate, wrong/correct
 login, reload, logout, private-tab protection and bag-preserving checkout return
 pass. Recovery-unavailable and missing-reset-token screens are honest. The fixture
 uses memory-only accounts, blocked outbound connections and disabled payments;
-it is not hosted-cookie or actual iPhone acceptance. Hosting checks remain pending.
-No shared test customer, password change, real
-email/payment or migration is authorized. See
+it is not actual iPhone acceptance. PR77/78 pass separate current-head Quality.
+Main23a3ed1 is Railway8c865954SUCCESS and both stable Vercel artifacts READY with
+matching source. Live existing-customer first-party login/reload/logout/private
+redirect/re-login, pet-photo decoding, wishlist and bag-preserving signed-in
+checkout pass, without captured warnings/errors or horizontal overflow. Anonymous
+private401/staffpath404/hostingSSO302 and no-store boundaries hold. Runtime29
+migrations/nonepending/listening/0captured exception patterns, shared checksum
+postflight29matching/nonepending. Owner iPhone/Safari remains manual and production
+reset-email readiness is false; live delivery was not enabled or tested. No shared
+test customer, password/provider/config change, real email/payment or migration.
+See
 [exact evidence/resume](work-checkpoints/2026-11-01-customer-first-party-sessions.md).
 
 ## Admin Routing Freshness (2026-10-31, Deployed)
