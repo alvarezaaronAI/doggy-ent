@@ -7,8 +7,13 @@ import { validateRequiredCheckoutFields } from '../../checkout/validators/checko
 import { apiError } from '../../../shared/utils/apiError.js'
 import { assertPaymentRequestMode } from '../config/payment.config.js'
 import { validateTaxSnapshot } from '../../../shared/utils/taxSnapshot.js'
+import { recoveryEnabled } from '../../checkout/utils/checkoutAttempt.js'
 
 export const createPaymentIntent = async (req, res) => {
+  if (recoveryEnabled()) {
+    const { prepareCheckoutAttempt } = await import('../../checkout/controllers/checkoutAttempt.controller.js')
+    return prepareCheckoutAttempt(req, res)
+  }
   try {
     validateRequiredCheckoutFields({ customer: req.body?.customer })
     assertPaymentRequestMode(req.body?.paymentMode)

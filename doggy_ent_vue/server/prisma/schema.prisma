@@ -119,6 +119,7 @@ model Order {
   discountAmount        Float       @default(0)
   taxAmount             Float       @default(0)
   taxSnapshot           Json?
+  attributionSnapshot   Json?
   currency              String      @default("usd")
   stripePaymentIntentId String?     @unique
   createdAt             DateTime    @default(now())
@@ -131,9 +132,60 @@ model Order {
   emailDeliveries EmailDelivery[]
   supportRequests CustomerSupportRequest[]
   user            User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  checkoutAttempt CheckoutAttempt?
 
   @@index([userId])
   @@index([customerEmail])
+}
+
+model CheckoutAttempt {
+  id                 String    @id
+  recoveryHash       String
+  inputHash          String
+  snapshot           Json
+  amountCents        Int
+  currency           String    @default("usd")
+  paymentMode        String
+  stripeAccountId    String
+  paymentIntentId    String?   @unique
+  orderId            String?   @unique
+  userId             String?
+  status             String    @default("PREPARED")
+  leaseToken         String?
+  leaseUntil         DateTime?
+  retryCount         Int       @default(0)
+  nextRetryAt        DateTime  @default(now())
+  lastErrorCode      String?
+  paidAt             DateTime?
+  completedAt        DateTime?
+  expiresAt          DateTime
+  recoveryExpiresAt  DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  order  Order?              @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  user   User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  events StripePaymentEvent[]
+
+  @@index([status, nextRetryAt])
+  @@index([userId, createdAt])
+}
+
+model StripePaymentEvent {
+  id                String    @id
+  type              String
+  paymentIntentId   String
+  stripeAccountId   String
+  paymentMode       String
+  attemptId         String?
+  status            String    @default("PENDING")
+  receivedAt        DateTime  @default(now())
+  processedAt       DateTime?
+
+  attempt CheckoutAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+
+  @@index([status, receivedAt])
+  @@index([paymentIntentId])
 }
 
 model OrderItem {
@@ -404,6 +456,7 @@ model User {
   notificationPreference CustomerNotificationPreference?
   pets                   Pet[]
   wishlistItems          WishlistItem[]
+  checkoutAttempts       CheckoutAttempt[]
 
   @@index([role])
   @@index([status])

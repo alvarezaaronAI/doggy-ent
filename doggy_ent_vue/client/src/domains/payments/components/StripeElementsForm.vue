@@ -6,6 +6,7 @@ import { createPaymentIntent } from '@payments/services/payment.service.js'
 
 const props = defineProps({
   preview: Boolean,
+  preparePayment: Function,
   cartItems: {
     type: Array,
     default: () => [],
@@ -49,15 +50,18 @@ defineExpose({
       throw new Error('Please enter the cardholder name.')
     }
 
-    const paymentIntentResponse = await createPaymentIntent({
+    const reviewedTotal = props.checkoutTotal
+    const payload = {
       cartItems: props.cartItems,
       promoCode: props.promoCode || null,
       customer: props.customer,
       shipping: props.shipping,
-    })
+    }
+    const paymentIntentResponse = await (props.preparePayment ? props.preparePayment(payload, reviewedTotal) : createPaymentIntent(payload))
+    if (paymentIntentResponse.recovered) return { status: 'recovered' }
 
     const { clientSecret } = paymentIntentResponse
-    if (Math.round(Number(paymentIntentResponse.pricing?.total) * 100) !== Math.round(props.checkoutTotal * 100)) {
+    if (Math.round(Number(paymentIntentResponse.pricing?.total) * 100) !== Math.round(reviewedTotal * 100)) {
       emit('pricing-changed')
       throw new Error('Your total changed. Review the refreshed order before paying.')
     }

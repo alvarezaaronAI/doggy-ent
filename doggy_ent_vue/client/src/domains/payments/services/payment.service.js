@@ -21,6 +21,7 @@ export const getPaymentConfiguration = async () => {
       || Array.isArray(configuration)
       || !['sandbox', 'live', 'unconfigured'].includes(configuration.mode)
       || typeof configuration.enabled !== 'boolean'
+      || (configuration.recoveryEnabled !== undefined && typeof configuration.recoveryEnabled !== 'boolean')
       || (configuration.enabled && configuration.mode === 'unconfigured')
       || typeof configuration.message !== 'string'
     ) {
@@ -30,6 +31,7 @@ export const getPaymentConfiguration = async () => {
     return {
       mode: configuration.mode,
       enabled: configuration.enabled,
+      recoveryEnabled: configuration.recoveryEnabled === true,
       message: configuration.enabled ? '' : PAYMENT_UNAVAILABLE_MESSAGE,
     }
   } catch {
@@ -42,6 +44,8 @@ export const createPaymentIntent = async ({
   promoCode,
   customer,
   shipping,
+  attemptId,
+  recoveryToken,
 }) => {
   try {
     const paymentMode = getPublishableKeyMode(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -60,6 +64,7 @@ export const createPaymentIntent = async ({
         customerEmail: customer?.email,
         customer,
         shipping,
+        ...(attemptId && recoveryToken ? { attemptId, recoveryToken } : {}),
       }),
     })
 

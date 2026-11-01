@@ -21,6 +21,13 @@ describe('strict payment environment configuration', () => {
     expect(() => assertPaymentRequestMode('sandbox', config)).toThrow('temporarily unavailable')
   })
 
+  it('keeps recovery off by default and requires a signing secret before enabling it', () => {
+    expect(getPaymentConfig(sandbox).recoveryEnabled).toBe(false)
+    expect(getPaymentConfig({ ...sandbox, CHECKOUT_RECOVERY_ENABLED: 'true' }).issues).toContainEqual(expect.objectContaining({ code: 'WEBHOOK_UNCONFIGURED' }))
+    expect(getPaymentConfig({ ...sandbox, CHECKOUT_RECOVERY_ENABLED: 'TRUE' }).issues).toContainEqual(expect.objectContaining({ code: 'INVALID_RECOVERY_FLAG' }))
+    expect(getPaymentConfig({ ...sandbox, CHECKOUT_RECOVERY_ENABLED: 'true', STRIPE_WEBHOOK_SECRET: 'whsec_fixtureOnly123' }).issues).toEqual([])
+  })
+
   it.each(['sk', 'rk'])('accepts a %s sandbox credential without exposing it in messages', prefix => {
     const config = getPaymentConfig({ ...sandbox, STRIPE_SECRET_KEY: `${prefix}_test_syntheticOnly123` })
     expect(config.issues).toEqual([])
@@ -189,6 +196,12 @@ describe('read-only Stripe environment verification', () => {
   it('paused public reads never construct a Stripe client', async () => {
     const { service, createClient } = fixture({ PAYMENTS_ENABLED: 'false' })
     expect(await service.getPublicConfiguration()).toMatchObject({ mode: 'sandbox', enabled: false })
+    expect(createClient).not.toHaveBeenCalled()
+  })
+
+  it('advertises recovery without exposing credentials, even when new payments are paused', async () => {
+    const { service, createClient } = fixture({ CHECKOUT_RECOVERY_ENABLED: 'true', STRIPE_WEBHOOK_SECRET: 'whsec_fixtureOnly123', PAYMENTS_ENABLED: 'false' })
+    expect(await service.getPublicConfiguration()).toEqual({ mode: 'sandbox', enabled: false, recoveryEnabled: true, message: expect.any(String) })
     expect(createClient).not.toHaveBeenCalled()
   })
 })

@@ -38,10 +38,15 @@ describe('publishable key payment mode', () => {
 })
 
 describe('public payment configuration API', () => {
+  it.each([true, false])('preserves the optional recoveryEnabled=%s gate independently of paused creation', async recoveryEnabled => {
+    fetch.mockResolvedValue(json({ success: true, configuration: { mode: 'sandbox', enabled: false, recoveryEnabled, message: '' } }))
+    const { getPaymentConfiguration } = await import('../../../src/domains/payments/services/payment.service.js')
+    expect(await getPaymentConfiguration()).toEqual({ mode: 'sandbox', enabled: false, recoveryEnabled, message: unavailable })
+  })
   it.each(['sandbox', 'live'])('reads %s configuration without sending a key', async mode => {
     fetch.mockResolvedValue(json({ success: true, configuration: { mode, enabled: true, message: '', accountId: 'private-marker' } }))
     const { getPaymentConfiguration } = await import('../../../src/domains/payments/services/payment.service.js')
-    expect(await getPaymentConfiguration()).toEqual({ mode, enabled: true, message: '' })
+    expect(await getPaymentConfiguration()).toEqual({ mode, enabled: true, recoveryEnabled: false, message: '' })
     expect(fetch).toHaveBeenCalledExactlyOnceWith('/api/checkout/payment-configuration', {
       credentials: 'include', method: 'GET', cache: 'no-store',
     })
@@ -50,7 +55,7 @@ describe('public payment configuration API', () => {
   it.each(['sandbox', 'live', 'unconfigured'])('keeps disabled %s status and discards server diagnostics', async mode => {
     fetch.mockResolvedValue(json({ success: true, configuration: { mode, enabled: false, message: 'private-provider-marker' } }))
     const { getPaymentConfiguration } = await import('../../../src/domains/payments/services/payment.service.js')
-    expect(await getPaymentConfiguration()).toEqual({ mode, enabled: false, message: unavailable })
+    expect(await getPaymentConfiguration()).toEqual({ mode, enabled: false, recoveryEnabled: false, message: unavailable })
   })
 
   it.each([
@@ -61,6 +66,7 @@ describe('public payment configuration API', () => {
     { success: true, configuration: { mode: 'sandbox', enabled: 'true', message: '' } },
     { success: true, configuration: { mode: 'sandbox', enabled: true } },
     { success: true, configuration: { mode: 'sandbox', enabled: true, message: {} } },
+    { success: true, configuration: { mode: 'sandbox', enabled: true, message: '', recoveryEnabled: 'true' } },
     { success: true, configuration: { mode: 'unconfigured', enabled: true, message: '' } },
   ])('rejects malformed configuration without leaking it: %j', async data => {
     fetch.mockResolvedValue(json(data))
@@ -79,6 +85,13 @@ describe('public payment configuration API', () => {
 })
 
 describe('payment intent request mode handshake', () => {
+  it('sends only the durable handle additions alongside the existing checkout payload', async () => {
+    fetch.mockResolvedValue(json({ success: true }))
+    const { createPaymentIntent } = await import('../../../src/domains/payments/services/payment.service.js')
+    await createPaymentIntent({ ...checkout, attemptId: 'offline-attempt', recoveryToken: 'offline-capability' })
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toMatchObject({ attemptId: 'offline-attempt', recoveryToken: 'offline-capability' })
+    expect(fetch.mock.calls[0][0]).not.toContain('offline-capability')
+  })
   it.each([
     ['pk_test_offlineFixture', 'sandbox'], ['pk_live_offlineFixture', 'live'],
   ])('derives %s mode locally and preserves the checkout payload', async (key, mode) => {

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   mapCustomerOrder,
+  mapOrder,
+  getOrderDonationAmount,
 } from '../../../src/domains/orders/mappers/orders.mapper.js'
 
 describe('customer-safe order lookup mapping', () => {
@@ -59,5 +61,33 @@ describe('customer-safe order lookup mapping', () => {
     expect(order.shipment.trackingNumber).toBe('TRACK123')
     expect(order.shipment).not.toHaveProperty('id')
     expect(order.shipment.events[0]).not.toHaveProperty('id')
+  })
+
+  it.each([true, false])('retains frozen attribution when campaign rows are present=%s', present => {
+    const raw = {
+      id: 'internal', orderNumber: 'DGE-FIXTURE', status: 'PAID', stripePaymentIntentId: 'pi_fixture',
+      createdAt: new Date(),
+      attributionSnapshot: {
+        version: 1,
+        promo: { promoId: 'promo', promoCode: 'FROZEN', promoName: 'Agreed promo', customerEmail: 'fixture@example.test', discountAmount: 2, subtotalAmount: 20, usageLimitTotal: 7 },
+        campaigns: [{ campaignId: 'campaign', campaignName: 'Agreed campaign', donationTarget: 'Agreed beneficiary', donationType: 'PERCENT', donationValue: 10, eligibleSubtotal: 20, donationAmount: 2, matchedProductIds: ['product'] }],
+      },
+      campaignUsages: present ? [{ campaignId: 'campaign', donationAmount: 99, campaign: { name: 'Changed', donationTarget: 'Changed', donationType: 'FIXED', donationValue: 99, slug: 'current-page', publicPageEnabled: true, status: 'ACTIVE' } }] : [],
+      promoUsage: present ? { promo: { code: 'CHANGED', name: 'Changed' }, discountAmount: 99 } : null,
+    }
+    const order = mapCustomerOrder(mapOrder(raw))
+    expect(order.promoUsage).toMatchObject({ promoCode: 'FROZEN', promoName: 'Agreed promo', discountAmount: 2 })
+    expect(order.campaignAttributions).toEqual([expect.objectContaining({ campaignName: 'Agreed campaign', donationTarget: 'Agreed beneficiary', donationType: 'PERCENT', donationValue: 10, donationAmount: 2, pageAvailable: present })])
+    expect(order.donationAmount).toBe(2); expect(getOrderDonationAmount(raw)).toBe(2)
+    expect(order).not.toHaveProperty('attributionSnapshot')
+    expect(order.promoUsage).not.toHaveProperty('usageLimitTotal')
+    expect(order).not.toHaveProperty('stripePaymentIntentId')
+  })
+
+  it('keeps the legacy live-rule fallback when no attribution snapshot was saved', () => {
+    const order = mapCustomerOrder({ campaignUsages: [{ campaignId: 'legacy', donationAmount: 3, campaign: { name: 'Legacy campaign', donationTarget: 'Legacy beneficiary' } }], promoUsage: { discountAmount: 1, promo: { code: 'LEGACY' } } })
+    expect(order.donationAmount).toBe(3)
+    expect(order.campaignAttributions[0].donationTarget).toBe('Legacy beneficiary')
+    expect(order.promoUsage.promoCode).toBe('LEGACY')
   })
 })

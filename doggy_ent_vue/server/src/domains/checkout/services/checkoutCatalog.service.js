@@ -12,6 +12,6 @@ export async function resolveCheckoutItems(items) {
     const requested = (quantities.get(variant.sku) || 0) + quantity
     quantities.set(variant.sku, requested)
     if ((!product.sellingMode || product.sellingMode === 'INVENTORY_LIMITED') && variant.inventory < requested) throw invalid('There is not enough stock for ' + product.name + ', ' + variant.size + '.')
-    return { id: product.id, productId: product.id, name: product.name, image: product.image, size: variant.size, price: variant.price / 100, quantity, variant: { sku: variant.sku }, sku: variant.sku }
+    return { id: product.id, productId: product.id, variantId: variant.id, name: product.name, image: product.image, size: variant.size, price: variant.price / 100, quantity, variant: { sku: variant.sku }, sku: variant.sku }
   })
 }

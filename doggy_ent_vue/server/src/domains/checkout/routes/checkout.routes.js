@@ -1,4 +1,5 @@
 import express from 'express'
+import { getCheckoutAttempt, cancelCheckoutAttempt } from '../controllers/checkoutAttempt.controller.js'
 
 import {
   previewCheckoutController,
@@ -12,6 +13,10 @@ import {
 } from '../../../app/middleware/security/rateLimit.middleware.js'
 
 const router = express.Router()
+
+router.get('/attempts/:id', checkoutRateLimiter, getCheckoutAttempt)
+router.post('/attempts/:id/finalize', checkoutRateLimiter, getCheckoutAttempt)
+router.post('/attempts/:id/cancel', checkoutRateLimiter, cancelCheckoutAttempt)
 
 router.get('/shipping-options', getCheckoutShippingOptionsController)
 router.post('/shipping-rates', checkoutRateLimiter, postCheckoutShippingRatesController)

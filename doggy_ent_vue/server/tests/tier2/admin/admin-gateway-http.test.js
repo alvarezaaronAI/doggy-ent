@@ -73,6 +73,7 @@ beforeEach(() => {
   vi.stubEnv('STRIPE_SECRET_KEY', undefined)
   vi.stubEnv('STRIPE_EXPECTED_ACCOUNT_ID', undefined)
   vi.stubEnv('TAX_PROVIDER', 'none')
+  vi.stubEnv('CHECKOUT_RECOVERY_ENABLED', 'false')
   db.session.length = 0
   for (const user of db.user) { user.status = 'ACTIVE'; user.role = user.id }
   state.handler.mockImplementation(request => engine.handler(request))
@@ -104,6 +105,18 @@ async function login(path = '/api/auth/login') {
 function cookie(response) { return response.headers.getSetCookie().map(value => value.split(';')[0]).join('; ') }
 
 describe('actual HTTP mounts with synthetic persisted Better Auth sessions', () => {
+  it('protects payment-review reads and stays storage-inert when recovery is disabled', async () => {
+    expect((await request('/api/admin/payments/recovery')).status).toBe(403)
+    expect((await request('/api/admin/payments/recovery', { headers: gateway })).status).toBe(401)
+    const signedIn = await login(), headers = { ...gateway, Cookie: cookie(signedIn) }
+    const response = await request('/api/admin/payments/recovery', { headers })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    expect(await response.json()).toEqual({ success: true, enabled: false, cases: [] })
+    expect((await request('/api/admin/payments/recovery', { method: 'POST', headers })).status).toBe(404)
+    db.user[0].role = 'CUSTOMER'
+    expect((await request('/api/admin/payments/recovery', { headers })).status).toBe(401)
+  })
   it('keeps payment configuration public and minimal, but account context staff-only', async () => {
     const response = await request('/api/checkout/payment-configuration')
     expect(response.status).toBe(200)

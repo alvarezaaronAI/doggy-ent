@@ -1,5 +1,38 @@
 # Verification And QA
 
+## Checkout Recovery Preparation (2026-10-31)
+
+Full client734/server880/gateway6 pass; guarded payment492server/382client,
+runner-safety9/security-helper10 and combined/storefront/admin/server builds pass.
+Real disposable PostgreSQL12-stage verification covers concurrent finalization,
+stock/promo contention, three actual write-failure rollbacks/retry, immutable
+history, ambiguous commit, lease CAS/expiry and permanent event dedupe. Fixture
+databases are removed. Signed raw HTTP and recovery controller fixtures are
+separate from the network-blocked runner. Independent findings are fixed and
+re-reviewed; no security/schema/route blocker remains in reviewed scope.
+
+Approved Railway migration follows a fresh fully decoded private backup;29matching
+complete migrations/nonepending,11validated constraints and34prior business table
+projections preserved. No shared fixture/payment or provider change. Owner defers
+Stripe configuration, so release recovery off and do not imply browser-close
+recovery is active. Actual enabled browser/mobile/3DS/wallet/event replay and
+provider/email/business acceptance remain pending. Local ordinary967px checkout
+has no overflow/captured errors; it is not that acceptance. See
+[exact rollout/checkpoint](work-checkpoints/2026-10-31-payment-recovery.md).
+
+## Checkout Discount Group (2026-10-30)
+
+Full client659/server802/gateway6 and combined/storefront/admin/server builds pass.
+Three focused regressions cover item-pricing scope/indent, no-discount layout and
+long-code wrapping; independent review finds no issues. PR68/69 pass separate
+exact-head Quality. Main7f7a2a0 is RailwaySUCCESS and both stable VercelREADY.
+Live checkout verifies original cards, retained bag/account, correct total,
+thumbnail/monogram/colors/no public dev panel. Public access and52asset privacy/
+new-markup checks pass. Percent/fixed promo states are actual isolated UI checks,
+not a real order. Tax stays off. Full mobile/screen-reader/payment/Tax/receipt
+acceptance and a new live screenshot are not claimed. See the
+[checkpoint](work-checkpoints/2026-10-28-checkout-discount-group.md).
+
 ## Routing And Summary Follow-Up (2026-10-27)
 
 Full client655/server802, gateway6, guarded420server/311client and all four builds

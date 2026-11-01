@@ -4,6 +4,7 @@ import AdminPageHeader from '../components/AdminPageHeader.vue'
 import AdminMetrics from '../components/AdminMetrics.vue'
 import AdminIcon from '../components/AdminIcon.vue'
 import AdminOrderValueBadge from '../components/AdminOrderValueBadge.vue'
+import AdminPaymentRecovery from '../components/AdminPaymentRecovery.vue'
 import { ORDER_STATUSES } from '../constants/adminOrders.constants'
 import {
   formatAdminOrderDate,
@@ -63,6 +64,7 @@ onMounted(loadPageData)
         },
       ]"
     />
+    <AdminPaymentRecovery />
     <div class="admin-filters">
       <label class="admin-field grow"
         >Search orders<input

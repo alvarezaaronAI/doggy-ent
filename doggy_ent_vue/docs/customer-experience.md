@@ -1,5 +1,18 @@
 # Customer Experience Requirements
 
+## Durable Payment Recovery (2026-10-31, In Verification)
+
+Keep the approved checkout cards, summary, guest/member paths and payment controls.
+The default-off recovery contract saves a minimal seven-day browser handle before
+preparing a payment, resumes the same frozen checkout after interruption, and never
+invites a second charge for an unknown/processing/paid review outcome. A changed bag
+or address requires checking/canceling the old unpaid attempt first. Paid recovery
+must work without card input, a current catalog quote or an enabled new-payment gate.
+Capability expiry is not payment cancellation. No card/Stripe client secret or new
+customer form draft belongs in recovery storage. See
+[architecture](architecture/checkout-recovery.md) and
+[current approval/verification state](work-checkpoints/2026-10-31-payment-recovery.md).
+
 ## Compact Checkout Summary Labels (2026-10-27)
 
 Preserve the original checkout layout, payment form and actions. Only the summary

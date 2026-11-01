@@ -1,5 +1,16 @@
 # Communications Policy
 
+## Recoverable Receipt Intent (2026-10-31, In Verification)
+
+New saved-attempt completion inserts its one optional payment receipt in the same
+transaction as order/items/stock and frozen promo/giving accounting. Signed payment
+events may complete that transaction after the browser closes, but do not add any
+new email event or override saved DISABLED/DRY_RUN/LIVE and live-provider gates.
+No email runs inside a database transaction. Existing provider-ambiguity handling,
+approved inbox/budget and manual fulfillment policy remain. Failed finalization
+must not generate a second charge or a partial receipt. See
+[recovery contract](architecture/checkout-recovery.md).
+
 ## Saved Tax Disclosure (2026-10-27)
 
 Order email totals use validated saved tax data: explicitly not-collected wording

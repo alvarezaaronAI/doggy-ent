@@ -1,5 +1,16 @@
 # Admin Experience Requirements
 
+## Payment Recovery Review (2026-10-31, In Verification)
+
+Keep recovery cases within Orders, not another sidebar destination. The new
+read-only list distinguishes saved paid-review/pending/failed-retry cases from
+ordinary order workflow and shows bounded attempt/payment references, mode and
+safe reason codes. It requires gateway plus fresh ACTIVE ADMIN authorization and
+cannot charge, refund, send, ship or modify provider settings. Staff reconcile
+Stripe before acting; operational PAID is still not a complete financial ledger.
+The feature remains off pending its separately approved migration/provider rollout.
+See [recovery contract](architecture/checkout-recovery.md).
+
 ## Two-Site Routing Context (2026-10-27)
 
 Data routing now expands in the shared context to show staff site, protected
