@@ -1,5 +1,29 @@
 # Verification And QA
 
+## Customer Session Repair (2026-11-01, In Verification)
+
+Current source adds first-party customer transport, fixes native aged-session
+renewal and failed-logout UI state, and preserves large private photo input via a
+bounded transfer body. Gateway tests cover method/path deny-default, origins,
+fixed upstream, staff/hosting cookie and header exclusion, referrer redaction,
+no-store/failure and local/admin compatibility. Actual native Vue auth client
+resolves get-session to the storefront origin in the browser fixture.
+
+Real installed-engine memory tests expand signup/duplicates/credential privacy,
+retained/expired/renewed/copied sessions, logout failure/retry, single-use reset,
+untrusted origins/redirects and no provider access. The renewal test first fails
+on old configuration and passes after removing the incorrect token override;
+public token redaction stays required. Latest complete source checks are client
+821/server902/admin-gateway6, guarded checkout492server/382client, runner safety9
+and all builds. Actual isolated browser signup/review/duplicate, wrong/correct
+login, reload, logout, private-tab protection and bag-preserving checkout return
+pass. Recovery-unavailable and missing-reset-token screens are honest. The fixture
+uses memory-only accounts, blocked outbound connections and disabled payments;
+it is not hosted-cookie or actual iPhone acceptance. Hosting checks remain pending.
+No shared test customer, password change, real
+email/payment or migration is authorized. See
+[exact evidence/resume](work-checkpoints/2026-11-01-customer-first-party-sessions.md).
+
 ## Admin Routing Freshness (2026-10-31, Deployed)
 
 Five new cases reproduce server clock offsets, transport latency and a backwards

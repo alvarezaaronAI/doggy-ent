@@ -1,5 +1,15 @@
 # Doggy Ent Project Handoff
 
+## In Progress: Customer Session Repair And Deep QA (2026-11-01)
+
+Owner reports mobile sign-in accepted but session not retained and requests deep
+signup/login/recovery testing. Investigate the known direct Railway cross-site
+cookie limitation and a narrowly allowed first-party storefront gateway, keeping
+existing Better Auth/ownership/origin safeguards, UI, bag and guest checkout. No
+shared migration, password reset, live email/payment or provider change. Current
+branch, evidence and exact next steps are in the
+[session repair checkpoint](docs/work-checkpoints/2026-11-01-customer-first-party-sessions.md).
+
 ## Deployed: Admin Routing Freshness (2026-10-31)
 
 Routing freshness now measures local request-start wall/monotonic elapsed time,

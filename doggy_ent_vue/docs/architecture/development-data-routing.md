@@ -1,5 +1,15 @@
 # Development Data Routing
 
+## Customer Session Transport (2026-11-01, In Verification)
+
+The hosted storefront's customer-auth/account/checkout paths use its own origin
+and a restricted Vercel gateway to the existing Railway API/DB. Public product,
+campaign and media reads still use the configured API origin. Backend startup
+still selects the database: this proxy never switches or copies it. Existing
+local/combined development and the protected admin gateway remain unchanged.
+See [auth contract](auth-roadmap.md) and
+[verification/checkpoint](../work-checkpoints/2026-11-01-customer-first-party-sessions.md).
+
 ## Two-Site Staff Context And Isolated Previews (2026-10-27)
 
 The protected staff site uses same-origin `/api/auth/data-target` through its

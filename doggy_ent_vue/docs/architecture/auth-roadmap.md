@@ -1,5 +1,32 @@
 # Auth Architecture And Roadmap
 
+## First-Party Customer Sessions (2026-11-01, In Verification)
+
+Hosted storefront customer-auth, owned account/private photo and session-aware
+checkout calls now have a narrowly allowed same-origin Vercel gateway. Public
+catalog/media keep their configured API origin; local and separate protected admin
+transports are unchanged. Native Better Auth client uses the same customer origin
+selection as ordinary fetch helpers. The gateway accepts only reviewed methods/
+paths, fixes its HTTPS upstream from existing VITE_API_BASE_URL or VITE_API_URL,
+requires same-origin write evidence, excludes staff/hosting cookies and arbitrary
+auth/forwarded headers, and disables caching. No secret or new env variable is
+introduced; backend sessions/ownership/trusted origins stay authoritative.
+
+Safari may block the earlier direct Railway third-party cookies even with
+SameSite=None/Secure. Same-origin transport addresses that deployment shape
+without disabling privacy protections or sharing cookie domains. Existing users
+may need to sign in again to establish the storefront host-only cookie; passwords,
+accounts and bag data are not reset. Deployment/browser proof remains in the
+[checkpoint](../work-checkpoints/2026-11-01-customer-first-party-sessions.md).
+
+Deep real-engine QA also finds a native renewal defect: redeclaring Session.token
+as returned:false additional data removes the engine's renewal input. Remove that
+incorrect override; existing response hooks still redact credentials/tokens from
+public JSON. Default expiry/renewal and stored schema are unchanged. Failed logout
+does not clear UI identity before confirmed revocation and offers a retry. Account
+creation/reset testing uses memory fixtures with provider hooks disabled, never
+real customer signup or email delivery. This is not an OAuth/password-policy change.
+
 2026-10-25: [separate Vercel admin hosting](admin-hosting.md) adds a staged server-only
 gateway ahead of existing native/compatibility admin authorization. Default off until
 protected replacement acceptance; customer auth and admin persistence are unchanged.
