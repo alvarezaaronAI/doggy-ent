@@ -1,12 +1,18 @@
 # Doggy Ent Project Handoff
 
-## In Progress: Admin Routing Freshness (2026-10-31)
+## Deployed: Admin Routing Freshness (2026-10-31)
 
-Recovery preparation and evidence PR73 are complete; its Stripe activation stays
-off. The next bounded repair addresses immediate routing-check expiry caused by
-comparing browser and server clocks directly. Preserve the protected read-only
-probe, 60-second limit and sleep/failure behavior. No provider/DB/config change.
-Current task and exact next steps are in the
+Routing freshness now measures local request-start wall/monotonic elapsed time,
+not a browser/server clock subtraction. It includes latency, expires at60seconds,
+and fails closed on old/failed/regressed clocks; protected probe/layout unchanged.
+Seven regressions,22routing/741client tests, all three client builds and independent
+review pass. PR74/75 each pass their own current-head client/server Quality.
+Maince6370c is Railway30aeede4SUCCESS and both stable Vercel aliases READY at that
+exact source. Actual protected Refresh confirms gateway/RailwayDB/Connected with
+no captured errors/overflow. Read-only history29matching/nonepending; no migration,
+provider/configuration change, payment or email. Recovery stays off and existing
+Sandbox creation remains enabled. Full device suspend/BFCache still manual.
+Final evidence and deferred activation steps are in the
 [freshness checkpoint](docs/work-checkpoints/2026-10-31-admin-routing-freshness.md).
 
 ## Deployed: Recovery Preparation, Activation Off (2026-10-31)
@@ -32,8 +38,8 @@ strip, overflow or captured error. Staff Orders loads with review hidden while o
 
 Later: owner's Sandbox endpoint/signing secret and coordinated activation/real
 card/3DS/wallet/event acceptance, then financial/status/refund/reservation/privacy/
-business launch gates. Staff routing badge also reports expiry immediately after
-a successful read; conservative UI staleness follow-up, not proven DB outage.
+business launch gates. The routing freshness follow-up noted during this release
+is addressed by the subsequent scoped repair above, not a DB outage.
 See [checkpoint and exact resume steps](docs/work-checkpoints/2026-10-31-payment-recovery.md).
 
 ## Deployed: Item Discount Group (2026-10-30)
