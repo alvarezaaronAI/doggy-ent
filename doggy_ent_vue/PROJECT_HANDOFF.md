@@ -1,5 +1,21 @@
 # Doggy Ent Project Handoff
 
+## In Progress: Payment Recovery (2026-10-31)
+
+Owner requests implementation and deployment of durable payment recovery and
+duplicate-charge protection, preserving the approved UI and live-charge lock.
+Fresh synchronized baseline ab23e13 is on feat/payment-recovery. Parent owns server/
+schema/Git; commerce and customer-experience sidecars implement scoped transaction/
+client contracts. Owner approves a fresh-backed-up Railway additive migration but
+chooses to configure Stripe later. Deploy the prepared handler with recovery off;
+do not create the provider endpoint, configure its secret or enable recovery. No
+provider/configuration operation or payment has occurred. Approved Railway migration
+now has29matching/nonepending after a fresh fully decoded private backup, preserving
+all34prior table projections; new recovery tables remain empty. Follow the
+[active checkpoint](docs/work-checkpoints/2026-10-31-payment-recovery.md) for scope,
+ownership, confirmed gaps and exact next steps. Do not deploy partial recovery or
+claim unit tests certify provider/device/real-payment readiness.
+
 ## Deployed: Item Discount Group (2026-10-30)
 
 Discounted item pricing now has a light neutral box with indented Discount on items

@@ -10,6 +10,7 @@ vi.mock('../../../src/domains/checkout/api/checkout.api.js', () => ({
   fetchCheckoutShippingRates: vi.fn().mockResolvedValue({ options: [] }),
 }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('../../../src/domains/payments/services/payment.service.js', () => ({ getPaymentConfiguration: vi.fn().mockResolvedValue({ recoveryEnabled: false }), createPaymentIntent: vi.fn() }))
 vi.mock('../../../src/domains/account/api/account.api.js', () => ({ fetchAccountProfile: vi.fn().mockResolvedValue(null) }))
 vi.mock('../../../src/domains/campaigns/api/campaigns.api.js', () => ({ previewCampaigns: vi.fn().mockResolvedValue([]) }))
 vi.mock('../../../src/domains/campaigns/composables/useStorefrontCampaigns.js', () => ({ useStorefrontCampaigns: () => ({ campaigns: ref([]), loadCampaigns: vi.fn() }) }))

@@ -63,6 +63,24 @@ async function wallet(properties = {}) {
 }
 
 describe('actual card payment submission with a mocked SDK', () => {
+  it('delegates durable preparation and skips confirmation for an already paid canonical attempt', async () => {
+    const preparePayment = vi.fn().mockResolvedValue({ recovered: true })
+    const view = await card({ preparePayment })
+    await expect(view.exposed.submitPayment()).resolves.toEqual({ status: 'recovered' })
+    expect(preparePayment).toHaveBeenCalledWith(expect.objectContaining({ cartItems: props.cartItems }), 14.99)
+    expect(provider.createPaymentIntent).not.toHaveBeenCalled()
+    expect(view.stripe.confirmCardPayment).not.toHaveBeenCalled()
+  })
+
+  it('compares the amount reviewed before the request, not props changed while awaiting it', async () => {
+    let resolve
+    provider.createPaymentIntent.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const view = await card(), pending = view.exposed.submitPayment()
+    await view.updateTotal(20)
+    resolve({ clientSecret: 'offline-client-secret', pricing: { total: 20 } })
+    await expect(pending).rejects.toThrow('total changed')
+    expect(view.stripe.confirmCardPayment).not.toHaveBeenCalled()
+  })
   it('requires a cardholder before creating any intent', async () => {
     const view = await card()
     view.state.cardholderName = ' '
@@ -126,6 +144,25 @@ describe('actual card payment submission with a mocked SDK', () => {
 })
 
 describe('actual wallet confirmation handler with a mocked SDK', () => {
+  it('does not open another confirmation or report failure for a canonically paid recovered wallet', async () => {
+    const view = await wallet({ preparePayment: vi.fn().mockResolvedValue({ recovered: true }) })
+    await view.handlers.confirm(view.event)
+    expect(provider.createPaymentIntent).not.toHaveBeenCalled()
+    expect(view.stripe.confirmPayment).not.toHaveBeenCalled()
+    expect(view.event.paymentFailed).not.toHaveBeenCalled()
+  })
+
+  it('freezes the reviewed wallet amount before asynchronous Elements submission', async () => {
+    let resolve
+    const view = await wallet()
+    view.elements.submit.mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const pending = view.handlers.confirm(view.event)
+    await view.updateTotal(20)
+    provider.createPaymentIntent.mockResolvedValue({ clientSecret: 'offline-client-secret', pricing: { total: 20 } })
+    resolve({}); await pending
+    expect(view.stripe.confirmPayment).not.toHaveBeenCalled()
+    expect(view.event.paymentFailed).toHaveBeenCalledOnce()
+  })
   it('submits Elements before creating the trusted intent and confirms with the same amount', async () => {
     const view = await wallet()
     await view.handlers.confirm(view.event)

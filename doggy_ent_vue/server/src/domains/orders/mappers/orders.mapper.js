@@ -159,12 +159,45 @@ export function mapCustomerShipment(shipment) {
 }
 
 export function getOrderDonationAmount(order) {
-  return Array.isArray(order?.campaignUsages)
-    ? order.campaignUsages.reduce(
+  const campaigns = frozenAttribution(order)?.campaigns || order?.campaignUsages
+  return Array.isArray(campaigns)
+    ? campaigns.reduce(
         (total, usage) => total + Number(usage.donationAmount || 0),
         0,
       )
     : 0
+}
+
+function frozenAttribution(order) {
+  const snapshot = order?.attributionSnapshot
+  return snapshot?.version === 1 && Array.isArray(snapshot.campaigns) ? snapshot : null
+}
+
+function mapFrozenCampaigns(order, snapshot) {
+  return snapshot.campaigns.map(frozen => {
+    const usage = order.campaignUsages?.find(entry => entry.campaignId === frozen.campaignId)
+    return mapOrderCampaignUsage({
+      id: usage?.id, orderId: order.id, campaignId: frozen.campaignId,
+      donationAmount: frozen.donationAmount, eligibleSubtotal: frozen.eligibleSubtotal,
+      matchedProductIds: frozen.matchedProductIds,
+      createdAt: usage?.createdAt || order.createdAt, updatedAt: usage?.updatedAt || order.createdAt,
+      campaign: {
+        ...usage?.campaign,
+        name: frozen.campaignName, donationTarget: frozen.donationTarget,
+        donationType: frozen.donationType, donationValue: frozen.donationValue,
+      },
+    })
+  })
+}
+
+function mapFrozenPromo(order, frozen) {
+  if (!frozen) return null
+  return mapOrderPromoUsage({
+    id: order.promoUsage?.id, promoId: frozen.promoId, customerEmail: frozen.customerEmail,
+    discountAmount: frozen.discountAmount, subtotalAmount: frozen.subtotalAmount,
+    redeemedAt: order.promoUsage?.redeemedAt || order.createdAt,
+    promo: { code: frozen.promoCode, name: frozen.promoName },
+  })
 }
 
 export function getCustomerOrderReference(order) {
@@ -184,6 +217,7 @@ export function mapOrder(order) {
     return null
   }
 
+  const snapshot = frozenAttribution(order)
   return {
     ...order,
     total: Number(order.total || 0),
@@ -198,7 +232,7 @@ export function mapOrder(order) {
     taxDetails: mapPublicTaxDetails(order.taxSnapshot || order.taxDetails, Number(order.taxAmount || 0)),
     donationAmount: getOrderDonationAmount(order),
     customerReference: getCustomerOrderReference(order),
-    promoUsage: mapOrderPromoUsage(order.promoUsage),
+    promoUsage: snapshot ? mapFrozenPromo(order, snapshot.promo) : mapOrderPromoUsage(order.promoUsage),
     statusHistory: Array.isArray(order.statusHistory)
       ? order.statusHistory
           .map(mapOrderStatusHistoryEntry)
@@ -215,7 +249,7 @@ export function mapOrder(order) {
     shipment: Array.isArray(order.shipments)
       ? mapOrderShipment(order.shipments[0])
       : null,
-    campaignAttributions: Array.isArray(order.campaignUsages)
+    campaignAttributions: snapshot ? mapFrozenCampaigns(order, snapshot) : Array.isArray(order.campaignUsages)
       ? order.campaignUsages
           .map(mapOrderCampaignUsage)
           .filter(Boolean)

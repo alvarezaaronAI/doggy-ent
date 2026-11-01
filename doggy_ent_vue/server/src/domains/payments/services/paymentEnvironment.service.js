@@ -68,11 +68,12 @@ export function createPaymentEnvironmentService({ readConfig = getPaymentConfig,
     const config = readConfig()
     // A paused or incomplete deployment must not probe Stripe on every public read.
     if (config.issues.length || !config.enabled || config.mode === 'live' && !LIVE_PAYMENTS_SUPPORTED) {
-      return { mode: config.mode, enabled: false, message: paymentUnavailable().message }
+      return { mode: config.mode, enabled: false, message: paymentUnavailable().message, ...(config.recoveryEnabled ? { recoveryEnabled: true } : {}) }
     }
     const environment = await getEnvironment()
     return { mode: environment.mode, enabled: environment.canCreatePayments,
-      message: environment.canCreatePayments ? 'Secure payment is available.' : paymentUnavailable().message }
+      message: environment.canCreatePayments ? 'Secure payment is available.' : paymentUnavailable().message,
+      ...(config.recoveryEnabled ? { recoveryEnabled: true } : {}) }
   }
 
   return { getEnvironment, getVerifiedContext, getPublicConfiguration }
