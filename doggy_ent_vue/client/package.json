@@ -26,10 +26,14 @@
     "@lucide/vue": "^1.53.0",
     "@stripe/stripe-js": "^9.5.0",
     "@tailwindcss/vite": "^4.2.4",
+    "@vercel/functions": "3.10.3",
     "better-auth": "^1.6.18",
     "tailwindcss": "^4.2.4",
     "vue": "^3.5.32",
     "vue-router": "^5.0.6"
+  },
+  "overrides": {
+    "@vercel/cli-config": { "zod": "4.6.7" }
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.6",

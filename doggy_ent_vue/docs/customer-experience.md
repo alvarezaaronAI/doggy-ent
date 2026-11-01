@@ -1,5 +1,23 @@
 # Customer Experience Requirements
 
+## Customer Session Reliability (2026-11-01, In Verification)
+
+Keep the approved centered sign-in/signup/recovery cards and monogram unchanged.
+Hosted customer session/account/checkout requests use a restricted first-party
+connection so retained login does not depend on third-party-cookie acceptance.
+The separate admin and local startup-selected data modes remain unchanged. Do not
+ask customers to disable browser privacy protection to make ordinary login work.
+An existing customer may need one fresh sign-in after this transport rollout; bag,
+credentials and account records are preserved. Failed logout retains a visible
+error/retry rather than clearing local identity before confirmed revocation.
+
+Private photos retain the 5 MB picker allowance. Only large selected files are
+prepared to a 3 MB/1600px JPEG transport body to fit the first-party gateway;
+small files pass through and existing saved photos are not rewritten. Errors keep
+the draft and offer another photo. No public library upload is added. Deep native
+auth and UI verification, exact deployment and remaining device gates are tracked
+in the [checkpoint](work-checkpoints/2026-11-01-customer-first-party-sessions.md).
+
 ## Durable Payment Recovery (2026-10-31, Deployed Inactive)
 
 Keep the approved checkout cards, summary, guest/member paths and payment controls.

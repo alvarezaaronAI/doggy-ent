@@ -3,11 +3,11 @@ import {
   dashClient,
 } from '@better-auth/infra/client'
 import {
-  getApiBaseUrl,
+  getCustomerApiBaseUrl,
 } from '@shared/api/http.js'
 
 export const customerAuthClient = createAuthClient({
-  baseURL: getApiBaseUrl(),
+  baseURL: getCustomerApiBaseUrl(),
   basePath: '/api/customer-auth',
   plugins: [
     dashClient(),

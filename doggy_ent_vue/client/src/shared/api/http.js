@@ -1,4 +1,5 @@
 import { APPLICATION_SURFACE } from '../config/applicationSurface.js'
+import { isCustomerApiPath } from '../utils/customerApiRoutes.js'
 
 function normalizeApiBaseUrl(value) {
   const url = String(value || '').trim()
@@ -28,6 +29,10 @@ export function getApiBaseUrl() {
   return API_BASE_URL
 }
 
+export function getCustomerApiBaseUrl() {
+  return APPLICATION_SURFACE === 'storefront' && !import.meta.env.DEV ? '' : API_BASE_URL
+}
+
 export function getAdminDataTarget() {
   if (
     ADMIN_DATA_TARGET === 'RAILWAY'
@@ -44,17 +49,17 @@ export function getAdminDataTarget() {
 }
 
 export function buildApiUrl(path) {
-  if (APPLICATION_SURFACE !== 'admin' && getAdminDataTarget() === 'RAILWAY_DB' && !API_BASE_URL) {
+  const normalizedPath = String(path || '').startsWith('/')
+    ? String(path || '')
+    : `/${path || ''}`
+  const customerProxy = APPLICATION_SURFACE === 'storefront' && !import.meta.env.DEV && isCustomerApiPath(normalizedPath)
+  if (APPLICATION_SURFACE !== 'admin' && !customerProxy && getAdminDataTarget() === 'RAILWAY_DB' && !API_BASE_URL) {
     throw new Error(
       'RAILWAY DB TARGET requires VITE_API_BASE_URL or VITE_API_URL to point to the local backend origin.',
     )
   }
 
-  const normalizedPath = String(path || '').startsWith('/')
-    ? String(path || '')
-    : `/${path || ''}`
-
-  return `${API_BASE_URL}${normalizedPath}`
+  return `${customerProxy ? '' : API_BASE_URL}${normalizedPath}`
 }
 
 export async function parseJsonResponse(response, fallbackMessage) {
