@@ -1,13 +1,13 @@
 # Checkout, Receipts And Manual Order Email
 
-## Durable Attempt Follow-Up (2026-10-31, In Verification)
+## Durable Attempt Follow-Up (2026-10-31, Deployed Inactive)
 
 The new default-off [recovery path](checkout-recovery.md) freezes the agreement
 before payment, provides leased canonical signed-event/browser recovery and
 completes order/stock/promo/campaign/optional receipt atomically. Historical
 browser-driven notes below remain relevant only to legacy paid-proof compatibility.
-This source is not deployed or activated; shared migration/provider approvals and
-isolated acceptance are tracked in the
+Source and approved migration are deployed; recovery remains off because the
+owner defers Stripe configuration. Provider/device activation gates are tracked in the
 [checkpoint](../work-checkpoints/2026-10-31-payment-recovery.md). Manual fulfillment,
 live email/Tax gates and source-locked live charging remain unchanged.
 

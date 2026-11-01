@@ -1,13 +1,14 @@
 # Payment Environments And Launch Controls
 
-## Recovery Follow-Up (2026-10-31, In Verification)
+## Recovery Follow-Up (2026-10-31, Deployed Inactive)
 
 [Saved checkout recovery](checkout-recovery.md) adds a default-off server feature
 gate and signed-event handler without removing the live-creation lock. Earlier
 notes below describing no handler refer to the prior deployed baseline, not this
-unreleased source. Only `CHECKOUT_RECOVERY_ENABLED` and server-only
+now-deployed prepared source. Only `CHECKOUT_RECOVERY_ENABLED` and server-only
 `STRIPE_WEBHOOK_SECRET` are new configuration names. Migration/provider enablement
-remain separately approved; current evidence is in the
+remain separate operations; the approved migration is applied but owner defers
+provider setup, leaving recovery off. Current evidence is in the
 [checkpoint](../work-checkpoints/2026-10-31-payment-recovery.md).
 
 ## Current Scope (2026-10-27, Hosted Sandbox Testing Enabled)
