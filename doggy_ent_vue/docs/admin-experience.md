@@ -1,6 +1,6 @@
 # Admin Experience Requirements
 
-## Payment Recovery Review (2026-10-31, In Verification)
+## Payment Recovery Review (2026-10-31, Deployed Inactive)
 
 Keep recovery cases within Orders, not another sidebar destination. The new
 read-only list distinguishes saved paid-review/pending/failed-retry cases from
@@ -8,7 +8,8 @@ ordinary order workflow and shows bounded attempt/payment references, mode and
 safe reason codes. It requires gateway plus fresh ACTIVE ADMIN authorization and
 cannot charge, refund, send, ship or modify provider settings. Staff reconcile
 Stripe before acting; operational PAID is still not a complete financial ledger.
-The feature remains off pending its separately approved migration/provider rollout.
+The approved migration is applied; the feature remains off until the owner's later
+provider configuration and activation acceptance.
 See [recovery contract](architecture/checkout-recovery.md).
 
 ## Two-Site Routing Context (2026-10-27)
@@ -20,6 +21,11 @@ gateway-admitted persisted ACTIVE ADMIN sessions may read it; private DB
 addresses/credentials remain server-only. Expired/failed checks say unverified,
 not Connected. Known Railway DB hosts identify Railway database; an unknown host
 remains Deployed database. See [routing contract](architecture/development-data-routing.md).
+
+The freshness repair measures the 60-second bound from the browser's request start
+instead of comparing server/browser clocks. Server check time is retained for
+display; slow, expired, invalid or failed evidence still cannot claim Connected.
+No layout, database target, authorization or provider setting changes.
 
 ## Tax Readiness And Saved Details (2026-10-27)
 

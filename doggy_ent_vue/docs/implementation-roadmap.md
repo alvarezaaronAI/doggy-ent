@@ -1,17 +1,17 @@
 # Implementation Roadmap
 
-## 2026-10-31 Payment Recovery In Progress
+## 2026-10-31 Recovery Preparation Deployed, Activation Off
 
 Owner asks to implement/deploy saved checkout recovery and duplicate-charge
 protection without redesigning approved checkout. Source adds frozen attempts,
 stable provider idempotency, signed minimal event inbox, canonical leased recovery,
 atomic order/stock/promo/giving/receipt completion and read-only staff review. Local
-verification is underway; owner approves backed-up Railway migration and defers
-Stripe setup. Release the prepared handler with recovery off. No live unlock,
+verification passes and backed-up Railway migration/source are deployed. Owner defers
+Stripe setup; the prepared handler stays off. No live unlock,
 actual charge/refund/email or provider setting is implied.
-See [checkpoint](work-checkpoints/2026-10-31-payment-recovery.md). Complete isolated
-concurrency/rollback/client tests and independent review, then approved backed-up
-migration, coordinated exact-source rollout and Sandbox event acceptance. Stock/
+See [checkpoint](work-checkpoints/2026-10-31-payment-recovery.md). Exact-source
+rollout is verified; next is coordinated owner Sandbox setup and event/device
+acceptance before activating recovery. Stock/
 promo reservations, financial ledger/admin statuses, real-device/provider/legal
 and explicit1.0 launch gates remain separate work.
 

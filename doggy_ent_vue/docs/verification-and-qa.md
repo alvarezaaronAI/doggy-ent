@@ -1,6 +1,28 @@
 # Verification And QA
 
+## Admin Routing Freshness (2026-10-31, Local)
+
+Five new cases reproduce server clock offsets, transport latency and a backwards
+local clock against the prior code, then pass with the bounded local-elapsed
+repair. Review adds monotonic enforcement and two partial-rollback regressions.
+All 22 routing cases and all 741 client tests (11/724/6) pass, along with
+combined/storefront/admin builds. The first admin command used the wrong public
+origin variable name; the corrected VITE_STOREFRONT_ORIGIN build passes without
+changing environment files. Actual signed-in local Railway-target admin reports
+Connected. This is not hosted repair acceptance or payment/provider certification.
+See the [checkpoint](work-checkpoints/2026-10-31-admin-routing-freshness.md).
+
 ## Checkout Recovery Preparation (2026-10-31)
+
+Main2d395d5 is Railway7d81f053SUCCESS and both stable Vercel aliases READY at that
+exact source; PR71/72 separate current-head Quality/all steps pass. Runtime startup
+29migrations/nonepending/listening/no error patterns. Off-mode webhook503, public
+health/catalog/campaign/config200/exactCORS, anonymousaccount401/directstaff403,
+SSO302 and79asset privacy/zero-admin manifest checks pass. Actual checkout/staff
+Orders retain approved UI and no captured errors/overflow; new recovery controls
+are correctly absent. Tables empty/order-email counts unchanged. Staff routing
+badge's immediate-expiry observation is recorded separately as a follow-up; no
+DB outage or new active recovery/payment/Tax/receipt acceptance is inferred.
 
 Full client734/server880/gateway6 pass; guarded payment492server/382client,
 runner-safety9/security-helper10 and combined/storefront/admin/server builds pass.

@@ -1,20 +1,40 @@
 # Doggy Ent Project Handoff
 
-## In Progress: Payment Recovery (2026-10-31)
+## In Progress: Admin Routing Freshness (2026-10-31)
 
-Owner requests implementation and deployment of durable payment recovery and
-duplicate-charge protection, preserving the approved UI and live-charge lock.
-Fresh synchronized baseline ab23e13 is on feat/payment-recovery. Parent owns server/
-schema/Git; commerce and customer-experience sidecars implement scoped transaction/
-client contracts. Owner approves a fresh-backed-up Railway additive migration but
-chooses to configure Stripe later. Deploy the prepared handler with recovery off;
-do not create the provider endpoint, configure its secret or enable recovery. No
-provider/configuration operation or payment has occurred. Approved Railway migration
-now has29matching/nonepending after a fresh fully decoded private backup, preserving
-all34prior table projections; new recovery tables remain empty. Follow the
-[active checkpoint](docs/work-checkpoints/2026-10-31-payment-recovery.md) for scope,
-ownership, confirmed gaps and exact next steps. Do not deploy partial recovery or
-claim unit tests certify provider/device/real-payment readiness.
+Recovery preparation and evidence PR73 are complete; its Stripe activation stays
+off. The next bounded repair addresses immediate routing-check expiry caused by
+comparing browser and server clocks directly. Preserve the protected read-only
+probe, 60-second limit and sleep/failure behavior. No provider/DB/config change.
+Current task and exact next steps are in the
+[freshness checkpoint](docs/work-checkpoints/2026-10-31-admin-routing-freshness.md).
+
+## Deployed: Recovery Preparation, Activation Off (2026-10-31)
+
+Prepared durable attempts/frozen pricing/stable provider idempotency, signed minimal
+event inbox, leased canonical recovery, atomic order/stock/promo/giving/optional
+receipt, customer resume and read-only Orders review. Approved checkout layout and
+existing Sandbox testing remain. Owner explicitly defers Stripe setup: recovery
+flag/secret remain absent/off, no endpoint was created, and live charging stays
+code-locked. These recovery behaviors are deployed infrastructure, NOT active yet.
+
+PR71/72 pass separate current-head client/server Quality and guarded merges. Exact
+main2d395d5d76d8e76f01d8346dcc70c826993e85ff is Railway7d81f053 SUCCESS and stable
+shopdpl_CgpdaUixZQf4mC5UiUotVRUk9Kky/staffdpl_84Dfjga9fKdReHq4fJ5yTx8kVQfY READY.
+Startup29migrations/nonepending/listening and no exception patterns. Client734/
+server880/gateway6, guarded492/382, all builds/Prisma6.16.2,12-stage disposable
+Postgres and scoped independent reviews pass. Approved backed-up Railway migration
+preserves34prior table projections; recovery tables remain empty, order/email
+counts unchanged. No actual payment/refund/mail/provider config or local-primary
+migration. Public APIs/CORS/access/off-mode route and79asset privacy checks pass;
+actual checkout retains bag/account/decoded image/total/cards without public dev
+strip, overflow or captured error. Staff Orders loads with review hidden while off.
+
+Later: owner's Sandbox endpoint/signing secret and coordinated activation/real
+card/3DS/wallet/event acceptance, then financial/status/refund/reservation/privacy/
+business launch gates. Staff routing badge also reports expiry immediately after
+a successful read; conservative UI staleness follow-up, not proven DB outage.
+See [checkpoint and exact resume steps](docs/work-checkpoints/2026-10-31-payment-recovery.md).
 
 ## Deployed: Item Discount Group (2026-10-30)
 

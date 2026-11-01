@@ -2,7 +2,9 @@
 
 ## Rollout Status
 
-2026-10-31 source implementation is under verification, not deployed or enabled.
+2026-10-31 source is deployed on Railway and both Vercel sites at main2d395d5,
+with recovery intentionally disabled. Existing Sandbox testing uses the legacy
+flow until the owner's later coordinated provider setup/activation.
 The [checkpoint](../work-checkpoints/2026-10-31-payment-recovery.md) records exact
 approval, source, database, provider and deployment evidence. Owner approves the
 fresh-backed-up additive Railway migration and defers Stripe setup. This release
@@ -106,6 +108,10 @@ casually. Configure the approved Sandbox endpoint only after the tested HTTPS
 handler is deployed, then enable recovery after verification. Keep creation paused
 during cutover if needed; retain the same account's credentials for old payments.
 Do not roll back by switching payment modes or dropping tables.
+
+Starting new durable confirmation requires the browser Web Locks API; unavailable
+or busy locks block a new payment but not status/receipt recovery. Storage events
+alone are not an atomic cross-tab lock. Actual browser/device acceptance is pending.
 
 The seven-day capability is an access limit, not a storage-retention policy.
 Abandoned snapshots contain necessary checkout personal data. Retention, disposal,
