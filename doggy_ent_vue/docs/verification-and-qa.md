@@ -1,6 +1,6 @@
 # Verification And QA
 
-## Admin Routing Freshness (2026-10-31, Local)
+## Admin Routing Freshness (2026-10-31, Deployed)
 
 Five new cases reproduce server clock offsets, transport latency and a backwards
 local clock against the prior code, then pass with the bounded local-elapsed
@@ -9,7 +9,12 @@ All 22 routing cases and all 741 client tests (11/724/6) pass, along with
 combined/storefront/admin builds. The first admin command used the wrong public
 origin variable name; the corrected VITE_STOREFRONT_ORIGIN build passes without
 changing environment files. Actual signed-in local Railway-target admin reports
-Connected. This is not hosted repair acceptance or payment/provider certification.
+Connected. PR74/75 each pass current-head client/server Quality. Maince6370c is
+Railway30aeede4SUCCESS and both stable Vercel aliases READY at that exact source.
+Actual protected staff refresh shows gateway/RailwayDB/Connected without captured
+errors/overflow. Public API/access/no-store checks pass; migration history remains
+29matching/nonepending, recovery off and existing Sandbox enabled. No migration,
+provider configuration, payment/email or device suspend/BFCache acceptance.
 See the [checkpoint](work-checkpoints/2026-10-31-admin-routing-freshness.md).
 
 ## Checkout Recovery Preparation (2026-10-31)
