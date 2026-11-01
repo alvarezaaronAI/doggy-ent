@@ -1,5 +1,14 @@
 # Doggy Ent Project Handoff
 
+## In Progress: Admin Routing Freshness (2026-10-31)
+
+Recovery preparation and evidence PR73 are complete; its Stripe activation stays
+off. The next bounded repair addresses immediate routing-check expiry caused by
+comparing browser and server clocks directly. Preserve the protected read-only
+probe, 60-second limit and sleep/failure behavior. No provider/DB/config change.
+Current task and exact next steps are in the
+[freshness checkpoint](docs/work-checkpoints/2026-10-31-admin-routing-freshness.md).
+
 ## Deployed: Recovery Preparation, Activation Off (2026-10-31)
 
 Prepared durable attempts/frozen pricing/stable provider idempotency, signed minimal

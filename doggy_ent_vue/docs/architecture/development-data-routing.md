@@ -18,6 +18,16 @@ refreshed; returning to a visible stale tab rechecks. Errors, old target-only
 responses and expired checks never claim Connected. This is connection/route
 evidence, not schema parity or a runtime database-switch control.
 
+Freshness uses elapsed browser time from the request start, including transport
+latency, not a subtraction between browser and server clocks. The server's
+checkedAt remains display-only evidence of the probe. This prevents clock skew
+from immediately expiring a successful read. Responses taking 60 seconds or more
+are stale. Both wall and monotonic elapsed clocks are checked: wall time covers
+suspend, while monotonic time prevents a partial wall-clock rollback extending
+freshness. Tab return after elapsed expiry or a backwards local clock rechecks.
+Invalid/failed checks remain unverified. See the
+[freshness repair checkpoint](../work-checkpoints/2026-10-31-admin-routing-freshness.md).
+
 A deliberately isolated local design fixture may report `PREVIEW` with
 `databaseConnected:false`. The development strip then says Preview / No database,
 not Railway and not a connection failure. Ordinary APIs cannot become verified
