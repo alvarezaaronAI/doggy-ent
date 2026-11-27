@@ -1,6 +1,6 @@
 # Project Agents And Workflow
 
-Updated: 2026-10-24. These eight local, reusable Codex role definitions are not hosted bots, scheduled jobs or new services running in the storefront. They inherit the parent session's access; instructions are not a security sandbox. No global settings, paid agent runtime or provider credentials are installed.
+Updated: 2026-11-27. These nine reusable Codex role definitions are not hosted bots, scheduled jobs or new services running in the storefront. They inherit the parent session's access; instructions are not a security sandbox. No global settings, paid agent runtime or provider credentials are installed.
 
 ## Roles
 
@@ -14,10 +14,26 @@ Updated: 2026-10-24. These eight local, reusable Codex role definitions are not 
 | `docs_curator` | Reconcile architecture, handoff, command evidence and resumable checkpoints | No invented verification/deployment claims | Use docs_curator to update the handoff and checkpoint from the verified changes. |
 | `release_operator` | Verify source/deployment parity, existing targets, startup effects, rollback and post-release health | Managed existing-site releases; migrations/provider changes and 1.0 acceptance stay separate | Use release_operator to verify the main-triggered Railway/Vercel rollout for this ready change. |
 | `security_responder` | Triage official advisories, inventory affected credentials, plan and verify approved remediation with resumable receipts | Read-only first; explicit credential/DB/session/provider/network approval, no secret output or unrelated release; human security handoffs remain | Use security_responder to review this advisory and the incident checkpoint, then plan the affected rotations without showing values. |
+| `systems_reviewer` | Independently review high-impact contracts, failure states and rollout compatibility across systems | Read-only by instruction; no release, provider, secret, or shared-data operations; no further delegation | Use systems_reviewer to review whether the old storefront and new API can coexist during this checkout rollout. |
 
-Definitions: Git-root `.codex/agents/*.toml`. A repository-level AGENTS.md points into this application's operating guide. Agent files inherit the model instead of pinning a paid/possibly unavailable one. Ask explicitly to use named agents or delegate; simply saving definitions does not launch them. A new session/reload may be needed for discovery. This pass validates files against the documented schema, not a running custom-agent dispatch in this already-open session.
+Definitions: Git-root `.codex/agents/*.toml`. A repository-level AGENTS.md points into this application's operating guide. Ask explicitly to use named agents or delegate; saving definitions does not launch them. Open a fresh Codex chat in this trusted repository to pick up changed defaults and newly added roles.
 
 The [official custom-agent guide](https://learn.chatgpt.com/docs/agent-configuration/subagents) documents project-scoped TOML and inherited permissions. The [skill guide](https://learn.chatgpt.com/docs/build-skills) documents repository `.agents/skills` discovery. The `shop-git-workflow` skill provides the Git steward's repeatable procedure and is callable as `$shop-git-workflow` where skills are supported.
+
+## Model Routing
+
+The Git-root `.codex/config.toml` defaults new subagents to GPT-6.2 Sol at Medium. It does not set the primary chat model, speed tier, global preferences, or project trust. Use Codex desktop or CLI with these models available.
+
+| Agent | Model and effort |
+| --- | --- |
+| `git_steward` | Sol / Light (CLI: Low) |
+| `qa_engineer` | Sol / Medium; optionally request Terra / Medium for a browser-only or screenshot assignment |
+| `commerce_guardian`, `security_responder` | Sol / High |
+| `customer_data_steward`, `customer_experience`, `release_operator` | Sol / Medium; request High for an unusually complex assignment |
+| `docs_curator` | Luna / High; the parent resolves disputed evidence |
+| `systems_reviewer` | Astra / High, only when invoked for a bounded escalation |
+
+Role-level settings take precedence for fields set in the role file. For an Astra escalation, use `systems_reviewer` for a new, specific decision about cross-system behavior or release compatibility. Do not automatically add it to every risk review. Have the parent or the ordinary domain owner handle routine changes, and give the reviewer only the relevant diff and verified evidence. If Astra is unavailable, report it and use a focused Sol review or defer when the release gate still lacks evidence. No model selection is a substitute for CI, an independent review where required, or owner approval.
 
 ## How To Work Together
 
@@ -29,7 +45,7 @@ The [official custom-agent guide](https://learn.chatgpt.com/docs/agent-configura
 
 The main agent coordinates these roles during an active task; saved definitions are not a bot watching GitHub when Codex is closed. Git steward owns mutations so two agents never race merges. Failed checks, dirty/divergent work, unexpected changes, unresolved review blockers or unapproved shared-data/provider effects stop the release. Capability or another agent's confidence is not approval. Do not ask repeatedly for actions already covered by the owner's bounded instruction. Follow the workflow's full gates and exceptions.
 
-Do not run all eight for a typo. Start with one or two relevant roles; subagents consume extra tokens and coordination time. The original six and customer_experience remain; security_responder adds incident-specific triage, not independent mutation permission. Save checkpoints during long work because credit/time limits cannot reliably be predicted. Agent outputs are proposals/evidence, not approval from the human. CI is deterministic verification, not an AI agent.
+Skip subagents for straightforward edits. Start with at most one or two relevant roles, each with a distinct deliverable. Reserve Ultra for intentionally parallel work; don't use it for routine delegation. Save checkpoints during long work because credit/time limits cannot reliably be predicted. Agent outputs are proposals/evidence, not approval from the human. CI is deterministic verification, not an AI agent.
 
 ## Installed Supporting Pieces
 
@@ -46,6 +62,6 @@ Initial connection check: Git fetch works and local `gh` is absent. The owner co
 
 ## Reuse On Another Website
 
-Copy the Git-root `.codex/agents`, `.agents/skills/shop-git-workflow`, PR template and relevant engineering docs. Adapt the root guide, application path, integration/production branches, commands and provider safety rules. Copy the preflight script with `project-workflow.json`; run its fixture tests. Update CI working directories/Node/toolchain/lockfiles, and inspect the new project's tests before enabling CI. Never copy env files, tokens, customer data, remote project IDs or blindly reuse deployment approval. A new GitHub connector/CLI session needs that repository's authorization; these files cannot grant it.
+Copy the Git-root `.codex/agents`, optional project-only model defaults in `.codex/config.toml`, `.agents/skills/shop-git-workflow`, PR template and relevant engineering docs. Adapt the root guide, application path, integration/production branches, commands and provider safety rules. Copy the preflight script with `project-workflow.json`; run its fixture tests. Update CI working directories/Node/toolchain/lockfiles, and inspect the new project's tests before enabling CI. Never copy env files, tokens, customer data, remote project IDs or blindly reuse deployment approval. A new GitHub connector/CLI session needs that repository's authorization; these files cannot grant it.
 
 Optional later additions: accessibility specialist after core flows stabilize; fulfillment/provider operator after manual shipping/email acceptance. Use security_responder for bounded dependency/advisory triage rather than another duplicate role. Avoid autonomous customer-service or marketing send agents until permissions, audit, recipient review and manual-send policy are ready.
