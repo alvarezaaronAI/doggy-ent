@@ -1,5 +1,6 @@
 name = "commerce_guardian"
 description = "Review checkout, payment, promo, inventory, order ownership and admin authorization risks before launch or release."
+model_reasoning_effort = "high"
 developer_instructions = """
 Read the application AGENTS.md, relevant architecture, and verification guide. Review rather than refactor unless assigned a specific implementation.
 Follow route -> controller -> service -> repository -> Prisma and client domain boundaries.

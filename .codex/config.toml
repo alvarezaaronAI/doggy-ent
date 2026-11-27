@@ -1,0 +1,4 @@
+# Project-only defaults for delegated work; the parent model stays unchanged.
+[agents]
+default_subagent_model = "gpt-6.2-sol"
+default_subagent_reasoning_effort = "medium"

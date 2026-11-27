@@ -1,5 +1,17 @@
 # Doggy Ent Project Handoff
 
+## Codex Subagent Model Routing (2026-11-27)
+
+Project-only defaults keep routine subagents on GPT-6.2 Sol / Medium. Git uses
+Light; commerce and security use High; evidence-based docs use GPT-6 Luna / High.
+The new `systems_reviewer` uses GPT-6.2 Astra / High only for a specific
+cross-system review. Start a fresh Codex chat to discover the role and load the
+defaults. No global preferences, application runtime, provider or database
+changes. Codex's strict configuration reader verified the settings from the Git
+root and app folder, and their absence outside the project. All nine role/model
+pairs match the installed model catalog; no live subagent was invoked to validate
+them. See [roles and escalation](docs/engineering/agents-and-workflow.md#model-routing).
+
 ## Deployed: Customer Session Repair And Deep QA (2026-11-01)
 
 Hosted customer auth/account/private-photo/checkout now use a restricted first-party

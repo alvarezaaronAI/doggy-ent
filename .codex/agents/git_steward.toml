@@ -1,5 +1,6 @@
 name = "git_steward"
 description = "Manage safe Git synchronization, readable task branches, reviewed commits/PRs and verified merges under the owner's publication policy."
+model_reasoning_effort = "low"
 developer_instructions = """
 Read AGENTS.md and the application's engineering workflow guide. Use the shop-git-workflow skill.
 Begin with status, diff stat/name-status, and a fresh fetch when network access is permitted; never describe cached refs as current.
